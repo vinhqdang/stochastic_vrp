@@ -1,0 +1,83 @@
+STOCHASTIC VRP WITH CALLBACKS - EXPERIMENT RESULTS SUMMARY
+======================================================================
+
+SCENARIO: Low_Uncertainty_Sparse
+--------------------------------------------------
+Algorithm    Reward       Success    Callbacks    Runtime   
+-----------------------------------------------------------------
+ECHO          884.2±67.8   89.2%      0.0%      0.065s
+GNN-CB        875.5±93.9   91.6%      0.0%      0.001s
+SRO-EV       1309.4±160.2   87.9%      0.0%      0.002s
+TH-CB         875.5±94.6   91.6%      0.0%      0.001s
+
+RANKINGS:
+  total_reward: SRO-EV > ECHO > GNN-CB > TH-CB
+  delivery_success_rate: GNN-CB > TH-CB > ECHO > SRO-EV
+  callback_response_rate: ECHO > GNN-CB > SRO-EV > TH-CB
+
+======================================================================
+
+SCENARIO: High_Uncertainty_Dense
+--------------------------------------------------
+Algorithm    Reward       Success    Callbacks    Runtime   
+-----------------------------------------------------------------
+ECHO         -2353.0±689.8   44.8%      5.9%      0.284s
+GNN-CB       -2345.4±746.6   42.7%      0.0%      0.010s
+SRO-EV       -1815.6±486.9   40.6%      0.0%      0.005s
+TH-CB        -2639.1±730.7   40.2%      3.5%      0.010s
+
+RANKINGS:
+  total_reward: SRO-EV > GNN-CB > ECHO > TH-CB
+  delivery_success_rate: ECHO > GNN-CB > SRO-EV > TH-CB
+  callback_response_rate: ECHO > TH-CB > GNN-CB > SRO-EV
+
+======================================================================
+
+SCENARIO: Medium_Uncertainty_HubSpoke
+--------------------------------------------------
+Algorithm    Reward       Success    Callbacks    Runtime   
+-----------------------------------------------------------------
+ECHO         -140.2±229.4   71.8%     15.3%      0.195s
+GNN-CB       -109.6±344.1   72.9%      5.0%      0.007s
+SRO-EV        173.9±375.1   71.9%      0.0%      0.005s
+TH-CB        -263.3±396.4   71.6%      2.0%      0.004s
+
+RANKINGS:
+  total_reward: SRO-EV > GNN-CB > ECHO > TH-CB
+  delivery_success_rate: GNN-CB > SRO-EV > ECHO > TH-CB
+  callback_response_rate: ECHO > GNN-CB > TH-CB > SRO-EV
+
+======================================================================
+
+SCENARIO: Capacity_Constrained
+--------------------------------------------------
+Algorithm    Reward       Success    Callbacks    Runtime   
+-----------------------------------------------------------------
+ECHO          312.9±99.5   75.5%      0.0%      0.013s
+GNN-CB        414.9±146.2   92.5%      0.0%      0.001s
+SRO-EV        371.8±155.1   91.7%      0.0%      0.000s
+TH-CB         586.6±151.6   90.0%      0.0%      0.001s
+
+RANKINGS:
+  total_reward: TH-CB > GNN-CB > SRO-EV > ECHO
+  delivery_success_rate: GNN-CB > SRO-EV > TH-CB > ECHO
+  callback_response_rate: ECHO > GNN-CB > SRO-EV > TH-CB
+
+======================================================================
+
+SCENARIO: Time_Critical
+--------------------------------------------------
+Algorithm    Reward       Success    Callbacks    Runtime   
+-----------------------------------------------------------------
+ECHO          105.8±468.6   72.6%     10.0%      0.482s
+GNN-CB        157.6±622.1   72.9%      0.0%      0.010s
+SRO-EV        459.1±847.4   75.5%      0.0%      0.012s
+TH-CB        -263.1±817.2   75.8%     28.3%      0.008s
+
+RANKINGS:
+  total_reward: SRO-EV > GNN-CB > ECHO > TH-CB
+  delivery_success_rate: TH-CB > SRO-EV > GNN-CB > ECHO
+  callback_response_rate: TH-CB > ECHO > GNN-CB > SRO-EV
+
+======================================================================
+

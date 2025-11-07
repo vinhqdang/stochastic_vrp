@@ -1,0 +1,90 @@
+scenarios:
+  - name: "Low_Uncertainty_Sparse"
+    description: "Favorable conditions with high delivery success rates"
+    parameters:
+      n_shippers: 2
+      n_packages: 10
+      n_locations: 5
+      shipper_capacities: [50, 50]
+      package_weights: [2, 8]
+      delivery_probability_range: [0.80, 0.95]
+      callback_probability: 0.20
+      network_type: "clustered"
+      location_bounds: [20, 20]
+      R_success_base: 100
+      R_failure: -50
+      R_callback_success: 80
+      cost_per_km_kg: 0.5
+      time_window: 120
+
+  - name: "High_Uncertainty_Dense"
+    description: "Challenging conditions with frequent failures and callbacks"
+    parameters:
+      n_shippers: 3
+      n_packages: 20
+      n_locations: 10
+      shipper_capacities: [40, 50, 45]
+      package_weights: [3, 10]
+      delivery_probability_range: [0.30, 0.60]
+      callback_probability: 0.80
+      network_type: "uniform"
+      location_bounds: [25, 25]
+      R_success_base: 100
+      R_failure: -80
+      R_callback_success: 70
+      cost_per_km_kg: 0.8
+      time_window: 180
+
+  - name: "Medium_Uncertainty_HubSpoke"
+    description: "Realistic urban delivery with central depot"
+    parameters:
+      n_shippers: 3
+      n_packages: 15
+      n_locations: 8
+      shipper_capacities: [60, 55, 50]
+      package_weights: [2, 12]
+      delivery_probability_range: [0.60, 0.80]
+      callback_probability: 0.50
+      network_type: "hub_spoke"
+      location_bounds: [20, 20]
+      R_success_base: 100
+      R_failure: -60
+      R_callback_success: 75
+      cost_per_km_kg: 0.6
+      time_window: 150
+
+  - name: "Capacity_Constrained"
+    description: "Heavy packages with limited shipper capacity"
+    parameters:
+      n_shippers: 2
+      n_packages: 12
+      n_locations: 6
+      shipper_capacities: [30, 35]
+      package_weights: [8, 15]
+      delivery_probability_range: [0.70, 0.85]
+      callback_probability: 0.40
+      network_type: "clustered"
+      location_bounds: [15, 15]
+      R_success_base: 120
+      R_failure: -70
+      R_callback_success: 90
+      cost_per_km_kg: 1.0
+      time_window: 100
+
+  - name: "Time_Critical"
+    description: "Short time window with high time decay on rewards"
+    parameters:
+      n_shippers: 4
+      n_packages: 20
+      n_locations: 12
+      shipper_capacities: [50, 50, 45, 55]
+      package_weights: [3, 7]
+      delivery_probability_range: [0.65, 0.85]
+      callback_probability: 0.60
+      network_type: "uniform"
+      location_bounds: [25, 25]
+      R_success_base: 150
+      R_failure: -100
+      R_callback_success: 100
+      cost_per_km_kg: 0.7
+      time_window: 60
