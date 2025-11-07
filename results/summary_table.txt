@@ -5,15 +5,18 @@ SCENARIO: Low_Uncertainty_Sparse
 --------------------------------------------------
 Algorithm    Reward       Success    Callbacks    Runtime   
 -----------------------------------------------------------------
-ECHO          884.2±67.8   89.2%      0.0%      0.065s
+APEX-v3      1670.6±145.2   95.3%      0.0%      0.001s
+APEX-v2         0.0± 0.0    0.0%      0.0%      0.000s
+APEX          868.9±91.8   93.5%      0.0%      0.002s
+ECHO          884.2±67.8   89.2%      0.0%      0.063s
 GNN-CB        875.5±93.9   91.6%      0.0%      0.001s
 SRO-EV       1309.4±160.2   87.9%      0.0%      0.002s
 TH-CB         875.5±94.6   91.6%      0.0%      0.001s
 
 RANKINGS:
-  total_reward: SRO-EV > ECHO > GNN-CB > TH-CB
-  delivery_success_rate: GNN-CB > TH-CB > ECHO > SRO-EV
-  callback_response_rate: ECHO > GNN-CB > SRO-EV > TH-CB
+  total_reward: APEX-v3 > SRO-EV > ECHO > GNN-CB > TH-CB > APEX > APEX-v2
+  delivery_success_rate: APEX-v3 > APEX > GNN-CB > TH-CB > ECHO > SRO-EV > APEX-v2
+  callback_response_rate: APEX-v3 > APEX-v2 > APEX > ECHO > GNN-CB > SRO-EV > TH-CB
 
 ======================================================================
 
@@ -21,15 +24,18 @@ SCENARIO: High_Uncertainty_Dense
 --------------------------------------------------
 Algorithm    Reward       Success    Callbacks    Runtime   
 -----------------------------------------------------------------
-ECHO         -2353.0±689.8   44.8%      5.9%      0.284s
+APEX-v3      1030.3±808.4   68.8%     10.3%      0.005s
+APEX-v2         0.0± 0.0    0.0%      0.0%      0.000s
+APEX         -3155.8±1010.5   38.7%      0.0%      0.010s
+ECHO         -2353.0±689.8   44.8%      5.9%      0.282s
 GNN-CB       -2345.4±746.6   42.7%      0.0%      0.010s
 SRO-EV       -1815.6±486.9   40.6%      0.0%      0.005s
-TH-CB        -2639.1±730.7   40.2%      3.5%      0.010s
+TH-CB        -2639.1±730.7   40.2%      3.5%      0.012s
 
 RANKINGS:
-  total_reward: SRO-EV > GNN-CB > ECHO > TH-CB
-  delivery_success_rate: ECHO > GNN-CB > SRO-EV > TH-CB
-  callback_response_rate: ECHO > TH-CB > GNN-CB > SRO-EV
+  total_reward: APEX-v3 > APEX-v2 > SRO-EV > GNN-CB > ECHO > TH-CB > APEX
+  delivery_success_rate: APEX-v3 > ECHO > GNN-CB > SRO-EV > TH-CB > APEX > APEX-v2
+  callback_response_rate: APEX-v3 > ECHO > TH-CB > APEX-v2 > APEX > GNN-CB > SRO-EV
 
 ======================================================================
 
@@ -37,15 +43,18 @@ SCENARIO: Medium_Uncertainty_HubSpoke
 --------------------------------------------------
 Algorithm    Reward       Success    Callbacks    Runtime   
 -----------------------------------------------------------------
-ECHO         -140.2±229.4   71.8%     15.3%      0.195s
-GNN-CB       -109.6±344.1   72.9%      5.0%      0.007s
+APEX-v3      1904.9±262.7   89.7%      0.0%      0.002s
+APEX-v2         0.0± 0.0    0.0%      0.0%      0.000s
+APEX         -244.8±493.0   73.3%      0.0%      0.005s
+ECHO         -140.2±229.4   71.8%     15.3%      0.193s
+GNN-CB       -109.6±344.1   72.9%      5.0%      0.006s
 SRO-EV        173.9±375.1   71.9%      0.0%      0.005s
 TH-CB        -263.3±396.4   71.6%      2.0%      0.004s
 
 RANKINGS:
-  total_reward: SRO-EV > GNN-CB > ECHO > TH-CB
-  delivery_success_rate: GNN-CB > SRO-EV > ECHO > TH-CB
-  callback_response_rate: ECHO > GNN-CB > TH-CB > SRO-EV
+  total_reward: APEX-v3 > SRO-EV > APEX-v2 > GNN-CB > ECHO > APEX > TH-CB
+  delivery_success_rate: APEX-v3 > APEX > GNN-CB > SRO-EV > ECHO > TH-CB > APEX-v2
+  callback_response_rate: ECHO > GNN-CB > TH-CB > APEX-v3 > APEX-v2 > APEX > SRO-EV
 
 ======================================================================
 
@@ -53,15 +62,18 @@ SCENARIO: Capacity_Constrained
 --------------------------------------------------
 Algorithm    Reward       Success    Callbacks    Runtime   
 -----------------------------------------------------------------
+APEX-v3       715.2±231.8   95.5%      0.0%      0.000s
+APEX-v2         0.0± 0.0    0.0%      0.0%      0.000s
+APEX          553.0±111.9   92.1%      0.0%      0.001s
 ECHO          312.9±99.5   75.5%      0.0%      0.013s
 GNN-CB        414.9±146.2   92.5%      0.0%      0.001s
 SRO-EV        371.8±155.1   91.7%      0.0%      0.000s
 TH-CB         586.6±151.6   90.0%      0.0%      0.001s
 
 RANKINGS:
-  total_reward: TH-CB > GNN-CB > SRO-EV > ECHO
-  delivery_success_rate: GNN-CB > SRO-EV > TH-CB > ECHO
-  callback_response_rate: ECHO > GNN-CB > SRO-EV > TH-CB
+  total_reward: APEX-v3 > TH-CB > APEX > GNN-CB > SRO-EV > ECHO > APEX-v2
+  delivery_success_rate: APEX-v3 > GNN-CB > APEX > SRO-EV > TH-CB > ECHO > APEX-v2
+  callback_response_rate: APEX-v3 > APEX-v2 > APEX > ECHO > GNN-CB > SRO-EV > TH-CB
 
 ======================================================================
 
@@ -69,15 +81,18 @@ SCENARIO: Time_Critical
 --------------------------------------------------
 Algorithm    Reward       Success    Callbacks    Runtime   
 -----------------------------------------------------------------
-ECHO          105.8±468.6   72.6%     10.0%      0.482s
-GNN-CB        157.6±622.1   72.9%      0.0%      0.010s
-SRO-EV        459.1±847.4   75.5%      0.0%      0.012s
+APEX-v3      2777.9±429.2   86.8%      0.0%      0.004s
+APEX-v2         0.0± 0.0    0.0%      0.0%      0.000s
+APEX         -399.5±908.4   74.2%     33.3%      0.011s
+ECHO          105.8±468.6   72.6%     10.0%      0.496s
+GNN-CB        157.6±622.1   72.9%      0.0%      0.009s
+SRO-EV        459.1±847.4   75.5%      0.0%      0.014s
 TH-CB        -263.1±817.2   75.8%     28.3%      0.008s
 
 RANKINGS:
-  total_reward: SRO-EV > GNN-CB > ECHO > TH-CB
-  delivery_success_rate: TH-CB > SRO-EV > GNN-CB > ECHO
-  callback_response_rate: TH-CB > ECHO > GNN-CB > SRO-EV
+  total_reward: APEX-v3 > SRO-EV > GNN-CB > ECHO > APEX-v2 > TH-CB > APEX
+  delivery_success_rate: APEX-v3 > TH-CB > SRO-EV > APEX > GNN-CB > ECHO > APEX-v2
+  callback_response_rate: APEX > TH-CB > ECHO > APEX-v3 > APEX-v2 > GNN-CB > SRO-EV
 
 ======================================================================
 

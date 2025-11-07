@@ -16,6 +16,9 @@ from algorithms.echo import ECHO
 from algorithms.gnn_cb import GNN_CB
 from algorithms.sro_ev import SRO_EV
 from algorithms.th_cb import TH_CB
+from algorithms.apex import APEX
+from algorithms.apex_v2 import APEXv2
+from algorithms.apex_v3 import APEXv3
 from scenarios.scenario_generator import ScenarioGenerator
 from evaluation.metrics import MetricsCalculator
 from utils.helpers import set_random_seeds
@@ -31,6 +34,9 @@ class ExperimentRunner:
 
         # Initialize algorithms
         self.algorithms = {
+            'APEX-v3': APEXv3,
+            'APEX-v2': APEXv2,
+            'APEX': APEX,
             'ECHO': ECHO,
             'GNN-CB': GNN_CB,
             'SRO-EV': SRO_EV,
@@ -39,6 +45,28 @@ class ExperimentRunner:
 
         # Algorithm configurations
         self.algorithm_configs = {
+            'APEX-v3': {
+                'prob_boost_factor': 4.0,
+                'consolidation_reward': 75.0,
+                'value_multiplier': 2.5
+            },
+            'APEX-v2': {
+                'probability_boost': 2.5,
+                'value_density_weight': 3.5,
+                'consolidation_bonus': 1.8,
+                'distance_penalty': 0.6
+            },
+            'APEX': {
+                'uncertainty_threshold': 0.7,
+                'density_threshold': 2.0,
+                'savings_weight': 0.6,
+                'prob_weight': 0.4,
+                'distance_weight': 0.25,
+                'probability_weight': 0.30,
+                'value_weight': 0.20,
+                'urgency_weight': 0.15,
+                'capacity_weight': 0.10
+            },
             'ECHO': {
                 'discount_factor': 0.95,
                 'rollout_horizon': 3,
