@@ -19,6 +19,8 @@ from algorithms.th_cb import TH_CB
 from algorithms.apex import APEX
 from algorithms.apex_v2 import APEXv2
 from algorithms.apex_v3 import APEXv3
+from algorithms.pomo_simplified import POMOSimplified
+from algorithms.drl_du_simplified import DRLDUSimplified
 from scenarios.scenario_generator import ScenarioGenerator
 from evaluation.metrics import MetricsCalculator
 from utils.helpers import set_random_seeds
@@ -35,11 +37,10 @@ class ExperimentRunner:
         # Initialize algorithms
         self.algorithms = {
             'APEX-v3': APEXv3,
-            'APEX-v2': APEXv2,
-            'APEX': APEX,
-            'ECHO': ECHO,
-            'GNN-CB': GNN_CB,
+            'POMO': POMOSimplified,
+            'DRL-DU': DRLDUSimplified,
             'SRO-EV': SRO_EV,
+            'GNN-CB': GNN_CB,
             'TH-CB': TH_CB
         }
 
@@ -50,11 +51,18 @@ class ExperimentRunner:
                 'consolidation_reward': 75.0,
                 'value_multiplier': 2.5
             },
-            'APEX-v2': {
-                'probability_boost': 2.5,
-                'value_density_weight': 3.5,
-                'consolidation_bonus': 1.8,
-                'distance_penalty': 0.6
+            'POMO': {
+                'num_starts': 15,  # Reduced for speed
+                'distance_weight': 0.3,
+                'probability_weight': 0.4,
+                'value_weight': 0.2,
+                'consolidation_weight': 0.1
+            },
+            'DRL-DU': {
+                'belief_decay': 0.1,
+                'confidence_threshold': 0.7,
+                'uncertainty_weight': 0.3,
+                'callback_value_threshold': 50.0
             },
             'APEX': {
                 'uncertainty_threshold': 0.7,
