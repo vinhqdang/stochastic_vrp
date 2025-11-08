@@ -231,17 +231,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Citation
 
-If you use this work in your research, please cite:
+This work is currently under development and not yet published. If you use this research implementation, please reference:
 
-```bibtex
-@article{dang2024apex,
-  title={APEX v3: A Breakthrough Algorithm for Stochastic Vehicle Routing with Dynamic Callbacks},
-  author={Dang, Vinh Q},
-  journal={Optimization and Logistics Research},
-  year={2024},
-  note={Implementation available at: https://github.com/vinhqdang/stochastic_vrp}
-}
 ```
+Dang, V.Q. (2024). APEX v3: A Breakthrough Algorithm for Stochastic Vehicle Routing with Dynamic Callbacks.
+Research implementation available at: https://github.com/vinhqdang/stochastic_vrp
+```
+
+**Status**: Research implementation complete, preparing for academic submission.
 
 ## Contact
 
