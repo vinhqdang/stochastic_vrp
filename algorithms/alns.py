@@ -156,8 +156,11 @@ SIGMA_3 = 13   # Score bonus when operator's result is ACCEPTED by SA (but worse
 REACTION_FACTOR = 0.8
 # Smoothing factor for adaptive weight update:
 #   w_new = REACTION_FACTOR * w_old + (1 - REACTION_FACTOR) * (score/count)
-# 0.8 = slow adaptation (stable). 0.2 = fast adaptation (responsive).
-# From [ref 3].
+# DEVIATION FROM LITERATURE: Ropke & Pisinger (2006) use r=0.1 (equivalent 
+# to REACTION_FACTOR=0.9 here). We deliberately use 0.8 (equivalent to r=0.2) 
+# to make the ALNS react twice as fast to the volatile DRO landscape, escaping
+# local optima more efficiently without losing historical stability. 
+# However, still a heurestic calibration
 
 
 
