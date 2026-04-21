@@ -116,7 +116,7 @@ All four share the **same correlation structure** (from the copula) but differ i
 | γ = 0.5 | — | Threshold scaling exponent | Ablation study |
 | λ₀ = 10,000 | — | Penalty strength | Ablation study |
 | 1/ln(m+1) | — | Length-dependent penalty scaling | Ablation study |
-| SA geometric cooling | 0.9997 | Temperature schedule | Does NOT satisfy Hajek (1988) conditions |
+| SA geometric cooling | 0.9997 | Temperature schedule | Hajek (1988) proves convergence to global optimum only with logarithmic cooling T_k = Γ/ln(k), which requires ~e^10000 iterations — completely impractical. Geometric cooling (T *= 0.9997) is the standard trade-off in applied OR: no theoretical guarantee, but reaches good solutions in feasible time. Nearly all published ALNS/SA implementations use geometric cooling for this reason. |
 | Reheat at T < 0.1 | → 30% of T₀ | Escape frozen states | Empirical |
 | Operator scores σ₁,σ₂,σ₃ | 33, 9, 13 | Adaptive weight rewards | Ropke & Pisinger (2006) |
 
