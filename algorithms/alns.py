@@ -89,7 +89,7 @@ THETA_FRACTION = 0.1
 # ALL THREE are SELF-SET calibration heuristics with NO theoretical derivation.
 # They should be tuned via ablation study on each problem class.
 
-ALPHA_BASE = 0.05
+ALPHA_BASE = 0.2 
 # Base risk threshold. A single-customer route is allowed RRI up to 0.05
 # before penalty kicks in. Larger value = more risk-tolerant.
 
@@ -101,7 +101,7 @@ GAMMA = 0.5
 # gamma=0.5 means threshold grows as sqrt(m). This is NOT derived from CLT
 # (CLT concerns normalized sums, not tail probability sums). Pure heuristic.
 
-LAMBDA_0 = 10000.0
+LAMBDA_0 = 500
 # Base penalty multiplier. Controls how strongly the solver avoids risky routes.
 # Divided by ln(m+1) to soften the penalty for longer routes.
 # SELF-SET. Too small -> ignores risk. Too large -> overly conservative routing.
