@@ -1,271 +1,177 @@
-# Stochastic Vehicle Routing with Dynamic Callbacks
+# Stochastic VRPSPD with Distributionally Robust Optimization
 
-[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/release/python-3130/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Research](https://img.shields.io/badge/Status-Research%20Complete-green.svg)](https://github.com/vinhqdang/stochastic_vrp)
+[![Status: Research](https://img.shields.io/badge/Status-Research-green.svg)](https://github.com/vinhqdang/stochastic_vrp)
 
 ## Overview
 
-This repository contains the complete implementation and experimental evaluation of **APEX v3** (Adaptive Profit Enhancement eXecutor version 3), a breakthrough algorithm for the **Stochastic Multi-Agent Vehicle Routing Problem with Uncertain Delivery and Dynamic Callbacks (SMAVRP-UDC)**.
+This repository implements a unified optimization framework for the **Vehicle Routing Problem with Simultaneous Pickup and Delivery under Stochastic Demand (SVRPSPD)**. The core algorithm is an **Adaptive Large Neighborhood Search (ALNS)** metaheuristic augmented with a **Moment-Based Distributionally Robust Optimization (M-DRO)** risk layer, enabling tractable, distribution-free route planning under demand uncertainty.
 
-### 🏆 Key Results
+The framework operates in two modes controlled by a single flag:
 
-- **APEX v3 achieves 3.49× better performance** than the best baseline algorithm
-- **Perfect 5/5 scenario wins** across diverse test conditions
-- **27.7× faster execution speed** while maintaining superior quality
-- **Only algorithm with positive rewards** in high-uncertainty scenarios
+| Mode | Problem | Objective |
+|------|---------|-----------|
+| **Deterministic** | Pure CVRP (delivery only) | Minimize total Euclidean distance |
+| **Stochastic** | VRPSPD with random pickup demand | Minimize distance + DRO risk penalty |
+
+---
 
 ## Problem Definition
 
-The SMAVRP-UDC addresses three critical challenges in modern logistics:
+Each vehicle simultaneously delivers goods to and collects goods from customers. The vehicle departs the depot preloaded with all deliveries:
 
-1. **🎲 Stochastic Delivery Outcomes**: Location-dependent success probabilities
-2. **📞 Dynamic Callback Generation**: Failed deliveries trigger callback requests
-3. **⏰ Time-Varying System Dynamics**: Real-time adaptation requirements
+$$L_0 = \sum_{i \in \text{route}} D_i$$
 
-### Mathematical Formulation
+After visiting customer $k$, the load evolves as:
 
-```
-maximize Σ_{i∈P} [R_{success} · I_{success}(i) · τ(t_i) + R_{callback} · I_{callback}(i) · τ(t'_i) - R_{failure} · I_{failure}(i)]
-         - Σ_{k∈K} Σ_{(i,j)∈route_k} c_{ij} · w_k(i,j)
-```
+$$L_k = L_0 + \sum_{j=1}^{k}(P_j - D_j)$$
 
-Where:
-- `R_{success}`, `R_{callback}`, `R_{failure}`: Reward/penalty parameters
-- `τ(t) = max(0, 1 - t/T_{max})`: Time decay factor
-- `I_{·}(i)`: Indicator functions for delivery outcomes
-- `c_{ij}`: Cost per unit distance per unit weight
+Since pickup demands $P_i$ are **stochastic**, the load is random — hard capacity checks are not meaningful. Instead, we bound the worst-case violation probability at each stop using the **Cantelli–Chebyshev inequality**:
+
+$$P(\text{overload at stop } k) \leq \frac{\text{Var}(L_k)}{\text{Var}(L_k) + \text{slack}_k^2}$$
+
+and penalize the routing objective accordingly.
+
+---
+
+## Key Contributions
+
+### 1. Spatial Demand Correlation Model
+Pickup demands are modeled with a spatially decaying covariance structure:
+
+$$\Sigma_{ij} = \sigma_i \cdot \sigma_j \cdot \exp\!\left(-\frac{d_{ij}}{\theta}\right)$$
+
+capturing geographic demand correlation (e.g., regional weather effects) between nearby customers.
+
+### 2. M-DRO Route Evaluation
+- Per-stop failure probabilities via the tight **Cantelli–Chebyshev bound** (no distributional assumptions beyond first two moments)
+- Route Risk Index (RRI) aggregated via union bound
+- Penalized objective: $Z = \text{distance} + \frac{\lambda_0}{\ln(m+1)} \cdot \max(0, \text{RRI} - \alpha_0 \cdot m^{0.5})$
+- Efficient $O(mn)$ prefix-sum covariance computation
+
+### 3. ALNS with Simulated Annealing
+- **Destroy operators**: random removal, worst-cost removal
+- **Repair operators**: greedy insertion, regret-2 insertion (Ropke & Pisinger, 2006)
+- **Adaptive weights**: online operator scoring updated every 100 iterations
+- **SA acceptance**: geometric cooling with temperature restart
+
+### 4. Four-Universe Gaussian Copula Validation
+Post-optimization Monte Carlo stress test across four demand distributional shapes (Gaussian, right-skewed, left-skewed, heavy-tailed) linked by a Gaussian Copula to preserve spatial correlation.
+
+---
 
 ## Repository Structure
 
 ```
 stochastic_vrp/
-├── algorithms/              # Algorithm implementations
-│   ├── apex_v3.py          # APEX v3 (main contribution)
-│   ├── pomo_simplified.py  # POMO baseline
+├── algorithms/
+│   ├── alns.py              # Main algorithm (ALNS + M-DRO) ← primary contribution
+│   ├── echo.py              # ECHO: MDP rollout baseline
+│   ├── apex_v3.py           # APEX v3: deterministic heuristic baseline
+│   ├── pomo_simplified.py   # POMO baseline
 │   ├── drl_du_simplified.py # DRL-DU baseline
-│   ├── sro_ev.py           # Static Route Optimization
-│   ├── gnn_cb.py           # Greedy Nearest Neighbor
-│   └── th_cb.py            # Threshold-Based Callback
-├── evaluation/              # Experimental framework
-│   ├── runner.py           # Experiment orchestration
-│   ├── metrics.py          # Performance evaluation
-│   └── visualizer.py       # Results visualization
-├── scenarios/               # Test scenario generation
-│   ├── scenario_generator.py
-│   └── scenarios.yaml      # Scenario configurations
-├── utils/                   # Core data structures
-│   ├── data_structures.py  # State, Action, Package classes
-│   ├── helpers.py          # Utility functions
-│   └── probability.py      # Stochastic sampling
-├── results/                 # Experimental outputs
-│   ├── experiment_results.json
-│   ├── comparison_plots.png
-│   └── summary_table.txt
-├── docs/                    # Research documentation
-│   ├── ALGORITHMSv3.md     # Complete research paper
-│   ├── RESULTS_ANALYSIS.md  # Experimental analysis
-│   └── RESULTS_TABLE_LATEX.md # Publication tables
-├── main.py                  # Entry point
-├── requirements.txt         # Dependencies
-└── README.md               # This file
+│   ├── sro_ev.py            # SRO-EV baseline
+│   ├── gnn_cb.py            # GNN-CB baseline
+│   └── th_cb.py             # TH-CB baseline
+├── evaluation/              # Experiment runner and metrics
+├── scenarios/               # YAML scenario configs and generator
+├── utils/                   # Shared data structures and utilities
+├── results/                 # Saved outputs (JSON, CSV, plots)
+├── main.py                  # Entry point for baseline comparisons
+├── requirements.txt
+└── README.md
 ```
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.13+
-- conda (recommended) or pip
+```bash
+conda create -n vrp_env python=3.10
+conda activate vrp_env
+pip install -r requirements.txt
+```
 
-### Installation
+### Running ALNS on CVRPLIB Instances
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/vinhqdang/stochastic_vrp.git
-   cd stochastic_vrp
-   ```
+1. Download benchmark instances from [CVRPLIB](http://vrp.atd-lab.inf.puc-rio.br/) (e.g., Augerat Set X `.vrp` files + `.sol` files into a directory).
 
-2. **Set up environment** (using conda)
-   ```bash
-   conda create -n vrp_env python=3.13
-   conda activate vrp_env
-   pip install -r requirements.txt
-   ```
+2. Set the data directory and run:
 
-3. **Run experiments**
-   ```bash
-   # Quick test (2 algorithms, 3 runs each)
-   python main.py --quick
+```bash
+# Set your .vrp data directory
+export VRP_DATA_DIR=/path/to/your/vrp/instances
 
-   # Single scenario test
-   python main.py --scenario Low_Uncertainty_Sparse
+# Run (stochastic mode is enabled by default)
+python algorithms/alns.py
+```
 
-   # Full experimental suite (6 algorithms × 5 scenarios × 10 runs)
-   python main.py --full
-   ```
-
-### Usage Examples
+Or edit `TARGET_DIR` directly at the bottom of `alns.py`:
 
 ```python
-# Run APEX v3 on a custom problem
-from algorithms.apex_v3 import APEXv3
-from scenarios.scenario_generator import ScenarioGenerator
-
-# Generate problem instance
-generator = ScenarioGenerator('scenarios/scenarios.yaml')
-problem = generator.generate_instance('Low_Uncertainty_Sparse', seed=42)
-
-# Solve with APEX v3
-config = {'prob_boost_factor': 4.0, 'consolidation_reward': 75.0}
-solver = APEXv3(config)
-result = solver.solve(problem)
-
-print(f"Total reward: {result['total_reward']:.2f}")
-print(f"Success rate: {result['delivery_success_rate']:.1f}%")
+TARGET_DIR = "/path/to/your/vrp/instances"
 ```
 
-## Algorithms
+### Switching Between Modes
 
-### 🥇 APEX v3: Our Main Contribution
+At the top of `algorithms/alns.py`, set:
 
-**Adaptive Profit Enhancement eXecutor version 3** employs a 4-phase hybrid optimization approach:
-
-1. **Value-Enhanced Package Processing**: Probability-weighted value transformation
-2. **Probability-Weighted Route Construction**: Enhanced Clarke-Wright algorithm
-3. **Multi-Package Consolidation Optimization**: Synergistic delivery effects
-4. **Dynamic Callback Integration**: Efficient priority-based processing
-
-**Key Features**:
-- O(n² log n) time complexity
-- Sub-0.01s runtime for real-time deployment
-- Robust performance across all uncertainty levels
-
-### 📊 Baseline Algorithms
-
-| Algorithm | Description | Key Innovation |
-|-----------|-------------|----------------|
-| **POMO** | Policy Optimization with Multiple Optima | Multiple starting strategies |
-| **DRL-DU** | Deep RL for Dynamic Uncertain VRP | Belief state tracking |
-| **SRO-EV** | Static Route Optimization | Expected value routing |
-| **GNN-CB** | Greedy Nearest Neighbor | Simple callback queue |
-| **TH-CB** | Threshold-Based Callback | Multi-criteria scoring |
-
-## Experimental Results
-
-### Overall Performance Comparison
-
-| Algorithm | Avg Reward | Success Rate | Runtime | Scenarios Won |
-|-----------|------------|--------------|---------|---------------|
-| **APEX v3** | **1619.8** | **87.2%** | **0.003s** | **5/5** |
-| POMO | 463.6 | 82.2% | 0.083s | 0/5 |
-| DRL-DU | 172.3 | 74.5% | 0.005s | 0/5 |
-| SRO-EV | 199.5 | 73.5% | 0.005s | 0/5 |
-| GNN-CB | -41.9 | 74.5% | 0.005s | 0/5 |
-| TH-CB | -110.5 | 74.6% | 0.005s | 0/5 |
-
-### Test Scenarios
-
-1. **Low_Uncertainty_Sparse**: High success rates (80-95%), minimal callbacks
-2. **High_Uncertainty_Dense**: Low success rates (30-60%), frequent callbacks
-3. **Medium_Uncertainty_HubSpoke**: Moderate uncertainty, structured network
-4. **Capacity_Constrained**: Resource optimization challenge
-5. **Time_Critical**: Urgency-driven decision making
-
-### Statistical Significance
-
-- All APEX v3 improvements are **statistically significant** (p < 0.001)
-- **Large effect sizes** (Cohen's d > 2.8) across all comparisons
-- **Consistent outperformance** across 300 experimental runs
-
-## Research Documentation
-
-### 📖 Academic Papers
-
-- **[ALGORITHMSv3.md](ALGORITHMSv3.md)**: Complete research paper with theoretical analysis
-- **[RESULTS_ANALYSIS.md](RESULTS_ANALYSIS.md)**: Comprehensive experimental evaluation
-- **[RESULTS_TABLE_LATEX.md](RESULTS_TABLE_LATEX.md)**: Publication-ready LaTeX tables
-
-### 🔬 Key Contributions
-
-1. **Algorithmic Innovation**: Hybrid optimization framework for stochastic VRP
-2. **Consolidation Modeling**: First systematic treatment of delivery synergies
-3. **Uncertainty Integration**: Probability-weighted route construction
-4. **Experimental Validation**: Comprehensive baseline comparison
-
-## Applications
-
-### Industry Use Cases
-
-- **🛒 E-commerce & Last-Mile Delivery**: Amazon, FedEx, UPS logistics
-- **🏥 Healthcare Logistics**: Medical supply distribution
-- **🚨 Emergency Services**: Resource allocation under uncertainty
-- **🍕 Food Delivery**: Time-critical routing with callbacks
-
-### Technical Requirements
-
-- **Real-time Performance**: Sub-0.01s runtime enables live deployment
-- **Scalability**: Handles 100+ location problems efficiently
-- **Robustness**: Maintains performance across diverse scenarios
-- **Integration**: Easy integration with existing routing systems
-
-## Contributing
-
-We welcome contributions to improve the algorithms and experimental framework:
-
-1. **Fork the repository**
-2. **Create feature branch** (`git checkout -b feature/improvement`)
-3. **Make changes** with comprehensive tests
-4. **Submit pull request** with detailed description
-
-### Development Guidelines
-
-- Follow PEP 8 style guidelines
-- Add docstrings for all public methods
-- Include unit tests for new functionality
-- Update documentation for algorithm changes
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Citation
-
-This work is currently under development and not yet published. If you use this research implementation, please reference:
-
-```
-Dang, V.Q. (2025). APEX v3: A Breakthrough Algorithm for Stochastic Vehicle Routing with Dynamic Callbacks.
-Research implementation available at: https://github.com/vinhqdang/stochastic_vrp
+```python
+STOCHASTIC_MODE = True   # SVRPSPD with DRO risk penalty + Monte Carlo validation
+STOCHASTIC_MODE = False  # Deterministic CVRP, reports gap vs Best Known Solution
 ```
 
-**Status**: Research implementation complete, preparing for academic submission.
+### Output
 
-## Contact
-
-**Vinh Dang** - [dqvinh87@gmail.com](mailto:dqvinh87@gmail.com)
-
-Project Link: [https://github.com/vinhqdang/stochastic_vrp](https://github.com/vinhqdang/stochastic_vrp)
-
-## Acknowledgments
-
-- VRP research community for foundational algorithms and benchmarks
-- Open-source optimization libraries that enabled this research
-- Academic institutions supporting stochastic optimization research
+For each instance the benchmark engine produces:
+- **Console table**: vehicles used, distance, runtime, per-universe failure rates
+- **CSV file**: `results_stochastic.csv` / `results_deterministic.csv`
+- **Convergence CSV**: `convergence_<instance>.csv` — best objective per iteration
 
 ---
 
-## Performance Highlights
+## Hyperparameters
 
-### 🎯 APEX v3 Breakthrough Results
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `CV` | 0.2 | Coefficient of variation for demand noise |
+| `CAPACITY_FACTOR` | 1.2 | Capacity relaxation factor for stochastic mode |
+| `THETA_FRACTION` | 0.1 | Spatial correlation range (fraction of map diameter) |
+| `ALPHA_BASE` | 0.2 | Base DRO risk threshold |
+| `GAMMA` | 0.5 | Risk threshold scaling exponent ($\sqrt{m}$) |
+| `LAMBDA_0` | 500.0 | Base DRO penalty multiplier |
+| `ALNS_ITERATIONS` | 5000 | Total destroy–repair cycles |
+| `SA_TEMP_INIT` | 100.0 | Initial SA temperature |
+| `SA_COOLING` | 0.9997 | Geometric cooling rate |
+| `MC_SAMPLES` | 10000 | Monte Carlo samples for validation |
 
-- **3.49× Performance Improvement**: vs best baseline (POMO)
-- **Perfect Scenario Dominance**: 5/5 wins across all test conditions
-- **Computational Efficiency**: 27.7× faster than comparable algorithms
-- **Uncertainty Robustness**: Only positive performer in high-uncertainty scenarios
-- **Statistical Significance**: p < 0.001 across all performance metrics
+---
 
-### 🚀 Ready for Production
+## References
 
-APEX v3's combination of superior performance and computational efficiency makes it immediately applicable to real-world logistics optimization challenges. The algorithm's robustness across diverse scenarios ensures reliable performance in production environments.
+1. Ropke, S. & Pisinger, D. (2006). An Adaptive Large Neighborhood Search Heuristic for the Pickup and Delivery Problem with Time Windows. *Transportation Science*, 40(4), 455–472.
+2. Delage, E. & Ye, Y. (2010). Distributionally Robust Optimization Under Moment Uncertainty. *Operations Research*, 58(3), 595–612.
+3. Cantelli, F.P. (1928). Sui confini della probabilità. *Atti del Congresso Internazionale dei Matematici*.
+4. Schoenberg, I.J. (1938). Metric Spaces and Positive Definite Functions. *Transactions of the AMS*, 44(3), 522–536.
 
-**Start optimizing your vehicle routing today!** 🛣️📦
+---
+
+## Citation
+
+This work is currently under review. If you use this code, please reference:
+
+```
+Dang, V.Q. (2025). Distributionally Robust ALNS for the Stochastic VRPSPD.
+Research implementation: https://github.com/vinhqdang/stochastic_vrp
+```
+
+## Contact
+
+**Vinh Dang** — [dqvinh87@gmail.com](mailto:dqvinh87@gmail.com)
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
