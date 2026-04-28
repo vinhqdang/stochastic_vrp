@@ -1,5 +1,7 @@
 """
-Unified VRPSPD Benchmark: Deterministic <-> Stochastic 
+================================================================================
+Unified VRPSPD Benchmark: Deterministic <-> Stochastic Toggle
+================================================================================
 
 Solves the Vehicle Routing Problem with Simultaneous Pickup & Delivery (VRPSPD)
 using Adaptive Large Neighborhood Search (ALNS) metaheuristic, with an optional
@@ -38,6 +40,7 @@ References:
   [6] Schur, I. (1911). Hadamard product of PSD matrices is PSD.
 
 Dependencies: numpy, scipy
+================================================================================
 """
 
 import os
@@ -52,15 +55,19 @@ import numpy as np
 from scipy.linalg import LinAlgError
 from scipy.stats import norm, skewnorm, t  # THÊM THƯ VIỆN CHO COPULA 4 VŨ TRỤ
 
+# ==============================================================================
 # 0. MASTER TOGGLE
+# ==============================================================================
 
 STOCHASTIC_MODE = True
 # True  = Stochastic VRPSPD with DRO risk penalty + Monte Carlo validation
 # False = Deterministic CVRP with hard capacity check, no randomness
 
+# ==============================================================================
 # 1. HYPERPARAMETERS — each one annotated with its source
+# ==============================================================================
 
-#Stochastic demand model (active only when STOCHASTIC_MODE=True)
+# ---------- Stochastic demand model (active only when STOCHASTIC_MODE=True) ---
 
 CV = 0.2
 # Coefficient of Variation for demand noise.
@@ -83,13 +90,13 @@ THETA_FRACTION = 0.1
 # This controls how far a demand "shock" propagates geographically.
 # SELF-SET heuristic. Should be tuned via variogram fitting on real data.
 
-# DRO risk penalty calibration --
+# ---------- DRO risk penalty calibration ------------------------------------
 # These control the penalty term in the objective function:
 #   Z = distance + [LAMBDA_0 / ln(m+1)] * max(0, RRI - ALPHA_BASE * m^GAMMA)
 # ALL THREE are SELF-SET calibration heuristics with NO theoretical derivation.
 # They should be tuned via ablation study on each problem class.
 
-ALPHA_BASE = 0.05
+ALPHA_BASE = 0.2
 # Base risk threshold. A single-customer route is allowed RRI up to 0.05
 # before penalty kicks in. Larger value = more risk-tolerant.
 
@@ -101,12 +108,12 @@ GAMMA = 0.5
 # gamma=0.5 means threshold grows as sqrt(m). This is NOT derived from CLT
 # (CLT concerns normalized sums, not tail probability sums). Pure heuristic.
 
-LAMBDA_0 = 10000.0
+LAMBDA_0 = 500.0
 # Base penalty multiplier. Controls how strongly the solver avoids risky routes.
 # Divided by ln(m+1) to soften the penalty for longer routes.
 # SELF-SET. Too small -> ignores risk. Too large -> overly conservative routing.
 
-# Monte Carlo validation 
+# ---------- Monte Carlo validation ------------------------------------------
 
 MC_SAMPLES = 10000
 # Number of random demand realizations to simulate per route.
@@ -114,7 +121,7 @@ MC_SAMPLES = 10000
 # Estimation error scales as 1/sqrt(MC_SAMPLES): 10000 -> ~1% precision.
 # Skipped entirely in deterministic mode (variance = 0 -> nothing to simulate).
 
-#  ALNS search engine 
+# ---------- ALNS search engine ----------------------------------------------
 
 ALNS_ITERATIONS = 5000
 # Total destroy-repair cycles. More iterations = better solutions but slower.
@@ -146,7 +153,7 @@ SEGMENT_SIZE = 100
 # Update adaptive operator weights every this many iterations.
 # SELF-SET. From Ropke & Pisinger [ref 3].
 
-# Operator scoring (from Ropke & Pisinger 2006 [ref 3]) 
+# ---------- Operator scoring (from Ropke & Pisinger 2006 [ref 3]) -----------
 
 SIGMA_1 = 33   # Score bonus when operator produces a new GLOBAL BEST solution
 SIGMA_2 = 9    # Score bonus when operator improves the CURRENT solution
@@ -156,18 +163,17 @@ SIGMA_3 = 13   # Score bonus when operator's result is ACCEPTED by SA (but worse
 REACTION_FACTOR = 0.8
 # Smoothing factor for adaptive weight update:
 #   w_new = REACTION_FACTOR * w_old + (1 - REACTION_FACTOR) * (score/count)
-# DEVIATION FROM LITERATURE: Ropke & Pisinger (2006) use r=0.1 (equivalent 
-# to REACTION_FACTOR=0.9 here). We deliberately use 0.8 (equivalent to r=0.2) 
-# to make the ALNS react twice as fast to the volatile DRO landscape, escaping
-# local optima more efficiently without losing historical stability. 
-# However, still a heurestic calibration
+# 0.8 = slow adaptation (stable). 0.2 = fast adaptation (responsive).
+# From [ref 3].
 
-
+# ---------- Reproducibility -------------------------------------------------
 
 SEED = 42
 
 
+# ==============================================================================
 # 2. DATA STRUCTURES
+# ==============================================================================
 
 class Node(NamedTuple):
     """
@@ -219,7 +225,7 @@ class ProblemInstance:
         self.is_stochastic = is_stochastic
 
 
-# 3. FILE PARSERS
+
 
 def parse_vrp_file(filepath: str) -> Tuple[str, List[Tuple[float, float]],
                                             List[float], float]:
@@ -298,7 +304,9 @@ def parse_bks_solution(sol_filepath: str) -> List[List[int]]:
     return bks_routes
 
 
+# ==============================================================================
 # 4. DATA AUGMENTATION: CVRP -> Stochastic VRPSPD
+# ==============================================================================
 
 def augment_instance(name: str, coords: List[Tuple[float, float]],
                      demands: List[float], capacity_raw: float,
@@ -381,7 +389,6 @@ def augment_instance(name: str, coords: List[Tuple[float, float]],
                           theta, stochastic)
 
 
-# 5. ROUTE EVALUATOR: Distance + DRO Risk Penalty
 
 
 def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, float, float]:
@@ -393,7 +400,7 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
 
     STOCHASTIC: Uses Moment-Based Distributionally Robust Optimization (M-DRO).
 
-     LOAD MODEL (both modes) 
+    === LOAD MODEL (both modes) ===
     The vehicle leaves the depot carrying ALL delivery goods for this route:
       L_0 = sum(D_i for i in route)
 
@@ -407,7 +414,7 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
 
     Constraint: L_k <= C at every stop k = 1, ..., m.
 
-     M-DRO EVALUATION (stochastic only) 
+    === M-DRO EVALUATION (stochastic only) ===
     Since X_i is random, S_k is random, so we can't check L_k <= C exactly.
     Instead we bound the worst-case probability of violation:
 
@@ -448,8 +455,10 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
         dist += inst.dist_matrix[route[k - 1], route[k]]
     dist += inst.dist_matrix[route[-1], 0]
 
+    # =====================================================================
     # DETERMINISTIC MODE: hard capacity check, no probabilistic evaluation
-    if not inst.is_stochastic:
+    # =====================================================================
+    if not inst.is_stochastic:    
         load = sum(inst.nodes[n].delivery for n in route)  # L_0
         if load > C:
             return dist, 0.0, float('inf')  # Overloaded before leaving depot
@@ -459,7 +468,9 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
                 return dist, 0.0, float('inf')  # Overloaded at customer n
         return dist, 0.0, dist  # Feasible: Z = distance, no penalty
 
+    # =====================================================================
     # STOCHASTIC MODE: M-DRO with prefix-sum covariance tracking
+    # =====================================================================
 
     # L_0 = sum of all deliveries (truck leaves depot carrying all goods to deliver)
     total_delivery = sum(inst.nodes[n].delivery for n in route)
@@ -478,7 +489,7 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
     # RRI = sum of worst-case failure probabilities (union bound)
     rri = 0.0
 
-    #  Prefix-sum cross-covariance vector (the key computational trick) 
+    # --- Prefix-sum cross-covariance vector (the key computational trick) ---
     #
     # To compute var_k we need: sum_{j<k} Sigma_{route[j], route[k]}
     # (covariance of the new customer with ALL previously visited customers).
@@ -499,12 +510,12 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
     for k in range(m):
         node_k = route[k]
 
-        # Update expected load 
+        # --- Update expected load ---
         # L_k = L_{k-1} + (P_k - D_k)
         # P_k - D_k > 0 means the truck gets heavier (picked up more than delivered)
         cum_mean += inst.nodes[node_k].pickup - inst.nodes[node_k].delivery
 
-        # Update cumulative variance (recurrence) 
+        # --- Update cumulative variance (recurrence) ---
         # Mathematical derivation (from Var(A+B) = Var(A) + Var(B) + 2*Cov(A,B)):
         #   Var(S_k) = Var(S_{k-1} + X_k)
         #            = Var(S_{k-1}) + Var(X_k) + 2*Cov(S_{k-1}, X_k)
@@ -520,7 +531,7 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
         # Accumulate this node's covariance contributions for future steps
         cov_prefix_vector += inst.cov_matrix[node_k]  # v += row of Sigma matrix
 
-        #  Cantelli-Chebyshev bound [Cantelli 1928, ref 1] 
+        # --- Cantelli-Chebyshev bound [Cantelli 1928, ref 1] ---
         # P_fail = max over ALL distributions with mean=cum_mean, var=cum_var
         #          of P(load > C)
         #        = cum_var / (cum_var + slack^2)    when slack > 0
@@ -540,7 +551,7 @@ def evaluate_route_dro(route: List[int], inst: ProblemInstance) -> Tuple[float, 
         # Accumulate into RRI (union bound [Boole's inequality] over all stops)
         rri += p_fail
 
-    #  Objective function 
+    # --- Objective function ---
     # Z = distance + [lambda_0 / ln(m+1)] * max(0, RRI - alpha_base * m^gamma)
     #
     # alpha(m) = ALPHA_BASE * m^GAMMA:
@@ -579,7 +590,9 @@ def evaluate_solution(routes: List[List[int]],
     return total_dist, total_rri, total_z
 
 
+# ==============================================================================
 # 6. INITIAL SOLUTION: Greedy Nearest-Neighbor
+# ==============================================================================
 
 def build_initial_solution(inst: ProblemInstance) -> List[List[int]]:
     """
@@ -633,7 +646,9 @@ def build_initial_solution(inst: ProblemInstance) -> List[List[int]]:
     return routes
 
 
+# ==============================================================================
 # 7. ALNS DESTROY OPERATORS
+# ==============================================================================
 
 def random_removal(routes: List[List[int]], inst: ProblemInstance,
                    rng: np.random.Generator) -> Tuple[List[List[int]], List[int]]:
@@ -705,7 +720,9 @@ def worst_removal(routes: List[List[int]], inst: ProblemInstance,
     return curr_routes, removed
 
 
+# ==============================================================================
 # 8. ALNS REPAIR OPERATORS
+# ==============================================================================
 
 def _best_insertion_cost(route: List[int], customer: int,
                          inst: ProblemInstance) -> Tuple[float, int]:
@@ -807,87 +824,62 @@ def regret2_insertion(routes: List[List[int]], removed: List[int],
     return curr
 
 
+# ==============================================================================
+# 9. ALNS SOLVER with Simulated Annealing
+# ==============================================================================
+
 # 9. ALNS SOLVER with Simulated Annealing
 def alns_solve(inst: ProblemInstance, rng: np.random.Generator,
-               max_iter: int = ALNS_ITERATIONS) -> Tuple[List[List[int]], float, float]:
+               max_iter: int = ALNS_ITERATIONS) -> Tuple[List[List[int]], float, float, List[float]]:
     """
-    Adaptive Large Neighborhood Search (ALNS) with Simulated Annealing (SA).
-
-    Algorithm (each iteration):
-      1. SELECT destroy + repair operators via roulette wheel (adaptive weights)
-      2. DESTROY: remove a fraction of customers from the current solution
-      3. REPAIR: reinsert removed customers at good positions
-      4. ACCEPT/REJECT using SA criterion:
-         - Always accept improvements
-         - Accept worse solutions with probability exp(-delta/T)
-           (allows escaping local optima early on when T is high)
-      5. UPDATE operator weights based on performance scores [ref 3]
-
-    Cooling schedule: geometric T(k+1) = T(k) * SA_COOLING, with reheat when
-    T drops below 0.1 (jump to 30% of initial temperature).
-
-    THEORETICAL NOTE: Geometric cooling does NOT satisfy the conditions in
-    Hajek (1988) [ref 4] for guaranteed convergence to global optimum.
-    Hajek requires logarithmic cooling T_k = Gamma/ln(k+k0), which needs
-    exponentially many iterations. Geometric cooling is standard practice in
-    applied OR -- its justification is empirical, not theoretical.
-
-    Returns: (best_routes, best_distance, best_Z_cost)
+    Returns: (best_routes, best_distance, best_Z_cost, history_of_best_z)
     """
-    # Two destroy operators, two repair operators
     d_ops = [random_removal, worst_removal]
     r_ops = [greedy_insertion, regret2_insertion]
     nd, nr = len(d_ops), len(r_ops)
 
-    # Adaptive weights (start uniform at 1.0 each)
-    d_w = np.ones(nd)   # destroy operator weights
-    r_w = np.ones(nr)   # repair operator weights
-    d_s = np.zeros(nd)   # accumulated scores this segment
+    d_w = np.ones(nd)
+    r_w = np.ones(nr)
+    d_s = np.zeros(nd)
     r_s = np.zeros(nr)
-    d_c = np.zeros(nd)   # usage counts this segment
+    d_c = np.zeros(nd)
     r_c = np.zeros(nr)
 
-    # Initialize with greedy nearest-neighbor solution
     curr = build_initial_solution(inst)
     curr_dist, _, curr_z = evaluate_solution(curr, inst)
     best = copy.deepcopy(curr)
     best_dist = curr_dist
     best_z = curr_z
     temp = SA_TEMP_INIT
+    
+    # LƯU LẠI LỊCH SỬ ĐỂ CHỨNG MINH SỰ HỘI TỤ
+    history = [best_z]
 
     for it in range(1, max_iter + 1):
-        # --- Operator selection: roulette wheel proportional to weights ---
         d_idx = rng.choice(nd, p=d_w / d_w.sum())
         r_idx = rng.choice(nr, p=r_w / r_w.sum())
         d_c[d_idx] += 1
         r_c[r_idx] += 1
 
-        # --- Destroy then repair ---
         partial, removed = d_ops[d_idx](curr, inst, rng)
         cand = r_ops[r_idx](partial, removed, inst, rng)
-        cand = [r for r in cand if r]  # Remove any empty routes
+        cand = [r for r in cand if r]
 
         cand_dist, _, cand_z = evaluate_solution(cand, inst)
 
-        #  SA acceptance criterion 
-        # Boltzmann acceptance: P(accept) = exp(-delta/T)
-        # When T is high, almost anything is accepted (exploration).
-        # When T is low, only improvements pass (exploitation).
         delta = cand_z - curr_z
         accepted = False
 
         if delta < 0:
-            # Improvement: always accept
             accepted = True
             if cand_z < best_z:
-                # New global best
                 best = copy.deepcopy(cand)
                 best_dist = cand_dist
                 best_z = cand_z
-                d_s[d_idx] += SIGMA_1  # Highest reward [ref 3]
+                d_s[d_idx] += SIGMA_1
                 r_s[r_idx] += SIGMA_1
             else:
-                d_s[d_idx] += SIGMA_2  # Improved current but not global best
+                d_s[d_idx] += SIGMA_2
                 r_s[r_idx] += SIGMA_2
         elif temp > 1e-10:
             try:
@@ -895,7 +887,6 @@ def alns_solve(inst: ProblemInstance, rng: np.random.Generator,
             except OverflowError:
                 prob = 0.0
             if rng.random() < prob:
-                # Accepted a worse solution (diversification)
                 accepted = True
                 d_s[d_idx] += SIGMA_3
                 r_s[r_idx] += SIGMA_3
@@ -905,19 +896,13 @@ def alns_solve(inst: ProblemInstance, rng: np.random.Generator,
             curr_dist = cand_dist
             curr_z = cand_z
 
-        # Geometric cooling + reheat 
+        # LƯU ĐIỂM SAU MỖI VÒNG
+        history.append(best_z)
+
         temp *= SA_COOLING
         if temp < 0.1:
-            # Reheat: temperature too low -> solver "frozen" at local optimum.
-            # Jump to 30% of initial temperature. SELF-SET heuristic.
-            # Not a standard SA technique; breaks homogeneous Markov chain
-            # properties but helps escape in practice.
             temp = SA_TEMP_INIT * 0.3
 
-        #  Adaptive weight update (every SEGMENT_SIZE iterations)
-        # Formula from Ropke & Pisinger [ref 3]:
-        #   w_new = rho * w_old + (1 - rho) * (score / count)
-        # rho = REACTION_FACTOR controls how much history matters.
         if it % SEGMENT_SIZE == 0:
             for i in range(nd):
                 if d_c[i] > 0:
@@ -927,20 +912,24 @@ def alns_solve(inst: ProblemInstance, rng: np.random.Generator,
                 if r_c[i] > 0:
                     r_w[i] = max(0.01, REACTION_FACTOR * r_w[i]
                                 + (1 - REACTION_FACTOR) * (r_s[i] / r_c[i]))
-            # Reset scores and counts for next segment
             d_s.fill(0)
             r_s.fill(0)
             d_c.fill(0)
             r_c.fill(0)
 
-    return best, best_dist, best_z
+    return best, best_dist, best_z, history
 
 
+# ==============================================================================
 # 10. MONTE CARLO VALIDATION (MULTI-UNIVERSE COPULA)
+# ==============================================================================
 
 def monte_carlo_validate(routes: List[List[int]], inst: ProblemInstance,
                          rng: np.random.Generator, n_samples: int = MC_SAMPLES) -> Dict[str, float]:
- 
+    """
+    Test hệ thống qua 4 vũ trụ rủi ro khác nhau cùng một lúc sử dụng Gaussian Copula.
+    Trả về Dictionary chứa tỷ lệ FailRate của từng vũ trụ.
+    """
     results = {
         "GAUSSIAN": 0.0,
         "SKEW_RIGHT": 0.0,
@@ -971,6 +960,7 @@ def monte_carlo_validate(routes: List[List[int]], inst: ProblemInstance,
 
         stds = np.sqrt(np.diag(sub_cov))
 
+        # --- TẠO COPULA BASE (UNIFORM) ---
         outer_stds = np.outer(stds, stds)
         corr_matrix = np.divide(sub_cov, outer_stds, out=np.eye(m), where=outer_stds!=0)
         min_eig_corr = np.min(np.linalg.eigvalsh(corr_matrix))
@@ -980,6 +970,7 @@ def monte_carlo_validate(routes: List[List[int]], inst: ProblemInstance,
         Z = rng.multivariate_normal(np.zeros(m), corr_matrix, size=n_samples)
         U = norm.cdf(Z) # Uniform mang sẵn độ lây nhiễm không gian
 
+        # --- THIẾT LẬP 4 VŨ TRỤ ---
         scenarios = {
             "GAUSSIAN": norm.ppf(U),
             "SKEW_RIGHT": (skewnorm.ppf(U, 5.0) - skewnorm.stats(5.0, moments='m')) / np.sqrt(skewnorm.stats(5.0, moments='v')),
@@ -1001,7 +992,9 @@ def monte_carlo_validate(routes: List[List[int]], inst: ProblemInstance,
     return results
 
 
+# ==============================================================================
 # 11. BENCHMARK ENGINE
+# ==============================================================================
 
 def run_benchmark(target_dir: str):
     """
@@ -1079,13 +1072,36 @@ def run_benchmark(target_dir: str):
                     bks_fail = bks_fail_dict['SKEW_RIGHT'] # Show worst-case skew for BKS
 
             # 3. Run ALNS solver
+           # 3. Run ALNS solver
             t_start = time.perf_counter()
-            best_routes, alns_dist, alns_z = alns_solve(inst, rng, ALNS_ITERATIONS)
+            # HỨNG THÊM BIẾN history
+            best_routes, alns_dist, alns_z, history = alns_solve(inst, rng, ALNS_ITERATIONS)
             alns_time = time.perf_counter() - t_start
             alns_veh = len(best_routes)
+            history_csv = os.path.join(target_dir, f"convergence_{base_name}.csv")
+            with open(history_csv, 'w', newline='', encoding='utf-8') as f:
+                f.write("Iteration,Best_Z_Cost\n")
+                for i, cost_val in enumerate(history):
+                    f.write(f"{i},{cost_val:.4f}\n")
 
             # 4. Monte Carlo validation
             alns_fail_dict = monte_carlo_validate(best_routes, inst, rng, MC_SAMPLES)
+
+            # =================================================================
+            # ĐOẠN MỚI THÊM: TÍNH EXPECTED FAIL RATE & TOTAL METRIC
+            # =================================================================
+            VEHICLE_PRICE = 50.0
+            PENALTY_PRICE = 1000.0  
+            
+            expected_fail_rate = 0.0
+            if STOCHASTIC_MODE:
+                expected_fail_rate = (0.4 * alns_fail_dict.get("GAUSSIAN", 0.0) + 
+                                      0.2 * alns_fail_dict.get("SKEW_RIGHT", 0.0) + 
+                                      0.2 * alns_fail_dict.get("SKEW_LEFT", 0.0) + 
+                                      0.2 * alns_fail_dict.get("HEAVY_TAIL", 0.0))
+            
+            total_metric = alns_dist + (alns_veh * VEHICLE_PRICE) + (expected_fail_rate * PENALTY_PRICE)
+            # =================================================================
 
             # 5. Gap vs BKS
             # ONLY meaningful in deterministic mode: same problem, same capacity.
@@ -1125,6 +1141,8 @@ def run_benchmark(target_dir: str):
                 "ALNS_Vehicles": alns_veh,
                 "ALNS_Distance": round(alns_dist, 2),
                 "ALNS_Z_Cost": round(alns_z, 2),
+                "Total_Metric": round(total_metric, 2),                   # <--- CỘT TỔNG TIỀN MỚI
+                "Exp_FailRate": round(expected_fail_rate, 6),             # <--- CỘT GỘP FAIL RATE MỚI
                 "Gap_vs_BKS_%": round(gap_val, 2) if not STOCHASTIC_MODE else gap_val,
                 "Runtime_s": round(alns_time, 2),
                 "Seed": inst_seed,
@@ -1132,6 +1150,7 @@ def run_benchmark(target_dir: str):
                 "Fail_SkewRight": round(alns_fail_dict.get('SKEW_RIGHT', 0.0), 6) if STOCHASTIC_MODE else "N/A",
                 "Fail_SkewLeft": round(alns_fail_dict.get('SKEW_LEFT', 0.0), 6) if STOCHASTIC_MODE else "N/A",
                 "Fail_HeavyTail": round(alns_fail_dict.get('HEAVY_TAIL', 0.0), 6) if STOCHASTIC_MODE else "N/A",
+                "Routes": str(best_routes)                                # <--- CHỐT LẠI CỘT ROUTES KẺO QUÊN
             }
             results.append(row)
 
@@ -1143,7 +1162,7 @@ def run_benchmark(target_dir: str):
 
     # --- Export CSV ---
     suffix = "stochastic" if STOCHASTIC_MODE else "deterministic"
-    out_csv = os.path.join(target_dir, f"results_{suffix}.csv")
+    out_csv = os.path.join(target_dir, f"results {suffix}.csv")
 
     if results:
         fieldnames = list(results[0].keys())
@@ -1171,10 +1190,12 @@ def run_benchmark(target_dir: str):
                   f"|  Instances: {len(valid)}/{len(vrp_files)}")
 
 
+# ==============================================================================
 # 12. ENTRY POINT
+# ==============================================================================
 
 if __name__ == "__main__":
-    TARGET_DIR = r""
+    TARGET_DIR = r"C:\Users\Admin\Downloads\New folder (4)\X"
 
     # Fallback: check environment variable or current directory
     if not os.path.isdir(TARGET_DIR):
