@@ -176,6 +176,7 @@ python scripts/run_otr_eval.py \
     n_test=2000      \  # test scenarios per route
     cfail=5.0        \  # Cfail / omegaF ratio
     policies=SAA,WDRO\  # which ALNS plans to evaluate
+    workers=8        \  # parallel worker processes (default: all CPUs)
     max=5            \  # limit to first N instances (useful for testing)
     out=results/run1    # output file stem
 ```
