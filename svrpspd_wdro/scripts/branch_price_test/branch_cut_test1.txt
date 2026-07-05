@@ -1,0 +1,13 @@
+C:\Users\Admin\Downloads\stochastic_vrp\svrpspd_wdro\scripts\files (3)>python bc_strong.py
+B&C-exact with STRONG interior cuts + warm start -- scaling:
+  n       UB      opt    bound   gap%  solved?  setCut  seqCut      t
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2812034
+Academic license 2812034 - for non-commercial use only - registered to hv___@students.stir.ac.uk
+ 40    667.2    633.0    633.0   5.13      YES     352      15    2.8
+ 50    718.8    713.7    713.7   0.71      YES      90       2    1.6
+ 60    775.0    761.0    761.0   1.80      YES     116       2    6.2
+ 80    842.8    832.8    832.8   1.19      YES     762       0   41.7
+100    903.8    902.0    902.0   0.20      YES      57     235   27.0
+seqCut dominating / timeout -> the 'feasible-set-bad-sequence' case is the wall; no-goods don't scale.

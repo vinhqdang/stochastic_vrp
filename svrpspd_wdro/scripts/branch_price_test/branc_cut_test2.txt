@@ -1,0 +1,8 @@
+C:\Users\Admin\Downloads\stochastic_vrp\svrpspd_wdro\scripts\files (3)>python bc_strong.py
+B&C-exact with STRONG interior cuts + warm start -- scaling:
+  n       UB      opt    bound   gap%  solved?  setCut  seqCut      t
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2812034
+Academic license 2812034 - for non-commercial use only - registered to hv___@students.stir.ac.uk
+ 50    908.9    908.9    826.9   9.01  TIMEOUT    3083     219   91.2
