@@ -54,3 +54,15 @@ All author lists in the .bib are complete (no "et al.").
 - [ ] `montane2006tabu` — DOI 10.1016/j.cor.2004.07.009, verify pages.
 - [ ] `boeing2017osmnx` — DOI 10.1016/j.compenvurbsys.2017.05.004 (city
   instance generation uses OSMnx; cite in the data section).
+
+## SOTA comparison sweep (agent-verified via Crossref/arXiv, re-verify before submission)
+- [ ] `ghosal2024unifying` — OR 72(2):425-443, DOI 10.1287/opre.2021.0669 (agent Crossref-verified)
+- [ ] `gounaris2013robust` — OR 61(3):677-693, DOI 10.1287/opre.1120.1136 — verify pages
+- [ ] `bertsimas2004price` — OR 52(1):35-53, DOI 10.1287/opre.1030.0065
+- [ ] `legault2025superadditivity` — arXiv:2508.05877, preprint (check journal status before submission)
+- [ ] `iklassov2024reinforcement` — PMLR v222:502-517; DOI given is the arXiv one (PMLR has no DOI)
+- [ ] `hoogendoorn2025evaluation` — EJOR 321(1):107-122, DOI 10.1016/j.ejor.2024.09.007 (CC BY)
+- [ ] `hu2025vehicle` — AOR online Dec 2025, DOI 10.1007/s10479-025-06877-1 (paywalled; volume/pages TBD)
+- [ ] IMPORTANT: repo's older "Cui et al. (2025)" baseline (algorithms/cui baseline.py) cites an
+  inventory paper (Data Science and Management) — the method used is Bertsimas-Sim (2004) budget
+  uncertainty. In the manuscript, attribute the BSIM gate to Bertsimas & Sim 2004, NOT Cui.

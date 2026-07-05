@@ -282,6 +282,41 @@ class BudgetGate:
         return True
 
 
+class MomentDROGate:
+    """Ghosal, Ho & Wiesemann (2024)-style distributionally robust gate
+    under moment ambiguity: the route is feasible iff the worst-case
+    probability of exceeding capacity, over ALL demand distributions with
+    the given mean and (equicorrelated) covariance, is at most eps at
+    every stop. By the one-sided Chebyshev (Cantelli) bound this reduces
+    to  M_k + sqrt((1-eps)/eps) * sd(L_k) <= Q  per position k — a
+    closed-form check, the moment-DRO analogue of the SAA/WDRO gates."""
+    mode = "mdro"
+
+    def __init__(self, cap, dbar, pbar, sig_d, sig_p, rho, eps=0.10):
+        self.cap = cap
+        self.dbar, self.pbar = dbar, pbar
+        self.sig_d, self.sig_p = sig_d, sig_p
+        self.rho = rho
+        self.kappa = math.sqrt((1.0 - eps) / eps)
+        self.calls = self.pruned = 0
+
+    def feasible(self, route):
+        if not route:
+            return True
+        self.calls += 1
+        d = self.dbar[route]; p = self.pbar[route]
+        sd = self.sig_d[route]; sp = self.sig_p[route]
+        total_d = d.sum()
+        M = np.concatenate(([total_d], total_d - np.cumsum(d) + np.cumsum(p)))
+        v2 = (sd ** 2).sum()
+        Vind = np.concatenate(([v2], v2 - np.cumsum(sd ** 2) + np.cumsum(sp ** 2)))
+        s1 = sd.sum()
+        S = np.concatenate(([s1], s1 - np.cumsum(sd) + np.cumsum(sp)))
+        Vcorr = (1.0 - self.rho) * Vind + self.rho * S ** 2
+        return bool(np.max(M + self.kappa * np.sqrt(np.clip(Vcorr, 0.0, None)))
+                    <= self.cap + 1e-9)
+
+
 class TwoPhaseGate:
     """SAA / W-DRO: Phase-1 O(route_len) rho-surrogate LOWER-BOUND prune (reject-only),
     Phase-2 exact empirical CVaR certificate (the only acceptance gate)."""
@@ -545,6 +580,7 @@ def solve_instance(path, tlim, no_improve, use_prune=True, which=None):
         # published robust-planning baselines (see class docstrings)
         "GNRS": InflationGate(Q, dbar, pbar),
         "BSIM": BudgetGate(Q, dbar, pbar),
+        "MDRO": MomentDROGate(Q, dbar, pbar, sig_d, sig_p, RHO, eps=1.0 - ALPHA),
     }
     if which:
         gates = {k: v for k, v in gates.items() if k in which}
