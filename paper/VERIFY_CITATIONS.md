@@ -66,3 +66,8 @@ All author lists in the .bib are complete (no "et al.").
 - [ ] IMPORTANT: repo's older "Cui et al. (2025)" baseline (algorithms/cui baseline.py) cites an
   inventory paper (Data Science and Management) — the method used is Bertsimas-Sim (2004) budget
   uncertainty. In the manuscript, attribute the BSIM gate to Bertsimas & Sim 2004, NOT Cui.
+- [ ] `salavati2019rule` — TS 53(5):1334-1353, DOI 10.1287/trsc.2018.0876 (open CIRRELT-2017-36 PDF exists)
+- [ ] `florio2020new` — TS 54(4):1073-1090, DOI 10.1287/trsc.2020.0976 (arXiv:1806.08549; code github.com/amflorio/vrpsd-optimal-restocking)
+- [ ] `secomandi2009reoptimization` — OR 57(1):214-230, DOI 10.1287/opre.1080.0520
+- [ ] `pessoa2021branch` — OR 69(3), DOI 10.1287/opre.2020.2035 — VERIFY pages 739-754 (agent did not confirm)
+- [ ] `gounaris2016adaptive` — TS 50(4):1239-1260, DOI 10.1287/trsc.2014.0559

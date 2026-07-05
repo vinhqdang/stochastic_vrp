@@ -48,6 +48,7 @@ sys.path.insert(0, str(_SCRIPTS))
 from core.otr import fit_otr
 from core.otr2 import calibrate_B_empirical_peak, fit_otr_peak
 from core.dp_exec import fit_dp
+from core.published_policies import pi_thresholds, simulate_pi, tune_pi
 from core.costs import (
     LastMileCosts,
     route_cost_schedules,
@@ -66,8 +67,9 @@ from dethloff_runner import (
 RESULTS_DIR = _WDRO / "results"
 PLANS_DIR   = RESULTS_DIR / "plans"
 
-POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau", "v2_lsm",
-                 "dp_n", "dp_xl", "oracle"]
+POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau",
+                 "pi1", "pi2", "pi3",
+                 "v2_lsm", "dp_n", "dp_xl", "oracle"]
 
 N_XL = 50_000       # training scenarios for the near-exact DP anchor
 
@@ -148,12 +150,24 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     dp_same = fit_dp(g_train, B, H, E)
     dp_xl   = fit_dp(g_xl,    B, H, E)
 
+    # published rule-based recourse (Salavati-Khoshghalb et al. 2019),
+    # adapted to handoff recourse and grid-tuned on realized costs
+    g_mean = g_train.mean(axis=0)
+    pis = {}
+    for kind in ("pi1", "pi2", "pi3"):
+        c = tune_pi(kind, g_train, B, H, E)
+        pis[kind] = simulate_pi(g_test, B, H, E,
+                                pi_thresholds(kind, B, g_mean, c))
+
     orc = oracle_costs_general(g_test, B, H, E)
     return {
         "none":   simulate_tau_general(g_test, B, H, E, fb_models, tau=1.0),
         "v1_end": simulate_tau_general(g_test, B, H, E, v1_end_models, tau=tau_end),
         "v1_myo": simulate_tau_general(g_test, B, H, E, fb_models, tau=tau_myo),
         "fb_tau": simulate_tau_general(g_test, B, H, E, fb_models, tau=tau_fb),
+        "pi1":    pis["pi1"],
+        "pi2":    pis["pi2"],
+        "pi3":    pis["pi3"],
         "v2_lsm": simulate_v2_general(g_test, B, H, E, cm),
         "dp_n":   simulate_v2_general(g_test, B, H, E, dp_same),
         "dp_xl":  simulate_v2_general(g_test, B, H, E, dp_xl),
