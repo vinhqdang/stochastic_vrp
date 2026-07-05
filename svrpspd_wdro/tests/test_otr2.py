@@ -17,6 +17,8 @@ from core.otr2 import (
     _simulate_costs_v2,
     validate,
     fit_otr_peak,
+    oracle_costs,
+    simulate_oracle,
 )
 
 M = 8
@@ -299,6 +301,31 @@ class TestValidate:
         cm = fit_lsm(g_tr, B, OMEGA_F, CFAIL)
         v2 = simulate_v2(g_te, B, OMEGA_F, CFAIL, cm)
         assert v2["mean_cost"] < v1["mean_cost"]
+
+
+# ─────────────────────────────────────────────
+# Clairvoyant oracle
+# ─────────────────────────────────────────────
+
+class TestOracle:
+    def test_costs(self):
+        g = np.array([[0.2, 0.2, 0.2],     # never overflows (B=1): 0
+                      [0.5, 0.8, -0.5],    # overflows at step 2: omegaF
+                      [2.0, 0.0, 0.0]])    # overflows at step 1: Cfail
+        costs = oracle_costs(g, B=1.0, omegaF=1.0, Cfail=5.0)
+        assert list(costs) == [0.0, 1.0, 5.0]
+
+    def test_lower_bounds_every_policy(self, g_hist, B, cont_models):
+        """No implementable policy may beat the oracle."""
+        g_te = _make_data(20000, M, seed=21)
+        orc = simulate_oracle(g_te, B, OMEGA_F, CFAIL)
+        v2 = simulate_v2(g_te, B, OMEGA_F, CFAIL, cont_models)
+        v1_models = fit_otr(g_hist, B)
+        tau = tune_tau_fast(g_hist, B, v1_models, OMEGA_F, CFAIL)
+        v1 = simulate_fast(g_te, B, tau, OMEGA_F, CFAIL, v1_models)
+        none = simulate_fast(g_te, B, 1.0, OMEGA_F, CFAIL, v1_models)
+        for stats in (v2, v1, none):
+            assert orc["mean_cost"] <= stats["mean_cost"] + 1e-12
 
 
 # ─────────────────────────────────────────────
