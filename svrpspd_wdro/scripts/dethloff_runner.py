@@ -222,6 +222,66 @@ class DetGate:
         return nominal_peak(route, self.dbar, self.pbar) <= self.cap + 1e-9
 
 
+class InflationGate:
+    """Gounaris et al. (2013)-style robust gate, static-inflation variant:
+    the nominal Model-A peak with every demand inflated by (1+alpha) must
+    fit the capacity. Matches the repo's validated adaptation of the
+    robust CVRP (algorithms/gounaris_exact final.py) with the same
+    default alpha=0.2 (the paper's Table-2 operating point)."""
+    mode = "gounaris"
+
+    def __init__(self, cap, dbar, pbar, alpha=0.2):
+        self.cap = cap
+        self.dbar = dbar * (1.0 + alpha)
+        self.pbar = pbar * (1.0 + alpha)
+        self.calls = self.pruned = 0
+
+    def feasible(self, route):
+        if not route:
+            return True
+        return nominal_peak(route, self.dbar, self.pbar) <= self.cap + 1e-9
+
+
+class BudgetGate:
+    """Bertsimas & Sim (2004) budget-uncertainty gate on the SPD load
+    profile: each node may deviate by hat_i = alpha_dev*(d_i+p_i), at most
+    Gamma = ceil(gamma_frac*m) nodes deviate simultaneously, and the
+    worst-case load at every stop must fit the capacity. At position k the
+    eligible deviations are hat_d of not-yet-served customers (still on
+    board) plus hat_p of already-served ones (collected)."""
+    mode = "bsim"
+
+    def __init__(self, cap, dbar, pbar, alpha_dev=0.2, gamma_frac=0.5):
+        self.cap = cap
+        self.dbar, self.pbar = dbar, pbar
+        self.hat_d = alpha_dev * (dbar + pbar)
+        self.hat_p = alpha_dev * (dbar + pbar)
+        self.gamma_frac = gamma_frac
+        self.calls = self.pruned = 0
+
+    def feasible(self, route):
+        if not route:
+            return True
+        self.calls += 1
+        r = np.asarray(route)
+        d, p = self.dbar[r], self.pbar[r]
+        hd, hp = self.hat_d[r], self.hat_p[r]
+        m = len(r)
+        Gamma = int(math.ceil(self.gamma_frac * m))
+        total_d = d.sum()
+        # nominal Model-A load after serving stop k (k=0 is departure)
+        L = np.concatenate(([total_d], total_d - np.cumsum(d) + np.cumsum(p)))
+        for k in range(m + 1):
+            elig = np.concatenate([hd[k:], hp[:k]])   # unserved deliveries + served pickups
+            if Gamma < len(elig):
+                add = np.partition(elig, -Gamma)[-Gamma:].sum()
+            else:
+                add = elig.sum()
+            if L[k] + add > self.cap + 1e-9:
+                return False
+        return True
+
+
 class TwoPhaseGate:
     """SAA / W-DRO: Phase-1 O(route_len) rho-surrogate LOWER-BOUND prune (reject-only),
     Phase-2 exact empirical CVaR certificate (the only acceptance gate)."""
@@ -482,6 +542,9 @@ def solve_instance(path, tlim, no_improve, use_prune=True, which=None):
         "Det":  DetGate(Q, dbar, pbar),
         "SAA":  TwoPhaseGate(Q,    ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune),
         "WDRO": TwoPhaseGate(Qeff, ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune),
+        # published robust-planning baselines (see class docstrings)
+        "GNRS": InflationGate(Q, dbar, pbar),
+        "BSIM": BudgetGate(Q, dbar, pbar),
     }
     if which:
         gates = {k: v for k, v in gates.items() if k in which}

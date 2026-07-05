@@ -91,7 +91,13 @@ def _save_plans(sol: dict) -> None:
                     "dist": sol["res"][p]["dist"]}
                 for p in sol["res"]},
     }
-    _plan_path(sol["name"]).write_text(json.dumps(payload))
+    path = _plan_path(sol["name"])
+    if path.exists():                      # merge with previously solved gates
+        old = json.loads(path.read_text())
+        merged = old.get("res", {})
+        merged.update(payload["res"])
+        payload["res"] = merged
+    path.write_text(json.dumps(payload))
 
 
 def _load_plans(name: str) -> dict | None:
