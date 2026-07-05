@@ -83,6 +83,11 @@ def _distance_matrix(G, node_ids: np.ndarray) -> np.ndarray:
     D = dist[:, src]
     if not np.isfinite(D).all():
         raise RuntimeError("disconnected node pair despite SCC restriction")
+    # Symmetrize: one-way streets make road distances directed, but the
+    # ALNS planning moves (savings, 2-opt) assume a symmetric matrix —
+    # an asymmetric D makes the 2-opt gain test cycle forever. Averaging
+    # the two directions is the standard adaptation.
+    D = 0.5 * (D + D.T)
     return np.round(D * SCALE).astype(np.int64)
 
 

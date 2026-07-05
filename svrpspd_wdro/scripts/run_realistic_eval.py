@@ -165,10 +165,13 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
     D, _dem, Q, n, scale = parse_dethloff(path)
 
     sol = _load_plans(name) if reuse else None
+    if sol is not None and not all(p in sol["res"] for p in active_policies):
+        sol = None                      # persisted plans lack a requested gate
     solve_time = 0.0
     if sol is None:
         t0 = time.time()
-        full = solve_instance(path, tlim, NO_IMPROVE, use_prune=True)
+        full = solve_instance(path, tlim, NO_IMPROVE, use_prune=True,
+                              which=active_policies)
         solve_time = time.time() - t0
         _save_plans(full)
         sol = _load_plans(name)
