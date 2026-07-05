@@ -1,0 +1,42 @@
+\begin{table}[t]
+\caption{Sensitivity study: execution-cost saving over the reactive
+baseline (\%, mean over five seeds) as one factor varies with all others
+at their defaults ($C_{\mathrm{fail}}/\omega_F{=}5$, $N{=}10^4$,
+$m{=}12$, gamma increments, $\rho{=}0$).}
+\label{tab:sensitivity}
+\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{ll ccc ccc}
+\toprule
+& & \multicolumn{3}{c}{Collect-then-deliver} &
+\multicolumn{3}{c}{Milk run} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+Factor & Value & v1 & fallb. & v2 & v1 & fallb. & v2 \\
+\midrule
+$C_{\mathrm{fail}}/\omega_F$ & 10.0 & 0.0 & 65.1 & 69.3 & 75.3 & 75.3 & 78.9 \\
+ & 2.0 & 0.0 & 20.9 & 22.4 & 27.0 & 27.0 & 29.6 \\
+ & 20.0 & 0.0 & 75.7 & 80.1 & 86.0 & 86.0 & 88.5 \\
+ & 5.0 & 0.0 & 48.9 & 52.5 & 59.2 & 59.2 & 64.1 \\
+\addlinespace
+history $N$ & 1000 & 0.0 & 48.0 & 51.8 & 58.9 & 58.9 & 61.8 \\
+ & 200 & 0.0 & 45.5 & 48.8 & 56.2 & 56.2 & 58.1 \\
+ & 20000 & 0.0 & 49.1 & 52.6 & 59.2 & 59.2 & 63.7 \\
+ & 500 & 0.0 & 50.0 & 51.5 & 59.3 & 59.3 & 61.8 \\
+ & 5000 & 0.0 & 49.9 & 52.5 & 60.0 & 60.0 & 64.0 \\
+\addlinespace
+route length $m$ & 12 & 0.0 & 48.9 & 52.5 & 59.2 & 59.2 & 64.1 \\
+ & 24 & 0.0 & 55.2 & 60.7 & 63.4 & 63.4 & 67.9 \\
+ & 48 & 0.0 & 62.0 & 66.7 & 67.0 & 67.0 & 71.6 \\
+ & 6 & 0.0 & 38.0 & 39.5 & 53.0 & 53.0 & 56.9 \\
+\addlinespace
+increment family & gamma & 0.0 & 48.9 & 52.5 & 59.2 & 59.2 & 64.1 \\
+ & lognormal & 0.0 & 49.4 & 51.4 & 58.7 & 58.7 & 62.5 \\
+ & studentt & 0.0 & 49.2 & 52.5 & 60.0 & 60.0 & 64.2 \\
+\addlinespace
+common factor $\rho$ & 0.0 & 0.0 & 48.9 & 52.5 & 59.2 & 59.2 & 64.1 \\
+ & 0.3 & 0.0 & 50.6 & 54.3 & 61.6 & 61.6 & 65.6 \\
+ & 0.6 & 0.0 & 62.3 & 64.7 & 69.7 & 69.7 & 72.6 \\
+ & 0.9 & 0.0 & 68.2 & 70.2 & 72.6 & 72.6 & 74.8 \\
+\bottomrule
+\end{tabular}
+\end{table}

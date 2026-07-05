@@ -1,0 +1,21 @@
+\begin{table}[t]
+\caption{Structural synthetic scenarios: execution-cost saving over the
+reactive baseline (\%, mean $\pm$ s.d.\ over five seeds, $1.2\times10^4$
+test routes each). The endpoint-trained v1 policy saves exactly zero on
+collect-then-deliver routes because its training labels are almost surely
+zero (Proposition~\ref{prop:bias}).}
+\label{tab:synthetic}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+Scenario & v1 myopic & v1 tuned & Peak fallback & OTR-2.0 &
+Emerg.\ \% (v2) \\
+\midrule
+Collect-then-deliver & $0.0 \pm 0.0$ & $0.0 \pm 0.0$ & $49.2 \pm 0.2$ & $51.9 \pm 0.4$ & $2.02$ \\
+Milk run + regime switching & $35.2 \pm 0.9$ & $58.9 \pm 1.4$ & $58.9 \pm 1.4$ & $63.8 \pm 0.8$ & $0.81$ \\
+Milk run, $C_{\mathrm{fail}}/\omega_F{=}20$ & $72.3 \pm 1.6$ & $85.5 \pm 0.2$ & $85.5 \pm 0.2$ & $88.2 \pm 0.9$ & $0.17$ \\
+\bottomrule
+\end{tabular}
+\end{table}

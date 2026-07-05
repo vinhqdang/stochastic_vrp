@@ -1,0 +1,23 @@
+\begin{table}[t]
+\caption{Dethloff benchmark, flat two-price cost model
+($C_{\mathrm{fail}}/\omega_F = 5$): total budget cost (travel +
+vehicles + expected execution cost; mean over 40 instances) and
+execution-cost saving over the reactive policy, by planning gate.}
+\label{tab:dethloff}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrccc c}
+\toprule
+& \multicolumn{5}{c}{Total budget cost} &
+\multicolumn{3}{c}{Saving vs reactive (\%)} & Emerg.\,\% \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-9}
+Gate & reactive & v1 myo & v1 tuned & fallback & OTR-2.0 &
+v1 tuned & fallback & OTR-2.0 & (v2) \\
+\midrule
+\textsc{Det} & 56,525 & 28,352 & 26,686 & 26,575 & 26,167 & 56.5 & 56.8 & 57.7 & 7.49 \\
+\textsc{SAA} & 8,325 & 5,732 & 4,944 & 4,945 & 4,873 & 54.6 & 54.6 & 55.6 & 0.50 \\
+\textsc{WDRO} & 3,324 & 3,000 & 2,885 & 2,889 & 2,889 & 40.3 & 40.1 & 39.1 & 0.15 \\
+\bottomrule
+\end{tabular}
+\end{table}
