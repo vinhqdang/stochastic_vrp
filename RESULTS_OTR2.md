@@ -69,6 +69,32 @@ scalar `tau` cannot adapt to per-stop handoff prices.
 - Even at N=200 training paths v2 ≥ fallback in these scenarios; the
   theoretical small-N caution applies below that.
 
+## 5. Large-scale benchmarks (added after the Dethloff layers)
+
+**Salhi–Nagy classical benchmark** (`results/results_salhinagy_eval.csv`) —
+14 instances (CMT1–5, 11, 12 X/Y; 50–199 customers) derived from CVRPLIB
+via the documented ratio split; realistic cost model, Det-gate plans:
+
+| Policy | saving% vs reactive | share of oracle saving |
+|---|---|---|
+| v1 endpoint | 48.6 | — |
+| fallback (peak+tau) | 53.8 | — |
+| DP equal-data | 59.3 | 90.0% |
+| **OTR-2.0** | **59.4** | **90.3%** |
+| DP 50k paths (near-exact) | 60.1 | 91.3% |
+
+v2 beats v1 and fallback at p ≈ 6×10⁻⁵ (paired Wilcoxon, n=14), edges the
+equal-data DP (p=0.045), and reaches **98.9% of the near-exact DP's
+performance** from 1/50th of its data.
+
+**Real-map city instances** (`results/results_city_eval.csv`) — 6 instances
+(100/200/400 customers) on the actual OSM drive networks of Ho Chi Minh
+City and Hanoi (symmetrized shortest-path road distances, parcel-van
+demands): v2 saves 24.6% vs 21.5% (v1) and 23.7% (fallback); it beats v1
+and the equal-data DP at p=0.016 and attains 92.3% of the near-exact DP.
+Routes here are long (12–22 stops), which is exactly where the
+optimal-stopping trigger's option value grows.
+
 ## Verdict
 
 OTR-2.0 dominates OTR 1.0 everywhere it matters: catastrophically on
