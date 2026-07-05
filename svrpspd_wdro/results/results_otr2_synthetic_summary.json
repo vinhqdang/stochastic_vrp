@@ -1,0 +1,29 @@
+[
+  {
+    "scenario": "collect_then_deliver",
+    "v1_myo_saving": 0.0,
+    "v1_tun_saving": 0.0,
+    "fb_tun_saving": 49.212,
+    "v2_lsm_saving": 51.88599999999999,
+    "v2_fail_pct": 2.018,
+    "corr": NaN
+  },
+  {
+    "scenario": "milk_run_regime",
+    "v1_myo_saving": 35.172,
+    "v1_tun_saving": 58.862,
+    "fb_tun_saving": 58.862,
+    "v2_lsm_saving": 63.831999999999994,
+    "v2_fail_pct": 0.808,
+    "corr": 1.0
+  },
+  {
+    "scenario": "high_cost_ratio",
+    "v1_myo_saving": 72.276,
+    "v1_tun_saving": 85.48400000000001,
+    "fb_tun_saving": 85.47000000000001,
+    "v2_lsm_saving": 88.174,
+    "v2_fail_pct": 0.17,
+    "corr": 1.0
+  }
+]
