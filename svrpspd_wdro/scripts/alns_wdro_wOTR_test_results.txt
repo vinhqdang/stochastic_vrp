@@ -1,0 +1,49 @@
+C:\Users\Admin\Videos\stochastic_vrp\svrpspd_wdro>python scripts\run_otr_eval.py max=2 cfail=5
+================================================================================================
+  OTR EVALUATION -- Online Threshold Reassignment on Dethloff SVRPSPD  (load-space, corrected)
+================================================================================================
+  instances=2  policies=['Det', 'Gounaris', 'Cui', 'MDRO', 'SAA', 'WDRO']  workers=2/28
+  ALNS tlim=60.0s/policy   n_train=1000 (gamma)   n_test=2000 (mixture)
+  Cfail/omegaF=5.0   alpha=0.9   omegaF/omegaV=50.0
+  Estimated wall time: >6 min (ALNS) + OTR (vectorized)
+------------------------------------------------------------------------------------------------
+
+[1/2] CON3-1
+  Det      K=4 dist=554  ALNS_EVx=1.980 ALNS_TBC=11507  OTR(tun)=40326 OTR(myo)=43606 NoHO=54977  saving=27.1%  fail%(tun)=32.0  t_otr=0.3s
+  Gounaris K=5 dist=603  ALNS_EVx=0.072 ALNS_TBC=1519  OTR(tun)=2371 OTR(myo)=3003 NoHO=2597  saving=15.5%  fail%(tun)=0.7  t_otr=0.4s
+  Cui      K=5 dist=603  ALNS_EVx=0.077 ALNS_TBC=1546  OTR(tun)=2472 OTR(myo)=2958 NoHO=2756  saving=17.5%  fail%(tun)=0.7  t_otr=0.4s
+  MDRO     K=6 dist=636  ALNS_EVx=0.009 ALNS_TBC=1319  OTR(tun)=1362 OTR(myo)=1417 NoHO=1354  saving=-10.0%  fail%(tun)=0.1  t_otr=0.4s
+  SAA      K=5 dist=617  ALNS_EVx=0.076 ALNS_TBC=1555  OTR(tun)=2509 OTR(myo)=3078 NoHO=2610  saving=6.9%  fail%(tun)=0.8  t_otr=0.4s
+  WDRO     K=6 dist=638  ALNS_EVx=0.008 ALNS_TBC=1316  OTR(tun)=1369 OTR(myo)=1419 NoHO=1356  saving=-16.7%  fail%(tun)=0.1  t_otr=0.6s
+
+[2/2] CON3-0
+  Det      K=4 dist=618  ALNS_EVx=1.281 ALNS_TBC=9124  OTR(tun)=29041 OTR(myo)=32754 NoHO=41706  saving=31.2%  fail%(tun)=18.1  t_otr=0.4s
+  Gounaris K=5 dist=721  ALNS_EVx=0.090 ALNS_TBC=1911  OTR(tun)=3712 OTR(myo)=4015 NoHO=4065  saving=13.0%  fail%(tun)=1.3  t_otr=0.6s
+  Cui      K=5 dist=701  ALNS_EVx=0.118 ALNS_TBC=2061  OTR(tun)=4273 OTR(myo)=5317 NoHO=4608  saving=10.2%  fail%(tun)=1.7  t_otr=0.5s
+  MDRO     K=6 dist=750  ALNS_EVx=0.010 ALNS_TBC=1561  OTR(tun)=1757 OTR(myo)=1807 NoHO=1750  saving=-2.5%  fail%(tun)=0.1  t_otr=0.3s
+  SAA      K=5 dist=687  ALNS_EVx=0.091 ALNS_TBC=1881  OTR(tun)=3401 OTR(myo)=3957 NoHO=4016  saving=22.8%  fail%(tun)=1.1  t_otr=0.4s
+  WDRO     K=6 dist=730  ALNS_EVx=0.008 ALNS_TBC=1529  OTR(tun)=1614 OTR(myo)=1774 NoHO=1605  saving=-7.5%  fail%(tun)=0.0  t_otr=0.3s
+
+------------------------------------------------------------------------------------------------
+  Total wall time: 3.5 min
+
+====================================================================================================================
+  SUMMARY -- means across all instances   (OTR: train=gamma reference, test=stress mixture)
+====================================================================================================================
+  Plan       ALNS TBC  ALNS EVx  OTRtun TBC  OTRmyo TBC  NoHO TBC  saving%  fail%(tun)  HO%(tun)
+  ------------------------------------------------------------------------------------------------------------------
+  Det           10316    1.6305       34684       38180     48342     29.2       25.09     22.91
+  Gounaris       1715    0.0814        3041        3509      3331     14.2        1.01      1.06
+  Cui            1804    0.0975        3373        4138      3682     13.9        1.22      1.13
+  MDRO           1440    0.0091        1559        1612      1552     -6.2        0.08      0.08
+  SAA            1718    0.0837        2955        3518      3313     14.8        0.96      1.07
+  WDRO           1423    0.0077        1492        1597      1480    -12.1        0.04      0.10
+
+  Notes:
+    ALNS_EVx = E[extra trucks/route], reactive ceil model, stress mixture (this IS the OOS
+               risk -- check it is comparable across policies, else baselines are miscalibrated)
+    *_TBC    = Travel + omega_V*K + *_exec.  OTR exec uses ceil-vehicle emergencies * Cfail
+               (set emergency_ceil=False in core.otr for the flat-per-event variant)
+    saving%  = (NoHandoff_exec - OTR_tuned_exec) / NoHandoff_exec * 100  (within the Cfail world)
+    omegaF/omegaV = 50.0   Cfail/omegaF swept via cfail=<ratio> (run 2, 5, 10)
+    Compare OTR_tuned vs NoHandoff (same cost world); ALNS_TBC is a DIFFERENT cost model.
