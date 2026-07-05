@@ -1,46 +1,50 @@
-instance   SPLITdist     bestDRO   pol    gap% MDROgap%    win
-          CON3-0   7404827.0   7362556.0  WDRO    +0.6     -3.4    DRO
+C:\Users\Admin\Videos\stochastic_vrp\svrpspd_wdro\scripts>python benchmark_c4.py --sweep data\Dethloff --gate cantelli
+sweeping 40 instances in data\Dethloff (gate=cantelli, tlim=10.0s/policy)
+        instance   SPLITdist     bestDRO   pol    gap% MDROgap%    win
+          CON3-0   7352343.0   7662908.0  MDRO    -4.1     -4.1  SPLIT
           CON3-1   6541250.0   6360285.0  MDRO    +2.8     +2.8    DRO
           CON3-2   5891394.0   5969388.0  MDRO    -1.3     -1.3  SPLIT
-          CON3-3   6914889.0   6848312.0   Cui    +1.0     -3.1    DRO
-          CON3-4   6843745.0   6706763.0  MDRO    +2.0     +2.0    DRO
+          CON3-3   6946266.0   6848312.0   Cui    +1.4     -2.7    DRO
+          CON3-4   6866099.0   6706763.0  MDRO    +2.4     +2.4    DRO
           CON3-5   6626300.0   6550531.0  MDRO    +1.2     +1.2    DRO
           CON3-6   5785451.0   5782072.0  MDRO    +0.1     +0.1    DRO
           CON3-7   6805026.0   6489944.0 Gounaris    +4.9     -0.1    DRO
           CON3-8   6422289.0   6428045.0  MDRO    -0.1     -0.1  SPLIT
           CON3-9   6740578.0   6615212.0  MDRO    +1.9     +1.9    DRO
-          CON8-0  12567400.0  12383033.0  MDRO    +1.5     +1.5    DRO
-          CON8-1  10466467.0  11545589.0  MDRO    -9.3     -9.3  SPLIT
-          CON8-2  10661128.0  10568533.0  WDRO    +0.9     -0.7    DRO
+          CON8-0  12658887.0  12383033.0  MDRO    +2.2     +2.2    DRO
+          CON8-1  10478026.0  11545589.0  MDRO    -9.2     -9.2  SPLIT
+          CON8-2  10673731.0  10568533.0  WDRO    +1.0     -0.6    DRO
           CON8-3  11422423.0  12137122.0  MDRO    -5.9     -5.9  SPLIT
-          CON8-4  11090377.0  11011963.0  MDRO    +0.7     +0.7    DRO
+          CON8-4  11128023.0  11011963.0  MDRO    +1.1     +1.1    DRO
           CON8-5  11431356.0  11582506.0  MDRO    -1.3     -1.3  SPLIT
-          CON8-6   9441752.0   9847447.0  MDRO    -4.1     -4.1  SPLIT
-          CON8-7  12348911.0  12443053.0  WDRO    -0.8     -3.8  SPLIT
-          CON8-8  11332335.0  11615045.0  MDRO    -2.4     -2.4  SPLIT
-          CON8-9  12022769.0  12066618.0  WDRO    -0.4     -0.5  SPLIT
+          CON8-6   9564027.0   9847447.0  MDRO    -2.9     -2.9  SPLIT
+          CON8-7  12453821.0  12443053.0  WDRO    +0.1     -3.0    DRO
+          CON8-8  11405955.0  11615045.0  MDRO    -1.8     -1.8  SPLIT
+          CON8-9  12148445.0  11943754.0  MDRO    +1.7     +1.7    DRO
           SCA3-0   7643310.0   7757847.0  MDRO    -1.5     -1.5  SPLIT
           SCA3-1   8524454.0   8516419.0  MDRO    +0.1     +0.1    DRO
-          SCA3-2   8344736.0   8484283.0  WDRO    -1.6     -3.5  SPLIT
+          SCA3-2   8416514.0   8484283.0  WDRO    -0.8     -2.7  SPLIT
           SCA3-3   8005551.0   7930070.0  MDRO    +1.0     +1.0    DRO
-          SCA3-4   8634836.0   8860896.0  MDRO    -2.6     -2.6  SPLIT
-          SCA3-5   8370208.0   8284037.0  MDRO    +1.0     +1.0    DRO
-          SCA3-6   8068429.0   7372115.0   Cui    +9.4     +4.3    DRO
-          SCA3-7   8172079.0   8280467.0  WDRO    -1.3     -5.2  SPLIT
+          SCA3-4   8663444.0   8860896.0  MDRO    -2.2     -2.2  SPLIT
+          SCA3-5   8551890.0   8284037.0  MDRO    +3.2     +3.2    DRO
+          SCA3-6   8157347.0   7372115.0   Cui   +10.7     +5.5    DRO
+          SCA3-7   8208061.0   8280467.0  WDRO    -0.9     -4.7  SPLIT
           SCA3-8   8641338.0   7966200.0 Gounaris    +8.5     -2.3    DRO
-          SCA3-9   8772696.0   8732413.0  MDRO    +0.5     +0.5    DRO
-          SCA8-0  16058630.0  15519950.0  MDRO    +3.5     +3.5    DRO
-          SCA8-1  16937403.0  16499914.0  MDRO    +2.7     +2.7    DRO
+          SCA3-9   8803618.0   8732413.0  MDRO    +0.8     +0.8    DRO
+          SCA8-0  15780389.0  15519950.0  MDRO    +1.7     +1.7    DRO
+          SCA8-1  16726088.0  16499914.0  MDRO    +1.4     +1.4    DRO
           SCA8-2  17077322.0  16839959.0  MDRO    +1.4     +1.4    DRO
           SCA8-3  15486527.0  15475479.0  MDRO    +0.1     +0.1    DRO
-          SCA8-4  16912661.0  16949615.0  MDRO    -0.2     -0.2  SPLIT
-          SCA8-5  16193574.0  16426440.0  MDRO    -1.4     -1.4  SPLIT
-          SCA8-6  16784195.0  16128065.0  MDRO    +4.1     +4.1    DRO
-          SCA8-7  16664875.0  17042838.0  MDRO    -2.2     -2.2  SPLIT
-          SCA8-8  16553303.0  16647206.0  WDRO    -0.6     -3.9  SPLIT
-          SCA8-9  17241927.0  16590137.0  MDRO    +3.9     +3.9    DRO
+          SCA8-4  16888993.0  16949615.0  MDRO    -0.4     -0.4  SPLIT
+          SCA8-5  16149756.0  16426440.0  MDRO    -1.7     -1.7  SPLIT
+          SCA8-6  16486975.0  16128065.0  MDRO    +2.2     +2.2    DRO
+          SCA8-7  17417319.0  17042838.0  MDRO    +2.2     +2.2    DRO
+          SCA8-8  16688761.0  16647206.0  WDRO    +0.2     -3.1    DRO
+          SCA8-9  16950155.0  16590137.0  MDRO    +2.2     +2.2    DRO
 === SWEEP SUMMARY (target OOS feasibility = 0.95) ===
-  win rate: SPLIT 17 | DRO 23 | tie 0
-  SPLIT vs best-DRO distance gap: mean +0.4%  median +0.3%
-  SPLIT vs MDRO (same gate) gap:  mean -0.7%  median -0.2%
-  time: SPLIT mean 181.57s | DRO mean 35.0s | speedup ~0x
+  win rate: SPLIT 14 | DRO 26 | tie 0
+  SPLIT vs best-DRO distance gap: mean +0.6%  median +0.9%
+  SPLIT vs MDRO (same gate) gap:  mean -0.4%  median -0.0%
+  SOLVE time (algorithm only, no Monte-Carlo eval):
+    SPLIT mean 108 ms | DRO+ALNS mean 34.7 s | speedup ~322x
+  (note: SPLIT solve time = all 40 instances' multi-start splits; per-instance it is the time to split K tours across the reliability grid.)
