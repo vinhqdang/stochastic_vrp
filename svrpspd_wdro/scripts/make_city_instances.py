@@ -39,8 +39,11 @@ _WDRO    = _SCRIPTS.parent
 
 CITIES = {
     # name: (lat, lon of depot ~ central logistics area, radius m)
-    "hcmc":  (10.7769, 106.7009, 6000),   # Ho Chi Minh City, District 1 centre
-    "hanoi": (21.0285, 105.8542, 6000),   # Hanoi, Hoan Kiem centre
+    "hcmc":     (10.7769, 106.7009, 6000),   # Ho Chi Minh City, District 1
+    "hanoi":    (21.0285, 105.8542, 6000),   # Hanoi, Hoan Kiem
+    "nyc":      (40.7549, -73.9840, 6000),   # New York, Midtown Manhattan
+    "paris":    (48.8566, 2.3522, 6000),     # Paris, city centre
+    "shanghai": (31.2304, 121.4737, 6000),   # Shanghai, People's Square
 }
 
 # demand model (kg): parcel-van operations
@@ -165,6 +168,13 @@ def main():
                 name = f"{city.upper()}-{n_cust}-{seed}"
                 write_vrpspd(out / f"{name}.vrpspd", name, D, dem, Q_VEHICLE,
                              f"OSM drive network, depot {centre}, seed {seed}")
+                # coordinates sidecar for map visualization: OSM node ids and
+                # lat/lon of depot + customers, in instance node order
+                import json
+                coords = [[int(v), float(G.nodes[v]["y"]), float(G.nodes[v]["x"])]
+                          for v in node_ids]
+                (out / f"{name}.coords.json").write_text(json.dumps(
+                    {"city": city, "centre": centre, "nodes": coords}))
                 print(f"  wrote {name}.vrpspd  (n={n_cust}, "
                       f"D in [{D[D>0].min()}, {D.max()}] m, "
                       f"{time.time()-t0:.0f}s)", flush=True)
