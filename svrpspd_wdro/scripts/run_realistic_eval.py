@@ -47,6 +47,7 @@ sys.path.insert(0, str(_SCRIPTS))
 
 from core.otr import fit_otr
 from core.otr2 import calibrate_B_empirical_peak, fit_otr_peak
+from core.dp_exec import fit_dp
 from core.costs import (
     LastMileCosts,
     route_cost_schedules,
@@ -65,7 +66,10 @@ from dethloff_runner import (
 RESULTS_DIR = _WDRO / "results"
 PLANS_DIR   = RESULTS_DIR / "plans"
 
-POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau", "v2_lsm", "oracle"]
+POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau", "v2_lsm",
+                 "dp_n", "dp_xl", "oracle"]
+
+N_XL = 50_000       # training scenarios for the near-exact DP anchor
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -113,10 +117,12 @@ def _gen_scenarios(dbar, pbar, N, seed):
 
 
 def _eval_route_realistic(route, dbar, Q, D, scale, costs,
-                          dsc_tr, psc_tr, dsc_te, psc_te):
+                          dsc_tr, psc_tr, dsc_te, psc_te,
+                          dsc_xl, psc_xl):
     r = np.array(route)
     g_train = psc_tr[:, r] - dsc_tr[:, r]
     g_test  = psc_te[:, r] - dsc_te[:, r]
+    g_xl    = psc_xl[:, r] - dsc_xl[:, r]
 
     L0 = float(dbar[r].sum())
     B  = float(Q - L0)
@@ -132,6 +138,10 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     tau_fb  = tune_tau_general(g_train, B, H, E, fb_models) if fb_models else 1.0
     cm      = fit_lsm_general(g_train, B, H, E)
 
+    # plug-in DP benchmarks: equal data budget, and near-exact 50k anchor
+    dp_same = fit_dp(g_train, B, H, E)
+    dp_xl   = fit_dp(g_xl,    B, H, E)
+
     orc = oracle_costs_general(g_test, B, H, E)
     return {
         "none":   simulate_tau_general(g_test, B, H, E, fb_models, tau=1.0),
@@ -139,6 +149,8 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
         "v1_myo": simulate_tau_general(g_test, B, H, E, fb_models, tau=tau_myo),
         "fb_tau": simulate_tau_general(g_test, B, H, E, fb_models, tau=tau_fb),
         "v2_lsm": simulate_v2_general(g_test, B, H, E, cm),
+        "dp_n":   simulate_v2_general(g_test, B, H, E, dp_same),
+        "dp_xl":  simulate_v2_general(g_test, B, H, E, dp_xl),
         "oracle": {"mean_cost": float(orc.mean()),
                    "handoff_rate": float((orc > 0).mean()),
                    "fail_rate": 0.0, "complete_rate": float((orc == 0).mean())},
@@ -166,6 +178,7 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
 
     dsc_tr, psc_tr = _gen_scenarios(dbar, pbar, n_train, inst_seed)
     dsc_te, psc_te = _gen_scenarios(dbar, pbar, n_test,  inst_seed + 99_991)
+    dsc_xl, psc_xl = _gen_scenarios(dbar, pbar, N_XL,    inst_seed + 424_243)
 
     rows = []
     for policy in active_policies:
@@ -180,7 +193,8 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
             if not route:
                 continue
             res = _eval_route_realistic(route, dbar, Q, D, scale, costs,
-                                        dsc_tr, psc_tr, dsc_te, psc_te)
+                                        dsc_tr, psc_tr, dsc_te, psc_te,
+                                        dsc_xl, psc_xl)
             for lbl in POLICY_LABELS:
                 agg[lbl].append(res[lbl]["mean_cost"])
                 ho[lbl].append(res[lbl]["handoff_rate"])
@@ -215,10 +229,11 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
         log.append(
             f"  {policy:<5} K={K}  rec$: none={none_rec:.0f} "
             f"v1_end={row['v1_end_rec']:.0f} fb={row['fb_tau_rec']:.0f} "
-            f"v2={row['v2_lsm_rec']:.0f} orc={orc_rec:.0f}  "
-            f"save%(v1e/fb/v2)={row['v1_end_saving']:.1f}/"
-            f"{row['fb_tau_saving']:.1f}/{row['v2_lsm_saving']:.1f}  "
-            f"gap%(fb/v2)={row['fb_tau_gap']:.1f}/{row['v2_lsm_gap']:.1f}"
+            f"v2={row['v2_lsm_rec']:.0f} dp_n={row['dp_n_rec']:.0f} "
+            f"dp_xl={row['dp_xl_rec']:.0f} orc={orc_rec:.0f}  "
+            f"save%(v1e/fb/v2/dpn/dpxl)={row['v1_end_saving']:.1f}/"
+            f"{row['fb_tau_saving']:.1f}/{row['v2_lsm_saving']:.1f}/"
+            f"{row['dp_n_saving']:.1f}/{row['dp_xl_saving']:.1f}"
         )
     return rows, "\n".join(log)
 
@@ -230,10 +245,10 @@ def _print_summary(df, policies):
     print("\n" + "=" * W)
     print("  SUMMARY — realistic last-mile costs, means across instances")
     print("=" * W)
-    print(f"  {'Plan':<6}{'Fixed$':>9}{'none TBC':>10}{'v1_end TBC':>11}"
-          f"{'fb TBC':>9}{'v2 TBC':>9}{'orc TBC':>9}"
-          f"{'sv% v1e':>9}{'sv% fb':>8}{'sv% v2':>8}{'sv% orc':>8}"
-          f"{'gap% fb':>9}{'gap% v2':>9}")
+    print(f"  {'Plan':<6}{'Fixed$':>9}{'none TBC':>10}"
+          f"{'sv% v1e':>9}{'sv% fb':>8}{'sv% v2':>8}"
+          f"{'sv% dp_n':>9}{'sv% dp_xl':>10}{'sv% orc':>8}"
+          f"{'gap% v2':>9}{'gap% dp_n':>10}{'gap% dp_xl':>11}")
     print("  " + "-" * (W - 2))
     for policy in policies:
         sub = df[df["Plan"] == policy]
@@ -242,16 +257,15 @@ def _print_summary(df, policies):
         print(f"  {policy:<6}"
               f"{sub['Fixed_cost'].mean():>9.0f}"
               f"{sub['none_TBC'].mean():>10.0f}"
-              f"{sub['v1_end_TBC'].mean():>11.0f}"
-              f"{sub['fb_tau_TBC'].mean():>9.0f}"
-              f"{sub['v2_lsm_TBC'].mean():>9.0f}"
-              f"{sub['oracle_TBC'].mean():>9.0f}"
               f"{sub['v1_end_saving'].mean():>9.1f}"
               f"{sub['fb_tau_saving'].mean():>8.1f}"
               f"{sub['v2_lsm_saving'].mean():>8.1f}"
+              f"{sub['dp_n_saving'].mean():>9.1f}"
+              f"{sub['dp_xl_saving'].mean():>10.1f}"
               f"{sub['oracle_saving'].mean():>8.1f}"
-              f"{sub['fb_tau_gap'].mean():>9.1f}"
-              f"{sub['v2_lsm_gap'].mean():>9.1f}")
+              f"{sub['v2_lsm_gap'].mean():>9.1f}"
+              f"{sub['dp_n_gap'].mean():>10.1f}"
+              f"{sub['dp_xl_gap'].mean():>11.1f}")
     print("\n  rec$/TBC in cost units of core/costs.py defaults; "
           "saving% on the recourse term vs reactive")
     print("  gap% = share of the oracle-achievable saving that the policy misses")

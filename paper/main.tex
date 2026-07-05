@@ -668,11 +668,29 @@ routes, and execution policies act on the latter alone.
 \section{Experimental design}\label{sec:experiments}
 
 Our evaluation has three layers, all with train/test scenario
-separation, and all comparing the same six execution policies:
-\textsc{none} (reactive: never hand off), \textsc{v1} with endpoint
-labels and a cost-tuned threshold, the myopic threshold, the
-label-corrected threshold fallback (\textsc{fb}), \textsc{OTR-2.0}
-(\textsc{v2}), and the clairvoyant oracle of Section~\ref{sec:oracle}.
+separation, comparing eight execution policies: \textsc{none}
+(reactive: never hand off), \textsc{v1} with endpoint labels and a
+cost-tuned threshold, the myopic threshold, the label-corrected
+threshold fallback (\textsc{fb}), \textsc{OTR-2.0} (\textsc{v2}), two
+dynamic-programming benchmarks described next, and the clairvoyant
+oracle of Section~\ref{sec:oracle}.
+
+\paragraph{Exact-method benchmark.} Because the execution stage is a
+finite-horizon optimal stopping problem, the exact solution technique
+for it is backward dynamic programming on the $(k, W_k)$ state space,
+in the preventive-restocking tradition of \citet{yang2000stochastic} —
+not mixed-integer programming, which addresses deterministic or
+scenario-tree formulations and cannot compactly encode a
+non-anticipative multistage stopping rule. We therefore benchmark
+against a nonparametric plug-in DP that discretises $W_k$ into
+quantile bins and runs the same backward recursion as
+Algorithm~\ref{alg:offline} with binned conditional means in place of
+the isotonic regression. Fitted on the same $10^3$ paths as OTR-2.0 it is
+denoted DP$_{10^3}$ (an equal-information competitor); fitted on
+$5\times 10^4$ paths per route it is denoted DP$_{5\cdot 10^4}$ and
+converges to the optimal policy measurable with respect to
+$(k, W_k)$ — a near-exact yardstick against which the near-optimality
+of any implementable policy can be judged.
 
 \paragraph{Structural synthetic scenarios.} Following the diagnosis of
 Proposition~\ref{prop:bias} we generate (i) \emph{collect-then-deliver}
@@ -756,6 +774,23 @@ prices differ, while rule \eqref{eq:trigger} adapts per stop. OTR-2.0
 captures \vTwoRealisticShare\ of the oracle-achievable saving on
 average, against \fbRealisticShare\ for the label-corrected threshold
 and \vOneRealisticShare\ for the endpoint-trained policy.
+
+The two dynamic-programming columns of Table~\ref{tab:realistic} then
+answer the natural question of how far OTR-2.0 sits from the exact
+method. Given fifty times more data, the near-exact
+DP$_{5\cdot 10^4}$ captures \dpXlRealisticShare\ of the
+oracle-achievable saving; OTR-2.0 reaches \vTwoOfDpXl\ of that
+near-exact performance from only $10^3$ paths per route. At an equal
+data budget the picture reverses sharply: the histogram DP collapses
+on the conservative \textsc{WDRO} plans (\dpNWdroSaving\ mean saving
+versus \vTwoWdroSaving\ for OTR-2.0, and on several instances it is
+worse than doing nothing), because at breach rates near $10^{-2}$ its
+bins contain almost no positive examples, whereas the isotonic shape
+constraint pools information across the entire range of $W_k$.
+Matching the exact dynamic program at a fiftieth of its sample
+complexity — rather than merely beating internal baselines — is the
+operative evidence that the method is near-optimal in its policy
+class.
 
 \input{tables/tab_sensitivity}
 

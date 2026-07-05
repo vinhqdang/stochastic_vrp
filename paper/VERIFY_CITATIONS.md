@@ -38,3 +38,7 @@ oyola2018stochastic, robbins1955empirical (the Ayer et al. PAVA paper),
 koc2020review.
 
 All author lists in the .bib are complete (no "et al.").
+
+- [ ] `yang2000stochastic` — Yang, Mathur, Ballou (2000), "Stochastic Vehicle
+  Routing Problem with Restocking", Transportation Science 34(1):99-112,
+  DOI 10.1287/trsc.34.1.99.12278. Verify volume/issue/pages and DOI resolve.

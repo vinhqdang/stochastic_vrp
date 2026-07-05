@@ -1,24 +1,25 @@
 \begin{table}[t]
 \caption{Dethloff benchmark under the realistic last-mile cost model of
-Section~\ref{sec:costs} (state-dependent handoff and emergency prices
-from real route geometry): total budget cost (mean over 40 instances)
-and the share of the oracle-achievable recourse saving each policy
-captures.}
+Section~\ref{sec:costs}: total budget cost (mean over 40 instances) and
+the share of the oracle-achievable recourse saving each policy captures.
+DP$_{10^3}$ is the plug-in dynamic program fitted on the same $10^3$
+training paths as OTR-2.0; DP$_{5\cdot10^4}$ is the same program fitted
+on $5\cdot10^4$ paths, a near-exact solution of the stopping problem.}
 \label{tab:realistic}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrrrrr ccc}
+\begin{tabular}{lrrrr ccccc}
 \toprule
-& & \multicolumn{5}{c}{Total budget cost} &
-\multicolumn{3}{c}{Share of oracle saving (\%)} \\
-\cmidrule(lr){3-7}\cmidrule(lr){8-10}
-Gate & Fixed & reactive & v1 endpoint & fallback & OTR-2.0 & oracle &
-v1 endp. & fallback & OTR-2.0 \\
+& & \multicolumn{3}{c}{Total budget cost} &
+\multicolumn{5}{c}{Share of oracle saving (\%)} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-10}
+Gate & Fixed & reactive & OTR-2.0 & oracle &
+v1 endp. & fallback & DP$_{10^3}$ & DP$_{5\cdot10^4}$ & OTR-2.0 \\
 \midrule
-\textsc{Det} & 306 & 487 & 423 & 422 & 420 & 393 & 69.6 & 70.4 & 73.4 \\
-\textsc{SAA} & 433 & 449 & 444 & 444 & 444 & 439 & 51.5 & 51.7 & 59.0 \\
-\textsc{WDRO} & 510 & 513 & 513 & 513 & 512 & 511 & 28.7 & 28.2 & 40.1 \\
+\textsc{Det} & 306 & 487 & 420 & 394 & 69.8 & 70.5 & 72.8 & 74.5 & 73.7 \\
+\textsc{SAA} & 433 & 450 & 444 & 439 & 52.9 & 53.0 & 46.8 & 63.2 & 59.7 \\
+\textsc{WDRO} & 510 & 513 & 512 & 511 & 26.1 & 25.7 & -1.4 & 43.1 & 38.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
