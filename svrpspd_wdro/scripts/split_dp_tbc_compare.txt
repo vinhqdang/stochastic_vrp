@@ -1,0 +1,54 @@
+C:\Users\Admin\Videos\stochastic_vrp\svrpspd_wdro\scripts>python benchmark_c4.py --sweep data\Dethloff --tbc --otr
+TBC sweep over 40 instances (tlim=10.0s/policy, metric=OTR_TBC)
+      instance        SPLIT     bestBASE  base    gap%    win    spd
+        CON3-0       1751.8       1694.0  WDRO    +3.4   BASE   441x
+        CON3-1       1466.8       1361.7  MDRO    +7.7   BASE   319x
+        CON3-2       1357.9       1245.4  MDRO    +9.0   BASE   281x
+        CON3-3       1627.6       1567.3  MDRO    +3.8   BASE   387x
+        CON3-4       1539.2       1467.1  MDRO    +4.9   BASE   253x
+        CON3-5       1527.5       1430.2  WDRO    +6.8   BASE   401x
+        CON3-6       1314.4       1296.3  WDRO    +1.4   BASE   443x
+        CON3-7       1482.4       1388.7  MDRO    +6.7   BASE   370x
+        CON3-8       1440.2       1496.5  MDRO    -3.8  SPLIT   431x
+        CON3-9       1626.1       1609.6  WDRO    +1.0   BASE   414x
+        CON8-0       3090.2       2872.7  MDRO    +7.6   BASE   542x
+        CON8-1       2746.2       2549.3  MDRO    +7.7   BASE   528x
+        CON8-2       2683.3       2502.9  WDRO    +7.2   BASE   472x
+        CON8-3       2778.4       2749.6  MDRO    +1.0   BASE   513x
+        CON8-4       2524.8       2500.1  MDRO    +1.0   BASE   421x
+        CON8-5       2614.6       2599.0  WDRO    +0.6   BASE   639x
+        CON8-6       2174.8       2156.9  MDRO    +0.8   BASE   352x
+        CON8-7       3027.9       2878.6  WDRO    +5.2   BASE   419x
+        CON8-8       2719.4       2654.7  WDRO    +2.4   BASE   690x
+        CON8-9       2728.3       2709.8  MDRO    +0.7   BASE   466x
+        SCA3-0       1871.2       1681.7  WDRO   +11.3   BASE   349x
+        SCA3-1       1902.9       1915.6  WDRO    -0.7  SPLIT   333x
+        SCA3-2       1784.4       1759.6  WDRO    +1.4   BASE   490x
+        SCA3-3       1967.7       1987.7  WDRO    -1.0  SPLIT   280x
+        SCA3-4       1823.2       1835.5  MDRO    -0.7  SPLIT   423x
+        SCA3-5       2024.7       2066.9  MDRO    -2.0  SPLIT   332x
+        SCA3-6       1814.4       1618.2  WDRO   +12.1   BASE   382x
+        SCA3-7       2063.0       1937.4  WDRO    +6.5   BASE   234x
+        SCA3-8       1886.4       1889.2  WDRO    -0.2  SPLIT   334x
+        SCA3-9       2184.7       1983.6  MDRO   +10.1   BASE   290x
+        SCA8-0       3780.1       3334.0  WDRO   +13.4   BASE   581x
+        SCA8-1       3856.0       3679.0  MDRO    +4.8   BASE   436x
+        SCA8-2       4023.4       3895.9  MDRO    +3.3   BASE   559x
+        SCA8-3       3781.9       3613.8  WDRO    +4.7   BASE   584x
+        SCA8-4       4195.4       4044.3  WDRO    +3.7   BASE   503x
+        SCA8-5       4119.0       3922.7  WDRO    +5.0   BASE   660x
+        SCA8-6       4135.5       3794.8  MDRO    +9.0   BASE   583x
+        SCA8-7       4505.9       4433.6  MDRO    +1.6   BASE   571x
+        SCA8-8       3988.4       3795.1  WDRO    +5.1   BASE   458x
+        SCA8-9       4180.9       3996.1  WDRO    +4.6   BASE   457x
+=== TBC SWEEP SUMMARY (metric: OTR_TBC) ===
+  win rate: SPLIT 6 | baselines 34
+  SPLIT vs BEST baseline gap: mean +4.2%  median +4.2%
+  SOLVE speedup vs all baselines: mean ~441x
+  SPLIT vs each baseline (mean gap%, negative = SPLIT cheaper):
+      vs       Cui: -59.4%
+      vs       Det: -95.5%
+      vs  Gounaris: -47.2%
+      vs      MDRO: +2.6%
+      vs       SAA: -44.4%
+      vs      WDRO: +3.4%
