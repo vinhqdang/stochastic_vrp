@@ -1,4 +1,4 @@
-"""Day 9 Part C — Test 3: Out-of-sample distributional stress.
+"""
 
 Train W-DRO solution on Gamma scenarios. Test on shifted distributions:
     (1) Gamma cv=0.2  (in-distribution, sanity)

@@ -1,4 +1,4 @@
-"""Day 8 — Speedup measurement: W-DRO ALNS with vs without Phase 2 filter.
+"""
 
 Runs on CON3-0 with collapse settings (variance=0, epsilon=0) and reports:
     - Wall-clock time comparison

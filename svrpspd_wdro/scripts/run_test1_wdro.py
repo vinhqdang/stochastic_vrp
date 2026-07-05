@@ -1,4 +1,4 @@
-"""REAL Test 1: W-DRO ALNS collapse on CON3-0.
+"""
 
 variance = 0 (constant scenarios = nominal demand)
 epsilon  = 0

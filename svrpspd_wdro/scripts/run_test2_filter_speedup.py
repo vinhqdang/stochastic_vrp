@@ -1,4 +1,4 @@
-"""Day 9 — Filter speedup measurement on CON3-0 with REAL variance.
+"""
 
 Setup:
     - Scenarios: Gamma distribution (cv=0.2) on nominal demand, N=1000
