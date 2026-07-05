@@ -95,6 +95,25 @@ and the equal-data DP at p=0.016 and attains 92.3% of the near-exact DP.
 Routes here are long (12–22 stops), which is exactly where the
 optimal-stopping trigger's option value grows.
 
+## 6. Exact-solver certification (HiGHS MIP)
+
+Planning-layer check with the Montané–Galvão two-commodity-flow VRPSPD MIP
+solved by HiGHS (`results/results_mip_cert.csv`, `results_mip_small.csv`):
+
+- **Small city sub-instances (12–24 customers):** HiGHS proves optimality
+  in seconds; even the fast CW+2-opt planner is within 1.2–3.6% of the
+  true optimum.
+- **Full Dethloff instances (50 customers, 300 s/instance):** the ALNS
+  plans used throughout our experiments beat HiGHS's own incumbent on
+  **35/40 instances** (the solver's best solution averages 5.9% *worse*
+  than ours), and the MIP dual bound certifies every ALNS plan within
+  **11.0% mean / 14.5% max** of optimal — an upper bound on true
+  suboptimality, since the two-flow LP relaxation is known to be loose.
+
+Execution stage vs exact methods: covered by the DP benchmark (Sections
+3 and 5) — MIP technology does not encode non-anticipative multistage
+stopping rules, so backward DP is the correct exact comparator there.
+
 ## Verdict
 
 OTR-2.0 dominates OTR 1.0 everywhere it matters: catastrophically on
