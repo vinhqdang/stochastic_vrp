@@ -271,6 +271,41 @@ def simulate_v2(
 
 
 # ============================================================
+# Clairvoyant oracle — perfect-information lower bound
+# ============================================================
+
+
+def oracle_costs(g: np.ndarray, B: float, omegaF: float, Cfail: float) -> np.ndarray:
+    """Per-scenario cost of the clairvoyant policy that sees the whole path.
+
+    If the route never peak-overflows, complete it free. If it would
+    overflow at step 1 there is no decision epoch before the breach, so
+    Cfail is unavoidable. Otherwise hand off just in time and pay omegaF.
+    No online policy measurable w.r.t. the running-sum filtration can do
+    better, so this is the perfect-information lower bound for the class.
+    """
+    ostep = _overflow_step(np.cumsum(g, axis=1), B)
+    m = g.shape[1]
+    costs = np.zeros(g.shape[0])
+    costs[ostep == 1] = Cfail
+    costs[(ostep > 1) & (ostep <= m)] = omegaF
+    return costs
+
+
+def simulate_oracle(g_test: np.ndarray, B: float, omegaF: float, Cfail: float) -> dict:
+    """Summary-stats wrapper around oracle_costs (same dict as simulate_v2)."""
+    costs = oracle_costs(g_test, B, omegaF, Cfail)
+    ho = costs == omegaF
+    em = costs == Cfail
+    return {
+        "mean_cost":     float(costs.mean()),
+        "handoff_rate":  float(ho.mean()),
+        "fail_rate":     float(em.mean()),
+        "complete_rate": float((~ho & ~em).mean()),
+    }
+
+
+# ============================================================
 # Validation protocol (run before deployment)
 # ============================================================
 
