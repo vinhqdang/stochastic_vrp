@@ -42,3 +42,15 @@ All author lists in the .bib are complete (no "et al.").
 - [ ] `yang2000stochastic` — Yang, Mathur, Ballou (2000), "Stochastic Vehicle
   Routing Problem with Restocking", Transportation Science 34(1):99-112,
   DOI 10.1287/trsc.34.1.99.12278. Verify volume/issue/pages and DOI resolve.
+
+- [ ] `salhi1999cluster2` — Salhi & Nagy (1999), JORS 50(10):1034-1042,
+  DOI 10.1057/palgrave.jors.2600808. NOTE: check this is the correct paper
+  for the X/Y VRPSPD instance construction (some papers credit the split
+  rule to Nagy & Salhi 2005, EJOR 162(1):126-141, DOI
+  10.1016/j.ejor.2003.08.041 — verify which to cite for the benchmark,
+  and dedupe against the existing `salhi1999cluster` entry).
+- [ ] `christofides1979vehicle` — book chapter, no DOI; CVRPLIB given as
+  stable URL. Verify editor/page details.
+- [ ] `montane2006tabu` — DOI 10.1016/j.cor.2004.07.009, verify pages.
+- [ ] `boeing2017osmnx` — DOI 10.1016/j.compenvurbsys.2017.05.004 (city
+  instance generation uses OSMnx; cite in the data section).
