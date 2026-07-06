@@ -1,0 +1,75 @@
+%% Cover letter for the Omega submission — carries the author identity;
+%% the manuscript itself is anonymised (\anontrue in main.tex).
+%% Build: pdflatex cover_letter
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.6cm]{geometry}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
+\usepackage{parskip}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{flushright}
+Quang-Vinh Dang\\
+British University Vietnam\\
+Hung Yen, Vietnam\\
+\href{mailto:vinh.dq4@buv.edu.vn}{vinh.dq4@buv.edu.vn}\\[4pt]
+\today
+\end{flushright}
+
+\vspace{6pt}
+\noindent
+The Editors-in-Chief\\
+\emph{Omega --- The International Journal of Management Science}
+
+\vspace{14pt}
+\noindent Dear Editors,
+
+Please consider the enclosed manuscript, \emph{``BATON:
+optimal-stopping recourse for vehicle routing with simultaneous
+pickup, delivery, and stochastic demands,''} for publication in
+\emph{Omega}.
+
+The paper addresses an operational question that sits squarely in the
+journal's tradition of decision-making under uncertainty: when a
+delivery vehicle that also collects pickups is filling up mid-route,
+at which stop should the operator intervene---hand the remainder of
+the route to a standby vehicle, detour to the depot to unload, or
+keep driving? We show that this execution-stage question is a
+finite-horizon optimal-stopping problem and solve it with a policy,
+\textsc{Baton}, that prices every recourse action from the route's
+real geometry and intervenes exactly when continuing becomes dearer
+than the cheapest lever. The policy has no tunable threshold; we prove
+that no fixed threshold can reproduce the optimal intervention
+boundary, and that the endpoint-based risk labels used by prior work
+are structurally blind to mid-route load peaks.
+
+The computational study is, to our knowledge, the broadest comparison
+of execution-stage recourse policies in this problem class:
+eleven policies---including published rule-based restocking triggers,
+rollout, depot-return restocking, a plug-in dynamic program, and a
+GPU-trained reinforcement-learning baseline---evaluated on identical
+plans from six planning regimes (three of them published robust
+planners), on classical benchmarks and on new instances built from
+OpenStreetMap road networks with customers at real retail locations in
+five cities. All underlying routing plans are certified against
+mixed-integer programming bounds, and every table and figure in the
+paper regenerates mechanically from the result files.
+
+This manuscript is original, has not been published previously, and is
+not under consideration elsewhere. I have no conflicts of interest to
+declare, and the work received no external funding. The manuscript has
+been anonymised for review; author identity appears only in this
+letter. The code and data repository will be shared with the editorial
+office on request during review and made public upon acceptance.
+
+Thank you for your consideration.
+
+\vspace{14pt}
+\noindent Sincerely,
+
+\vspace{6pt}
+\noindent Quang-Vinh Dang\\
+British University Vietnam
+\end{document}
