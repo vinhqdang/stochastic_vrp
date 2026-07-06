@@ -227,6 +227,8 @@ def animate(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
     TITLES = {"reactive": "Reactive (no policy)",
               "v1": "OTR v1 (fixed threshold)",
               "v2": "OTR-2.0 (optimal stopping)"}
+    trails = []          # per panel: {veh_id: Line2D with accumulated path}
+    trail_axes = []
     for ax, p, sim in zip(axes, policies, sims):
         _draw_static(ax, G, lonr, latr, xs, ys, lon[0], lat[0])
         ax.set_title(f"{TITLES[p]} — realized cost ${sim['cost']:.1f}",
@@ -234,6 +236,8 @@ def animate(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
         d, = ax.plot([], [], marker="o", ms=13, color=VEH1, zorder=8,
                      mec="white", mew=1.2)
         veh_dots.append(d)
+        trails.append({})
+        trail_axes.append(ax)
         served_sc.append(ax.scatter([], [], s=46, color=VEH1, zorder=6,
                                     edgecolors="white", linewidths=0.8))
         # load gauge (inset, bottom-left)
@@ -259,6 +263,16 @@ def animate(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
             col = {1: VEH1, 2: VEH2, 3: VEH3}[fr["veh"]]
             veh_dots[pi].set_data([fr["x"]], [fr["y"]])
             veh_dots[pi].set_color(col)
+            # breadcrumb trail: the roads this vehicle has actually driven
+            tr = trails[pi].get(fr["veh"])
+            if tr is None:
+                tr, = trail_axes[pi].plot([], [], color=col, lw=2.6,
+                                          alpha=0.85, zorder=5,
+                                          solid_capstyle="round")
+                trails[pi][fr["veh"]] = tr
+            tx, ty = tr.get_data()
+            tr.set_data(np.append(tx, fr["x"]), np.append(ty, fr["y"]))
+            artists.append(tr)
             if fr["served"]:
                 k = fr["served"]
                 served_pts[pi].append((xs[k - 1], ys[k - 1]))
@@ -308,6 +322,138 @@ def animate(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
     return out
 
 
+def animate_fleet(instance_stem="HANOI-200-1", scen_rank=0, fps=7,
+                  out_dir=FIG_DIR, alpha_gate=0.10):
+    """Whole-plan animation: every vehicle of the plan drives its route
+    simultaneously under OTR-2.0, with breadcrumb trails, per-route colors,
+    handoff markers (standby vehicles in the route's color, dashed trail)
+    and breach markers. One shared demand scenario for the whole fleet."""
+    from dethloff_runner import (parse_dethloff, sample_demands, solve_fast,
+                                 InflationGate, CV, DIST, SEED)
+    from make_figures import ROUTE_COLORS
+    import json as _json
+
+    city = instance_stem.split("-")[0].lower()
+    inst = _WDRO / "data" / "City" / f"{instance_stem}.vrpspd"
+    D, dem, Q, n, scale = parse_dethloff(str(inst))
+    coords = _json.loads((inst.parent / f"{instance_stem}.coords.json")
+                         .read_text())["nodes"]
+    dbar = dem[:, 0].astype(float)
+    pbar = dem[:, 1].astype(float)
+    plan = [r for r in solve_fast(D, InflationGate(Q, dbar, pbar,
+                                                   alpha=alpha_gate), n) if r]
+
+    seed = SEED + 5
+    rng = np.random.default_rng(seed)
+    dsc_tr = sample_demands(dbar, n, 1000, CV, DIST, rng)
+    psc_tr = sample_demands(pbar, n, 1000, CV, DIST, rng)
+    rng2 = np.random.default_rng(seed + 99_991)
+    dsc_te = sample_demands(dbar, n, 500, CV, DIST, rng2)
+    psc_te = sample_demands(pbar, n, 500, CV, DIST, rng2)
+    costs = LastMileCosts()
+
+    # fit OTR-2.0 per route; pick the day with the most "at-risk" routes
+    fits, risk = [], np.zeros(500)
+    for route in plan:
+        r = np.array(route)
+        B = float(Q - dbar[r].sum())
+        g_tr = psc_tr[:, r] - dsc_tr[:, r]
+        H, E = route_cost_schedules(route, D, scale, costs)
+        cm = fit_lsm_general(g_tr, B, H, E)
+        fits.append((route, B, H, E, cm))
+        g_te = psc_te[:, r] - dsc_te[:, r]
+        risk += (np.cumsum(g_te, 1).max(1) > B).astype(float)
+    day = int(np.argsort(risk)[-(1 + scen_rank)])
+
+    G = _load_graph(city)
+    osm_ids = [c[0] for c in coords]
+    lat = [c[1] for c in coords]
+    lon = [c[2] for c in coords]
+
+    frame_sets, sims = [], []
+    for route, B, H, E, cm in fits:
+        r = np.array(route)
+        L0 = float(dbar[r].sum())
+        d_real = dsc_te[day][r]
+        p_real = psc_te[day][r]
+        sim = simulate_day("v2", len(r), B, Q, L0, d_real, p_real, H, E, cm=cm)
+        sims.append(sim)
+        frame_sets.append(build_frames(G, osm_ids, route, sim,
+                                       frames_per_leg=4, hold=1))
+    n_frames = max(len(f) for f in frame_sets)
+    for f in frame_sets:
+        f.extend([f[-1]] * (n_frames - len(f)))
+
+    fig, ax = plt.subplots(figsize=(14, 14))
+    all_c = [c for route in plan for c in route]
+    xs = [lon[c] for c in all_c]; ys = [lat[c] for c in all_c]
+    pad = 0.003
+    lonr = (min(xs + [lon[0]]) - pad, max(xs + [lon[0]]) + pad)
+    latr = (min(ys + [lat[0]]) - pad, max(ys + [lat[0]]) + pad)
+    _draw_static(ax, G, lonr, latr, xs, ys, lon[0], lat[0])
+
+    n_ho = sum(1 for s in sims if s["switch_stop"])
+    n_br = sum(1 for s in sims if s["breach_stop"])
+    fleet_cost = sum(s["cost"] for s in sims)
+    ax.set_title(f"{instance_stem} — {len(plan)} vehicles under OTR-2.0, one "
+                 f"high-demand day: {n_ho} handoffs, {n_br} breaches, "
+                 f"fleet recourse ${fleet_cost:.0f}", fontsize=14, color=INK)
+
+    dots, trails = [], []
+    for ri in range(len(plan)):
+        col = ROUTE_COLORS[ri % len(ROUTE_COLORS)]
+        d, = ax.plot([], [], marker="o", ms=11, color=col, zorder=8,
+                     mec="white", mew=1.1)
+        dots.append(d)
+        trails.append({})
+
+    def update(fi):
+        artists = []
+        for ri, frames in enumerate(frame_sets):
+            fr = frames[fi]
+            base = ROUTE_COLORS[ri % len(ROUTE_COLORS)]
+            col = base if fr["veh"] == 1 else \
+                (VEH3 if fr["veh"] == 3 else base)
+            dots[ri].set_data([fr["x"]], [fr["y"]])
+            dots[ri].set_color(col)
+            tr = trails[ri].get(fr["veh"])
+            if tr is None:
+                ls = "-" if fr["veh"] == 1 else "--"
+                tcol = base if fr["veh"] != 3 else VEH3
+                tr, = ax.plot([], [], color=tcol, lw=2.0, ls=ls,
+                              alpha=0.8, zorder=5, solid_capstyle="round")
+                trails[ri][fr["veh"]] = tr
+            tx, ty = tr.get_data()
+            tr.set_data(np.append(tx, fr["x"]), np.append(ty, fr["y"]))
+            if fr["event"] == "handoff":
+                ax.scatter([fr["x"]], [fr["y"]], s=170, facecolors="none",
+                           edgecolors=base, linewidths=2.2, zorder=7)
+            if fr["event"] == "breach":
+                ax.scatter([fr["x"]], [fr["y"]], marker="X", s=150,
+                           color=VEH3, zorder=7)
+            artists += [dots[ri], tr]
+        return artists
+
+    legend = [Line2D([], [], color=INK, lw=2, label="planned vehicle (trail)"),
+              Line2D([], [], color=INK, lw=2, ls="--",
+                     label="standby vehicle after handoff (dashed trail)"),
+              Line2D([], [], marker="o", color="white", markerfacecolor="none",
+                     markeredgecolor=INK, lw=0, ms=11, label="handoff point"),
+              Line2D([], [], marker="X", color=VEH3, lw=0, ms=11,
+                     label="capacity breach"),
+              Line2D([], [], marker="*", color=INK, lw=0, ms=15,
+                     label="depot")]
+    ax.legend(handles=legend, frameon=False, fontsize=10, loc="lower left")
+    fig.tight_layout()
+
+    anim = FuncAnimation(fig, update, frames=n_frames, blit=False)
+    out = Path(out_dir) / f"anim_{instance_stem}_fleet_s{scen_rank}.gif"
+    anim.save(out, writer=PillowWriter(fps=fps), dpi=100)
+    plt.close(fig)
+    print(f"wrote {out}  ({n_frames} frames, {len(plan)} vehicles)")
+    return out
+
+
 def main():
     kw = dict(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
               fps=7)
@@ -317,7 +463,11 @@ def main():
         elif a.startswith("scenario="): kw["scen_rank"] = int(a[9:])
         elif a.startswith("fps="):      kw["fps"] = int(a[4:])
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    animate(**kw)
+    if kw["policy"] == "fleet":
+        animate_fleet(instance_stem=kw["instance_stem"],
+                      scen_rank=kw["scen_rank"], fps=kw["fps"])
+    else:
+        animate(**kw)
 
 
 if __name__ == "__main__":
