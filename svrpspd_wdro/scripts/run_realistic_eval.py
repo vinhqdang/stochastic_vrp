@@ -53,11 +53,14 @@ from core.costs import (
     LastMileCosts,
     route_cost_schedules,
     plan_fixed_cost,
+    pool_cost,
     fit_lsm_general,
     simulate_v2_general,
     simulate_tau_general,
     tune_tau_general,
     oracle_costs_general,
+    oracle_actions_general,
+    oracle_general_billed,
 )
 from dethloff_runner import (
     parse_dethloff, sample_demands, solve_instance,
@@ -126,7 +129,15 @@ def _gen_scenarios(dbar, pbar, N, seed):
 
 def _eval_route_realistic(route, dbar, Q, D, scale, costs,
                           dsc_tr, psc_tr, dsc_te, psc_te,
-                          dsc_xl, psc_xl):
+                          dsc_xl, psc_xl, lam=None):
+    """Fit and score all policies on one route.
+
+    lam: optional {policy: shadow price} added to the DECISION handoff
+    schedule so policies internalize the standby-pool retainer their own
+    handoff pattern requires; billing always uses the true per-use H
+    (the retainer is charged separately at plan level).
+    """
+    lam = lam or {}
     r = np.array(route)
     g_train = psc_tr[:, r] - dsc_tr[:, r]
     g_test  = psc_te[:, r] - dsc_te[:, r]
@@ -139,42 +150,48 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
 
     H, E = route_cost_schedules(route, D, scale, costs)
 
+    def Hd(lbl):
+        return H + float(lam.get(lbl, 0.0))
+
     v1_end_models = fit_otr(g_train, B)          # endpoint label (the v1 bug)
     fb_models     = fit_otr_peak(g_train, B)     # peak label
-    tau_myo = float(H.mean() / max(E.mean(), 1e-9))
-    tau_end = tune_tau_general(g_train, B, H, E, v1_end_models) if v1_end_models else 1.0
-    tau_fb  = tune_tau_general(g_train, B, H, E, fb_models) if fb_models else 1.0
-    cm      = fit_lsm_general(g_train, B, H, E)
+    tau_myo = float(Hd("v1_myo").mean() / max(E.mean(), 1e-9))
+    tau_end = tune_tau_general(g_train, B, Hd("v1_end"), E, v1_end_models) if v1_end_models else 1.0
+    tau_fb  = tune_tau_general(g_train, B, Hd("fb_tau"), E, fb_models) if fb_models else 1.0
+    cm      = fit_lsm_general(g_train, B, Hd("v2_lsm"), E)
 
     # plug-in DP benchmarks: equal data budget, and near-exact 50k anchor
-    dp_same = fit_dp(g_train, B, H, E)
-    dp_xl   = fit_dp(g_xl,    B, H, E)
+    dp_same = fit_dp(g_train, B, Hd("dp_n"), E)
+    dp_xl   = fit_dp(g_xl,    B, Hd("dp_xl"), E)
 
     # published rule-based recourse (Salavati-Khoshghalb et al. 2019),
-    # adapted to handoff recourse and grid-tuned on realized costs
+    # adapted to handoff recourse and grid-tuned on realized cost + lambda
     g_mean = g_train.mean(axis=0)
     pis = {}
     for kind in ("pi1", "pi2", "pi3"):
-        c = tune_pi(kind, g_train, B, H, E)
-        pis[kind] = simulate_pi(g_test, B, H, E,
-                                pi_thresholds(kind, B, g_mean, c))
+        c = tune_pi(kind, g_train, B, Hd(kind), E)
+        pis[kind] = simulate_pi(g_test, B, H, E,          # bills true H
+                                pi_thresholds(kind, B, g_mean, c),
+                                return_actions=True)
 
-    orc = oracle_costs_general(g_test, B, H, E)
-    return {
-        "none":   simulate_tau_general(g_test, B, H, E, fb_models, tau=1.0),
-        "v1_end": simulate_tau_general(g_test, B, H, E, v1_end_models, tau=tau_end),
-        "v1_myo": simulate_tau_general(g_test, B, H, E, fb_models, tau=tau_myo),
-        "fb_tau": simulate_tau_general(g_test, B, H, E, fb_models, tau=tau_fb),
-        "pi1":    pis["pi1"],
-        "pi2":    pis["pi2"],
-        "pi3":    pis["pi3"],
-        "v2_lsm": simulate_v2_general(g_test, B, H, E, cm),
-        "dp_n":   simulate_v2_general(g_test, B, H, E, dp_same),
-        "dp_xl":  simulate_v2_general(g_test, B, H, E, dp_xl),
-        "oracle": {"mean_cost": float(orc.mean()),
-                   "handoff_rate": float((orc > 0).mean()),
-                   "fail_rate": 0.0, "complete_rate": float((orc == 0).mean())},
-    }
+    orc, orc_a = oracle_general_billed(g_test, B, Hd("oracle"), E, H)
+
+    out, acts = {}, {}
+    out["none"],   acts["none"]   = simulate_tau_general(g_test, B, Hd("none"), E, fb_models, tau=1.0, return_actions=True, H_bill=H)
+    out["v1_end"], acts["v1_end"] = simulate_tau_general(g_test, B, Hd("v1_end"), E, v1_end_models, tau=tau_end, return_actions=True, H_bill=H)
+    out["v1_myo"], acts["v1_myo"] = simulate_tau_general(g_test, B, Hd("v1_myo"), E, fb_models, tau=tau_myo, return_actions=True, H_bill=H)
+    out["fb_tau"], acts["fb_tau"] = simulate_tau_general(g_test, B, Hd("fb_tau"), E, fb_models, tau=tau_fb, return_actions=True, H_bill=H)
+    for kind in ("pi1", "pi2", "pi3"):
+        out[kind], acts[kind] = pis[kind]
+    out["v2_lsm"], acts["v2_lsm"] = simulate_v2_general(g_test, B, Hd("v2_lsm"), E, cm, return_actions=True, H_bill=H)
+    out["dp_n"],   acts["dp_n"]   = simulate_v2_general(g_test, B, Hd("dp_n"), E, dp_same, return_actions=True, H_bill=H)
+    out["dp_xl"],  acts["dp_xl"]  = simulate_v2_general(g_test, B, Hd("dp_xl"), E, dp_xl, return_actions=True, H_bill=H)
+    out["oracle"] = {"mean_cost": float(orc.mean()),
+                     "handoff_rate": float((orc_a == 1).mean()),
+                     "fail_rate": float((orc_a == 2).mean()),
+                     "complete_rate": float((orc_a == 0).mean())}
+    acts["oracle"] = orc_a
+    return out, acts
 
 
 def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
@@ -212,16 +229,24 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
         agg = {lbl: [] for lbl in POLICY_LABELS}
         ho  = {lbl: [] for lbl in POLICY_LABELS}
         fl  = {lbl: [] for lbl in POLICY_LABELS}
+        hand = {lbl: [] for lbl in POLICY_LABELS}   # (route, day) handoffs
         for route in plan:
             if not route:
                 continue
-            res = _eval_route_realistic(route, dbar, Q, D, scale, costs,
-                                        dsc_tr, psc_tr, dsc_te, psc_te,
-                                        dsc_xl, psc_xl)
+            res, acts = _eval_route_realistic(route, dbar, Q, D, scale, costs,
+                                              dsc_tr, psc_tr, dsc_te, psc_te,
+                                              dsc_xl, psc_xl)
             for lbl in POLICY_LABELS:
                 agg[lbl].append(res[lbl]["mean_cost"])
                 ho[lbl].append(res[lbl]["handoff_rate"])
                 fl[lbl].append(res[lbl]["fail_rate"])
+                hand[lbl].append(acts[lbl] == 1)
+        # dedicated-pool size a policy WOULD need (95% service): diagnostic
+        # only — the retainer is billed per vehicle-day inside handoff_cost
+        pool = {}
+        for lbl in POLICY_LABELS:
+            mat = np.array(hand[lbl]) if hand[lbl] else np.zeros((0, 0), bool)
+            pool[lbl] = pool_cost(mat, costs)
         eval_time = time.time() - t0
 
         fixed = plan_fixed_cost(K, dist, costs)
@@ -234,9 +259,13 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
             "Fixed_cost": round(fixed, 2),
         }
         for lbl in POLICY_LABELS:
+            # recourse = expected incident costs; each handoff's cost already
+            # includes the standby vehicle-day retainer (see LastMileCosts).
+            # {lbl}_S reports the dedicated pool the policy would need.
             rec = float(sum(agg[lbl]))
             row[f"{lbl}_rec"]  = round(rec, 2)
             row[f"{lbl}_TBC"]  = round(fixed + rec, 2)
+            row[f"{lbl}_S"]    = pool[lbl][1]
             row[f"{lbl}_HO"]   = round(float(np.mean(ho[lbl])), 4)
             row[f"{lbl}_fail"] = round(float(np.mean(fl[lbl])), 4)
             if lbl != "none":

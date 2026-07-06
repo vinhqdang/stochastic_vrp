@@ -143,3 +143,36 @@ class TestGeneralLsm:
         cm = fit_lsm_general(g_tr, B, H, E)
         s = simulate_v2_general(g_te, B, H, E, cm)
         assert s["handoff_rate"] + s["fail_rate"] + s["complete_rate"] == pytest.approx(1.0)
+
+
+class TestStandbyPool:
+    def test_pool_sizing_single_route(self):
+        import numpy as np
+        from core.costs import standby_pool_size
+        h = np.zeros((3, 100), dtype=bool); h[0] = True
+        assert standby_pool_size(h) == 1
+
+    def test_pool_sizing_all(self):
+        import numpy as np
+        from core.costs import standby_pool_size
+        h3 = np.ones((4, 50), dtype=bool)
+        assert standby_pool_size(h3) == 4
+
+    def test_rare_simultaneous_below_service_level(self):
+        import numpy as np
+        from core.costs import standby_pool_size
+        # 3 simultaneous handoffs on only 2% of days -> 95% pool ignores them
+        h = np.zeros((3, 100), dtype=bool); h[:, :2] = True
+        assert standby_pool_size(h, q=0.95) == 0
+
+    def test_empty(self):
+        import numpy as np
+        from core.costs import standby_pool_size
+        assert standby_pool_size(np.zeros((0, 0), dtype=bool)) == 0
+
+    def test_pool_cost_scales(self):
+        import numpy as np
+        from core.costs import pool_cost, LastMileCosts
+        h = np.ones((2, 10), dtype=bool)
+        c, S = pool_cost(h, LastMileCosts())
+        assert S == 2 and c == 2 * LastMileCosts().F_standby

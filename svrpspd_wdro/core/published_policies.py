@@ -79,7 +79,7 @@ def _simulate_costs_pi(g: np.ndarray, B: float, H: np.ndarray,
 
 
 def simulate_pi(g_test: np.ndarray, B: float, H: np.ndarray, E: np.ndarray,
-                thr: np.ndarray) -> dict:
+                thr: np.ndarray, return_actions: bool = False):
     costs = _simulate_costs_pi(g_test, B, H, E, thr)
     # a handoff at stop k costs H[k-1]; an emergency E[k-1]; identify by value
     # only when schedules are strictly ordered — report rates via re-simulation
@@ -101,12 +101,13 @@ def simulate_pi(g_test: np.ndarray, B: float, H: np.ndarray, E: np.ndarray,
         ho = active & ~em & (Wk > thr[k_idx])
         action[ho] = 1
         stopped |= ho
-    return {
+    stats = {
         "mean_cost":     float(costs.mean()),
         "handoff_rate":  float((action == 1).mean()),
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
     }
+    return (stats, action) if return_actions else stats
 
 
 def tune_pi(kind: str, g_train: np.ndarray, B: float, H: np.ndarray,

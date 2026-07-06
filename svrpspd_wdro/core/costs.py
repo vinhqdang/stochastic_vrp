@@ -59,7 +59,17 @@ class LastMileCosts:
     c_km:   float = 0.10     # $/km variable running cost (fuel + maintenance)
 
     # ── planned handoff (standby pool, scheduled rebalancing) ────────
-    F_ho:   float = 12.0     # callout fee for a standby vehicle
+    # The fleet cost splits into two vehicle classes: the PLANNED fleet
+    # (F_plan x K, in the fixed term) and the STANDBY class used by
+    # planned handoffs. Standby capacity is pooled city-wide; a handoff
+    # consumes one standby vehicle-day, billed at the retainer rate
+    # F_standby inside handoff_cost, plus a dispatch fee. Emergency
+    # vehicles are a third class: ad-hoc surge hires, per-incident only,
+    # no retainer. standby_pool_size() reports the dedicated-pool size a
+    # policy would need (diagnostic; a small-K plan cannot amortize a
+    # dedicated pool, which is why billing is per vehicle-day consumed).
+    F_standby: float = 20.0  # $/vehicle-day consumed by each handoff
+    F_ho:   float = 5.0      # per-use dispatch/admin fee
     s_ho:   float = 1.2      # standby per-km surcharge multiplier
     c_transfer: float = 3.0  # cargo transfer dwell (driver time + parking)
 
@@ -70,8 +80,11 @@ class LastMileCosts:
     p_breach: float = 10.0   # $ churn/goodwill loss at the breached stop itself
 
     def handoff_cost(self, remaining_km: float) -> float:
-        """Planned handoff after stop k: standby vehicle covers the rest."""
-        return self.F_ho + self.s_ho * self.c_km * remaining_km + self.c_transfer
+        """Planned handoff after stop k: one standby vehicle-day consumed
+        (retainer F_standby, pooled city-wide) + dispatch fee + the standby
+        vehicle running the remaining route + cargo transfer."""
+        return (self.F_standby + self.F_ho
+                + self.s_ho * self.c_km * remaining_km + self.c_transfer)
 
     def emergency_cost(self, remaining_km: float, n_downstream: int) -> float:
         """Unplanned breach at stop k: surge vehicle + SLA fallout."""
@@ -127,6 +140,30 @@ def plan_fixed_cost(K: int, total_dist: float, costs: LastMileCosts) -> float:
     return costs.F_plan * K + costs.c_km * total_dist
 
 
+def standby_pool_size(handoffs: np.ndarray, q: float = 0.95) -> int:
+    """Standby vehicles to retain for a policy: the q-quantile of the DAILY
+    count of simultaneous handoffs across the plan's routes.
+
+    Parameters
+    ----------
+    handoffs : np.ndarray, shape (n_routes, N_scenarios), boolean
+        handoffs[r, s] = policy hands route r off on test day s. Rows must
+        share the scenario axis (all routes simulated on the same days).
+    q : float
+        Service level of the pool (default: covers 95% of days).
+    """
+    if handoffs.size == 0:
+        return 0
+    daily = handoffs.sum(axis=0)
+    return int(np.ceil(np.quantile(daily, q)))
+
+
+def pool_cost(handoffs: np.ndarray, costs: LastMileCosts, q: float = 0.95) -> tuple:
+    """(retainer $/day, pool size) for a policy's handoff pattern."""
+    S = standby_pool_size(handoffs, q)
+    return costs.F_standby * S, S
+
+
 # ============================================================
 # Generalized LSM — per-stop cost schedules
 # ============================================================
@@ -170,7 +207,8 @@ def fit_lsm_general(g_hist: np.ndarray, B: float,
 
 
 def _simulate_costs_general(g, B, H, E, cont_models, tau=None,
-                            prob_models=None) -> tuple[np.ndarray, np.ndarray]:
+                            prob_models=None,
+                            H_bill=None) -> tuple[np.ndarray, np.ndarray]:
     """Vectorized execution under per-stop cost schedules.
 
     Two trigger modes:
@@ -178,11 +216,18 @@ def _simulate_costs_general(g, B, H, E, cont_models, tau=None,
       prob_models + tau  -> v1-style rule: handoff iff p_k(W_k) > tau
     Pass tau=1.0 with prob_models for the no-handoff (reactive) policy.
 
+    H is the DECISION price (may include a standby-pool shadow price
+    lambda); H_bill, when given, is the true per-use price actually
+    charged for a handoff — the retainer itself is charged separately at
+    plan level, so billing lambda here would double count it.
+
     Returns
     -------
     (costs, action) : per-scenario cost and action code
                       0 = COMPLETE, 1 = HANDOFF, 2 = EMERGENCY
     """
+    if H_bill is None:
+        H_bill = H
     N, m = g.shape
     cumW = np.cumsum(g, axis=1)
     costs = np.zeros(N)
@@ -218,7 +263,7 @@ def _simulate_costs_general(g, B, H, E, cont_models, tau=None,
                 continue
             trig = model.predict(Wk[ho_active]) > tau
         ho_idx = np.where(ho_active)[0][trig]
-        costs[ho_idx] = H[k_idx]
+        costs[ho_idx] = H_bill[k_idx]
         action[ho_idx] = 1
         stopped[ho_idx] = True
 
@@ -234,17 +279,21 @@ def _stats(costs: np.ndarray, action: np.ndarray) -> dict:
     }
 
 
-def simulate_v2_general(g_test, B, H, E, cont_models) -> dict:
+def simulate_v2_general(g_test, B, H, E, cont_models,
+                        return_actions: bool = False, H_bill=None):
     """OTR-2.0 execution stats under per-stop cost schedules."""
-    c, a = _simulate_costs_general(g_test, B, H, E, cont_models)
-    return _stats(c, a)
+    c, a = _simulate_costs_general(g_test, B, H, E, cont_models,
+                                   H_bill=H_bill)
+    return (_stats(c, a), a) if return_actions else _stats(c, a)
 
 
-def simulate_tau_general(g_test, B, H, E, prob_models, tau) -> dict:
+def simulate_tau_general(g_test, B, H, E, prob_models, tau,
+                         return_actions: bool = False, H_bill=None):
     """Fixed-threshold (v1-style) execution stats under cost schedules."""
     c, a = _simulate_costs_general(g_test, B, H, E, None,
-                                   tau=tau, prob_models=prob_models)
-    return _stats(c, a)
+                                   tau=tau, prob_models=prob_models,
+                                   H_bill=H_bill)
+    return (_stats(c, a), a) if return_actions else _stats(c, a)
 
 
 def tune_tau_general(g_train, B, H, E, prob_models,
@@ -294,3 +343,52 @@ def oracle_costs_general(g: np.ndarray, B: float,
     j = ostep[br]
     costs[br] = np.minimum(Hmin_before[j - 1], E[j - 1])
     return costs
+
+
+def oracle_actions_general(g: np.ndarray, B: float,
+                           H: np.ndarray, E: np.ndarray) -> np.ndarray:
+    """Per-scenario action of the clairvoyant policy (same convention as
+    _simulate_costs_general: 0 complete, 1 handoff, 2 emergency)."""
+    N, m = g.shape
+    ostep = _overflow_step(np.cumsum(g, axis=1), B)
+    Hmin_before = np.concatenate([[np.inf], np.minimum.accumulate(H[:m - 1])])
+    action = np.zeros(N, dtype=np.int8)
+    br = ostep <= m
+    j = ostep[br]
+    action[br] = np.where(Hmin_before[j - 1] <= E[j - 1], 1, 2)
+    return action
+
+
+def oracle_general_billed(g: np.ndarray, B: float, H_dec: np.ndarray,
+                          E: np.ndarray, H_bill: np.ndarray) -> tuple:
+    """Clairvoyant lower bound that DECIDES against the shadow-priced
+    schedule H_dec but is BILLED the true per-use schedule H_bill (the
+    retainer is charged separately at plan level).
+
+    Returns (costs, action) with the usual action codes.
+    """
+    N, m = g.shape
+    ostep = _overflow_step(np.cumsum(g, axis=1), B)
+    # prefix-minimum of the decision price over stops 1..m-1, and its argmin
+    Hm = H_dec[:m - 1]
+    prefix_min = np.minimum.accumulate(Hm)
+    argmin_idx = np.zeros(m - 1, dtype=int)
+    for k in range(1, m - 1):
+        argmin_idx[k] = argmin_idx[k - 1] if Hm[argmin_idx[k - 1]] <= Hm[k] else k
+
+    costs = np.zeros(N)
+    action = np.zeros(N, dtype=np.int8)
+    br_idx = np.where(ostep <= m)[0]
+    j = ostep[br_idx]                      # breach step per breaching day
+
+    early = j <= 1                         # no decision epoch before breach
+    costs[br_idx[early]] = E[j[early] - 1]
+    action[br_idx[early]] = 2
+
+    late = ~early
+    jl = j[late]
+    ho = prefix_min[jl - 2] <= E[jl - 1]   # cheapest pre-breach handoff wins
+    kstar = argmin_idx[jl - 2]             # 0-indexed stop of that handoff
+    costs[br_idx[late]] = np.where(ho, H_bill[kstar], E[jl - 1])
+    action[br_idx[late]] = np.where(ho, 1, 2)
+    return costs, action
