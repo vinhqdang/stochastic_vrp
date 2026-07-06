@@ -141,6 +141,20 @@ v1, fallback, pi3 and the equal-data DP on every gate, p<=8e-3 (mostly
 1e-8..1e-13). Salhi-Nagy: v2 42.0% vs fb 37.3% (p=6e-5). City: 12.0% vs
 11.3% (p=0.04).
 
+
+## 8. OTR-2.1 feature enrichment: a null result (kept deliberately)
+
+Enriching the conditioning statistic beyond scalar W_k — common-factor
+posterior (precision-weighted residuals), last increment, running max —
+with monotone gradient-boosted trees (`core/otr21.py`) LOSES to the
+isotonic scalar-W models on 23/25 real routes (mean -3.2% relative,
+`scripts/validate_otr21.py`), while fitting 100-1000x slower. At
+realistic history sizes the extra features add more estimation variance
+than signal; the isotonic shape constraint on W_k is doing the heavy
+lifting. This confirms the design choice empirically (spec section 7)
+and is worth a paragraph in the manuscript as evidence that OTR-2.0's
+simplicity is not a limitation at operational data scales.
+
 ## Verdict
 
 OTR-2.0 dominates OTR 1.0 everywhere it matters: catastrophically on
