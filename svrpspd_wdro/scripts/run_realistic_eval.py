@@ -45,7 +45,7 @@ _WDRO    = _SCRIPTS.parent
 sys.path.insert(0, str(_WDRO))
 sys.path.insert(0, str(_SCRIPTS))
 
-from core.otr import fit_otr
+from core.otr_endpoint import fit_otr
 from core.otr2 import calibrate_B_empirical_peak, fit_otr_peak
 from core.dp_exec import fit_dp
 from core.published_policies import pi_thresholds, simulate_pi, tune_pi

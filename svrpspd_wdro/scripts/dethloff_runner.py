@@ -264,6 +264,25 @@ class TwoPhaseGate:
         return cvar(route_peaks(route, self.dsc, self.psc),          # Phase 2: exact certificate
                     self.alpha) <= self.cap + 1e-9
 
+class InflationGate:
+    """Simple static-inflation gate (didactic; used by figure/validation
+    scripts): nominal Model-A peak with every demand inflated by (1+alpha)
+    must fit the capacity. The full quadrant-budget robust gate is
+    GounarisGate below."""
+    mode = "inflate"
+
+    def __init__(self, cap, dbar, pbar, alpha=0.2):
+        self.cap = cap
+        self.dbar = dbar * (1.0 + alpha)
+        self.pbar = pbar * (1.0 + alpha)
+        self.calls = self.pruned = 0
+
+    def feasible(self, route):
+        if not route:
+            return True
+        return nominal_peak(route, self.dbar, self.pbar) <= self.cap + 1e-9
+
+
 class CantelliGate:
     """M-DRO Baseline (Cantelli-Chebyshev). 
     Enforces P(load > Q) <= 1-alpha using only mean and variance."""
@@ -442,12 +461,16 @@ def cw_init(D, gate, n):
     return sol
 
 
-def two_opt_gate(route, D, gate):
+def two_opt_gate(route, D, gate, max_passes=200):
+    """First-improvement 2-opt. The gain test assumes symmetric D; the pass
+    cap is a safety net against cycling if D is (accidentally) asymmetric."""
     if len(route) < 4:
         return route
     r = route[:]
     improved = True
-    while improved:
+    passes = 0
+    while improved and passes < max_passes:
+        passes += 1
         improved = False
         for i in range(len(r) - 1):
             for k in range(i + 1, len(r)):
@@ -544,6 +567,18 @@ def econ_cost(sol, D, omega_V):
     return sum(route_cost(r, D) for r in sol) + omega_V * sum(1 for r in sol if r)
 
 
+def solve_fast(D, gate, n):
+    """Large-instance planning: Clarke-Wright + per-route 2-opt only.
+
+    The pure-Python relocate/ILS machinery of solve() runs its initial
+    local search to convergence BEFORE the time limit applies, which is
+    impractical beyond ~150 customers. CW + 2-opt builds a reasonable plan
+    in seconds; every execution policy is evaluated on the SAME plan, so
+    the policy comparison is unaffected by planner optimality."""
+    sol = [two_opt_gate(r, D, gate) for r in cw_init(D, gate, n) if r]
+    return [r for r in sol if r]
+
+
 def solve(D, gate, n, omega_V, time_limit, seed, no_improve=NO_IMPROVE):
     """Penalised-distance ILS (distance + omega_V*K). Early stop: break if no improving move for
     `no_improve` seconds, or when `time_limit` is hit."""
@@ -587,9 +622,13 @@ def eval_evextra(plan, dbar, pbar, n, Q, mixture=None, heavy_family="lognormal",
 
 
 # ============================================================ one instance
-def solve_instance(path, tlim, no_improve, use_prune=True):
-    """Solve all three policies ONCE. Returns plans + per-policy K/dist/time/prune plus the data
-    needed to (re-)price economics under any stress mixture (omega_V is mixture-independent)."""
+def solve_instance(path, tlim, no_improve, use_prune=True, which=None):
+    """Solve the requested policies ONCE (default: all). Returns plans +
+    per-policy K/dist/time/prune plus the data needed to (re-)price
+    economics under any stress mixture (omega_V is mixture-independent).
+    `which`: optional list of gate names to solve, e.g. ["Det"] — the
+    scenario-gated SAA/WDRO gates are O(N_DATA) per feasibility call and
+    impractical inside O(n^2) local search at n >= 200."""
     D, dem, Q, n, scale = parse_dethloff(path)
     dbar = dem[:, 0].astype(float).copy()            # mean delivery (depot idx 0 = 0)
     pbar = dem[:, 1].astype(float).copy()            # native pickup
@@ -606,10 +645,15 @@ def solve_instance(path, tlim, no_improve, use_prune=True):
         "SAA":      TwoPhaseGate(Q, ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune), # Lấy mẫu
         "WDRO":     TwoPhaseGate(Qeff, ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune), # Trùm cuối
     }
+    if which:
+        gates = {k: v for k, v in gates.items() if k in which}
     res = {}
     for name, gate in gates.items():
         t0 = time.time()
-        plan = solve(D, gate, n, omega_V_solve, tlim, SEED, no_improve)
+        if n > 90:                      # ILS impractical: CW + 2-opt (see solve_fast)
+            plan = solve_fast(D, gate, n)
+        else:
+            plan = solve(D, gate, n, omega_V_solve, tlim, SEED, no_improve)
         elapsed = time.time() - t0
         K = sum(1 for r in plan if r)
         dist = sum(route_cost(r, D) for r in plan) / scale          # real units

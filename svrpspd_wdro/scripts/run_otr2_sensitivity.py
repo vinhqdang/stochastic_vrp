@@ -35,7 +35,7 @@ _SCRIPTS = Path(__file__).resolve().parent
 _WDRO    = _SCRIPTS.parent
 sys.path.insert(0, str(_WDRO))
 
-from core.otr import fit_otr, tau_myopic, tune_tau_fast, simulate_fast
+from core.otr_endpoint import fit_otr, tau_myopic, tune_tau_fast, simulate_fast
 from core.otr2 import (
     fit_lsm, fit_otr_peak, calibrate_B_empirical_peak,
     simulate_v2, simulate_oracle,

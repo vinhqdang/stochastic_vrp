@@ -37,7 +37,7 @@ sys.path.insert(0, str(_SCRIPTS))
 
 from dethloff_runner import (parse_dethloff, sample_demands, solve_fast,
                              DetGate, InflationGate, CV, DIST, SEED)
-from core.otr import fit_otr
+from core.otr_endpoint import fit_otr
 from core.otr2 import fit_otr_peak, calibrate_B_empirical_peak
 from core.costs import (LastMileCosts, route_cost_schedules, fit_lsm_general,
                         simulate_v2_general, simulate_tau_general,

@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.otr import fit_otr, simulate_fast, tune_tau_fast, tau_myopic
+from core.otr_endpoint import fit_otr, simulate_fast, tune_tau_fast, tau_myopic
 from core.otr2 import (
     _overflow_step,
     fit_lsm,

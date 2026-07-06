@@ -25,8 +25,8 @@ core/
 
 scripts/
   dethloff_runner.py    Instance parsing, scenario generation, ALNS + the six
-                        gates: Det, SAA, WDRO, GNRS (Gounaris 2013 inflation),
-                        BSIM (Bertsimas-Sim 2004 budget), MDRO (Ghosal et al.
+                        gates: Det, SAA, WDRO, Gounaris (2013 quadrant-budget robust),
+                        Cui (Bertsimas-Sim budget), MDRO (Cantelli/Ghosal et al.
                         2024 moment ambiguity); solve_fast for n>90
   run_realistic_eval.py MAIN EVALUATION: gates x 11 execution policies
                         (reactive, v1, myopic, fallback, pi1-3, OTR-2.0,
@@ -52,7 +52,7 @@ results/ CSVs consumed by ../paper/make_tables.py; figures/
 
 ```bash
 # grand comparison grid (Dethloff, 6 gates x 11 policies)
-python scripts/run_realistic_eval.py policies=Det,SAA,WDRO,GNRS,BSIM,MDRO \
+python scripts/run_realistic_eval.py policies=Det,SAA,WDRO,Gounaris,Cui,MDRO \
        workers=3 out=results_grand_dethloff
 
 # large-scale benchmarks

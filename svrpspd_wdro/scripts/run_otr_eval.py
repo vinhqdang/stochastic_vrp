@@ -49,7 +49,7 @@ _WDRO    = _SCRIPTS.parent
 sys.path.insert(0, str(_WDRO))
 sys.path.insert(0, str(_SCRIPTS))
 
-from core.otr import (
+from core.otr_endpoint import (
     fit_otr,
     tau_myopic,
     tune_tau_fast,

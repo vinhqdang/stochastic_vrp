@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.otr import (
+from core.otr_endpoint import (
     fit_otr,
     otr_route,
     calibrate_B,
