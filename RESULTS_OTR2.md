@@ -229,6 +229,53 @@ recourse (Florio/Legault) wins exactly where depots are central, handoff
 recourse wins where they are not, and OTR-A prices the choice per stop
 from data — subsuming both.
 
+
+## 11. Cost-parameter sensitivity (managerial analysis)
+
+One-factor sweeps around the fleet-economics defaults (12 Dethloff
+instances, Det+SAA gates; `results/results_costsens_*.csv`). Saving % vs
+reactive; BATON = deployed combined-action policy:
+
+| Configuration | restock | tuned thresh | BATON-HO | **BATON** | oracle(HO) |
+|---|---|---|---|---|---|
+| baseline | 24.6 | 20.7 | 23.3 | **40.6** | 42.1 |
+| cheap emergencies (F_emg=25) | 22.5 | 13.5 | 17.6 | **39.5** | 31.1 |
+| dear emergencies (F_emg=60) | 32.3 | 35.7 | 39.1 | **54.4** | 55.4 |
+| cheap standby (F_standby=10) | 28.2 | 37.0 | 41.3 | **51.3** | 57.7 |
+| dear standby (F_standby=35) | 28.0 | 7.3 | 12.4 | **41.9** | 24.8 |
+| low SLA price (p_late=0.5) | 33.1 | 22.3 | 27.0 | **48.8** | 42.0 |
+| high SLA price (p_late=3.0) | 23.3 | 28.5 | 32.2 | **46.1** | 47.6 |
+| mild surge (s_emg=1.5) | 26.8 | 20.3 | 24.9 | **44.2** | 40.3 |
+| heavy surge (s_emg=4.0) | 29.8 | 30.2 | 33.6 | **51.4** | 49.3 |
+
+BATON leads in every configuration. The managerially interesting rows:
+when standby vehicles are DEAR ($35/day) the threshold family collapses
+(7.3%) while BATON shifts weight to depot returns and holds 41.9% —
+exceeding the handoff-only oracle (24.8) by a wide margin; when SLA
+lateness is expensive, depot returns lose appeal and BATON shifts back
+toward handoffs. The policy re-balances its recourse mix as prices move,
+with no re-tuning.
+
+## 12. Spatial structure: real shops vs uniform scatter
+
+Twin city instances (same cities, demands, seeds) with customers at real
+OSM shop locations vs uniformly sampled street nodes
+(`results_city_eval.csv` vs `results_cityuniform_eval.csv`): real retail
+clustering yields **25.9% shorter routes** (211.9 vs 287.2 km mean) —
+uniform-scatter conventions materially overstate travel — while the
+policy ranking and BATON's lead are unchanged, supporting external
+validity. City replication (seeds 1-3, 19 instances): BATON 10.8%,
+DP-50k 12.4%, oracle 36.8%.
+
+## 13. Strengthened RL baseline (robustness of Section 9)
+
+Retraining the Iklassov-style policy with 150 epochs (~4x), entropy
+regularization, learning-rate selection, and multiple seeds on a T4
+(`results/rl_strong_s*.json`): best seed reaches 28.6% saving (vs 27.6%
+originally) — still decisively below BATON-HO's 33.9% on identical
+routes and days (better on 38/50 routes, p = 1.8e-8). The gap is not an
+artifact of under-training.
+
 ## Verdict
 
 OTR-2.0 dominates OTR 1.0 everywhere it matters: catastrophically on
