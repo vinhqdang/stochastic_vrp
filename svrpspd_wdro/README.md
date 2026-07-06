@@ -9,11 +9,13 @@ evaluated under a realistic three-class fleet cost model.
 
 ```
 core/
-  otr.py                OTR 1.0 (endpoint-label isotonic curves + tau threshold)
+  otr.py                Load-space peak-label threshold policy (contributed
+                        rewrite); otr_endpoint.py keeps the original
+                        endpoint-label OTR 1.0 as the paper's v1 baseline
   otr2.py               OTR-2.0: peak labels, Longstaff-Schwartz continuation
                         models, cost-comparison trigger, oracle, validation
-  otr21.py              OTR-2.1 (experimental): feature-enriched continuation
-                        models (factor posterior, recency, spike detector)
+  otr21.py              OTR-2.1 feature-enriched models — validated NULL
+                        result (loses to scalar-W isotonic 23/25 routes)
   costs.py              Realistic last-mile cost model: planned / standby /
                         emergency vehicle classes, per-stop price schedules,
                         generalized LSM + simulators, clairvoyant oracle
@@ -39,8 +41,9 @@ scripts/
   make_salhi_nagy.py    Salhi-Nagy 1999 CMT-X/Y benchmark from CVRPLIB
   make_figures.py       Paper/report figures (city maps, decision explainer)
   animate_execution.py  Animated trip replay: assignment + demand scenario ->
-                        GIF (handoff dispatches standby vehicle, breach calls
-                        emergency vehicle); compare mode = side-by-side
+                        GIF with breadcrumb road trails and load gauges.
+                        policy=compare: reactive vs OTR-2.0 side by side;
+                        policy=fleet: every vehicle of a plan simultaneously
   validate_otr21.py     Paired v2 vs v2.1 validation over real routes
 
 data/    Dethloff (40x50 cust), SalhiNagy (14x50-199), City (9x100-400)

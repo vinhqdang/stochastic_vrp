@@ -1,262 +1,141 @@
-# Stochastic VRPSPD with Distributionally Robust Optimization
+# Stochastic VRPSPD — robust planning + optimal-stopping execution (OTR-2.0)
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status: Research](https://img.shields.io/badge/Status-Research-green.svg)](https://github.com/vinhqdang/stochastic_vrp)
 
 ## Overview
 
-This repository implements a unified optimization framework for the **Vehicle Routing Problem with Simultaneous Pickup and Delivery under Stochastic Demand (SVRPSPD)**. It contains two complementary components:
+Research codebase for the **Vehicle Routing Problem with Simultaneous Pickup
+and Delivery under Stochastic Demand (SVRPSPD)**, covering both decision
+layers of a last-mile operation:
 
-| Component | What it does |
-|---|---|
-| **ALNS + W-DRO** (`svrpspd_wdro/`) | Offline route planning: builds routes that are robust to demand uncertainty via Wasserstein Distributionally Robust Optimization |
-| **OTR** (`svrpspd_wdro/core/otr.py`) | Online execution policy: monitors live demand as a truck drives its route and triggers a proactive spare-truck handoff when overflow risk crosses a learned threshold |
+| Layer | What it does | Where |
+|---|---|---|
+| **Planning** | ALNS route construction under six capacity-feasibility gates: deterministic, SAA-CVaR, Wasserstein-DRO, and three published robust baselines (Gounaris quadrant-budget, Bertsimas–Sim budget, Cantelli/moment-DRO) | `svrpspd_wdro/scripts/dethloff_runner.py` |
+| **Execution** | Online mid-route **handoff** policies that watch the live load as the vehicle serves customers and decide when to dispatch a standby vehicle — headlined by **OTR-2.0**, a peak-aware optimal-stopping rule with *zero tuning parameters* | `svrpspd_wdro/core/otr2.py`, `core/costs.py` |
 
-The two components are designed to be used together: ALNS+W-DRO plans the routes before departure; OTR manages residual uncertainty during execution.
+**Headline results** (details in [`RESULTS_OTR2.md`](RESULTS_OTR2.md)):
+OTR-2.0 beats its predecessor, tuned thresholds, published rule-based
+recourse (Salavati-Khoshghalb et al. 2019), and an equal-data dynamic
+program on **all six planning gates** (paired Wilcoxon p ≤ 8×10⁻³, mostly
+≤ 10⁻⁸), reaches **92–99% of a near-exact DP** given 50× its data, and under
+the three-class fleet cost model stays firmly positive (+11–13%) where
+threshold policies *destroy* value (−1.4%) on conservative plans. Plans are
+certified within **9.3% of optimal on average** by Gurobi MIP bounds.
 
----
+## Problem
 
-## Problem Definition
+Each vehicle departs the depot preloaded with its deliveries and collects
+pickups as it goes. The on-board load after customer $k$ is
 
-Each vehicle departs the depot preloaded with all deliveries and simultaneously collects pickups from customers. The on-board load after visiting customer $k$ is:
+$$L_k = \underbrace{\sum_{i \in \text{route}} d_i}_{L_0} - \sum_{j=1}^k d_j + \sum_{j=1}^k p_j .$$
 
-$$L_k = \underbrace{\sum_{i \in \text{route}} d_i}_{L_0} - \sum_{j=1}^k d_j + \sum_{j=1}^k p_j$$
+Demands are stochastic, so the **running peak** $\max_k L_k$ is random and
+may breach capacity $Q$ mid-route — an expensive emergency. The execution
+problem is *when to hand the remainder of a route to a standby vehicle*:
+act too early and you pay for handoffs you didn't need; too late and you
+pay surge prices plus SLA compensation.
 
-Because pickup demands $p_i$ are stochastic, the peak load $f_r(\xi) = \max_k L_k$ is random. The route overflows when $f_r(\xi) > Q$.
+## OTR-2.0 in one paragraph
 
----
+Offline, from historical demand paths (empirical distribution, no
+parametric assumption), backward induction fits per-stop monotone models
+$\hat C_k(w)$ = *expected cost of continuing optimally past stop $k$ with
+load state $w$* (Longstaff–Schwartz with isotonic regression; overflow
+labelled on the running **peak**, not the endpoint — the predecessor's
+defect). Online, after every stop, one comparison: **hand off iff
+$\hat C_k(W_k) > H_k$**, the current per-stop handoff price. The rule
+prices in option value (early in the route, waiting is cheap) and adapts
+to state-dependent prices — which no single threshold $\tau$ can do.
+A deliberate null result (`core/otr21.py`): enriching the statistic with
+factor posteriors/recency features *loses* to the scalar-$W_k$ isotonic
+models at operational data scales (23/25 routes) — the design is at the
+right complexity point.
 
-## Repository Structure
+## Repository structure
 
 ```
 stochastic_vrp/
 ├── svrpspd_wdro/        # THE maintained pipeline — see svrpspd_wdro/README.md
-│   ├── core/            #   OTR-2.0/2.1, cost model, DP benchmark, W-DRO planner
-│   ├── scripts/         #   evaluations, instance generators, figures, animation
-│   ├── data/            #   Dethloff (50 cust) · Salhi-Nagy (50-199) · City (100-400,
-│   │                    #   real OSM road networks: HCMC/Hanoi/NYC/Paris/Shanghai)
-│   ├── tests/           #   pytest suite (~180 tests)
+│   ├── core/            #   OTR-2.0/2.1, three-class cost model, DP benchmark,
+│   │                    #   published pi-rules, W-DRO planner internals
+│   ├── scripts/         #   evaluations, gates, instance generators, figures,
+│   │                    #   trip animations, MIP certification
+│   ├── data/            #   Dethloff (40x50) · Salhi-Nagy (14x50-199) · City
+│   │                    #   (100-400 cust on real OSM road networks:
+│   │                    #    HCMC, Hanoi, NYC, Paris, Shanghai)
+│   ├── tests/           #   pytest suite (~185 tests)
 │   └── results/         #   CSVs + figures (paper tables regenerate from these)
 ├── paper/               # Springer sn-jnl manuscript (tables via make_tables.py)
-├── RESULTS_OTR2.md      # running results summary (all seven experiment layers)
-├── legacy/              # archived ECHO-era code (not maintained; see its README)
+├── RESULTS_OTR2.md      # running results summary — eight experiment layers
+├── legacy/              # archived ECHO-era code (not maintained)
 └── requirements.txt
 ```
 
-**Headline (see `RESULTS_OTR2.md`):** OTR-2.0 — peak-aware labels + an
-optimal-stopping handoff trigger with zero tuning parameters — beats OTR 1.0,
-tuned thresholds, published rule-based recourse, and an equal-data dynamic
-program on all six planning gates (Wilcoxon p ≤ 8×10⁻³, mostly ≤ 10⁻⁸), and
-reaches 92–99% of a near-exact DP given 50× its data. Under the three-class
-fleet cost model, threshold policies destroy value on conservative plans
-(−1.4%) while OTR-2.0 stays firmly positive (+11–13%).
+## Evaluation design
 
----
+- **Execution policies compared** (11): reactive, OTR-1.0 endpoint baseline,
+  myopic threshold, peak-label tuned threshold, π1/π2/π3 published recourse
+  rules, **OTR-2.0**, plug-in DP at equal data, near-exact DP (50k paths),
+  clairvoyant oracle.
+- **Cost model** (`core/costs.py`): three vehicle classes — planned fleet
+  ($35/veh-day), standby (each handoff consumes a pooled vehicle-day at
+  $20 + dispatch + per-km surcharge on the *remaining* route), emergency
+  (surge callout + 2.5× km + $1.5/late customer + goodwill). All policies
+  score on 2,000 out-of-sample test days per route.
+- **Exact-method anchors**: backward DP for the stopping stage (MIPs cannot
+  encode non-anticipative multistage rules); Gurobi/HiGHS MIP bounds for the
+  planning stage (Montané–Galvão two-commodity flow).
 
-## Algorithms
+## Visualizations
 
-### 1. ALNS + W-DRO (offline planning)
+![city maps](svrpspd_wdro/results/figures/fig1_city_maps.png)
 
-The core planner in `svrpspd_wdro/core/alns_wdro.py`. Objective:
+- `scripts/make_figures.py` — four-city route maps, the decision-rule
+  explainer (load fan, $\hat C_k$ vs $H_k$, cost bars), spike-day map replay.
+- `scripts/animate_execution.py` — **animated trip replays** on the real
+  street network with breadcrumb road trails and load gauges:
+  `policy=compare` (reactive vs OTR-2.0, same realized demands) and
+  `policy=fleet` (every vehicle of a plan simultaneously, e.g. 13 vehicles /
+  200 customers in Hanoi). GIFs in `results/figures/`.
 
-$$F(\text{solution}) = \underbrace{\sum_r \text{dist}(r)}_{\text{travel}} + \lambda \underbrace{\sum_r \Phi(r)}_{\text{W-DRO penalty}}$$
-
-where the W-DRO penalty for route $r$ is:
-
-$$\Phi(r) = \mathrm{CVaR}_\alpha^{F_0}\!\bigl(\max(0,\, f_r(\xi) - Q)\bigr) + \frac{\varepsilon}{1-\alpha}$$
-
-- $F_0$ = empirical distribution over $N$ historical scenarios  
-- $\varepsilon$ = Wasserstein ambiguity radius  
-- The $+\varepsilon/(1-\alpha)$ term follows from Universal Lipschitz Invariance (every route in $\mathcal{R}_n$ has $\|\beta_{r,k}\|_\infty = 1$)
-
-**Speed:** candidate insertions are evaluated in $O(N \log N)$ using the prefix/suffix-peak cache (`cache.py` + `wdro_fast.py`), independent of route length.
-
-Three planning policies are compared:
-
-| Policy | Capacity gate |
-|---|---|
-| **Det** | Nominal (mean-demand) peak $\leq Q$ |
-| **SAA** | Empirical CVaR$_\alpha \leq Q$ |
-| **WDRO** | Empirical CVaR$_\alpha \leq Q(1 - \varepsilon_{\text{frac}})$ |
-
-### 2. OTR — Online Threshold Reassignment (execution policy)
-
-Defined in `svrpspd_wdro/core/otr.py`. After route planning, OTR operates in real time as the truck visits customers.
-
-**Offline phase** — fit once on historical routes:
-
-```python
-models = fit_otr(g_hist, B)   # g_hist: (N, m) net increments; B = Q - L0
-```
-
-Each `models[k]` is an isotonic regression mapping the running net-increment sum $W_k$ to $\hat{p}(W_k) = P(W > B \mid W_k)$.
-
-**Online phase** — called at every customer stop:
-
-```
-for k = 1 .. m:
-    observe d_k, p_k              ← revealed on arrival
-    W_k += p_k - d_k
-    if W_k > B  → EMERGENCY       ← overflow already happened
-    if k == m   → COMPLETE
-    if models[k].predict(W_k) > τ → HANDOFF  ← proactive spare truck
-```
-
-**Threshold selection:**
-
-```python
-tau_myopic(omegaF, Cfail)          # break-even: omegaF / Cfail
-tune_tau(g_train, B, models, ...)  # grid-search on training data (recommended when Cfail/omegaF > 5)
-```
-
----
-
-## Dataset
-
-The `svrpspd_wdro/data/Dethloff/` directory contains **40 standard VRPSPD benchmark instances** from Dethloff (2001), organized in four families:
-
-| Family | Topology | Vehicles | Customers |
-|---|---|---|---|
-| `CON3-*` (10 instances) | Concentrated, 3 clusters | 4 | 50 |
-| `CON8-*` (10 instances) | Concentrated, 8 clusters | 4 | 50 |
-| `SCA3-*` (10 instances) | Scattered, 3 clusters | 4 | 50 |
-| `SCA8-*` (10 instances) | Scattered, 8 clusters | 4 | 50 |
-
-Each `.vrpspd` file contains a full distance matrix (`EDGE_WEIGHT_SECTION`) and per-customer mean delivery/pickup demands (`PICKUP_AND_DELIVERY_SECTION`).
-
----
-
-## Quick Start
-
-### Prerequisites
+## Quick start
 
 ```bash
-conda create -n py313 python=3.13
-conda activate py313
 pip install -r requirements.txt
-```
-
-### Run the full OTR evaluation (single command)
-
-```bash
 cd svrpspd_wdro
-python scripts/run_otr_eval.py
+
+# grand comparison grid (Dethloff, 6 gates x 11 policies)
+python scripts/run_realistic_eval.py policies=Det,SAA,WDRO,Gounaris,Cui,MDRO workers=3 out=results_grand_dethloff
+
+# large-scale benchmarks (Salhi-Nagy 50-199 cust; real-map city 100-400 cust)
+python scripts/run_realistic_eval.py dir=data/SalhiNagy policies=Det out=results_salhinagy_eval
+python scripts/run_realistic_eval.py dir=data/City      policies=Det out=results_city_eval
+
+# exact-solver certification (HiGHS default; solver=gurobi with a WLS licence)
+python scripts/run_mip_cert.py dethloff tlim=300
+
+# animation of one day (assignment + realized demand scenario)
+python scripts/animate_execution.py policy=compare scenario=0
+python scripts/animate_execution.py policy=fleet instance=HANOI-200-1
+
+# tests
+python -m pytest tests/ -q
 ```
 
-This script:
-1. Solves all 40 Dethloff instances with ALNS under Det / SAA / WDRO planning policies
-2. Generates train and test demand scenarios for each route
-3. Fits OTR, tunes $\tau$, and simulates three execution policies (tuned, myopic, no-handoff)
-4. Writes **`results_otr_eval.csv`** and **`results_otr_eval.xlsx`**
+Solved plans are cached in `results/plans/*.json`, so evaluation reruns
+skip the ALNS solving stage. Full module map and per-table reproduction
+commands: [`svrpspd_wdro/README.md`](svrpspd_wdro/README.md).
 
-**Options** (all optional):
+## Manuscript
 
-```bash
-python scripts/run_otr_eval.py \
-    tlim=60          \  # ALNS time limit per policy (seconds)
-    n_train=1000     \  # training scenarios per route
-    n_test=2000      \  # test scenarios per route
-    cfail=5.0        \  # Cfail / omegaF ratio
-    policies=SAA,WDRO\  # which ALNS plans to evaluate
-    workers=8        \  # parallel worker processes (default: all CPUs)
-    max=5            \  # limit to first N instances (useful for testing)
-    out=results/run1    # output file stem
-```
-
-**Estimated runtime:** ~60 min ALNS solving + ~10 min OTR (all 40 instances, 3 policies, default settings).
-
-### Run only the ALNS planner
-
-```bash
-cd svrpspd_wdro
-python scripts/dethloff_runner.py dir=data/Dethloff t=60
-# outputs: results_dethloff_summary.xlsx
-```
-
-Add `sweep` to re-price solutions under 7 demand mixture scenarios without re-solving:
-
-```bash
-python scripts/dethloff_runner.py dir=data/Dethloff sweep
-```
-
-### Run unit tests
-
-```bash
-cd svrpspd_wdro
-python -m pytest tests/ -v
-```
-
----
-
-## Output Format
-
-`results_otr_eval.csv` has one row per `(instance, planning policy)` combination:
-
-| Column | Description |
-|---|---|
-| `Instance`, `Plan`, `N_cust`, `K_routes` | Instance metadata |
-| `Travel`, `omega_V`, `omega_F`, `Cfail` | Route cost parameters |
-| `ALNS_EVx`, `ALNS_exec`, `ALNS_TBC` | W-DRO baseline: $E[\text{extra trucks}]$, execution cost, total budget cost |
-| `OTR_tuned_{exec,TBC,HO_rate,fail,ok}` | OTR with grid-tuned $\tau$ |
-| `OTR_myopic_{exec,TBC,HO_rate,fail,ok}` | OTR with $\tau = \omega_F / C_{\text{fail}}$ |
-| `NoHandoff_{exec,TBC,HO_rate,fail,ok}` | Reactive baseline ($\tau = 1$, overflow only) |
-| `OTR_saving_pct` | `(NoHandoff_exec − OTR_tuned_exec) / NoHandoff_exec × 100` |
-
-Total Budget Cost: $\text{TBC} = \text{Travel} + \omega_V \cdot K + \text{exec\_cost}$
-
----
-
-## Hyperparameters
-
-### ALNS + W-DRO
-
-| Parameter | Default | Description |
-|---|---|---|
-| `alpha` | 0.90 | CVaR confidence level |
-| `epsilon` | 0.50 | Wasserstein ambiguity radius |
-| `penalty_lambda` | 1.0 | W-DRO penalty weight $\lambda$ |
-| `max_iters` | 5000 | ALNS iterations |
-| `alpha_cooling` | 0.9997 | SA geometric cooling rate |
-| `destroy_frac` | 0.10–0.30 | Fraction of customers removed per iteration |
-| `CV` | 0.30 | Demand coefficient of variation |
-| `OMEGA_RATIO` | 50.0 | $\omega_F / \omega_V$ (spare-truck cost ratio) |
-
-### OTR
-
-| Parameter | Default | Description |
-|---|---|---|
-| `alpha` (CVaR level) | 0.90 | Inherited from W-DRO configuration |
-| `tau` | tuned | Decision threshold — see `tune_tau()` or `tau_myopic()` |
-| `cfail / omegaF` | 5.0 | Cost ratio for unplanned vs planned handoff |
-| `n_train` | 1000 | Scenarios used to fit isotonic models |
-| `n_test` | 2000 | Scenarios used to evaluate simulated cost |
-
----
-
-## References
-
-1. Dethloff, J. (2001). Vehicle routing and reverse logistics: The vehicle routing problem with simultaneous delivery and pick-up. *OR Spectrum*, 23(1), 79–96.
-2. Ropke, S. & Pisinger, D. (2006). An Adaptive Large Neighborhood Search Heuristic for the Pickup and Delivery Problem with Time Windows. *Transportation Science*, 40(4), 455–472.
-3. Delage, E. & Ye, Y. (2010). Distributionally Robust Optimization Under Moment Uncertainty. *Operations Research*, 58(3), 595–612.
-4. Rockafellar, R.T. & Uryasev, S. (2000). Optimization of Conditional Value-at-Risk. *Journal of Risk*, 2(3), 21–41.
-5. Kuhn, D., Esfahani, P.M., Nguyen, V.A. & Shafieezadeh-Abadeh, S. (2019). Wasserstein Distributionally Robust Optimization: Theory and Applications in Machine Learning. *INFORMS TutORials in Operations Research*.
-
----
-
-## Citation
-
-This work is currently under review. If you use this code, please reference:
-
-```
-Dang, V.Q. (2025). Distributionally Robust ALNS and Online Threshold Reassignment
-for the Stochastic VRPSPD. https://github.com/vinhqdang/stochastic_vrp
-```
-
-## Contact
-
-**Vinh Dang** — [dqvinh87@gmail.com](mailto:dqvinh87@gmail.com)
+`paper/` holds a double-blind Springer sn-jnl draft (optimal-stopping
+formulation, three propositions with proofs, all tables generated from the
+result CSVs by `paper/make_tables.py`). Citations are tracked with DOIs in
+`paper/references.bib`; unverified entries are flagged in
+`paper/VERIFY_CITATIONS.md`.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE) for details.
+Apache 2.0 — see [LICENSE](LICENSE).
