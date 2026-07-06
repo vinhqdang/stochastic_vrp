@@ -114,6 +114,33 @@ Execution stage vs exact methods: covered by the DP benchmark (Sections
 3 and 5) — MIP technology does not encode non-anticipative multistage
 stopping rules, so backward DP is the correct exact comparator there.
 
+
+## 7. Two-class fleet economics (final cost model)
+
+Fleet costs split by vehicle class: planned fleet F_plan x K (fixed),
+standby class — each planned handoff consumes one pooled standby
+vehicle-day billed at F_standby=$20 inside the handoff price — and
+emergency class (ad-hoc surge, per incident, no retainer). Full grid
+rerun (`results_grand_dethloff.csv`, 6 gates x 11 policies x 40 instances):
+
+| Gate | v1 | fallback | pi3 | DP(=data) | **OTR-2.0** | DP(50k) | oracle |
+|---|---|---|---|---|---|---|---|
+| Det | 24.2 | 24.6 | * | 25.4 | **25.9** | 26.2 | 40.4 |
+| SAA | 16.1 | 16.1 | * | 12.1 | **20.3** | 22.2 | 43.5 |
+| WDRO | **-1.3** | **-1.4** | * | 0.0 | **+11.2** | 12.0 | 41.9 |
+| GNRS | 25.2 | 25.6 | * | 28.0 | **28.8** | 29.6 | 45.1 |
+| BSIM | 22.5 | 22.8 | * | 24.7 | **26.3** | 27.3 | 44.3 |
+| MDRO | 2.8 | 2.7 | * | 0.0 | **+12.6** | 15.2 | 42.4 |
+
+(recourse saving % vs reactive; * pi3 columns in the CSV.) The headline
+finding: with handoffs carrying their true standby vehicle-day cost, the
+THRESHOLD family goes NEGATIVE on conservative plans (WDRO/MDRO) — their
+handoffs cost more than they save — while the optimal-stopping trigger
+correctly backs off and stays firmly positive. Paired Wilcoxon: v2 beats
+v1, fallback, pi3 and the equal-data DP on every gate, p<=8e-3 (mostly
+1e-8..1e-13). Salhi-Nagy: v2 42.0% vs fb 37.3% (p=6e-5). City: 12.0% vs
+11.3% (p=0.04).
+
 ## Verdict
 
 OTR-2.0 dominates OTR 1.0 everywhere it matters: catastrophically on
