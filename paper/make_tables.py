@@ -1,95 +1,334 @@
 #!/usr/bin/env python3
 """
-make_tables.py — regenerate every manuscript table and inline-number macro
-from the result CSVs. NEVER hand-edit the files in tables/; rerun this.
+make_tables.py — generate ALL manuscript tables + inline-number macros from
+the result CSVs in ../svrpspd_wdro/results/. Never hand-edit paper/tables/*.
 
-Inputs  (svrpspd_wdro/results/):
-    results_otr2_synthetic.csv        structural synthetic benchmark
-    results_otr2_eval.csv             Dethloff, flat two-price cost model
-    results_realistic_eval.csv        Dethloff, realistic last-mile costs
-    results_otr2_sensitivity.csv      5-sweep sensitivity study
+Inputs (all produced by svrpspd_wdro/scripts/):
+    results_grand_dethloff.csv       6 gates x 13 policies x 40 instances
+    results_salhinagy_eval.csv       14 instances (Det gate)
+    results_city_eval.csv            19 shop-based city instances
+    results_cityuniform_eval.csv     9 uniform-scatter twins
+    results_costsens_*.csv           8 one-factor economic configurations
+    results_otr2_synthetic.csv       structural synthetic scenarios
+    results_mip_cert.csv / _gurobi   planning-layer MIP certification
+    rl_results.json, rl_strong_s*.json   RL baseline (Colab T4)
+    rl_bundle.npz                    routes for the RL head-to-head
 
-Outputs (paper/tables/):
-    macros.tex, tab_synthetic.tex, tab_dethloff.tex,
-    tab_realistic.tex, tab_sensitivity.tex
-
-Missing inputs produce placeholder macros/tables so the draft still
-builds; rerun after the corresponding experiment completes.
+Outputs: tables/tab_*.tex and tables/macros.tex
 """
 
+from __future__ import annotations
+
+import glob
+import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import stats as sps
 
-HERE    = Path(__file__).resolve().parent
-RESULTS = HERE.parent / "svrpspd_wdro" / "results"
-OUT     = HERE / "tables"
+HERE = Path(__file__).resolve().parent
+RES = HERE.parent / "svrpspd_wdro" / "results"
+OUT = HERE / "tables"
 OUT.mkdir(exist_ok=True)
-
 PLACEHOLDER = r"\emph{(pending)}"
 
+macros: dict[str, str] = {}
 
-def _read(name: str) -> pd.DataFrame | None:
-    p = RESULTS / name
-    if not p.exists():
-        print(f"  [warn] {name} missing — placeholders emitted")
-        return None
-    return pd.read_csv(p)
+
+def _read(name):
+    p = RES / name
+    return pd.read_csv(p) if p.exists() else None
 
 
 def _pct(x, nd=1):
     return f"{x:.{nd}f}\\%"
 
 
-def _write(name: str, content: str) -> None:
+def _write(name, content):
     (OUT / name).write_text(content)
     print(f"  wrote tables/{name}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-macros: dict[str, str] = {}
-
-syn  = _read("results_otr2_synthetic.csv")
-deth = _read("results_otr2_eval.csv")
-real = _read("results_realistic_eval.csv")
-sens = _read("results_otr2_sensitivity.csv")
+def _wilcox(a, b):
+    d = np.asarray(a) - np.asarray(b)
+    if np.allclose(d, 0):
+        return 1.0
+    return sps.wilcoxon(d, alternative="greater").pvalue
 
 
-# ── synthetic table + macros ─────────────────────────────────────────────────
-if syn is not None:
-    def _ms(scen, col):
-        sub = syn[syn["scenario"] == scen][col]
-        return sub.mean(), sub.std()
+def _pfmt(p):
+    if p >= 0.01:
+        return f"$p = {p:.2f}$"
+    exp = int(np.floor(np.log10(p)))
+    return rf"$p \le 10^{{{exp + 1}}}$"
 
+
+GATE_DISP = {"Det": r"\textsc{Det}", "SAA": r"\textsc{SAA}",
+             "WDRO": r"\textsc{WDRO}", "Gounaris": r"\textsc{Rob-G}",
+             "Cui": r"\textsc{Rob-BS}", "MDRO": r"\textsc{M-DRO}"}
+GATES = ["Det", "SAA", "WDRO", "Gounaris", "Cui", "MDRO"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Table 1 — grand comparison (the centrepiece)
+# ═══════════════════════════════════════════════════════════════════════════
+grand = _read("results_grand_dethloff.csv")
+if grand is not None:
+    cols = [("pi3", r"$\pi_3$"), ("rollout", "rollout"),
+            ("restock", "restock"), ("fb_tau", "threshold"),
+            ("v2_lsm", r"\textsc{Baton-ho}"), ("v2_act", r"\textsc{Baton}"),
+            ("dp_xl", r"DP$_{50\mathrm{k}}$"), ("oracle", "oracle")]
     rows = []
-    NAMES = {"collect_then_deliver": "Collect-then-deliver",
-             "milk_run_regime":      "Milk run + regime switching",
-             "high_cost_ratio":      r"Milk run, $C_{\mathrm{fail}}/\omega_F{=}20$"}
-    for scen, disp in NAMES.items():
-        cells = [disp]
-        for lbl in ("v1_myo", "v1_tun", "fb_tun", "v2_lsm"):
-            m, s = _ms(scen, f"{lbl}_saving")
-            cells.append(f"${m:.1f} \\pm {s:.1f}$")
-        mfail, _ = _ms(scen, "v2_lsm_fail")
-        cells.append(f"${100 * mfail:.2f}$")
+    for g in GATES:
+        s = grand[grand.Plan == g]
+        cells = [GATE_DISP[g]]
+        best = max(s[f"{lbl}_saving"].mean() for lbl, _ in cols[:-2])
+        for lbl, _ in cols:
+            v = s[f"{lbl}_saving"].mean()
+            cell = f"{v:.1f}"
+            if lbl == "v2_act":
+                cell = rf"\textbf{{{cell}}}"
+            cells.append(cell)
         rows.append(" & ".join(cells) + r" \\")
-
     tab = r"""\begin{table}[t]
-\caption{Structural synthetic scenarios: execution-cost saving over the
-reactive baseline (\%, mean $\pm$ s.d.\ over five seeds, $1.2\times10^4$
-test routes each). The endpoint-trained v1 policy saves exactly zero on
-collect-then-deliver routes because its training labels are almost surely
-zero (Proposition~\ref{prop:bias}).}
-\label{tab:synthetic}
+\caption{Expected-recourse saving over the reactive policy (\%, mean over
+the 40 Dethloff instances) for each planning gate and execution policy
+under the three-class fleet cost model. \textsc{Baton-ho} is the
+handoff-only restriction; DP$_{50\mathrm{k}}$ and the clairvoyant oracle
+are handoff-only reference points, so \textsc{Baton} may legitimately
+exceed them by exercising its richer action set.}
+\label{tab:grand}
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{l cccc cc cc}
+\toprule
+& \multicolumn{4}{c}{published / tuned competitors}
+& \multicolumn{2}{c}{this paper} & \multicolumn{2}{c}{reference (HO)} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+Gate & """ + " & ".join(h for _, h in cols) + r""" \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+"""
+    tab = tab.replace(r"Gate & $\pi_3$", r"Gate & $\pi_3$")
+    _write("tab_grand.tex", tab)
+
+    # macros: pooled Wilcoxon of BATON vs each competitor
+    for lbl, key in (("restock", "WRestock"), ("rollout", "WRollout"),
+                     ("pi3", "WPiThree"), ("fb_tau", "WThresh"),
+                     ("v2_lsm", "WHo"), ("dp_xl", "WDpxl")):
+        p = _wilcox(grand[f"{lbl}_rec"], grand["v2_act_rec"])
+        n_better = int((grand[f"{lbl}_rec"] - grand["v2_act_rec"] > 1e-9).sum())
+        macros[f"baton{key}P"] = _pfmt(p)
+        macros[f"baton{key}N"] = f"{n_better}/240"
+    macros["batonGrandBest"] = _pct(
+        max(grand[grand.Plan == g]["v2_act_saving"].mean() for g in GATES))
+    for g in GATES:
+        s = grand[grand.Plan == g]
+        macros[f"sv{g}Baton"] = _pct(s.v2_act_saving.mean())
+        macros[f"sv{g}Ho"] = _pct(s.v2_lsm_saving.mean())
+        macros[f"sv{g}Orc"] = _pct(s.oracle_saving.mean())
+        macros[f"sv{g}Thresh"] = _pct(s.fb_tau_saving.mean())
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Table 2 — large-scale benchmarks (Salhi–Nagy + city, shops & uniform)
+# ═══════════════════════════════════════════════════════════════════════════
+sn = _read("results_salhinagy_eval.csv")
+city = _read("results_city_eval.csv")
+cityu = _read("results_cityuniform_eval.csv")
+if sn is not None and city is not None:
+    def _row(name, d):
+        return (f"{name} & {len(d)} & {d.restock_saving.mean():.1f} & "
+                f"{d.fb_tau_saving.mean():.1f} & {d.v2_lsm_saving.mean():.1f} & "
+                rf"\textbf{{{d.v2_act_saving.mean():.1f}}} & "
+                f"{d.dp_xl_saving.mean():.1f} & {d.oracle_saving.mean():.1f} \\\\")
+    rows = [_row(r"Salhi--Nagy", sn),
+            _row(r"City, real shops", city)]
+    if cityu is not None:
+        rows.append(_row(r"City, uniform", cityu))
+    tab = r"""\begin{table}[t]
+\caption{Large-scale benchmarks under the fleet cost model
+(Det-gate plans; saving \% vs.\ reactive). Salhi--Nagy instances carry
+50--199 customers; the city instances (100--400 customers) place
+customers at real OSM shop locations on the road networks of Ho Chi Minh
+City, Hanoi, New York, Paris and Shanghai, and the uniform twins use the
+same cities and demands with uniformly scattered customers.}
+\label{tab:large}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l r cccccc}
+\toprule
+Benchmark & $n$ & restock & threshold & \textsc{Baton-ho} &
+\textsc{Baton} & DP$_{50\mathrm{k}}$ & oracle \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+"""
+    _write("tab_large.tex", tab)
+    macros["svSalhiBaton"] = _pct(sn.v2_act_saving.mean())
+    macros["svSalhiOrc"] = _pct(sn.oracle_saving.mean())
+    macros["svCityBaton"] = _pct(city.v2_act_saving.mean())
+    macros["nCity"] = str(len(city))
+    if cityu is not None:
+        m = city.merge(cityu, on="Instance", suffixes=("_s", "_u"))
+        macros["shopTravelSaving"] = _pct(
+            (100 * (m.Travel_km_u - m.Travel_km_s) / m.Travel_km_u).mean())
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Table 3 — cost-parameter sensitivity
+# ═══════════════════════════════════════════════════════════════════════════
+CS_DISP = [
+    ("F_emg_25",     r"cheap emergencies ($F_{\mathrm{emg}}{=}25$)"),
+    ("F_emg_60",     r"dear emergencies ($F_{\mathrm{emg}}{=}60$)"),
+    ("F_standby_10", r"cheap standby ($F_{\mathrm{sb}}{=}10$)"),
+    ("F_standby_35", r"dear standby ($F_{\mathrm{sb}}{=}35$)"),
+    ("p_late_0_5",   r"low SLA price ($p_{\mathrm{late}}{=}0.5$)"),
+    ("p_late_3_0",   r"high SLA price ($p_{\mathrm{late}}{=}3$)"),
+    ("s_emg_1_5",    r"mild surge ($s_{\mathrm{emg}}{=}1.5$)"),
+    ("s_emg_4_0",    r"heavy surge ($s_{\mathrm{emg}}{=}4$)"),
+]
+cs_files = {Path(f).stem.replace("results_costsens_", ""): pd.read_csv(f)
+            for f in glob.glob(str(RES / "results_costsens_*.csv"))}
+if cs_files and grand is not None:
+    base = grand[grand.Plan.isin(["Det", "SAA"])]
+    rows = [("baseline", base)] + [(disp, cs_files[tag])
+                                   for tag, disp in CS_DISP if tag in cs_files]
+    body = []
+    for disp, d in rows:
+        body.append(f"{disp} & {d.restock_saving.mean():.1f} & "
+                    f"{d.fb_tau_saving.mean():.1f} & "
+                    f"{d.v2_lsm_saving.mean():.1f} & "
+                    rf"\textbf{{{d.v2_act_saving.mean():.1f}}} & "
+                    f"{d.oracle_saving.mean():.1f} \\\\")
+    tab = r"""\begin{table}[t]
+\caption{Sensitivity of the recourse saving (\%) to the fleet-economics
+parameters, one factor at a time around the defaults (12 Dethloff
+instances, \textsc{Det} and \textsc{SAA} gates). \textsc{Baton}
+re-balances its action mix as prices move and leads in every
+configuration.}
+\label{tab:costsens}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lccccc}
+\begin{tabular}{l ccccc}
 \toprule
-Scenario & v1 myopic & v1 tuned & Peak fallback & OTR-2.0 &
-Emerg.\ \% (v2) \\
+Configuration & restock & threshold & \textsc{Baton-ho} &
+\textsc{Baton} & oracle (HO) \\
+\midrule
+""" + "\n".join(body) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+"""
+    _write("tab_costsens.tex", tab)
+    if "F_standby_35" in cs_files:
+        d = cs_files["F_standby_35"]
+        macros["dearSbThresh"] = _pct(d.fb_tau_saving.mean())
+        macros["dearSbBaton"] = _pct(d.v2_act_saving.mean())
+        macros["dearSbOrc"] = _pct(d.oracle_saving.mean())
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Table 4 — RL head-to-head
+# ═══════════════════════════════════════════════════════════════════════════
+def _rl_table():
+    import sys
+    sys.path.insert(0, str(HERE.parent / "svrpspd_wdro"))
+    try:
+        from core.costs import fit_lsm_general, simulate_v2_general
+    except Exception:
+        return
+    bundle = RES / "rl_bundle.npz"
+    first = RES / "rl_results.json"
+    if not (bundle.exists() and first.exists()):
+        return
+    z = np.load(bundle, allow_pickle=True)
+    n = int(z["n_routes"][0])
+    v2 = []
+    for i in range(n):
+        g_tr = z[f"r{i}_g_train"].astype(float)
+        g_te = z[f"r{i}_g_test"].astype(float)
+        H, E = z[f"r{i}_H"].astype(float), z[f"r{i}_E"].astype(float)
+        B = float(z[f"r{i}_B"][0])
+        cm = fit_lsm_general(g_tr, B, H, E)
+        v2.append(simulate_v2_general(g_te, B, H, E, cm)["mean_cost"])
+    v2 = np.array(v2)
+    ref = json.load(open(first))
+    re = np.array([r["reactive_cost"] for r in ref])
+
+    runs = [("40 epochs (paper spec)", first)]
+    for f in sorted(RES.glob("rl_strong_s*.json")):
+        runs.append((f"150 epochs, seed {f.stem[-1]}", f))
+    body, best_rl = [], None
+    for name, f in runs:
+        rl = np.array([r["rl_cost"] for r in json.load(open(f))])
+        sv = 100 * (re.sum() - rl.sum()) / re.sum()
+        if best_rl is None or sv > best_rl[0]:
+            best_rl = (sv, rl)
+        body.append(f"{name} & {sv:.1f} \\\\")
+    sv_v2 = 100 * (re.sum() - v2.sum()) / re.sum()
+    p = _wilcox(best_rl[1], v2)
+    nb = int((v2 < best_rl[1] - 1e-9).sum())
+    tab = r"""\begin{table}[t]
+\caption{Reinforcement-learning baseline (re-implementation of the policy
+architecture of Iklassov et al., 2024) versus \textsc{Baton-ho} on the
+identical 50 routes and out-of-sample test days. The learned policy is
+trained on a GPU; \textsc{Baton} fits in milliseconds per route on a CPU.}
+\label{tab:rl}
+\centering
+\begin{tabular}{l c}
+\toprule
+Policy & saving vs.\ reactive (\%) \\
+\midrule
+""" + "\n".join(body) + rf"""
+\midrule
+\textsc{{Baton-ho}} & \textbf{{{sv_v2:.1f}}} \\
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+"""
+    _write("tab_rl.tex", tab)
+    macros["rlBest"] = _pct(best_rl[0])
+    macros["rlBatonHo"] = _pct(sv_v2)
+    macros["rlWinN"] = f"{nb}/50"
+    macros["rlWinP"] = _pfmt(p)
+
+
+_rl_table()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Table 5 — synthetic structural scenarios (label defect isolated)
+# ═══════════════════════════════════════════════════════════════════════════
+syn = _read("results_otr2_synthetic.csv")
+if syn is not None:
+    def _ms(scen, col):
+        return syn[syn.scenario == scen][col].mean()
+    rows = []
+    for scen, disp in (("collect_then_deliver", "collect-then-deliver"),
+                       ("milk_run_regime", "milk run, regime switching"),
+                       ("high_cost_ratio", r"milk run, $C/\omega = 20$")):
+        rows.append(f"{disp} & {_ms(scen, 'v1_tun_saving'):.1f} & "
+                    f"{_ms(scen, 'fb_tun_saving'):.1f} & "
+                    rf"\textbf{{{_ms(scen, 'v2_lsm_saving'):.1f}}} \\")
+    tab = r"""\begin{table}[t]
+\caption{Structural synthetic scenarios (five seeds, $1.2\times10^4$ test
+routes each): saving \% over the reactive policy. On collect-then-deliver
+structure the endpoint-labelled predecessor never intervenes.}
+\label{tab:synthetic}
+\centering
+\begin{tabular}{l ccc}
+\toprule
+Scenario & endpoint + $\tau$ & peak + $\tau$ & \textsc{Baton-ho} \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
@@ -97,196 +336,28 @@ Emerg.\ \% (v2) \\
 \end{table}
 """
     _write("tab_synthetic.tex", tab)
-
-    ctd  = syn[syn["scenario"] == "collect_then_deliver"]
-    milk = syn[syn["scenario"] == "milk_run_regime"]
-    high = syn[syn["scenario"] == "high_cost_ratio"]
-    macros["vTwoCtdSaving"]  = _pct(ctd["v2_lsm_saving"].mean())
-    macros["fbCtdSaving"]    = _pct(ctd["fb_tun_saving"].mean())
-    macros["vTwoMilkSaving"] = _pct(milk["v2_lsm_saving"].mean())
-    macros["vOneMilkSaving"] = _pct(milk["v1_tun_saving"].mean())
-    macros["vTwoMilkEdge"]   = f"{milk['v2_lsm_saving'].mean() - milk['v1_tun_saving'].mean():.1f}"
-    macros["vTwoHighSaving"] = _pct(high["v2_lsm_saving"].mean())
-    macros["vOneHighSaving"] = _pct(high["v1_tun_saving"].mean())
+    macros["ctdVOne"] = _pct(_ms("collect_then_deliver", "v1_tun_saving"))
+    macros["ctdBaton"] = _pct(_ms("collect_then_deliver", "v2_lsm_saving"))
 
 
-# ── Dethloff flat-cost table + Wilcoxon macro ────────────────────────────────
-if deth is not None:
-    rows, wtexts = [], []
-    for plan in ("Det", "SAA", "WDRO"):
-        sub = deth[deth["Plan"] == plan]
-        cells = [rf"\textsc{{{plan}}}"]
-        for lbl in ("none", "v1_myo", "v1_tun", "fb_tun", "v2_lsm"):
-            cells.append(f"{sub[f'{lbl}_TBC'].mean():,.0f}")
-        for lbl in ("v1_tun", "fb_tun", "v2_lsm"):
-            cells.append(f"{sub[f'{lbl}_saving'].mean():.1f}")
-        cells.append(f"{100 * sub['v2_lsm_fail'].mean():.2f}")
-        rows.append(" & ".join(cells) + r" \\")
-
-        d = sub["v1_tun_exec"].values - sub["v2_lsm_exec"].values
-        if np.allclose(d, 0):
-            p = 1.0
-        else:
-            p = float(sps.wilcoxon(d, alternative="greater").pvalue)
-        if p < 0.001:
-            wtexts.append(rf"$p<0.001$ on \textsc{{{plan}}}")
-        elif p < 0.05:
-            wtexts.append(rf"$p={p:.3f}$ on \textsc{{{plan}}}")
-        else:
-            wtexts.append(rf"$p={p:.2f}$ (n.s.) on \textsc{{{plan}}}")
-    macros["wilcoxonDethloff"] = ", ".join(wtexts) + \
-        " (one-sided Wilcoxon signed-rank, v2 vs tuned v1, $n{=}40$ instances)"
-
-    tab = r"""\begin{table}[t]
-\caption{Dethloff benchmark, flat two-price cost model
-($C_{\mathrm{fail}}/\omega_F = 5$): total budget cost (travel +
-vehicles + expected execution cost; mean over 40 instances) and
-execution-cost saving over the reactive policy, by planning gate.}
-\label{tab:dethloff}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrrrrccc c}
-\toprule
-& \multicolumn{5}{c}{Total budget cost} &
-\multicolumn{3}{c}{Saving vs reactive (\%)} & Emerg.\,\% \\
-\cmidrule(lr){2-6}\cmidrule(lr){7-9}
-Gate & reactive & v1 myo & v1 tuned & fallback & OTR-2.0 &
-v1 tuned & fallback & OTR-2.0 & (v2) \\
-\midrule
-""" + "\n".join(rows) + r"""
-\bottomrule
-\end{tabular}
-\end{table}
-"""
-    _write("tab_dethloff.tex", tab)
+# ═══════════════════════════════════════════════════════════════════════════
+# certification macros
+# ═══════════════════════════════════════════════════════════════════════════
+grb = _read("results_mip_cert_gurobi.csv")
+hgs = _read("results_mip_cert.csv")
+if grb is not None:
+    macros["certGap"] = _pct(grb.gap_alns_pct.mean(), 2)
+    macros["certGapMax"] = _pct(grb.gap_alns_pct.max(), 2)
+    macros["certBeatN"] = f"{int((grb.ALNS_obj < grb.MIP_UB).sum())}/40"
+if hgs is not None:
+    macros["certGapHighs"] = _pct(hgs.gap_alns_pct.mean(), 2)
 
 
-# ── realistic-cost table + macros ────────────────────────────────────────────
-if real is not None:
-    _has_dp = "dp_n_TBC" in real.columns
-    rows = []
-    for plan in ("Det", "SAA", "WDRO"):
-        sub = real[real["Plan"] == plan]
-        cells = [rf"\textsc{{{plan}}}", f"{sub['Fixed_cost'].mean():,.0f}"]
-        for lbl in ("none", "v2_lsm", "oracle"):
-            cells.append(f"{sub[f'{lbl}_TBC'].mean():,.0f}")
-        share_labels = ("v1_end", "fb_tau", "dp_n", "dp_xl", "v2_lsm") if _has_dp \
-                       else ("v1_end", "fb_tau", "v2_lsm")
-        for lbl in share_labels:
-            cells.append(f"{100 - sub[f'{lbl}_gap'].mean():.1f}")
-        rows.append(" & ".join(cells) + r" \\")
-
-    if _has_dp:
-        tab = r"""\begin{table}[t]
-\caption{Dethloff benchmark under the realistic last-mile cost model of
-Section~\ref{sec:costs}: total budget cost (mean over 40 instances) and
-the share of the oracle-achievable recourse saving each policy captures.
-DP$_{10^3}$ is the plug-in dynamic program fitted on the same $10^3$
-training paths as OTR-2.0; DP$_{5\cdot10^4}$ is the same program fitted
-on $5\cdot10^4$ paths, a near-exact solution of the stopping problem.}
-\label{tab:realistic}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrrr ccccc}
-\toprule
-& & \multicolumn{3}{c}{Total budget cost} &
-\multicolumn{5}{c}{Share of oracle saving (\%)} \\
-\cmidrule(lr){3-5}\cmidrule(lr){6-10}
-Gate & Fixed & reactive & OTR-2.0 & oracle &
-v1 endp. & fallback & DP$_{10^3}$ & DP$_{5\cdot10^4}$ & OTR-2.0 \\
-\midrule
-""" + "\n".join(rows) + r"""
-\bottomrule
-\end{tabular}
-\end{table}
-"""
-    else:
-        tab = "% results_realistic_eval.csv lacks DP columns — rerun run_realistic_eval.py\n"
-    _write("tab_realistic.tex", tab)
-
-    macros["vTwoRealisticShare"] = _pct(100 - real["v2_lsm_gap"].mean())
-    macros["fbRealisticShare"]   = _pct(100 - real["fb_tau_gap"].mean())
-    macros["vOneRealisticShare"] = _pct(100 - real["v1_end_gap"].mean())
-    if _has_dp:
-        macros["dpNRealisticShare"]  = _pct(100 - real["dp_n_gap"].mean())
-        macros["dpXlRealisticShare"] = _pct(100 - real["dp_xl_gap"].mean())
-        macros["dpNWdroSaving"] = _pct(
-            real[real["Plan"] == "WDRO"]["dp_n_saving"].mean())
-        macros["vTwoWdroSaving"] = _pct(
-            real[real["Plan"] == "WDRO"]["v2_lsm_saving"].mean())
-        # v2's captured share of what the near-exact DP captures
-        num = 100 - real["v2_lsm_gap"].mean()
-        den = max(100 - real["dp_xl_gap"].mean(), 1e-9)
-        macros["vTwoOfDpXl"] = _pct(100.0 * num / den)
-else:
-    macros.setdefault("vTwoRealisticShare", PLACEHOLDER)
-    macros.setdefault("fbRealisticShare",   PLACEHOLDER)
-    macros.setdefault("vOneRealisticShare", PLACEHOLDER)
-    _write("tab_realistic.tex",
-           "% pending: results_realistic_eval.csv not yet available\n")
-
-
-# ── sensitivity table ────────────────────────────────────────────────────────
-if sens is not None:
-    SWEEP_DISP = {
-        "cost_ratio":  r"$C_{\mathrm{fail}}/\omega_F$",
-        "n_train":     r"history $N$",
-        "route_len":   r"route length $m$",
-        "family":      "increment family",
-        "correlation": r"common factor $\rho$",
-    }
-    rows = []
-    for sw in ("cost_ratio", "n_train", "route_len", "family", "correlation"):
-        grp = sens[sens["sweep"] == sw]
-        first = True
-        for x in sorted(grp["x"].unique(), key=str):
-            cells = [SWEEP_DISP[sw] if first else "", str(x)]
-            first = False
-            for scen in ("ctd", "milk_run"):
-                sub = grp[(grp["scenario"] == scen) & (grp["x"] == x)]
-                for lbl in ("v1_tun", "fb_tun", "v2_lsm"):
-                    cells.append(f"{sub[f'{lbl}_saving'].mean():.1f}")
-            rows.append(" & ".join(cells) + r" \\")
-        rows.append(r"\addlinespace")
-    while rows and rows[-1] == r"\addlinespace":
-        rows.pop()
-
-    tab = r"""\begin{table}[t]
-\caption{Sensitivity study: execution-cost saving over the reactive
-baseline (\%, mean over five seeds) as one factor varies with all others
-at their defaults ($C_{\mathrm{fail}}/\omega_F{=}5$, $N{=}10^4$,
-$m{=}12$, gamma increments, $\rho{=}0$).}
-\label{tab:sensitivity}
-\centering
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{ll ccc ccc}
-\toprule
-& & \multicolumn{3}{c}{Collect-then-deliver} &
-\multicolumn{3}{c}{Milk run} \\
-\cmidrule(lr){3-5}\cmidrule(lr){6-8}
-Factor & Value & v1 & fallb. & v2 & v1 & fallb. & v2 \\
-\midrule
-""" + "\n".join(rows) + r"""
-\bottomrule
-\end{tabular}
-\end{table}
-"""
-    _write("tab_sensitivity.tex", tab)
-
-
-# ── macros file ──────────────────────────────────────────────────────────────
-for key in ("vTwoCtdSaving", "fbCtdSaving", "vTwoMilkSaving",
-            "vOneMilkSaving", "vTwoMilkEdge", "vTwoHighSaving",
-            "vOneHighSaving", "wilcoxonDethloff",
-            "dpNRealisticShare", "dpXlRealisticShare",
-            "dpNWdroSaving", "vTwoWdroSaving", "vTwoOfDpXl"):
-    macros.setdefault(key, PLACEHOLDER)
-
+# ═══════════════════════════════════════════════════════════════════════════
+# write macros
+# ═══════════════════════════════════════════════════════════════════════════
 lines = ["% generated by make_tables.py — do not hand-edit"]
 for k, v in sorted(macros.items()):
     lines.append(rf"\newcommand{{\{k}}}{{{v}}}")
 _write("macros.tex", "\n".join(lines) + "\n")
-
 print("done.")

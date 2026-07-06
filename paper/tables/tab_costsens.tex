@@ -1,0 +1,27 @@
+\begin{table}[t]
+\caption{Sensitivity of the recourse saving (\%) to the fleet-economics
+parameters, one factor at a time around the defaults (12 Dethloff
+instances, \textsc{Det} and \textsc{SAA} gates). \textsc{Baton}
+re-balances its action mix as prices move and leads in every
+configuration.}
+\label{tab:costsens}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l ccccc}
+\toprule
+Configuration & restock & threshold & \textsc{Baton-ho} &
+\textsc{Baton} & oracle (HO) \\
+\midrule
+baseline & 24.6 & 20.7 & 23.3 & \textbf{40.6} & 42.1 \\
+cheap emergencies ($F_{\mathrm{emg}}{=}25$) & 22.5 & 13.5 & 17.6 & \textbf{39.5} & 31.1 \\
+dear emergencies ($F_{\mathrm{emg}}{=}60$) & 32.3 & 35.7 & 39.1 & \textbf{54.4} & 55.4 \\
+cheap standby ($F_{\mathrm{sb}}{=}10$) & 28.2 & 37.0 & 41.3 & \textbf{51.3} & 57.7 \\
+dear standby ($F_{\mathrm{sb}}{=}35$) & 28.0 & 7.3 & 12.4 & \textbf{41.9} & 24.8 \\
+low SLA price ($p_{\mathrm{late}}{=}0.5$) & 33.1 & 22.3 & 27.0 & \textbf{48.8} & 42.0 \\
+high SLA price ($p_{\mathrm{late}}{=}3$) & 23.3 & 28.5 & 32.2 & \textbf{46.1} & 47.6 \\
+mild surge ($s_{\mathrm{emg}}{=}1.5$) & 26.8 & 20.3 & 24.9 & \textbf{44.2} & 40.3 \\
+heavy surge ($s_{\mathrm{emg}}{=}4$) & 29.8 & 30.2 & 33.6 & \textbf{51.4} & 49.3 \\
+\bottomrule
+\end{tabular}
+\end{table}

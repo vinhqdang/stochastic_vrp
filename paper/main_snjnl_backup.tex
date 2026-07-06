@@ -1,0 +1,863 @@
+%% OTR-2.0 manuscript — Springer Nature sn-jnl, Machine Learning style
+%% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+%%
+%% Double-blind toggle: \anontrue for the review copy (default),
+%% \anonfalse for the camera-ready copy with author identity.
+
+\newif\ifanon
+\anontrue   % review copy by default; switch to \anonfalse for camera-ready
+
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning}
+
+\theoremstyle{thmstyleone}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{thmstyletwo}
+\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+
+% numbers regenerated from result files by make_tables.py — do not hand-edit
+\input{tables/macros}
+
+\raggedbottom
+
+\begin{document}
+
+\title[Optimal Stopping for Preventive Vehicle Handoff]{Optimal stopping for
+preventive vehicle handoff in stochastic routing with simultaneous pickup
+and delivery}
+
+\ifanon
+  \author*[1]{\fnm{Anonymous} \sur{Authors}}
+  \affil*[1]{\orgname{Anonymised for double-blind review}}
+\else
+  \author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+  \affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung Yen}, \country{Vietnam}}}
+\fi
+
+\abstract{In last-mile operations with simultaneous pickup and delivery,
+the load of a vehicle fluctuates non-monotonically along its route, and a
+capacity breach can occur in the middle of a tour even when the final load
+is comfortably below capacity. Operators can preempt such breaches by
+handing the remainder of a route to a standby vehicle at moderate cost,
+whereas an unplanned breach forces an expensive emergency dispatch and
+degrades service for every remaining customer. We study the resulting
+per-route execution problem as a finite-horizon optimal stopping problem
+and make three contributions. First, we show that the natural but naive
+supervised formulation, which labels a route by whether its \emph{final}
+load exceeds capacity, is systematically biased: the endpoint event is a
+strict subset of the physical mid-route breach event, and on
+collect-then-deliver structures the bias is total, driving any
+threshold policy trained on such labels to inaction. Second, we propose
+OTR-2.0, which combines peak-aware labels with a Longstaff--Schwartz
+regression scheme that estimates the cost of continuing optimally at every
+stop; the resulting trigger compares this continuation estimate with the
+state-dependent price of handing off now and requires no threshold tuning.
+We prove that the induced stopping rule is optimal for the fitted models,
+that the continuation value is monotone in the running load (justifying
+isotonic regression), and that the fixed-threshold rule of prior practice
+over-triggers early in a route. Third, we evaluate the policy on the 40
+Dethloff benchmark instances under planning policies of varying
+conservatism and under a realistic last-mile cost model with contracted
+fleets, standby handoffs priced on the remaining route, and surge-priced
+emergency vehicles with service-level compensation. Across synthetic
+structural scenarios the method recovers 52--88\% of the reactive
+execution cost where the endpoint-trained policy recovers between 0\% and
+86\%, and on the benchmark it closes the largest share of the gap to a
+clairvoyant lower bound among all evaluated policies.}
+
+\keywords{stochastic vehicle routing, simultaneous pickup and delivery,
+optimal stopping, Longstaff--Schwartz, isotonic regression, last-mile
+logistics}
+
+\maketitle
+
+% ════════════════════════════════════════════════════════════════════
+\section{Introduction}\label{sec:intro}
+
+Urban last-mile operators increasingly run \emph{simultaneous pickup and
+delivery} services: the same vehicle that delivers parcels also collects
+returns, marketplace consignments, or reverse-logistics items along the
+tour \citep{min1989multiple,dethloff2001vehicle,koc2020review}. Because
+deliveries free capacity while pickups consume it, the on-board load of
+such a vehicle is a non-monotone stochastic process, and the moment of
+greatest stress is typically in the \emph{middle} of the route rather than
+at its end. When realised pickup volumes run above plan, the vehicle may
+reach a customer it can no longer serve. At that point the operator has no
+good options left: an ad-hoc replacement vehicle must be hired at surge
+prices, the remaining customers are served late, and service-level
+compensation accrues --- the situation faced daily by ride-hailing and
+delivery platforms operating gig-economy fleets.
+
+The mitigation available \emph{before} the breach is a \emph{planned
+handoff}: at some stop, the remaining workload is transferred to a standby
+vehicle from a pooled reserve at a known, moderate price. The operational
+question is deceptively simple: \emph{at which stop, if any, should a
+vehicle give up and hand off?} Acting too early wastes standby capacity on
+routes that would have completed; acting too late converts cheap planned
+recourse into expensive emergencies. The decision must be made online,
+stop by stop, from the realised load trajectory alone.
+
+This paper studies that decision as a finite-horizon optimal stopping
+problem and develops a data-driven policy, \emph{OTR-2.0} (Online
+Threshold-free Reassignment), that is trained offline on historical load
+paths and executed online with negligible per-stop computation. Our
+starting point is a diagnosis of why the natural supervised approach
+fails. A first-generation system deployed by our industrial partner ---
+referred to as v1 throughout --- estimated, at each stop, the conditional
+probability that the route would end in overflow, and handed off when that
+probability crossed a tuned threshold $\tau$. Field results were
+disappointing, and the root cause turned out to be twofold. The training
+label declared a route an overflow when its \emph{endpoint} net load
+exceeded the slack; but on routes where pickups precede deliveries the
+endpoint total cancels toward zero while the mid-route peak breaches
+capacity, so the labels were almost surely zero, the estimated curves
+collapsed, and the policy never triggered. And even with correct labels, a
+single constant threshold ignores \emph{option value}: early in a route,
+waiting is nearly free because many future opportunities to hand off
+remain, whereas late in a route it is not --- no constant $\tau$ has the
+right shape, and tuning one on a grid overfits the training history.
+
+OTR-2.0 repairs both defects. Labels are computed from the \emph{running
+peak} of the load path, which is the physical breach event. The threshold
+is abolished altogether: following the least-squares Monte-Carlo tradition
+of American-option pricing
+\citep{longstaff2001valuing,tsitsiklis2001regression}, we estimate at
+every stop the expected cost of \emph{continuing optimally}, by backward
+induction over historical paths with isotonic regression as the
+conditional-expectation estimator, and hand off exactly when that estimate
+exceeds the price of handing off now. State-dependent recourse prices ---
+a handoff with twenty stops remaining costs more than one with two ---
+enter the rule with no structural change, which a scalar threshold cannot
+accommodate even in principle.
+
+Our contributions are as follows. (i) We formalise the execution problem
+as an optimal stopping problem on the running net-load process and
+quantify the endpoint-label bias: the endpoint event is always a subset of
+the peak event, and on collect-then-deliver structures the induced policy
+degenerates to inaction with a provable cost inflation of a factor
+$C_{\mathrm{fail}}/\omega_F$ over the preventive optimum
+(Proposition~\ref{prop:bias}). (ii) We prove that the continuation value
+is monotone in the running load under mild conditions
+(Proposition~\ref{prop:monotone}), which justifies isotonic regression as
+the estimator inside the backward induction, and that the classical
+fixed-threshold rule is the myopic special case of our trigger and
+over-triggers early in the route (Proposition~\ref{prop:myopic}). (iii) We
+introduce a realistic last-mile cost model --- contracted fleet day rates,
+standby handoffs priced on the remaining tour, surge-priced emergencies
+with per-customer service compensation --- and show that the
+Longstaff--Schwartz trigger absorbs it natively. (iv) We evaluate against
+the endpoint-trained policy, its label-corrected threshold variant, and a
+clairvoyant lower bound, on structural synthetic scenarios, on the 40
+Dethloff benchmark instances \citep{dethloff2001vehicle} under three
+planning regimes of increasing conservatism, and under the realistic cost
+model, with paired significance tests throughout.
+
+% ════════════════════════════════════════════════════════════════════
+\section{Related work}\label{sec:related}
+
+Stochastic vehicle routing has been studied since the observation of
+\citet{dror1989vehicle} and \citet{bertsimas1992vehicle} that demand
+uncertainty changes the structure of optimal routing decisions, with
+recourse actions ranging from restocking trips to route resequencing; see
+\citet{gendreau1996stochastic} and \citet{oyola2018stochastic} for
+surveys. The simultaneous pickup-and-delivery variant originates with
+\citet{min1989multiple} and was popularised by the benchmark instances of
+\citet{dethloff2001vehicle}; modern heuristics for the deterministic
+problem include cluster insertion \citep{salhi1999cluster}, particle swarm
+optimisation \citep{ai2009particle}, parallel local search
+\citep{subramanian2010parallel}, and adaptive large neighbourhood search
+descending from \citet{ropke2006adaptive}. Our work is complementary to
+this planning literature: we take the planned routes as given --- produced
+here by an ALNS planner under deterministic, sample-average, and
+Wasserstein distributionally robust \citep{esfahani2018data} feasibility
+gates --- and optimise the \emph{execution} of each route under realised
+uncertainty.
+
+Execution-stage recourse connects to approximate dynamic programming for
+routing, where rollout policies \citep{secomandi2001rollout}, lookup-table
+value functions \citep{novoa2009approximate}, and offline--online hybrids
+\citep{ulmer2019offline} approximate the cost-to-go of continuing a tour.
+Our setting differs in that the per-route decision is a pure stopping
+decision --- continue or transfer --- which admits the machinery of
+optimal stopping \citep{chow1971great,peskir2006optimal} rather than a
+general action space. We adopt the regression-based backward induction of
+\citet{longstaff2001valuing} and \citet{tsitsiklis2001regression},
+originally developed for American-option pricing, whose convergence was
+analysed by \citet{clement2002analysis}. Our estimator choice exploits
+problem structure: because the continuation cost is monotone in the
+running load (Proposition~\ref{prop:monotone}), we use isotonic regression
+\citep{robbins1955empirical,barlow1972statistical}, which is
+tuning-parameter-free and shape-constrained, in place of the polynomial
+bases common in finance.
+
+% ════════════════════════════════════════════════════════════════════
+\section{Problem formulation}\label{sec:problem}
+
+\subsection{Load dynamics and breach event}
+
+Consider one planned route serving $m$ customers in fixed sequence
+$1,\dots,m$ from a depot. The vehicle departs with the loaded deliveries;
+at stop $k$ it delivers a random volume $d_k \ge 0$ and collects a random
+pickup $p_k \ge 0$, producing the \emph{net increment}
+\begin{equation}\label{eq:increment}
+  g_k \;=\; p_k - d_k ,
+\end{equation}
+observed upon serving the stop. The \emph{running net load} is
+\begin{equation}\label{eq:runsum}
+  W_k \;=\; \sum_{j=1}^{k} g_j , \qquad W_0 = 0 ,
+\end{equation}
+and with departure load $L_0$ and capacity $Q$ the vehicle physically
+overflows at stop $k$ when $L_0 + W_k > Q$, i.e.\ when $W_k$ exceeds the
+\emph{slack} $B = Q - L_0$. Define the breach time
+\begin{equation}\label{eq:breach}
+  T \;=\; \min\{\,k \le m : W_k > B\,\}, \qquad
+  \min\emptyset := \infty .
+\end{equation}
+The route \emph{peak-overflows} on the event $\{T \le m\} =
+\{\max_{k\le m} W_k > B\}$. We write $\mathcal F_k =
+\sigma(g_1,\dots,g_k)$ for the information available after serving stop
+$k$.
+
+\subsection{Decisions, prices, and objective}
+
+After serving stop $k < m$ without a breach, the operator either
+\emph{continues} or \emph{hands off}, transferring the remaining stops
+$k{+}1,\dots,m$ to a standby vehicle at price $H_k > 0$. If the vehicle
+continues and breaches at stop $j$, an emergency dispatch costs $E_j$;
+if it completes all $m$ stops without breaching, execution costs nothing
+beyond the planned travel. Prices are route-specific and known before
+departure: in the realistic model of Section~\ref{sec:costs}, $H_k$
+prices a standby callout plus the remaining tour distance at a mild
+surcharge, and $E_j$ prices a surge callout, the remaining distance at a
+surge multiplier, and service compensation for the $m-j$ downstream
+customers, so both schedules decrease along the route and
+\begin{equation}\label{eq:prices}
+  E_k \;>\; H_k \quad\text{for all } k ,
+\end{equation}
+reflecting that an unplanned breach at a stop is always dearer than a
+planned transfer at the same stop. The flat model $H_k \equiv \omega_F$,
+$E_k \equiv C_{\mathrm{fail}}$ with $C_{\mathrm{fail}} > \omega_F$ is the
+special case used by v1 and in our controlled experiments.
+
+An \emph{execution policy} is a stopping time $\sigma$ with respect to
+$(\mathcal F_k)$ taking values in $\{1,\dots,m-1\} \cup \{\infty\}$
+($\sigma = \infty$ meaning never hand off), and the realised execution
+cost is
+\begin{equation}\label{eq:cost}
+  J(\sigma) \;=\;
+  \begin{cases}
+    E_T, & T \le \sigma \wedge m \quad\text{(breach first)},\\[2pt]
+    H_\sigma, & \sigma < T \quad\text{(handoff first)},\\[2pt]
+    0, & \sigma = \infty,\; T = \infty
+    \quad\text{(clean completion)} .
+  \end{cases}
+\end{equation}
+The operator seeks $\inf_\sigma \mathbb E\, J(\sigma)$. Throughout we
+assume the following.
+
+\begin{assumption}\label{ass:markov}
+The increments $g_1,\dots,g_m$ are independent (not necessarily
+identically distributed), so that $(W_k)$ is Markov and $W_k$ is a
+sufficient statistic for the future of the load path.
+\end{assumption}
+
+Assumption~\ref{ass:markov} matches the data-generating processes of both
+our industrial motivation and the benchmark protocol (correlated
+scenarios are examined empirically in Section~\ref{sec:experiments}; the
+policy degrades gracefully because the conditioning statistic $W_k$
+absorbs a common demand factor).
+
+\subsection{Dynamic-programming characterisation}
+
+By finite-horizon dynamic programming, define the value functions
+backwards from $V_m(w) \equiv 0$ on $\{w \le B\}$ by
+\begin{align}
+  C_k(w) &\;=\;
+  \mathbb E\!\left[\,
+    E_{k+1}\,\mathbf 1\{W_{k+1} > B\}
+    \;+\; V_{k+1}(W_{k+1})\,\mathbf 1\{W_{k+1} \le B\}
+    \,\middle|\, W_k = w \right],
+  \label{eq:contvalue}\\[3pt]
+  V_k(w) &\;=\; \min\{\, H_k ,\; C_k(w) \,\}, \qquad k = m-1,\dots,1 .
+  \label{eq:bellman}
+\end{align}
+$C_k(w)$ is the expected cost of \emph{continuing past stop $k$ and
+playing optimally thereafter}, and the optimal policy is the first-passage
+rule
+\begin{equation}\label{eq:rule}
+  \sigma^\star \;=\; \min\{\,k < m \;:\; C_k(W_k) > H_k \,\},
+\end{equation}
+by the standard verification argument for finite-horizon stopping
+problems \citep{chow1971great,peskir2006optimal}. All the difficulty is
+statistical: $C_k$ is unknown and must be estimated from historical load
+paths.
+
+% ════════════════════════════════════════════════════════════════════
+\section{The OTR-2.0 policy}\label{sec:method}
+
+\subsection{Why the endpoint label fails}
+
+The v1 system estimated $p_k(w) = \mathbb P(\text{overflow} \mid W_k = w)$
+by isotonic regression of a binary label on $W_k$ across historical
+routes, and triggered when $p_k(W_k) > \tau$. The label, however, was
+$Y^{\mathrm{end}} = \mathbf 1\{W_m > B\}$ --- computed from the endpoint
+of the path rather than from its running peak
+$Y^{\mathrm{peak}} = \mathbf 1\{\max_{k \le m} W_k > B\}$. The following
+elementary observation shows the defect is structural, not statistical,
+and quantifies its cost; despite its simplicity we state it formally
+because it explains a genuine field failure and because analogous
+endpoint-for-peak substitutions appear whenever monitoring data are
+aggregated per route.
+
+\begin{proposition}[Endpoint-label bias]\label{prop:bias}
+For every path law and every $B$,
+$\{W_m > B\} \subseteq \{\max_{k\le m} W_k > B\}$, hence
+$\mathbb P(Y^{\mathrm{end}}=1) \le \mathbb P(Y^{\mathrm{peak}}=1)$, and
+the endpoint-trained regression estimates a conditional probability of
+the \emph{wrong} event. The gap is extremal on collect-then-deliver
+routes: if the route structure forces $W_m = 0$ almost surely (all
+collected volume is delivered back) and $B > 0$, then
+$Y^{\mathrm{end}} = 0$ a.s.\ while $\mathbb P(T \le m)$ may be arbitrary
+in $[0,1)$. In that regime, under flat prices
+$(\omega_F, C_{\mathrm{fail}})$, any threshold policy trained on
+endpoint labels converges to the never-handoff policy with expected cost
+$C_{\mathrm{fail}}\,\mathbb P(T\le m)$, whereas the stopping rule
+\eqref{eq:rule} attains at most
+$\omega_F\,\mathbb P(2 \le T \le m) + C_{\mathrm{fail}}\,
+\mathbb P(T = 1)$. Consequently, whenever breaches occur but rarely at
+the first stop, the endpoint-trained policy inflates execution cost by
+approximately the factor $C_{\mathrm{fail}}/\omega_F$.
+\end{proposition}
+
+\begin{proof}
+The inclusion is immediate since $W_m \le \max_{k\le m} W_k$. If
+$W_m = 0$ a.s.\ and $B > 0$ then $Y^{\mathrm{end}} = 0$ a.s., so any
+regression of $Y^{\mathrm{end}}$ on any covariate is the zero function on
+the support of the data; a trigger of the form
+$\hat p_k(W_k) > \tau$ with $\tau > 0$ never fires, and the policy pays
+$E_T = C_{\mathrm{fail}}$ exactly on $\{T \le m\}$. For the upper bound
+on the optimum, consider the feasible (not necessarily optimal) rule
+that hands off at the first $k$ with $\mathbb P(T = k+1 \mid
+\mathcal F_k) = 1$; more simply, the clairvoyant-dominated bound follows
+because rule \eqref{eq:rule} is optimal and therefore no worse than the
+policy of Section~\ref{sec:oracle} restricted to information
+$\mathcal F_k$: on $\{2 \le T \le m\}$ a handoff at $T-1$ costs
+$\omega_F$, on $\{T = 1\}$ no decision epoch precedes the breach, and on
+$\{T = \infty\}$ continuing forever costs $0$. Taking expectations gives
+the stated bound, and the ratio of the two costs tends to
+$C_{\mathrm{fail}}/\omega_F$ as $\mathbb P(T=1) \to 0$.
+\end{proof}
+
+OTR-2.0 therefore labels and calibrates on the running peak everywhere:
+the empirical slack calibration solves
+$\hat B = \inf\{b : \frac1N \sum_s \mathbf 1\{\max_k W^{(s)}_k > b\}
+\le \alpha\}$, i.e.\ the $(1{-}\alpha)$-quantile of historical
+\emph{peaks}, never of endpoint totals.
+
+\subsection{Longstaff--Schwartz backward induction with isotonic
+regression}\label{sec:lsm}
+
+Estimating \eqref{eq:contvalue} requires the conditional expectation of
+future costs \emph{under optimal future play}, which is exactly the
+structure of American-option pricing by simulation. Following
+\citet{longstaff2001valuing}, we sweep historical paths backwards,
+maintaining for each path $s$ the realised future cost $\phi_s$ under the
+policy already constructed for later stops (initialised by
+$\phi_s = E_{T_s}$ if path $s$ breaches, else $0$), regress $\phi$ on
+$W_k$ among the paths still alive at stop $k$ to obtain $\hat C_k$, and
+then apply the implied action --- replace $\phi_s$ by $H_k$ on paths where
+$\hat C_k(W_{k,s}) > H_k$ --- so that stop $k-1$ sees costs under the
+improved later policy. The regressor is isotonic regression
+\citep{barlow1972statistical}: the target is a cost supported on
+$\{0\} \cup \{H_j\}_{j>k} \cup \{E_j\}_{j>k}$ rather than a probability,
+but the shape constraint is justified by the following monotonicity, which
+is the second structural pillar of the method.
+
+\begin{assumption}\label{ass:prices}
+$H_k \le E_k$ for all $k$, and both schedules are non-increasing in $k$.
+\end{assumption}
+
+Assumption~\ref{ass:prices} holds by construction in the realistic model
+(both prices are affine in the remaining tour distance, and emergencies
+additionally pay downstream compensation) and trivially in the flat
+model.
+
+\begin{proposition}[Monotone continuation value]\label{prop:monotone}
+Under Assumptions~\ref{ass:markov} and \ref{ass:prices}, for every
+$k \in \{1,\dots,m-1\}$ the continuation value $C_k(\cdot)$ of
+\eqref{eq:contvalue} is non-decreasing on $(-\infty, B]$.
+\end{proposition}
+
+\begin{proof}
+Backward induction on $k$. Write the integrand of \eqref{eq:contvalue}
+as $\varphi_{k+1}(x) = E_{k+1}\mathbf 1\{x > B\} +
+V_{k+1}(x)\mathbf 1\{x \le B\}$ so that, using
+Assumption~\ref{ass:markov},
+$C_k(w) = \mathbb E\,\varphi_{k+1}(w + g_{k+1})$ with $g_{k+1}$
+independent of $w$. It suffices that $\varphi_{k+1}$ be non-decreasing,
+for then monotonicity is preserved by the shift $w \mapsto w + g_{k+1}$
+pathwise and by expectation. At $k+1 = m$ we have $V_m \equiv 0 \le E_m$,
+so $\varphi_m$ is a non-decreasing step function. For $k+1 < m$, by the
+inductive hypothesis $C_{k+1}$ is non-decreasing, hence
+$V_{k+1} = \min\{H_{k+1}, C_{k+1}\}$ is non-decreasing on
+$(-\infty, B]$, and moreover $V_{k+1} \le H_{k+1} \le E_{k+1}$ by
+Assumption~\ref{ass:prices}. Consider $x \le x'$. If both exceed $B$,
+$\varphi_{k+1}(x) = \varphi_{k+1}(x') = E_{k+1}$. If both are at most
+$B$, $\varphi_{k+1}(x) = V_{k+1}(x) \le V_{k+1}(x') =
+\varphi_{k+1}(x')$. If $x \le B < x'$, then $\varphi_{k+1}(x) =
+V_{k+1}(x) \le E_{k+1} = \varphi_{k+1}(x')$. Thus $\varphi_{k+1}$ is
+non-decreasing in every case, completing the induction.
+\end{proof}
+
+Proposition~\ref{prop:monotone} makes isotonic regression the natural
+estimator: it is the least-squares projection onto exactly the function
+class known to contain the truth, requires no basis choice or bandwidth,
+and inherits classical consistency guarantees
+\citep{robbins1955empirical,barlow1972statistical}. The convergence of
+the full backward-induction scheme to the optimal stopping value as the
+number of historical paths grows follows the analysis of
+\citet{clement2002analysis}, whose arguments require only that each
+regression step be an $L^2$-consistent estimator of the conditional
+expectation within the approximating class; monotone functions on a
+compact range form a Glivenko--Cantelli class, so the isotonic step
+satisfies this requirement whenever the truth is monotone, which
+Proposition~\ref{prop:monotone} guarantees.
+
+\begin{remark}
+For small histories ($N \lesssim 500$ paths) the backward induction
+amplifies estimation noise, because errors at late stops propagate into
+the regression targets of early stops. OTR-2.0 then falls back to the
+\emph{label-corrected threshold} variant: isotonic estimation of the
+peak-overflow probability $p_k(w) = \mathbb P(T \le m \mid W_k = w,\,
+T > k)$ and a single threshold tuned on realised training cost. The
+fallback inherits the label fix but not the option-value correction; its
+empirical price is quantified in Section~\ref{sec:experiments}.
+\end{remark}
+
+\subsection{The online rule and its optimality for the fitted models}
+
+Online, the vehicle updates $W_k$ at each stop, checks the physical guard
+$W_k > B$ (which triggers the emergency price $E_k$ --- the guard always
+ran on the running sum even in v1; the endpoint defect was in the
+\emph{training label} only), and otherwise hands off exactly when
+\begin{equation}\label{eq:trigger}
+  \hat C_k(W_k) \;>\; H_k .
+\end{equation}
+No threshold exists to tune: \eqref{eq:trigger} compares two costs in the
+same unit. Because $\hat C_k$ already prices every future opportunity to
+hand off (that is precisely what the backward induction computed), rule
+\eqref{eq:trigger} is the exact optimal-stopping rule for the fitted
+models, not a heuristic approximation. The fixed-threshold rule of v1 is
+recovered as its myopic degeneration, and the direction of its error is
+one-sided:
+
+\begin{proposition}[Myopic over-triggering]\label{prop:myopic}
+Take flat prices $H_k \equiv \omega_F$, $E_k \equiv C_{\mathrm{fail}}$,
+and let $p_k(w) = \mathbb P(T \le m \mid W_k = w, T > k)$ be the true
+conditional peak-overflow probability. The v1-style myopic rule
+``hand off iff $C_{\mathrm{fail}}\, p_k(w) > \omega_F$'', i.e.\
+$p_k(w) > \tau$ with $\tau = \omega_F / C_{\mathrm{fail}}$, has stopping
+region containing that of the optimal rule \eqref{eq:rule} at every
+stop:
+\[
+  \{\, w : C_k(w) > \omega_F \,\} \;\subseteq\;
+  \{\, w : C_{\mathrm{fail}}\, p_k(w) > \omega_F \,\} .
+\]
+The inclusion is strict at stop $k$ whenever
+$\mathbb P(T > k+1 \mid W_k = w, T > k) > 0$ on a set of $w$ of positive
+measure, i.e.\ whenever the breach, if it comes, may still be more than
+one stop away.
+\end{proposition}
+
+\begin{proof}
+``Continue and never act again'' is a feasible continuation policy whose
+expected cost from state $(k, w)$ is exactly
+$C_{\mathrm{fail}}\, p_k(w)$; since $C_k(w)$ is the infimum over all
+continuation policies, $C_k(w) \le C_{\mathrm{fail}}\, p_k(w)$, which
+gives the inclusion. For strictness, split
+$p_k(w) = q_1(w) + q_2(w)$ with
+$q_1(w) = \mathbb P(T = k+1 \mid \cdot)$ and
+$q_2(w) = \mathbb P(k+1 < T \le m \mid \cdot)$, and consider the
+feasible policy ``continue one stop; if no breach, hand off at $k+1$ iff
+$p_{k+1}(W_{k+1})\,C_{\mathrm{fail}} > \omega_F$, else continue and
+never act''. Its cost is at most
+$C_{\mathrm{fail}}\, q_1(w) + \omega_F\, q_2(w) +
+0\cdot\mathbb P(T = \infty \mid \cdot)$
+on the event that the one-stop-later probability exceeds the myopic
+threshold, and in general at most
+$C_{\mathrm{fail}}\,q_1(w) + \min\{\omega_F, C_{\mathrm{fail}}\,
+\bar p\}\, q_2(w)$ where $\bar p \le 1$; whenever $q_2(w) > 0$ this is
+strictly below $C_{\mathrm{fail}}(q_1(w) + q_2(w)) =
+C_{\mathrm{fail}}\,p_k(w)$ because $\omega_F < C_{\mathrm{fail}}$.
+Hence $C_k(w) < C_{\mathrm{fail}}\, p_k(w)$ there, and states with
+$\omega_F$ between the two values are myopically stopped but optimally
+continued.
+\end{proof}
+
+Proposition~\ref{prop:myopic} explains the second field observation:
+tuned thresholds drifted upward (toward less triggering) precisely on
+long routes, chasing the option value the functional form cannot
+express. The state-dependent generalisation makes the failure
+qualitative: with per-stop prices $H_k$, the myopic comparison
+$p_k(w)\,E_{\text{(some)}} > H_k$ is not even well-posed as a single
+threshold on $p_k$, whereas \eqref{eq:trigger} is unchanged.
+
+\subsection{Clairvoyant lower bound}\label{sec:oracle}
+
+To measure how much of the achievable saving each policy captures, we
+report a perfect-information bound: a clairvoyant that sees the whole
+path pays $0$ on $\{T = \infty\}$, and on $\{T = j \le m\}$ pays
+$\min\{\min_{k < j} H_k,\; E_j\}$ --- the cheapest of any preemptive
+handoff or, if all are dearer, the breach itself; a breach at the first
+stop leaves no decision epoch. No policy adapted to
+$(\mathcal F_k)$ can pay less on any path, so the bound is valid
+pathwise, and it is attained by an $\mathcal F$-adapted policy only in
+degenerate cases. The \emph{optimality gap} we report is the share of
+the oracle-achievable saving a policy fails to capture, relative to the
+never-handoff (reactive) baseline.
+
+\subsection{Algorithm statement and complexity}
+
+Algorithms~\ref{alg:offline} and \ref{alg:online} state the method;
+Figure~\ref{fig:flow} shows the online loop.
+
+\begin{algorithm}[t]
+\caption{OTR-2.0 offline phase: peak-aware Longstaff--Schwartz fit}
+\label{alg:offline}
+\begin{algorithmic}[1]
+\Require historical increments $g^{(s)}_k$, $s = 1..N$, $k = 1..m$;
+         slack $B$; price schedules $(H_k)$, $(E_k)$
+\State $W^{(s)}_k \gets \sum_{j\le k} g^{(s)}_j$;\quad
+       $T_s \gets \min\{k : W^{(s)}_k > B\}$ ($\infty$ if none)
+       \Comment{peak, not endpoint}
+\State $\phi_s \gets E_{T_s}\,\mathbf 1\{T_s \le m\}$
+       \Comment{cost under ``never hand off''}
+\For{$k = m-1$ \textbf{down to} $1$}
+  \State $A \gets \{s : T_s > k\}$ \Comment{paths alive at stop $k$}
+  \State $\hat C_k \gets$ isotonic fit of $\{\phi_s\}_{s\in A}$ on
+         $\{W^{(s)}_k\}_{s\in A}$
+  \State $\phi_s \gets H_k$ for all $s \in A$ with
+         $\hat C_k(W^{(s)}_k) > H_k$
+         \Comment{apply implied optimal action}
+\EndFor
+\State \Return $\{\hat C_k\}_{k=1}^{m-1}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[t]
+\caption{OTR-2.0 online phase: cost-comparison trigger}
+\label{alg:online}
+\begin{algorithmic}[1]
+\Require $m$, $B$, $(H_k)$, $(E_k)$, fitted $\{\hat C_k\}$
+\State $W \gets 0$
+\For{$k = 1$ \textbf{to} $m$}
+  \State serve stop $k$; observe $d_k, p_k$;\quad $W \gets W + p_k - d_k$
+  \If{$W > B$} \Return (\textsc{Emergency}, $E_k$) \EndIf
+                \Comment{physical guard: running peak}
+  \If{$k = m$} \Return (\textsc{Complete}, $0$) \EndIf
+  \If{$\hat C_k(W) > H_k$} \Return (\textsc{Handoff}, $H_k$) \EndIf
+      \Comment{no threshold $\tau$ exists}
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=7mm and 9mm,
+  box/.style={rectangle, rounded corners=2pt, draw, align=center,
+              inner sep=4pt, font=\small},
+  dec/.style={diamond, aspect=2.2, draw, align=center, inner sep=1.5pt,
+              font=\small},
+  term/.style={rectangle, rounded corners=8pt, draw, align=center,
+               inner sep=4pt, font=\small\bfseries},
+  arr/.style={-{Stealth[length=2.2mm]}}]
+\node[term] (start) {depart:\; $W \gets 0$,\; $k \gets 1$};
+\node[box, below=of start] (serve)
+  {serve stop $k$:\; $W \gets W + p_k - d_k$};
+\node[dec, below=of serve] (guard) {$W > B$?};
+\node[term, right=14mm of guard] (emg) {\textsc{Emergency}\\ pay $E_k$};
+\node[dec, below=of guard] (last) {$k = m$?};
+\node[term, right=14mm of last] (done) {\textsc{Complete}\\ pay $0$};
+\node[dec, below=of last] (trig) {$\hat C_k(W) > H_k$?};
+\node[term, right=14mm of trig] (ho) {\textsc{Handoff}\\ pay $H_k$};
+\node[box, below=of trig] (inc) {$k \gets k + 1$};
+\draw[arr] (start) -- (serve);
+\draw[arr] (serve) -- (guard);
+\draw[arr] (guard) -- node[above, font=\scriptsize]{yes} (emg);
+\draw[arr] (guard) -- node[right, font=\scriptsize]{no} (last);
+\draw[arr] (last) -- node[above, font=\scriptsize]{yes} (done);
+\draw[arr] (last) -- node[right, font=\scriptsize]{no} (trig);
+\draw[arr] (trig) -- node[above, font=\scriptsize]{yes} (ho);
+\draw[arr] (trig) -- node[right, font=\scriptsize]{no} (inc);
+\draw[arr] (inc.west) to[out=180, in=180, looseness=1.6] (serve.west);
+\end{tikzpicture}
+\caption{Online decision loop of OTR-2.0. The physical guard has always
+operated on the running sum; OTR-2.0 fixes the \emph{training label} and
+replaces the tuned probability threshold with a per-stop cost
+comparison.}
+\label{fig:flow}
+\end{figure}
+
+The offline phase costs one isotonic fit per stop --- $O(N \log N)$ each
+by pool-adjacent-violators after sorting --- for $O(m N \log N)$ total,
+a few milliseconds per route at $N = 10^3$--$10^4$. The online decision
+is one monotone-function evaluation per stop. Both phases depend only on
+\texttt{numpy} and \texttt{scikit-learn}.
+
+% ════════════════════════════════════════════════════════════════════
+\section{A realistic last-mile cost model}\label{sec:costs}
+
+Benchmark studies of stochastic routing conventionally price recourse
+with two constants. Real operators face a richer bill, and because the
+trigger \eqref{eq:trigger} compares costs directly, OTR-2.0 can consume
+the richer bill without structural change. Guided by the economics of
+Southeast-Asian last-mile platforms operating mixed contracted and
+gig-economy fleets, we model, per operating day and per route:
+\begin{align}
+  \text{fixed:}\quad & F_{\mathrm{plan}} \cdot K
+      \;+\; c_{\mathrm{km}} \cdot \mathrm{Travel},
+  \label{eq:fixedcost}\\
+  \text{handoff at } k:\quad
+  H_k \;=\;& F_{\mathrm{ho}}
+      + s_{\mathrm{ho}}\, c_{\mathrm{km}}\, R_k
+      + c_{\mathrm{transfer}},
+  \label{eq:handoffcost}\\
+  \text{emergency at } k:\quad
+  E_k \;=\;& F_{\mathrm{emg}}
+      + s_{\mathrm{emg}}\, c_{\mathrm{km}}\, R_k
+      + p_{\mathrm{late}} (m - k)
+      + p_{\mathrm{breach}},
+  \label{eq:emergencycost}
+\end{align}
+where $K$ is the number of planned vehicles, $R_k$ the tour distance
+remaining after stop $k$, $F_{\mathrm{plan}}$ a contracted
+vehicle-day rate, $c_{\mathrm{km}}$ the variable running cost,
+$F_{\mathrm{ho}} < F_{\mathrm{emg}}$ callout fees for the standby pool
+and the surge market respectively, $s_{\mathrm{ho}} < s_{\mathrm{emg}}$
+the corresponding per-kilometre multipliers, $c_{\mathrm{transfer}}$ the
+cargo-transfer dwell, $p_{\mathrm{late}}$ the service-level compensation
+per downstream customer served late, and $p_{\mathrm{breach}}$ a churn
+allowance for the customer at the breach point. Both schedules decrease
+along the route and satisfy Assumption~\ref{ass:prices} by construction;
+an early emergency is the worst outcome the model can produce, which
+matches operational experience. Defaults
+($F_{\mathrm{plan}}{=}35$, $c_{\mathrm{km}}{=}0.10$,
+$F_{\mathrm{ho}}{=}12$, $s_{\mathrm{ho}}{=}1.2$,
+$c_{\mathrm{transfer}}{=}3$, $F_{\mathrm{emg}}{=}40$,
+$s_{\mathrm{emg}}{=}2.5$, $p_{\mathrm{late}}{=}1.5$,
+$p_{\mathrm{breach}}{=}10$, in currency units per day) are
+order-of-magnitude calibrated to public gig-logistics figures and are
+swept in the sensitivity study. Under this model the total budget cost of
+a plan is \eqref{eq:fixedcost} plus the expected execution cost of its
+routes, and execution policies act on the latter alone.
+
+% ════════════════════════════════════════════════════════════════════
+\section{Experimental design}\label{sec:experiments}
+
+Our evaluation has three layers, all with train/test scenario
+separation, comparing eight execution policies: \textsc{none}
+(reactive: never hand off), \textsc{v1} with endpoint labels and a
+cost-tuned threshold, the myopic threshold, the label-corrected
+threshold fallback (\textsc{fb}), \textsc{OTR-2.0} (\textsc{v2}), two
+dynamic-programming benchmarks described next, and the clairvoyant
+oracle of Section~\ref{sec:oracle}.
+
+\paragraph{Exact-method benchmark.} Because the execution stage is a
+finite-horizon optimal stopping problem, the exact solution technique
+for it is backward dynamic programming on the $(k, W_k)$ state space,
+in the preventive-restocking tradition of \citet{yang2000stochastic} —
+not mixed-integer programming, which addresses deterministic or
+scenario-tree formulations and cannot compactly encode a
+non-anticipative multistage stopping rule. We therefore benchmark
+against a nonparametric plug-in DP that discretises $W_k$ into
+quantile bins and runs the same backward recursion as
+Algorithm~\ref{alg:offline} with binned conditional means in place of
+the isotonic regression. Fitted on the same $10^3$ paths as OTR-2.0 it is
+denoted DP$_{10^3}$ (an equal-information competitor); fitted on
+$5\times 10^4$ paths per route it is denoted DP$_{5\cdot 10^4}$ and
+converges to the optimal policy measurable with respect to
+$(k, W_k)$ — a near-exact yardstick against which the near-optimality
+of any implementable policy can be judged.
+
+\paragraph{Structural synthetic scenarios.} Following the diagnosis of
+Proposition~\ref{prop:bias} we generate (i) \emph{collect-then-deliver}
+routes whose endpoint is identically zero while the peak varies, (ii)
+\emph{milk-run} routes with a rising net-load ramp and a two-regime
+day-volume mixture, and (iii) the milk run under a high emergency-price
+ratio $C_{\mathrm{fail}}/\omega_F = 20$; five seeds, $10^4$ training and
+$1.2\times 10^4$ test routes per seed, $m = 12$, slack calibrated to a
+10\% peak-overflow rate.
+
+\paragraph{Benchmark instances.} The 40 Dethloff instances
+\citep{dethloff2001vehicle} (CON and SCA families, 50 customers each) are
+solved by an ALNS planner under three feasibility gates of increasing
+conservatism --- deterministic (\textsc{Det}), sample-average CVaR
+(\textsc{SAA}), and Wasserstein-robust (\textsc{WDRO})
+\citep{esfahani2018data} --- and every route of every plan is then
+executed under all policies with $10^3$ training and $2\times 10^3$ test
+scenarios per route (gamma marginals, coefficient of variation $0.3$,
+equicorrelated Gaussian copula $\rho = 0.6$, the protocol of the
+underlying planning study). This yields 120 plan-level paired
+comparisons.
+
+\paragraph{Realistic-cost evaluation and sensitivity.} The same
+instances and plans are re-executed under the cost model of
+Section~\ref{sec:costs}, with per-stop schedules built from the true
+route geometry. The sensitivity study sweeps the emergency-price ratio,
+history size $N$, route length $m$, increment family (gamma, lognormal,
+Student-$t$), and the strength of a common demand factor, reporting
+paired Wilcoxon signed-rank tests of \textsc{v2} against the strongest
+tuned competitor in every cell.
+
+% ════════════════════════════════════════════════════════════════════
+\section{Results}\label{sec:results}
+
+\subsection{Structural scenarios: the label defect is decisive}
+
+Table~\ref{tab:synthetic} confirms Proposition~\ref{prop:bias}
+empirically. On collect-then-deliver routes the endpoint-trained policy
+never triggers and saves exactly $0.0\%$ of reactive execution cost ---
+across all seeds --- while OTR-2.0 saves \vTwoCtdSaving\ and the
+label-corrected fallback \fbCtdSaving. Where endpoint and peak labels
+coincide (milk runs, correlation $\approx 1$), the label fix is neutral
+and the gain comes from the trigger: OTR-2.0 improves on the tuned
+threshold by \vTwoMilkEdge\ points of saving (\vTwoMilkSaving\ vs
+\vOneMilkSaving) while cutting the residual emergency rate by an order
+of magnitude, and the advantage persists at the high price ratio
+(\vTwoHighSaving\ vs \vOneHighSaving).
+
+\input{tables/tab_synthetic}
+
+\subsection{Benchmark instances}
+
+\input{tables/tab_dethloff}
+
+Table~\ref{tab:dethloff} reports plan-level means over the 40 instances.
+Two regularities stand out. First, the planning gate governs how much
+execution risk remains: deterministic plans leave a large recourse bill
+that any preventive policy cuts by more than half, whereas
+Wasserstein-robust plans leave little for execution policies to save ---
+planning conservatism and execution intelligence are substitutes at the
+margin. Second, within every gate OTR-2.0 attains the lowest execution
+cost of the implementable policies on \textsc{Det} and \textsc{SAA}
+plans and is statistically indistinguishable from the tuned threshold on
+\textsc{WDRO} plans, where breaches are so rare that the backward
+induction sees few positive examples; the paired Wilcoxon test over
+instances gives \wilcoxonDethloff. On this benchmark the
+endpoint--peak correlation is high ($\approx 0.9$), so the label defect
+is mild and the tuned v1 baseline is competitive --- the structural
+scenarios above show how quickly that grace degrades when route
+structure changes.
+
+\subsection{Realistic costs and sensitivity}
+
+\input{tables/tab_realistic}
+
+Under the state-dependent price schedules of Section~\ref{sec:costs}
+(Table~\ref{tab:realistic}), the gap between the threshold family and
+the cost-comparison trigger widens, as Proposition~\ref{prop:myopic}
+predicts: a single tuned $\tau$ must average over stops whose handoff
+prices differ, while rule \eqref{eq:trigger} adapts per stop. OTR-2.0
+captures \vTwoRealisticShare\ of the oracle-achievable saving on
+average, against \fbRealisticShare\ for the label-corrected threshold
+and \vOneRealisticShare\ for the endpoint-trained policy.
+
+The two dynamic-programming columns of Table~\ref{tab:realistic} then
+answer the natural question of how far OTR-2.0 sits from the exact
+method. Given fifty times more data, the near-exact
+DP$_{5\cdot 10^4}$ captures \dpXlRealisticShare\ of the
+oracle-achievable saving; OTR-2.0 reaches \vTwoOfDpXl\ of that
+near-exact performance from only $10^3$ paths per route. At an equal
+data budget the picture reverses sharply: the histogram DP collapses
+on the conservative \textsc{WDRO} plans (\dpNWdroSaving\ mean saving
+versus \vTwoWdroSaving\ for OTR-2.0, and on several instances it is
+worse than doing nothing), because at breach rates near $10^{-2}$ its
+bins contain almost no positive examples, whereas the isotonic shape
+constraint pools information across the entire range of $W_k$.
+Matching the exact dynamic program at a fiftieth of its sample
+complexity — rather than merely beating internal baselines — is the
+operative evidence that the method is near-optimal in its policy
+class.
+
+\input{tables/tab_sensitivity}
+
+The sensitivity study (Table~\ref{tab:sensitivity}) shows the expected
+pattern: the advantage of the optimal-stopping trigger grows with the
+emergency-price ratio and with route length (more option value), is
+robust across increment families including heavy tails, decays
+gracefully as a common demand factor strengthens (the scalar statistic
+$W_k$ then carries most of the relevant information anyway), and
+crosses over to the fallback only below a few hundred training paths,
+matching the small-sample remark of Section~\ref{sec:lsm}.
+
+% ════════════════════════════════════════════════════════════════════
+\section{Conclusion}\label{sec:conclusion}
+
+We studied the execution stage of stochastic routing with simultaneous
+pickup and delivery as a finite-horizon optimal stopping problem, traced
+a real field failure to an endpoint-for-peak label substitution whose
+bias we quantified, and proposed OTR-2.0: peak-aware labels combined
+with a Longstaff--Schwartz backward induction whose isotonic regressions
+are justified by a monotone continuation value. The resulting trigger
+compares estimated continuation cost against the state-dependent price
+of acting now, eliminates threshold tuning, provably never triggers
+later than optimal play would while avoiding the myopic rule's premature
+handoffs, and absorbs realistic operator economics --- contracted
+fleets, standby pools, surge-priced emergencies, service-level
+compensation --- without structural change.
+
+Limitations delineate future work. The conditioning statistic is the
+scalar running sum; enriching it with remaining-route covariates gave no
+measurable gain in our tests but may matter for heterogeneous
+territories, and the isotonic step can be swapped for any monotone
+learner without touching the induction. The handoff is all-or-nothing;
+partial handoffs that transfer only the riskiest remaining customers
+compose cleanly with the same continuation machinery but require
+per-customer cost attribution. Increment independence
+(Assumption~\ref{ass:markov}) is used by the theory though not by the
+algorithm; our correlation sweep shows graceful degradation, and an
+explicit common-factor state would be the disciplined extension.
+Finally, planning and execution are optimised separately here; feeding
+the fitted execution cost of a candidate route back into the planner's
+acceptance gate --- so that routes are shaped to be cheap to execute,
+not merely feasible --- is, we believe, the most promising direction
+this line of work opens.
+
+\backmatter
+
+\bmhead{Data availability}
+The benchmark instances of \citet{dethloff2001vehicle} are publicly
+available.
+\ifanon
+All code, scenario generators, and result files will be made available
+in a public repository upon acceptance; an anonymised archive is
+provided to reviewers through the submission system.
+\else
+All code, scenario generators, and result files are available at
+\url{https://github.com/vinhqdang/stochastic_vrp}.
+\fi
+
+\bmhead{Acknowledgements}
+\ifanon
+Omitted for double-blind review.
+\else
+The author thanks the operations team of the industrial partner for the
+field diagnosis that motivated this study.
+\fi
+
+\bibliography{references}
+
+\end{document}

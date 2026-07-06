@@ -1,0 +1,20 @@
+\begin{table}[t]
+\caption{Reinforcement-learning baseline (re-implementation of the policy
+architecture of Iklassov et al., 2024) versus \textsc{Baton-ho} on the
+identical 50 routes and out-of-sample test days. The learned policy is
+trained on a GPU; \textsc{Baton} fits in milliseconds per route on a CPU.}
+\label{tab:rl}
+\centering
+\begin{tabular}{l c}
+\toprule
+Policy & saving vs.\ reactive (\%) \\
+\midrule
+40 epochs (paper spec) & 27.6 \\
+150 epochs, seed 0 & 27.7 \\
+150 epochs, seed 1 & 28.6 \\
+150 epochs, seed 2 & 28.7 \\
+\midrule
+\textsc{Baton-ho} & \textbf{33.9} \\
+\bottomrule
+\end{tabular}
+\end{table}

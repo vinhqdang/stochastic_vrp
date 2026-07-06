@@ -1,0 +1,27 @@
+\begin{table}[t]
+\caption{Expected-recourse saving over the reactive policy (\%, mean over
+the 40 Dethloff instances) for each planning gate and execution policy
+under the three-class fleet cost model. \textsc{Baton-ho} is the
+handoff-only restriction; DP$_{50\mathrm{k}}$ and the clairvoyant oracle
+are handoff-only reference points, so \textsc{Baton} may legitimately
+exceed them by exercising its richer action set.}
+\label{tab:grand}
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{l cccc cc cc}
+\toprule
+& \multicolumn{4}{c}{published / tuned competitors}
+& \multicolumn{2}{c}{this paper} & \multicolumn{2}{c}{reference (HO)} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+Gate & $\pi_3$ & rollout & restock & threshold & \textsc{Baton-ho} & \textsc{Baton} & DP$_{50\mathrm{k}}$ & oracle \\
+\midrule
+\textsc{Det} & 17.3 & 20.7 & 5.6 & 24.8 & 26.1 & \textbf{27.8} & 26.5 & 40.7 \\
+\textsc{SAA} & 12.8 & 10.0 & 43.7 & 16.6 & 20.5 & \textbf{53.4} & 22.3 & 43.5 \\
+\textsc{WDRO} & 7.8 & -4.7 & 34.8 & -8.3 & 9.3 & \textbf{40.9} & 12.0 & 42.0 \\
+\textsc{Rob-G} & 15.8 & 9.6 & 43.3 & 17.0 & 21.2 & \textbf{52.8} & 22.9 & 43.5 \\
+\textsc{Rob-BS} & 10.8 & 9.5 & 41.0 & 16.6 & 20.7 & \textbf{51.6} & 22.7 & 43.2 \\
+\textsc{M-DRO} & 10.0 & -3.1 & 38.8 & -1.8 & 11.9 & \textbf{44.3} & 14.2 & 42.2 \\
+\bottomrule
+\end{tabular}
+\end{table}

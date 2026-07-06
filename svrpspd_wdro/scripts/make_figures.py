@@ -418,3 +418,90 @@ if __name__ == "__main__":
         fig1()
     if which in ("all", "23"):
         fig23()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Figures 4 & 5 — results charts (dot plots)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def fig45():
+    import pandas as pd
+    GATES = ["Det", "SAA", "WDRO", "Gounaris", "Cui", "MDRO"]
+    GATE_DISP = {"Det": "Deterministic", "SAA": "SAA-CVaR", "WDRO": "W-DRO",
+                 "Gounaris": "Robust (Gounaris)", "Cui": "Robust (B-S budget)",
+                 "MDRO": "Moment-DRO"}
+    POL = [("fb_tau", "tuned threshold", MUTED, "o"),
+           ("restock", "restock rule", C["violet"], "o"),
+           ("v2_lsm", "BATON-HO", C["aqua"], "o"),
+           ("v2_act", "BATON", C["blue"], "D"),
+           ("oracle", "oracle (handoff-only)", INK, "*")]
+
+    d = pd.read_csv(_WDRO / "results" / "results_grand_dethloff.csv")
+    fig, ax = plt.subplots(figsize=(8.6, 4.6))
+    ys = np.arange(len(GATES))[::-1]
+    for y, g in zip(ys, GATES):
+        s = d[d.Plan == g]
+        ax.axhline(y, color=ROAD, lw=0.8, zorder=1)
+        for lbl, name, col, mk in POL:
+            v = s[f"{lbl}_saving"].mean()
+            ax.scatter([v], [y], s=150 if mk == "*" else (90 if mk == "D" else 55),
+                       color=col, marker=mk, zorder=4 if lbl == "v2_act" else 3,
+                       edgecolors="white", linewidths=0.8)
+            if lbl == "v2_act":
+                ax.annotate(f"{v:.0f}%", (v, y), textcoords="offset points",
+                            xytext=(0, 10), ha="center", fontsize=9,
+                            color=C["blue"], fontweight="bold")
+    ax.set_yticks(ys); ax.set_yticklabels([GATE_DISP[g] for g in GATES])
+    ax.set_xlabel("expected-recourse saving vs reactive policy (%)")
+    ax.set_xlim(-12, 60)
+    handles = [plt.Line2D([], [], marker=mk, color=col, lw=0,
+                          ms=11 if mk == "*" else (8 if mk == "D" else 7),
+                          label=nm) for _, nm, col, mk in POL]
+    ax.legend(handles=handles, frameon=False, fontsize=8.5,
+              loc="upper left", bbox_to_anchor=(0.0, -0.12), ncols=5)
+    ax.set_title("Execution-policy savings by planning gate — 40 Dethloff "
+                 "instances, three-class fleet costs", fontsize=11, loc="left")
+    fig.tight_layout()
+    fig.savefig(FIG_DIR / "fig4_gate_dots.png", dpi=200, facecolor="white",
+                bbox_inches="tight")
+    plt.close(fig)
+    print("wrote fig4_gate_dots.png")
+
+    # fig 5: cost sensitivity
+    import glob as _glob
+    CS = [("baseline", None),
+          ("cheap emergencies (F$_{emg}$=25)", "F_emg_25"),
+          ("dear emergencies (F$_{emg}$=60)", "F_emg_60"),
+          ("cheap standby (F$_{sb}$=10)", "F_standby_10"),
+          ("dear standby (F$_{sb}$=35)", "F_standby_35"),
+          ("low SLA price (p$_{late}$=0.5)", "p_late_0_5"),
+          ("high SLA price (p$_{late}$=3)", "p_late_3_0"),
+          ("mild surge (s$_{emg}$=1.5)", "s_emg_1_5"),
+          ("heavy surge (s$_{emg}$=4)", "s_emg_4_0")]
+    base = d[d.Plan.isin(["Det", "SAA"])]
+    fig, ax = plt.subplots(figsize=(8.6, 4.9))
+    ys = np.arange(len(CS))[::-1]
+    POL5 = [p for p in POL if p[0] != "v2_lsm"]
+    for y, (disp, tag) in zip(ys, CS):
+        s = base if tag is None else pd.read_csv(
+            _WDRO / "results" / f"results_costsens_{tag}.csv")
+        ax.axhline(y, color=ROAD, lw=0.8, zorder=1)
+        for lbl, name, col, mk in POL5:
+            v = s[f"{lbl}_saving"].mean()
+            ax.scatter([v], [y], s=150 if mk == "*" else (90 if mk == "D" else 55),
+                       color=col, marker=mk, zorder=4 if lbl == "v2_act" else 3,
+                       edgecolors="white", linewidths=0.8)
+    ax.set_yticks(ys); ax.set_yticklabels([c[0] for c in CS], fontsize=9)
+    ax.set_xlabel("expected-recourse saving vs reactive policy (%)")
+    handles = [plt.Line2D([], [], marker=mk, color=col, lw=0,
+                          ms=11 if mk == "*" else (8 if mk == "D" else 7),
+                          label=nm) for _, nm, col, mk in POL5]
+    ax.legend(handles=handles, frameon=False, fontsize=8.5,
+              loc="upper left", bbox_to_anchor=(0.0, -0.12), ncols=4)
+    ax.set_title("Robustness of the policy ranking to fleet economics "
+                 "(one factor at a time)", fontsize=11, loc="left")
+    fig.tight_layout()
+    fig.savefig(FIG_DIR / "fig5_costsens.png", dpi=200, facecolor="white",
+                bbox_inches="tight")
+    plt.close(fig)
+    print("wrote fig5_costsens.png")

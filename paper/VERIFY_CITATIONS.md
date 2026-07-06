@@ -71,3 +71,5 @@ All author lists in the .bib are complete (no "et al.").
 - [ ] `secomandi2009reoptimization` — OR 57(1):214-230, DOI 10.1287/opre.1080.0520
 - [ ] `pessoa2021branch` — OR 69(3), DOI 10.1287/opre.2020.2035 — VERIFY pages 739-754 (agent did not confirm)
 - [ ] `gounaris2016adaptive` — TS 50(4):1239-1260, DOI 10.1287/trsc.2014.0559
+- [ ] `ota2026scenario` — arXiv:2604.02496 (2026 preprint); check journal status at submission
+- [ ] `wang2026drone` — Transportation Letters 18(2):270-288; agent reported online 2025 / print 2026 — verify the volume year

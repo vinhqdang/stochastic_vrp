@@ -1,0 +1,22 @@
+\begin{table}[t]
+\caption{Large-scale benchmarks under the fleet cost model
+(Det-gate plans; saving \% vs.\ reactive). Salhi--Nagy instances carry
+50--199 customers; the city instances (100--400 customers) place
+customers at real OSM shop locations on the road networks of Ho Chi Minh
+City, Hanoi, New York, Paris and Shanghai, and the uniform twins use the
+same cities and demands with uniformly scattered customers.}
+\label{tab:large}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l r cccccc}
+\toprule
+Benchmark & $n$ & restock & threshold & \textsc{Baton-ho} &
+\textsc{Baton} & DP$_{50\mathrm{k}}$ & oracle \\
+\midrule
+Salhi--Nagy & 14 & 26.6 & 37.6 & 42.3 & \textbf{53.0} & 42.9 & 49.0 \\
+City, real shops & 19 & 0.3 & 10.1 & 10.7 & \textbf{10.8} & 12.4 & 36.8 \\
+City, uniform & 9 & 0.5 & 11.3 & 11.9 & \textbf{12.1} & 13.2 & 36.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
