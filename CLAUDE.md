@@ -1,153 +1,55 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
-## Project Overview
+## Project
 
-This is a Python research project that implements and evaluates the **ECHO (Efficient Callback Handling Optimizer)** algorithm for the Stochastic Multi-Agent Vehicle Routing Problem with Uncertain Delivery and Dynamic Callbacks (SMAVRP-UDC). The project focuses on optimizing last-mile delivery routing when delivery success is uncertain and customers can request re-delivery callbacks.
+Research codebase for the **Stochastic Vehicle Routing Problem with
+Simultaneous Pickup and Delivery (SVRPSPD)**. Two coupled layers:
 
-## Core Algorithm Architecture
+1. **Planning** — ALNS route construction under six capacity-feasibility
+   gates (deterministic, SAA-CVaR, Wasserstein-DRO, plus published robust
+   baselines: Gounaris inflation, Bertsimas–Sim budget, moment-DRO).
+2. **Execution** — online mid-route handoff policies under demand
+   uncertainty. The paper's contribution is **OTR-2.0**: peak-aware
+   labels + a Longstaff–Schwartz optimal-stopping trigger (no threshold
+   parameter). Benchmarked against OTR 1.0, tuned thresholds, published
+   rule-based recourse (pi1–pi3), a plug-in DP (the exact method for the
+   stopping stage), and a clairvoyant oracle.
 
-**ECHO** uses a Markov Decision Process formulation with:
-- **Route-based state representation** for scalability
-- **Callback priority queue management** for dynamic re-delivery requests
-- **Approximate value function** using rollout policy for lookahead optimization
-- **Multi-agent coordination** through decentralized decision-making
+Costs follow a three-class fleet model (planned / standby / emergency
+vehicles) with per-stop price schedules built from real route geometry —
+see `svrpspd_wdro/core/costs.py`.
 
-The algorithm addresses real-world scenarios where delivery attempts can fail stochastically, and customers can callback requesting re-delivery, requiring intelligent dynamic routing decisions.
+## Layout
 
-## Development Workflow
+- `svrpspd_wdro/` — the maintained pipeline (see its README for the
+  module map and reproduction commands for every results table).
+- `paper/` — Springer sn-jnl manuscript (double-blind, `\ifanon`);
+  tables regenerate ONLY via `paper/make_tables.py` from result CSVs —
+  never hand-edit `paper/tables/*`. Citations: real papers with DOIs;
+  anything unverified goes in `paper/VERIFY_CITATIONS.md`.
+- `RESULTS_OTR2.md` — running results summary.
+- `legacy/` — archived ECHO-era code; do not extend, do not import.
 
-create conda environment called py313 if not created, otherwise use the environment
-remember to commit to github for all the changes. The github keys are setup already.
+## Working rules
 
-### Common Commands
-```bash
-# Install dependencies (when implemented)
-pip install -r requirements.txt
-
-# Run experiments (when implemented)
-python main.py --config scenarios/scenarios.yaml --output results/
-
-# Run specific scenario (when implemented)
-python main.py --scenario "High_Uncertainty_Dense" --algorithms ECHO GNN-CB
-
-# Run tests (when implemented)
-python -m pytest tests/
-
-# Run linting (when implemented)
-python -m flake8 algorithms/ evaluation/ utils/
-```
-
-### Project Structure (Planned)
-```
-algorithms/          # Algorithm implementations
-├── echo.py         # Main ECHO algorithm (MDP with rollout)
-├── gnn_cb.py       # Greedy Nearest Neighbor baseline
-├── sro_ev.py       # Static Route Optimization baseline
-└── th_cb.py        # Threshold-based Callback baseline
-
-scenarios/          # Test scenario definitions
-├── scenario_generator.py
-└── scenarios.yaml  # 10 scenarios with varying uncertainty
-
-evaluation/         # Performance evaluation framework
-├── metrics.py      # 20+ evaluation metrics
-├── runner.py       # Experiment orchestration
-├── analyzer.py     # Statistical analysis
-└── visualizer.py   # Results visualization
-
-utils/             # Helper functions
-├── distance.py    # Distance calculations
-├── probability.py # Probability distributions
-└── helpers.py     # Utility functions
-```
-
-## Key Implementation Concepts
-
-### State Space
-The ECHO algorithm operates on states containing:
-- Shipper positions, loads, and remaining capacity
-- Pending deliveries with attempt counts
-- Callback queue with priority scores
-- Failed delivery tracking
-- Current time and accumulated costs
-
-### Action Space
-At each decision epoch, actions include:
-- Delivery attempts at current location
-- Movement to next location
-- Callback acceptance/rejection decisions
-- Package selection for delivery attempts
-
-### Reward Structure
-- **Success rewards**: Time-decayed positive rewards for successful deliveries
-- **Failure penalties**: Negative rewards for failed delivery attempts
-- **Callback rewards**: Bonuses for successful callback handling
-- **Movement costs**: Distance × weight cost function
-
-### Algorithm Comparison
-The project evaluates ECHO against three baselines:
-1. **GNN-CB**: Greedy nearest neighbor with simple callback queue
-2. **SRO-EV**: Static route optimization using expected values
-3. **TH-CB**: Threshold-based callback acceptance policy
-
-## Evaluation Framework
-
-### Test Scenarios (10 total)
-- **Low/Medium/High uncertainty** with varying delivery success rates (0.3-0.95)
-- **Different network topologies**: clustered, uniform, hub-spoke
-- **Capacity constraints**: tight vs. loose shipper capacities
-- **Time-critical delivery** with steep reward decay
-- **Large-scale deployment** with 50+ packages
-- **Heterogeneous delivery probabilities** across locations
-- **Time-dependent success rates** varying throughout the day
-
-### Performance Metrics
-- **Primary**: Total reward, delivery success rate, first-attempt success
-- **Callback-specific**: Response rate, response time, callback success rate
-- **Efficiency**: Average delivery time, distance traveled, capacity utilization
-- **Quality**: Route deviation, makespan, cost per delivery
-- **Robustness**: Performance variability across runs
-
-## Research Context
-
-This project implements algorithms described in PLANv1.md, which references foundational VRP literature and extends it to handle:
-- **Stochastic delivery outcomes** with location-specific success probabilities
-- **Dynamic callback events** requiring real-time route replanning
-- **Multi-objective optimization** balancing delivery success vs. operational costs
-
-The "ECHO" name reflects the callback mechanism - when deliveries fail, customer callbacks "echo" back to the system, requiring intelligent navigation through delivery uncertainty.
-
-## Implementation Guidelines
-
-### Key Classes to Implement
-- `State`: Current system state (shippers, packages, callbacks, time)
-- `Action`: Decision choices (movement, delivery attempts, callback responses)
-- `Problem Instance`: Scenario configuration (locations, probabilities, costs)
-- `Algorithm`: Base class for ECHO and baseline algorithms
-
-### Critical Design Considerations
-- **Scalability**: Use route-based state representation, not full combinatorial states
-- **Stochastic modeling**: Sample delivery outcomes according to location probabilities
-- **Rollout efficiency**: Limit horizon depth (3 steps) and sample count (10 samples)
-- **Callback prioritization**: Score callbacks based on value, proximity, and timing
-- **Statistical rigor**: Run 30+ replications per scenario for significance testing
-
-## Testing and Validation
-
-### Unit Tests Required
-- State transition functions with stochastic outcomes
-- Callback handling and priority queue management
-- Metric computation accuracy
-- Scenario generation from YAML configurations
-
-### Integration Tests
-- End-to-end algorithm execution on sample scenarios
-- Statistical analysis pipeline
-- Visualization generation
-
-### Performance Benchmarks
-- Runtime complexity validation: O(n×m×s×h×k) per decision
-- Memory usage tracking for large-scale scenarios
-- Comparison against theoretical bounds where available
+- Python 3.11, no conda needed: `pip install -r requirements.txt`.
+- Run tests from `svrpspd_wdro/`: `python -m pytest tests/ -q`
+  (~180 tests; keep green).
+- Commit author: Vinh <dqvinh87@gmail.com>. Always commit and push to
+  `origin main` after every change. No pull requests unless asked.
+- Long evaluations run in background with logs under
+  `svrpspd_wdro/results/*.log`; solved plans are cached in
+  `results/plans/*.json` (per-instance, gates merged) so eval reruns
+  skip ALNS.
+- Watch working-directory drift: run pipeline commands from
+  `svrpspd_wdro/` (scripts resolve paths relative to their own location,
+  but log/output conventions assume that cwd).
+- Gurobi: WLS licence at `/root/gurobi.lic`
+  (`export GRB_LICENSE_FILE=/root/gurobi.lic`); HiGHS is the default
+  solver so nothing breaks without it.
+- City instances are generated from OSM via `make_city_instances.py`;
+  distances are real road distances symmetrized for the ALNS moves —
+  do NOT feed asymmetric matrices to the 2-opt (it cycles).
+- Report times to the user in GMT+7.

@@ -31,43 +31,26 @@ Because pickup demands $p_i$ are stochastic, the peak load $f_r(\xi) = \max_k L_
 
 ```
 stochastic_vrp/
-│
-├── svrpspd_wdro/                    # Main research package
-│   ├── core/
-│   │   ├── instance.py              # Instance data structure
-│   │   ├── route.py                 # Route + peak-load computation
-│   │   ├── cache.py                 # Prefix/suffix-peak cache (O(Nm) build)
-│   │   ├── wdro_exact.py            # Exact W-DRO evaluator — CVaR + Wasserstein
-│   │   ├── wdro_fast.py             # O(N log N) insertion/removal via cache
-│   │   ├── alns_wdro.py             # ALNS-SA main loop with W-DRO objective
-│   │   ├── filter.py                # Phase-2 cheap-proxy pruning filter
-│   │   ├── otr.py                   # OTR: Online Threshold Reassignment
-│   │   ├── scenarios.py             # Scenario generation
-│   │   └── seeding.py               # RNG seeding helpers
-│   ├── data/
-│   │   └── Dethloff/                # 40 VRPSPD benchmark instances (*.vrpspd)
-│   ├── scripts/
-│   │   ├── dethloff_runner.py       # Batch ALNS evaluation on Dethloff instances
-│   │   ├── run_otr_eval.py          # ← full OTR evaluation (single entry point)
-│   │   ├── run_test1_wdro.py        # W-DRO unit regression
-│   │   ├── run_test2_filter_speedup.py
-│   │   └── run_test3_stress.py
-│   └── tests/                       # pytest suite
-│
-├── algorithms/                      # Earlier callback-routing baselines
-│   ├── alns.py                      # ALNS + M-DRO (moment-based DRO)
-│   ├── echo.py                      # ECHO: MDP rollout policy
-│   ├── apex_v3.py                   # APEX v3 deterministic heuristic
-│   ├── pomo_simplified.py           # POMO
-│   ├── drl_du_simplified.py         # DRL-DU
-│   ├── sro_ev.py / gnn_cb.py / th_cb.py
-│   └── ...
-├── evaluation/                      # Experiment runner and metrics
-├── scenarios/                       # YAML scenario configs and generator
-├── results/                         # Saved outputs (JSON, CSV, plots)
-├── main.py                          # Entry point for baseline comparisons
+├── svrpspd_wdro/        # THE maintained pipeline — see svrpspd_wdro/README.md
+│   ├── core/            #   OTR-2.0/2.1, cost model, DP benchmark, W-DRO planner
+│   ├── scripts/         #   evaluations, instance generators, figures, animation
+│   ├── data/            #   Dethloff (50 cust) · Salhi-Nagy (50-199) · City (100-400,
+│   │                    #   real OSM road networks: HCMC/Hanoi/NYC/Paris/Shanghai)
+│   ├── tests/           #   pytest suite (~180 tests)
+│   └── results/         #   CSVs + figures (paper tables regenerate from these)
+├── paper/               # Springer sn-jnl manuscript (tables via make_tables.py)
+├── RESULTS_OTR2.md      # running results summary (all seven experiment layers)
+├── legacy/              # archived ECHO-era code (not maintained; see its README)
 └── requirements.txt
 ```
+
+**Headline (see `RESULTS_OTR2.md`):** OTR-2.0 — peak-aware labels + an
+optimal-stopping handoff trigger with zero tuning parameters — beats OTR 1.0,
+tuned thresholds, published rule-based recourse, and an equal-data dynamic
+program on all six planning gates (Wilcoxon p ≤ 8×10⁻³, mostly ≤ 10⁻⁸), and
+reaches 92–99% of a near-exact DP given 50× its data. Under the three-class
+fleet cost model, threshold policies destroy value on conservative plans
+(−1.4%) while OTR-2.0 stays firmly positive (+11–13%).
 
 ---
 
