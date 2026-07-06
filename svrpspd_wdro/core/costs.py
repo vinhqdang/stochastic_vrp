@@ -321,6 +321,125 @@ def tune_tau_general(g_train, B, H, E, prob_models,
 
 
 # ============================================================
+# Published-family comparators re-implemented (no public code)
+# ============================================================
+
+
+def fit_rollout(g_hist: np.ndarray, B: float, H: np.ndarray,
+                E: np.ndarray) -> dict:
+    """Rollout policy in the sense of Secomandi (2001): one step of policy
+    improvement over the REACTIVE base policy. The continuation estimate at
+    stop k is the expected cost of never acting again (the base policy's
+    cost-to-go), i.e. the LSM backward pass WITHOUT the stop-updates; the
+    online trigger is the same cost comparison chat > H_k.
+
+    Returns per-step isotonic models with the fit_lsm_general interface.
+    """
+    N, m = g_hist.shape
+    cum = np.cumsum(g_hist, axis=1)
+    ostep = _overflow_step(cum, B)
+
+    future = np.zeros(N)                      # cost under the reactive base
+    breached = ostep <= m
+    future[breached] = E[np.clip(ostep[breached] - 1, 0, m - 1)]
+
+    models: dict = {}
+    for k in range(m - 1, 0, -1):
+        alive = ostep > k
+        n_alive = int(alive.sum())
+        if n_alive >= 2:
+            iso = IsotonicRegression(increasing=True, out_of_bounds="clip")
+            iso.fit(cum[alive, k - 1], future[alive])
+        elif n_alive == 1:
+            iso = _ConstantModel(future[alive][0])
+        else:
+            iso = _ConstantModel(float(E[min(k, m - 1)]))
+        models[k] = iso
+        # NO future-update: the base policy never acts — that is the
+        # difference from fit_lsm_general (full backward optimal play).
+    return models
+
+
+def restock_schedule(route: list, D: np.ndarray, scale: float,
+                     costs: LastMileCosts) -> np.ndarray:
+    """Per-stop cost of a depot-return RESTOCK after stop k: drive to the
+    depot, unload collected pickups / reload deliveries, drive to the next
+    stop; cost = c_km * detour distance + transfer dwell. R[m-1] exists for
+    completeness but a restock after the last stop is never useful."""
+    m = len(route)
+    R = np.zeros(m)
+    for k in range(m):
+        cur = route[k]
+        nxt = route[k + 1] if k + 1 < m else 0
+        detour = (float(D[cur, 0]) + float(D[0, nxt])
+                  - float(D[cur, nxt])) / scale
+        R[k] = costs.c_km * detour + costs.c_transfer
+    return R
+
+
+def simulate_restock(g_test: np.ndarray, B: float, E: np.ndarray,
+                     R: np.ndarray, restock_after: np.ndarray,
+                     return_actions: bool = False):
+    """Execute the single-restock policy: after stop k with W_k above the
+    trigger threshold, detour to the depot (pay R[k-1]), which empties the
+    pickups collected so far — the running sum resets to 0 while the slack
+    stays B (deliveries are reloaded to plan). At most one restock (>=2 is
+    rare in the VRPSD literature and never optimal at these route lengths).
+
+    restock_after: per-position W_k thresholds (np.inf disables a stop).
+    Action codes: 0 complete, 1 restock (recourse used), 2 emergency.
+    """
+    N, m = g_test.shape
+    costs_out = np.zeros(N)
+    action = np.zeros(N, dtype=np.int8)
+    W = np.zeros(N)
+    used = np.zeros(N, dtype=bool)
+    stopped = np.zeros(N, dtype=bool)
+
+    for k_idx in range(m):
+        active = ~stopped
+        if not active.any():
+            break
+        W[active] += g_test[active, k_idx]
+        em = active & (W > B)
+        costs_out[em] += E[k_idx]
+        action[em] = 2
+        stopped |= em
+        if k_idx + 1 == m:
+            break
+        rs = active & ~em & ~used & (W > restock_after[k_idx])
+        if rs.any():
+            costs_out[rs] += R[k_idx]
+            action[rs] = np.maximum(action[rs], 1)
+            W[rs] = 0.0                       # pickups emptied at the depot
+            used |= rs
+
+    stats = {
+        "mean_cost":     float(costs_out.mean()),
+        "handoff_rate":  float((action == 1).mean()),   # = restock rate here
+        "fail_rate":     float((action == 2).mean()),
+        "complete_rate": float((action == 0).mean()),
+    }
+    return (stats, action) if return_actions else stats
+
+
+def tune_restock(g_train: np.ndarray, B: float, E: np.ndarray,
+                 R: np.ndarray, grid: np.ndarray | None = None) -> np.ndarray:
+    """Tune the restock trigger as a fraction of slack: restock after stop k
+    iff W_k > c*B (one scalar c, grid-tuned on realized training cost —
+    the strongest simple form of the depot-return recourse)."""
+    if grid is None:
+        grid = np.concatenate([[np.inf], np.linspace(0.1, 0.95, 18) ])
+    best_thr, best_cost = np.full(g_train.shape[1], np.inf), np.inf
+    for c in grid:
+        thr = np.full(g_train.shape[1], np.inf if not np.isfinite(c) else c * B)
+        cost = simulate_restock(g_train, B, E, R, thr)["mean_cost"]
+        if cost < best_cost:
+            best_cost, best_thr = cost, thr
+    return best_thr
+
+
+# ============================================================
 # Clairvoyant oracle under cost schedules
 # ============================================================
 

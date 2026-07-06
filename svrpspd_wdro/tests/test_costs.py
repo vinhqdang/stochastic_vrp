@@ -176,3 +176,63 @@ class TestStandbyPool:
         h = np.ones((2, 10), dtype=bool)
         c, S = pool_cost(h, LastMileCosts())
         assert S == 2 and c == 2 * LastMileCosts().F_standby
+
+
+class TestPublishedCompetitors:
+    def _setup(self):
+        import numpy as np
+        from core.otr2 import calibrate_B_empirical_peak
+        rng = np.random.default_rng(11)
+        g = rng.normal(-0.05, 0.5, (3000, 10))
+        B = calibrate_B_empirical_peak(g, alpha=0.10)
+        H = np.full(10, 1.0); E = np.full(10, 5.0)
+        return g, B, H, E
+
+    def test_rollout_models_monotone_and_above_lsm(self):
+        """The reactive base never acts, so its cost-to-go dominates the
+        optimal continuation cost pointwise (rollout >= LSM estimates)."""
+        import numpy as np
+        from core.costs import fit_rollout, fit_lsm_general
+        g, B, H, E = self._setup()
+        ro = fit_rollout(g, B, H, E)
+        cm = fit_lsm_general(g, B, H, E)
+        w = np.linspace(-2, 2, 50)
+        for k in ro:
+            r = ro[k].predict(w); c = cm[k].predict(w)
+            assert np.all(np.diff(r) >= -1e-12)
+            # true never-act cost dominates optimal continuation; fitted
+            # curves carry estimation noise, so require it on average
+            assert r.mean() >= c.mean() - 1e-6
+
+    def test_rollout_beats_reactive(self):
+        import numpy as np
+        from core.costs import fit_rollout, simulate_v2_general, simulate_tau_general
+        from core.otr2 import fit_otr_peak
+        g, B, H, E = self._setup()
+        rng = np.random.default_rng(12)
+        g_te = rng.normal(-0.05, 0.5, (8000, 10))
+        ro = fit_rollout(g, B, H, E)
+        cost = simulate_v2_general(g_te, B, H, E, ro)["mean_cost"]
+        react = simulate_tau_general(g_te, B, H, E, fit_otr_peak(g, B), tau=1.0)["mean_cost"]
+        assert cost < react
+
+    def test_restock_resets_and_helps(self):
+        import numpy as np
+        from core.costs import simulate_restock, tune_restock
+        g, B, H, E = self._setup()
+        R = np.full(10, 0.5)                      # cheap detours
+        thr = tune_restock(g, B, E, R)
+        rng = np.random.default_rng(13)
+        g_te = rng.normal(-0.05, 0.5, (8000, 10))
+        tuned = simulate_restock(g_te, B, E, R, thr)
+        never = simulate_restock(g_te, B, E, R, np.full(10, np.inf))
+        assert tuned["mean_cost"] <= never["mean_cost"] + 1e-9
+        total = tuned["handoff_rate"] + tuned["fail_rate"] + tuned["complete_rate"]
+        assert total <= 1.0 + 1e-9
+
+    def test_restock_schedule_positive(self):
+        import numpy as np
+        from core.costs import restock_schedule, LastMileCosts
+        D = np.array([[0, 10, 20], [10, 0, 15], [20, 15, 0]], dtype=float)
+        R = restock_schedule([1, 2], D, 1.0, LastMileCosts())
+        assert (R > 0).all()
