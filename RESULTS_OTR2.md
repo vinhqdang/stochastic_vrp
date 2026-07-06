@@ -155,6 +155,34 @@ lifting. This confirms the design choice empirically (spec section 7)
 and is worth a paragraph in the manuscript as evidence that OTR-2.0's
 simplicity is not a limitation at operational data scales.
 
+
+## 9. RL baseline (Iklassov et al. 2024 re-implementation, Colab T4)
+
+A neural execution policy in the style of Iklassov, Sobirov, Solozabal &
+Takac (ACML 2024): shared MLP over observable state (position, load,
+slack, price ratios, remaining-demand moments), trained with REINFORCE +
+moving baseline for 40 epochs on a T4 (`scripts/rl_exec_train.py`,
+results `results/rl_results.json`). On the identical 50 routes and test
+days (Dethloff + Hanoi/HCMC bundle):
+
+| Policy | saving vs reactive |
+|---|---|
+| RL policy (GPU-trained) | 27.6% |
+| **OTR-2.0** (CPU, ms per route) | **33.9%** |
+
+OTR-2.0 wins on 39/50 routes (paired Wilcoxon p = 1.3e-8). The learned
+policy is a respectable competitor — clearly better than the rule-based
+family — but the backward-induction estimator extracts more from the same
+1,000 training paths than policy-gradient RL, at a tiny fraction of the
+compute.
+
+Note on framing: OTR 1.0 (v1_end/v1_myo columns) is our own prior
+version; in the manuscript it appears as an ABLATION (label defect and
+trigger change isolated), not as a competitor. The competitor set is:
+reactive, tuned threshold, pi1-pi3 (Salavati-Khoshghalb 2019), rollout
+(Secomandi 2001), depot restocking (Florio/Legault family), the plug-in
+DP at equal data, the RL policy above, and the clairvoyant oracle bound.
+
 ## Verdict
 
 OTR-2.0 dominates OTR 1.0 everywhere it matters: catastrophically on
