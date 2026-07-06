@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-make_figures.py — Explanatory visualizations for OTR-2.0 on real city maps.
+make_figures.py — Explanatory visualizations for BATON on real city maps.
 
 Outputs (results/figures/):
   fig1_city_maps.png     2x2 street maps (Hanoi, New York, Paris, Shanghai)
                          with the depot, customers and ALNS routes drawn on
                          the real drive network.
   fig2_how_it_works.png  The algorithm explainer: (A) onboard-load fan over
-                         route stops with the capacity line; (B) the OTR-2.0
+                         route stops with the capacity line; (B) the BATON
                          decision rule on one demand-spike day — estimated
                          cost-to-continue vs the per-stop handoff price, with
                          each policy's trigger stop; (C) resulting expected
                          execution cost per policy on 2,000 test days.
   fig3_map_replay.png    The same spike day replayed on the Hanoi map:
-                         where the reactive policy breaches vs where OTR-2.0
+                         where the reactive policy breaches vs where BATON
                          hands off to a standby vehicle.
 
 Colors follow the validated reference palette (fixed categorical order);
@@ -230,12 +230,30 @@ def fig23(city="hanoi"):
     c3 = tune_pi("pi3", g_tr, B, H, E)
     thr3 = pi_thresholds("pi3", B, g_tr.mean(0), c3)
 
-    # spike scenario: a breaching test day whose peak comes latest (readable)
+    # spike scenario: a breaching test day with a late peak AND the widest
+    # gap between BATON's trigger and the breach — the anticipation the
+    # figure exists to show
     cum_te = np.cumsum(g_te, axis=1)
     breach = cum_te.max(1) > B
     ostep = np.where(breach, (cum_te > B).argmax(1) + 1, 0)
     cand = np.where(breach & (ostep >= max(3, m // 2)))[0]
-    s = int(cand[0]) if len(cand) else int(np.argmax(cum_te.max(1)))
+
+    def _trigger_on(day):
+        w = cum_te[day]
+        for k in range(1, m):
+            if w[k - 1] > B:
+                return None                          # breached before acting
+            if cm[k].predict(np.array([w[k - 1]]))[0] > H[k - 1]:
+                return k
+        return None
+
+    s, best_gap = None, -1
+    for day in cand[:200]:
+        kk = _trigger_on(int(day))
+        if kk is not None and int(ostep[day]) - kk > best_gap:
+            s, best_gap = int(day), int(ostep[day]) - kk
+    if s is None:
+        s = int(cand[0]) if len(cand) else int(np.argmax(cum_te.max(1)))
     spike = cum_te[s]                                # W_k of the spike day
     o = int(ostep[s]) if breach[s] else m
 
@@ -286,12 +304,12 @@ def fig23(city="hanoi"):
     ks = np.arange(1, k_max + 1)
     chat = np.array([cm[k].predict(np.array([spike[k - 1]]))[0] for k in ks])
     axB.plot(ks, chat, color=C["blue"], lw=2,
-             label=r"OTR-2.0 estimate $\hat C_k$: cost of continuing")
+             label=r"BATON estimate $\hat C_k$: cost of continuing")
     axB.plot(ks, H[:k_max], color=MUTED, lw=1.6, ls="-",
              label=r"handoff price $H_k$ at this stop")
     if k_v2:
         axB.scatter([k_v2], [chat[k_v2 - 1]], s=90, color=C["green"], zorder=5)
-        axB.annotate("OTR-2.0 hands off:\ncontinuing now costs more",
+        axB.annotate("BATON hands off:\ncontinuing now costs more",
                      (k_v2, chat[k_v2 - 1]), textcoords="offset points",
                      xytext=(8, -34), fontsize=8.5, color=C["green"])
     if k_p3 and k_p3 != k_v2:
@@ -300,7 +318,7 @@ def fig23(city="hanoi"):
                  rotation=90, fontsize=8, color=C["violet"])
     if k_v1 and k_v1 != k_v2:
         axB.axvline(k_v1, color=C["aqua"], lw=1.2, ls=":")
-        axB.text(k_v1 + 0.1, axB.get_ylim()[1] * 0.8, "v1 threshold",
+        axB.text(k_v1 + 0.1, axB.get_ylim()[1] * 0.8, "endpoint threshold",
                  rotation=90, fontsize=8, color=C["aqua"])
     if o <= m:
         axB.axvline(o, color=STATUS_CRITICAL, lw=1.2, ls="--")
@@ -314,9 +332,9 @@ def fig23(city="hanoi"):
     # panel C: expected execution cost per policy on the test days
     pol_costs = {
         "reactive": simulate_tau_general(g_te, B, H, E, fb_models, tau=1.0),
-        "v1 tuned": simulate_tau_general(g_te, B, H, E, v1_models, tau=tau_v1),
+        "tuned threshold": simulate_tau_general(g_te, B, H, E, v1_models, tau=tau_v1),
         "π3 rule":  simulate_pi(g_te, B, H, E, thr3),
-        "OTR-2.0":  simulate_v2_general(g_te, B, H, E, cm),
+        "BATON":  simulate_v2_general(g_te, B, H, E, cm),
     }
     orc = oracle_costs_general(g_te, B, H, E)
     labels = list(pol_costs) + ["oracle"]
@@ -330,7 +348,7 @@ def fig23(city="hanoi"):
     axC.set_title("C — Result over 2,000 test days", fontsize=10, loc="left")
     axC.tick_params(axis="x", labelrotation=20)
 
-    fig.suptitle(f"How OTR-2.0 works — route with {m} stops, {name} "
+    fig.suptitle(f"How BATON works — route with {m} stops, {name} "
                  f"(peak-overflow rate {ovr * 100:.0f}%)", fontsize=12.5)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig2_how_it_works.png", dpi=200,
@@ -375,7 +393,7 @@ def fig23(city="hanoi"):
         hn = route[k_v2 - 1]
         ax.scatter([lon[hn]], [lat[hn]], s=200, facecolors="none",
                    edgecolors=C["green"], linewidths=2.4, zorder=6)
-        ax.annotate("OTR-2.0 hands off here —\nstandby vehicle finishes "
+        ax.annotate("BATON hands off here —\nstandby vehicle finishes "
                     "the dashed stops", (lon[hn], lat[hn]),
                     textcoords="offset points", xytext=(12, 12), fontsize=9,
                     color=C["green"])

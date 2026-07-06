@@ -17,7 +17,7 @@ demand scenario with the actual delivery/pickup realized at every customer
 
 Modes:
   policy=v2|v1|reactive     single animation
-  policy=compare            reactive vs OTR-2.0 side by side, same scenario
+  policy=compare            reactive vs BATON side by side, same scenario
 
 Usage:
     python scripts/animate_execution.py [instance=data/City/HANOI-100-1.vrpspd]
@@ -225,8 +225,8 @@ def animate(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
     axes = np.atleast_1d(axes)
     veh_dots, load_bars, load_txts, served_sc, ev_txts = [], [], [], [], []
     TITLES = {"reactive": "Reactive (no policy)",
-              "v1": "OTR v1 (fixed threshold)",
-              "v2": "OTR-2.0 (optimal stopping)"}
+              "v1": "endpoint threshold (v1)",
+              "v2": "BATON (optimal stopping)"}
     trails = []          # per panel: {veh_id: Line2D with accumulated path}
     trail_axes = []
     for ax, p, sim in zip(axes, policies, sims):
@@ -323,11 +323,13 @@ def animate(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
 
 
 def animate_fleet(instance_stem="HANOI-200-1", scen_rank=0, fps=7,
-                  out_dir=FIG_DIR, alpha_gate=0.10):
+                  out_dir=FIG_DIR, alpha_gate=0.10, still=False):
     """Whole-plan animation: every vehicle of the plan drives its route
-    simultaneously under OTR-2.0, with breadcrumb trails, per-route colors,
+    simultaneously under BATON, with breadcrumb trails, per-route colors,
     handoff markers (standby vehicles in the route's color, dashed trail)
-    and breach markers. One shared demand scenario for the whole fleet."""
+    and breach markers. One shared demand scenario for the whole fleet.
+    With still=True, replay every frame onto one axes and save a static
+    print-quality PNG (full trails + all event markers) instead of a GIF."""
     from dethloff_runner import (parse_dethloff, sample_demands, solve_fast,
                                  InflationGate, CV, DIST, SEED)
     from make_figures import ROUTE_COLORS
@@ -352,7 +354,7 @@ def animate_fleet(instance_stem="HANOI-200-1", scen_rank=0, fps=7,
     psc_te = sample_demands(pbar, n, 500, CV, DIST, rng2)
     costs = LastMileCosts()
 
-    # fit OTR-2.0 per route; pick the day with the most "at-risk" routes
+    # fit BATON per route; pick the day with the most "at-risk" routes
     fits, risk = [], np.zeros(500)
     for route in plan:
         r = np.array(route)
@@ -395,7 +397,7 @@ def animate_fleet(instance_stem="HANOI-200-1", scen_rank=0, fps=7,
     n_ho = sum(1 for s in sims if s["switch_stop"])
     n_br = sum(1 for s in sims if s["breach_stop"])
     fleet_cost = sum(s["cost"] for s in sims)
-    ax.set_title(f"{instance_stem} — {len(plan)} vehicles under OTR-2.0, one "
+    ax.set_title(f"{instance_stem} — {len(plan)} vehicles under BATON, one "
                  f"high-demand day: {n_ho} handoffs, {n_br} breaches, "
                  f"fleet recourse ${fleet_cost:.0f}", fontsize=14, color=INK)
 
@@ -446,6 +448,17 @@ def animate_fleet(instance_stem="HANOI-200-1", scen_rank=0, fps=7,
     ax.legend(handles=legend, frameon=False, fontsize=10, loc="lower left")
     fig.tight_layout()
 
+    if still:
+        for fi in range(n_frames):
+            update(fi)
+        for d in dots:            # vehicles end parked at the depot
+            d.set_visible(False)
+        out = Path(out_dir) / f"fig6_fleet_{instance_stem}.png"
+        fig.savefig(out, dpi=200, facecolor="white", bbox_inches="tight")
+        plt.close(fig)
+        print(f"wrote {out}  (static, {len(plan)} vehicles)")
+        return out
+
     anim = FuncAnimation(fig, update, frames=n_frames, blit=False)
     out = Path(out_dir) / f"anim_{instance_stem}_fleet_s{scen_rank}.gif"
     anim.save(out, writer=PillowWriter(fps=fps), dpi=100)
@@ -457,15 +470,17 @@ def animate_fleet(instance_stem="HANOI-200-1", scen_rank=0, fps=7,
 def main():
     kw = dict(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
               fps=7)
+    still = False
     for a in sys.argv[1:]:
         if   a.startswith("instance="): kw["instance_stem"] = Path(a[9:]).stem
         elif a.startswith("policy="):   kw["policy"] = a[7:]
         elif a.startswith("scenario="): kw["scen_rank"] = int(a[9:])
         elif a.startswith("fps="):      kw["fps"] = int(a[4:])
+        elif a == "still":              still = True
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     if kw["policy"] == "fleet":
         animate_fleet(instance_stem=kw["instance_stem"],
-                      scen_rank=kw["scen_rank"], fps=kw["fps"])
+                      scen_rank=kw["scen_rank"], fps=kw["fps"], still=still)
     else:
         animate(**kw)
 

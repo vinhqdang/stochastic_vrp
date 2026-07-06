@@ -27,6 +27,12 @@
 \theoremstyle{remark}
 \newtheorem{remark}{Remark}
 
+% float placement: several figures are near-full-page, so relax the
+% defaults or they queue behind one another and dump after the references
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.66}
+
 % elsarticle's pprintTitle footer wraps an \hbox to \textwidth followed by a
 % stray end-of-line space, overfull by one \footnotesize space — rebuild the
 % footer without the inner box
@@ -843,18 +849,18 @@ our experiments (\S\ref{sec:study}).
 Figure~\ref{fig:explainer} makes the machinery concrete on one route of
 the Hanoi instance introduced below: the fan of simulated load paths
 with a demand-spike day highlighted, the fitted continuation cost
-crossing the handoff price at stop 3---six stops before the breach the
+crossing the handoff price at stop 2---ten stops before the breach the
 reactive policy suffers---and the resulting cost distribution over two
 thousand held-out days.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig2_how_it_works}
-\caption{\textsc{Baton} on one 19-stop route in Hanoi. Left: onboard
+\caption{\textsc{Baton} on one 18-stop route in Hanoi. Left: onboard
 load across 200 simulated days; the highlighted day breaches capacity at
-stop 9 if nobody acts. Centre: the decision rule on that day---the
+stop 12 if nobody acts. Centre: the decision rule on that day---the
 estimated cost of continuing $\widehat C_k(W_k)$ crosses the per-stop
-handoff price at stop 3, where the policy hands off. Right: expected
+handoff price at stop 2, where the policy hands off. Right: expected
 execution cost per policy over 2{,}000 held-out days.}
 \label{fig:explainer}
 \end{figure}
@@ -901,7 +907,7 @@ deliveries of 8\,kg, pickup fractions uniform on $[0.2, 0.8]$, and
 150\,kg vehicles, which yields the long 12--25-stop routes where
 execution policy matters most.
 
-\begin{figure}[t]
+\begin{figure}[tp]
 \centering
 \includegraphics[width=\textwidth]{figures/fig1_city_maps}
 \caption{City instances on real street networks, with customers at real
@@ -1045,6 +1051,62 @@ operator can enable the full menu everywhere and trust the policy to
 discover, per route, which levers its geography supports.
 
 \input{tables/tab_large}
+
+Figures~\ref{fig:replay} and~\ref{fig:fleet} put these aggregates back
+on the map, using the same rendering of the real road network on which
+the instances were built; every trail in both figures follows the actual
+shortest road path between consecutive stops, so what is drawn is what
+the per-stop price schedules of \S\ref{sec:setting} price.
+Figure~\ref{fig:replay} replays the demand-spike day of
+Figure~\ref{fig:explainer} on the Hanoi network. The planned vehicle
+(solid trail) works outward from the depot while its fitted continuation
+cost climbs with the accumulating pickups; at the circled stop the
+estimate crosses the handoff price and \textsc{Baton} calls the standby
+vehicle, which completes the dashed remainder of the route. The red
+cross marks where the reactive policy, facing the identical demands,
+instead runs the vehicle to overflow---mid-route, far from the depot,
+at the position where the emergency transfer is priced highest and the
+largest number of downstream customers is kept waiting.
+Figure~\ref{fig:fleet} widens the lens from one route to an entire
+200-customer plan on the same network: thirteen vehicles run
+simultaneously under \textsc{Baton} through one shared high-demand day.
+Seven routes hand off mid-route (circles; the standby vehicle continues
+on the dashed trail in the route's colour), two absorb demand spikes
+too abrupt for any profitable anticipative action and fall through to
+the emergency guard, and the remaining four complete unaided. The
+figure makes the operating regime of the policy concrete: recourse is
+not an exceptional disaster response but a routine, priced re-balancing
+of work across the fleet, exercised on roughly half the routes of a
+hard day at a total recourse bill of a few hundred dollars.
+
+\begin{figure}[tp]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig3_map_replay}
+\caption{The demand-spike day of Figure~\ref{fig:explainer} replayed on
+the Hanoi street network (instance \textsc{Hanoi}-100-1; grey lines are
+the OSM drive network, the star is the depot, and every trail follows
+real shortest road paths). The planned vehicle drives the solid route;
+at the circled stop \textsc{Baton}'s estimated cost of continuing
+exceeds the handoff price and a standby vehicle takes over the dashed
+remainder. Under the reactive policy the same vehicle continues and
+overflows at the red cross, triggering the surge-priced emergency
+transfer with the rest of the route still unserved.}
+\label{fig:replay}
+\end{figure}
+
+\begin{figure}[tp]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig6_fleet}
+\caption{One high-demand day for a full 200-customer plan on the Hanoi
+network (instance \textsc{Hanoi}-200-1): thirteen vehicles execute
+simultaneously under \textsc{Baton}, sharing one demand scenario. Solid
+trails are planned vehicles, dashed trails the standby vehicles that
+take over at the circled handoff points, and red crosses the two spikes
+that outran any profitable anticipative action and fell through to the
+emergency guard. Seven of thirteen routes exercised the handoff lever;
+the whole day's recourse bill is \$341.}
+\label{fig:fleet}
+\end{figure}
 
 The routing plans beneath every number above were certified against
 mixed-integer programming bounds, using the two-commodity flow
