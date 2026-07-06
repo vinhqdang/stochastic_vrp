@@ -2,7 +2,8 @@
 
 Stochastic Vehicle Routing with Simultaneous Pickup and Delivery:
 ALNS planning under six feasibility gates, and online execution policies
-(headlined by **OTR-2.0**, a peak-aware optimal-stopping handoff rule)
+(headlined by **BATON** — Backward-induction AcTion pricing for ONline
+recourse; code labels v2_lsm = handoff-only BATON-HO, v2_act = full BATON)
 evaluated under a realistic three-class fleet cost model.
 
 ## Module map

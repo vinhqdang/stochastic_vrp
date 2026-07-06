@@ -1,4 +1,4 @@
-# Stochastic VRPSPD — robust planning + optimal-stopping execution (OTR-2.0)
+# Stochastic VRPSPD — robust planning + BATON optimal-stopping execution
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -13,10 +13,10 @@ layers of a last-mile operation:
 | Layer | What it does | Where |
 |---|---|---|
 | **Planning** | ALNS route construction under six capacity-feasibility gates: deterministic, SAA-CVaR, Wasserstein-DRO, and three published robust baselines (Gounaris quadrant-budget, Bertsimas–Sim budget, Cantelli/moment-DRO) | `svrpspd_wdro/scripts/dethloff_runner.py` |
-| **Execution** | Online mid-route **handoff** policies that watch the live load as the vehicle serves customers and decide when to dispatch a standby vehicle — headlined by **OTR-2.0**, a peak-aware optimal-stopping rule with *zero tuning parameters* | `svrpspd_wdro/core/otr2.py`, `core/costs.py` |
+| **Execution** | Online mid-route **handoff** policies that watch the live load as the vehicle serves customers and decide when to dispatch a standby vehicle — headlined by **BATON** (Backward-induction AcTion pricing for ONline recourse): a peak-aware optimal-stopping policy over the full recourse action set {continue, hand off, depot-restock}, with *zero tuning parameters* | `svrpspd_wdro/core/otr2.py`, `core/costs.py` |
 
 **Headline results** (details in [`RESULTS_OTR2.md`](RESULTS_OTR2.md)):
-OTR-2.0 beats its predecessor, tuned thresholds, published rule-based
+BATON beats its predecessor, tuned thresholds, published rule-based
 recourse (Salavati-Khoshghalb et al. 2019), and an equal-data dynamic
 program on **all six planning gates** (paired Wilcoxon p ≤ 8×10⁻³, mostly
 ≤ 10⁻⁸), reaches **92–99% of a near-exact DP** given 50× its data, and under
@@ -37,7 +37,7 @@ problem is *when to hand the remainder of a route to a standby vehicle*:
 act too early and you pay for handoffs you didn't need; too late and you
 pay surge prices plus SLA compensation.
 
-## OTR-2.0 in one paragraph
+## BATON in one paragraph
 
 Offline, from historical demand paths (empirical distribution, no
 parametric assumption), backward induction fits per-stop monotone models

@@ -1,4 +1,16 @@
-# OTR-2.0 — Results Summary
+# BATON — Results Summary
+
+**Naming.** The algorithm is **BATON** — *Backward-induction AcTion pricing
+for ONline recourse* (formerly "OTR"). Mapping to code/CSV labels, which
+stay frozen for reproducibility:
+
+| Paper name | Code / CSV label | What it is |
+|---|---|---|
+| **BATON** | `v2_act` | full algorithm: continue / handoff / depot-restock, exact reset valuation, per-route deployment selection |
+| BATON-HO | `v2_lsm` | handoff-only restriction (formerly "OTR-2.0") |
+| endpoint-threshold predecessor | `v1_end`, `v1_myo` | ablation (formerly "OTR 1.0") |
+| peak-label threshold | `fb_tau` | ablation of the trigger (label fixed, threshold kept) |
+
 
 *All experiments reproducible from `svrpspd_wdro/scripts/`; tables in the
 manuscript regenerate from these CSVs via `paper/make_tables.py`.*

@@ -11,9 +11,11 @@ Simultaneous Pickup and Delivery (SVRPSPD)**. Two coupled layers:
    gates (deterministic, SAA-CVaR, Wasserstein-DRO, plus published robust
    baselines: Gounaris inflation, Bertsimas–Sim budget, moment-DRO).
 2. **Execution** — online mid-route handoff policies under demand
-   uncertainty. The paper's contribution is **OTR-2.0**: peak-aware
-   labels + a Longstaff–Schwartz optimal-stopping trigger (no threshold
-   parameter). Benchmarked against OTR 1.0, tuned thresholds, published
+   uncertainty. The paper's contribution is **BATON** (Backward-induction AcTion
+   pricing for ONline recourse; code labels keep the historical v2_lsm/
+   v2_act names): peak-aware labels + a Longstaff–Schwartz optimal-
+   stopping trigger over {continue, handoff, depot-restock} — no
+   threshold parameter. Benchmarked against the endpoint-threshold predecessor (ablation), tuned thresholds, published
    rule-based recourse (pi1–pi3), a plug-in DP (the exact method for the
    stopping stage), and a clairvoyant oracle.
 
