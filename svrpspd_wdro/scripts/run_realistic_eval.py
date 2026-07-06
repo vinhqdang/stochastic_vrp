@@ -65,6 +65,8 @@ from core.costs import (
     restock_schedule,
     simulate_restock,
     tune_restock,
+    fit_lsm_actions,
+    simulate_actions,
 )
 from dethloff_runner import (
     parse_dethloff, sample_demands, solve_instance,
@@ -76,7 +78,7 @@ PLANS_DIR   = RESULTS_DIR / "plans"
 
 POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau",
                  "pi1", "pi2", "pi3", "rollout", "restock",
-                 "v2_lsm", "dp_n", "dp_xl", "oracle"]
+                 "v2_lsm", "v2_act", "dp_n", "dp_xl", "oracle"]
 
 N_XL = 50_000       # training scenarios for the near-exact DP anchor
 
@@ -186,11 +188,16 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
 
     orc, orc_a = oracle_general_billed(g_test, B, Hd("oracle"), E, H)
 
+    # combined-action OTR: continue / handoff / depot-restock
+    am = fit_lsm_actions(g_train, B, Hd("v2_act"), E, R)
+
     out, acts = {}, {}
     out["rollout"], acts["rollout"] = simulate_v2_general(
         g_test, B, Hd("rollout"), E, ro_models, return_actions=True, H_bill=H)
     out["restock"], acts["restock"] = simulate_restock(
         g_test, B, E, R, thr_rs, return_actions=True)
+    out["v2_act"], acts["v2_act"] = simulate_actions(
+        g_test, B, Hd("v2_act"), E, R, am, return_actions=True, H_bill=H)
     out["none"],   acts["none"]   = simulate_tau_general(g_test, B, Hd("none"), E, fb_models, tau=1.0, return_actions=True, H_bill=H)
     out["v1_end"], acts["v1_end"] = simulate_tau_general(g_test, B, Hd("v1_end"), E, v1_end_models, tau=tau_end, return_actions=True, H_bill=H)
     out["v1_myo"], acts["v1_myo"] = simulate_tau_general(g_test, B, Hd("v1_myo"), E, fb_models, tau=tau_myo, return_actions=True, H_bill=H)

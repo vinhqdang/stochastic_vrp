@@ -364,8 +364,11 @@ def restock_schedule(route: list, D: np.ndarray, scale: float,
                      costs: LastMileCosts) -> np.ndarray:
     """Per-stop cost of a depot-return RESTOCK after stop k: drive to the
     depot, unload collected pickups / reload deliveries, drive to the next
-    stop; cost = c_km * detour distance + transfer dwell. R[m-1] exists for
-    completeness but a restock after the last stop is never useful."""
+    stop. Cost = c_km * detour distance + transfer dwell + SLA lateness for
+    every downstream customer (the detour delays them exactly as an
+    emergency swap does — leaving this unpriced would make depot returns
+    artificially free relative to the emergency lateness charge).
+    R[m-1] exists for completeness but is never useful online."""
     m = len(route)
     R = np.zeros(m)
     for k in range(m):
@@ -373,7 +376,8 @@ def restock_schedule(route: list, D: np.ndarray, scale: float,
         nxt = route[k + 1] if k + 1 < m else 0
         detour = (float(D[cur, 0]) + float(D[0, nxt])
                   - float(D[cur, nxt])) / scale
-        R[k] = costs.c_km * detour + costs.c_transfer
+        R[k] = (costs.c_km * detour + costs.c_transfer
+                + costs.p_late * (m - (k + 1)))
     return R
 
 
@@ -437,6 +441,115 @@ def tune_restock(g_train: np.ndarray, B: float, E: np.ndarray,
         if cost < best_cost:
             best_cost, best_thr = cost, thr
     return best_thr
+
+
+# ============================================================
+# OTR-2.0 with the combined action set {continue, handoff, restock}
+# ============================================================
+
+
+def fit_lsm_actions(g_hist: np.ndarray, B: float, H: np.ndarray,
+                    E: np.ndarray, R: np.ndarray) -> dict:
+    """Backward induction over THREE actions: continue, hand off (H_k),
+    or depot-restock (R_k, resets the running sum to 0 — pickups emptied,
+    deliveries reloaded). The restock continuation is valued at the fitted
+    curve's own W=0 point (approximate DP: expectation in place of the
+    per-path fresh-suffix realization; consistent as N grows).
+
+    Returns {k: (iso_model, chat0_k)} — chat0_k is the continuation value
+    from the reset state used by both training updates and the online rule.
+    """
+    N, m = g_hist.shape
+    cum = np.cumsum(g_hist, axis=1)
+    ostep = _overflow_step(cum, B)
+
+    future = np.zeros(N)
+    breached = ostep <= m
+    future[breached] = E[np.clip(ostep[breached] - 1, 0, m - 1)]
+
+    models: dict = {}
+    for k in range(m - 1, 0, -1):
+        alive = ostep > k
+        n_alive = int(alive.sum())
+        if n_alive >= 2:
+            iso = IsotonicRegression(increasing=True, out_of_bounds="clip")
+            iso.fit(cum[alive, k - 1], future[alive])
+        elif n_alive == 1:
+            iso = _ConstantModel(future[alive][0])
+        else:
+            iso = _ConstantModel(float(E[min(k, m - 1)]))
+        chat0 = float(np.asarray(iso.predict(np.array([0.0])))[0])
+        models[k] = (iso, chat0)
+
+        pred = np.asarray(iso.predict(cum[:, k - 1]))
+        v_continue = pred
+        v_handoff = H[k - 1]
+        v_restock = R[k - 1] + chat0
+        best = np.minimum(np.minimum(v_continue, v_handoff), v_restock)
+        act_ho = alive & (v_handoff <= v_restock) & (best == v_handoff)
+        act_rs = alive & ~act_ho & (best == v_restock)
+        future = future.copy()
+        future[act_ho] = v_handoff
+        future[act_rs] = v_restock          # expectation-valued reset
+    return models
+
+
+def simulate_actions(g_test: np.ndarray, B: float, H: np.ndarray,
+                     E: np.ndarray, R: np.ndarray, models: dict,
+                     return_actions: bool = False, H_bill=None):
+    """Execute the combined-action policy. W resets to 0 on restock; the
+    same stop may be restocked at most once per visit (loop guard), and
+    multiple restocks along a route are allowed. Action codes: 0 complete,
+    1 handoff (standby vehicle-day consumed), 2 emergency, 3 restocked at
+    least once but completed/handed-off later is still coded by its final
+    terminal action; the handoff_rate/fail_rate semantics match the other
+    simulators, with restocks accumulated into cost only."""
+    if H_bill is None:
+        H_bill = H
+    N, m = g_test.shape
+    costs_out = np.zeros(N)
+    action = np.zeros(N, dtype=np.int8)
+    W = np.zeros(N)
+    stopped = np.zeros(N, dtype=bool)
+
+    for k_idx in range(m):
+        k = k_idx + 1
+        active = ~stopped
+        if not active.any():
+            break
+        W[active] += g_test[active, k_idx]
+        em = active & (W > B)
+        costs_out[em] += E[k_idx]
+        action[em] = 2
+        stopped |= em
+        if k == m:
+            break
+        alive = active & ~em
+        entry = models.get(k)
+        if entry is None or not alive.any():
+            continue
+        iso, chat0 = entry
+        chat = np.asarray(iso.predict(W[alive]))
+        v_ho = H[k_idx]
+        v_rs = R[k_idx] + chat0
+        idx = np.where(alive)[0]
+        do_ho = (v_ho < chat) & (v_ho <= v_rs)
+        do_rs = (v_rs < chat) & ~do_ho
+        ho_idx = idx[do_ho]
+        costs_out[ho_idx] += H_bill[k_idx]
+        action[ho_idx] = 1
+        stopped[ho_idx] = True
+        rs_idx = idx[do_rs]
+        costs_out[rs_idx] += R[k_idx]
+        W[rs_idx] = 0.0
+
+    stats = {
+        "mean_cost":     float(costs_out.mean()),
+        "handoff_rate":  float((action == 1).mean()),
+        "fail_rate":     float((action == 2).mean()),
+        "complete_rate": float((action == 0).mean()),
+    }
+    return (stats, action) if return_actions else stats
 
 
 # ============================================================
