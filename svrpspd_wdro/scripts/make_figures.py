@@ -50,7 +50,8 @@ C = {"blue": "#2a78d6", "aqua": "#1baf7a", "yellow": "#eda100",
 ROUTE_COLORS = [C["blue"], C["aqua"], C["yellow"], C["green"], C["violet"],
                 C["red"]]
 STATUS_CRITICAL = "#c62f2e"
-ROAD   = "#e3e2dd"
+ROAD   = "#e3e2dd"          # chart gridlines
+STREET = "#c0bfb6"          # map street network (dark enough to read in print)
 INK    = "#1a1a19"
 MUTED  = "#8a897f"
 
@@ -116,7 +117,7 @@ def fig1(cities=("hanoi", "nyc", "paris", "shanghai")):
         for u, v, data in G.edges(data=True):
             ax.plot([G.nodes[u]["x"], G.nodes[v]["x"]],
                     [G.nodes[u]["y"], G.nodes[v]["y"]],
-                    color=ROAD, lw=0.35, zorder=1)
+                    color=STREET, lw=0.5, zorder=1)
 
         for ri, route in enumerate(plan):
             col = ROUTE_COLORS[ri] if ri < len(ROUTE_COLORS) else MUTED
@@ -366,7 +367,7 @@ def fig23(city="hanoi"):
     for u, v, data in G.edges(data=True):
         ax.plot([G.nodes[u]["x"], G.nodes[v]["x"]],
                 [G.nodes[u]["y"], G.nodes[v]["y"]],
-                color=ROAD, lw=0.4, zorder=1)
+                color=STREET, lw=0.6, zorder=1)
 
     seq = [0] + route + [0]
     hand = k_v2 if k_v2 else m
@@ -429,6 +430,45 @@ def fig23(city="hanoi"):
     print("wrote fig3_map_replay.png", flush=True)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# Figure 7 — real shop locations vs the uniform twin, same city
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def fig7(city="hanoi", size=200):
+    """Two panels on the same street network: customers at real OSM shop
+    locations (data/City) vs the uniformly-scattered twin (data/CityUniform)
+    that shares the demand draws. Illustrates the spatial-structure
+    experiment of the paper."""
+    G = _load_graph(city)
+    fig, axes = plt.subplots(1, 2, figsize=(13, 6.8))
+    panels = [("City", "customers at real shop locations"),
+              ("CityUniform", "uniform twin (same demands)")]
+    name = f"{city.upper()}-{size}-1"
+    for ax, (dset, title) in zip(axes, panels):
+        coords = json.loads((_WDRO / "data" / dset / f"{name}.coords.json")
+                            .read_text())["nodes"]
+        lat = [c[1] for c in coords]
+        lon = [c[2] for c in coords]
+        for u, v in G.edges():
+            ax.plot([G.nodes[u]["x"], G.nodes[v]["x"]],
+                    [G.nodes[u]["y"], G.nodes[v]["y"]],
+                    color=STREET, lw=0.5, zorder=1)
+        ax.scatter(lon[1:], lat[1:], s=16, color=C["blue"], zorder=3,
+                   edgecolors="white", linewidths=0.4)
+        ax.scatter([lon[0]], [lat[0]], marker="*", s=300, color=INK,
+                   zorder=4, edgecolors="white", linewidths=0.8)
+        ax.set_title(f"{name} — {title}", fontsize=11, color=INK)
+        ax.set_aspect(1.0 / np.cos(np.deg2rad(np.mean(lat))))
+        ax.set_xticks([]); ax.set_yticks([])
+        for s_ in ax.spines.values():
+            s_.set_visible(False)
+    fig.tight_layout()
+    fig.savefig(FIG_DIR / "fig7_shops_vs_uniform.png", dpi=200,
+                facecolor="white", bbox_inches="tight")
+    plt.close(fig)
+    print("wrote fig7_shops_vs_uniform.png", flush=True)
+
+
 if __name__ == "__main__":
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
@@ -436,6 +476,8 @@ if __name__ == "__main__":
         fig1()
     if which in ("all", "23"):
         fig23()
+    if which in ("all", "7"):
+        fig7()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

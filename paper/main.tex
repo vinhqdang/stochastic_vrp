@@ -951,6 +951,42 @@ plug-in dynamic program DP$_{N}$; and the near-exact
 DP$_{50\mathrm{k}}$. A reinforcement-learning policy re-implemented
 from \citet{iklassov2024rl} is compared separately in
 \S\ref{sec:learning}, and the clairvoyant bound closes every table.
+Table~\ref{tab:competitors} collects the full roster with sources; in
+every results table the reported quantity is the expected-recourse
+saving relative to the reactive policy, in percent, so \emph{higher is
+always better}.
+
+\begin{table}[tp]
+\caption{Execution policies compared in this paper. Policies marked
+``tuned'' receive their best hyper-parameter by grid search on the
+training scenarios; \textsc{Baton} has no tunable parameter.}
+\label{tab:competitors}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l p{5.1cm} l}
+\toprule
+Label & Policy & Source \\
+\midrule
+reactive & never intervenes; emergency on breach & baseline \\
+endpoint $+\,\tau$ & endpoint-label threshold (tuned), and its
+  myopic variant & ablation (Props.~\ref{prop:bias}, \ref{prop:myopic}) \\
+threshold & peak-label threshold (tuned) & strongest threshold ablation \\
+$\pi_1$--$\pi_3$ & rule-based restocking triggers (tuned) &
+  \citet{salavati2019rule} \\
+rollout & one-step policy improvement & \citet{secomandi2001rollout} \\
+restock & depot-return restocking, tuned trigger &
+  \citet{yang2000stochastic}; \citet{florio2020new} \\
+RL & policy-gradient network, GPU-trained &
+  \citet{iklassov2024rl} \\
+DP$_N$, DP$_{50\mathrm{k}}$ & plug-in dynamic program, equal /
+  $50{\times}$ data & \citet{secomandi2009reoptimization} \\
+\textsc{Baton-ho} & handoff-only restriction of our policy & this paper \\
+\textsc{Baton} & priced-action optimal stopping & this paper \\
+oracle & clairvoyant per-day optimum (handoff-only) & upper bound \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Protocol.} Per route, policies are fitted on $10^3$ training
 scenarios and evaluated on $2 \times 10^3$ independent test days;
@@ -964,6 +1000,21 @@ $p_{\mathrm{late}} = 1.5$, $p_{\mathrm{breach}} = 10$ (currency units
 per vehicle-day or per event; kilometre costs $c_{\mathrm{km}} = 0.1$),
 calibrated to the order of magnitude of Southeast-Asian gig-logistics
 rates and swept in \S\ref{sec:sensitivity}.
+
+\paragraph{Software.} All planning and execution code is Python 3.11.15
+(NumPy 2.4.6, SciPy 1.17.1, pandas 3.0.3); the isotonic regressions of
+Algorithm~\ref{alg:offline} use scikit-learn 1.9.0. The MIP
+certification of \S\ref{sec:large} solves the two-commodity flow
+formulation through PuLP 3.3.2 with Gurobi 13.0.2 as the primary solver
+and the open-source HiGHS 1.15.1 as an independent cross-check; both
+solvers run single-model with a 300-second budget per instance and
+default tolerances. Street networks and shop locations come from
+OpenStreetMap via OSMnx 2.1.0 \citep{boeing2017osmnx}, and the
+reinforcement-learning baseline is trained with PyTorch on an NVIDIA
+T4 GPU. Everything else---the ALNS planner, all six gates, and every
+execution policy of Table~\ref{tab:competitors}---is implemented from
+the cited papers in plain Python within our repository, so all
+competitors share the same simulator, cost model, and data.
 
 \subsection{Headline comparison across planning regimes}
 \label{sec:headline}
@@ -1198,13 +1249,31 @@ relative prices move.}
 The spatial-structure experiment closes the study. For each city
 instance we generated a twin with identical demands and identical seeds
 but customers scattered uniformly over the street network rather than
-placed at real shops. The real retail clustering shortens optimal
+placed at real shops; Figure~\ref{fig:shops} shows the pair for the
+200-customer Hanoi instance, and the visual difference is the
+experiment: real retail concentrates around the commercial core while
+the uniform convention spreads demand into residential and peripheral
+blocks. The real retail clustering shortens optimal
 routes by \shopTravelSaving{} on average---uniform spatial conventions
 materially overstate travel in urban simultaneous pickup-and-delivery
 ---while the execution-policy ranking and \textsc{Baton}'s margins are
 unchanged between the twins. The policy conclusions of this paper do
 not depend on where customers stand; the absolute economics do, which
 is precisely why we report both.
+
+\begin{figure}[tp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig7_shops_vs_uniform}
+\caption{The spatial-structure twins for \textsc{Hanoi}-200-1 on the
+OSM drive network (star: depot). Left: the 200 customers at real
+OpenStreetMap shop locations, clustered along the retail corridors
+around the commercial centre. Right: the uniform twin---identical
+demand draws, customers scattered uniformly over the same street
+network. Real clustering shortens optimal routes by
+\shopTravelSaving{} on average while leaving the execution-policy
+ranking unchanged.}
+\label{fig:shops}
+\end{figure}
 
 
 % ══════════════════════════════════════════════════════════════════════

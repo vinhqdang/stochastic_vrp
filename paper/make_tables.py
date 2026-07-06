@@ -94,7 +94,8 @@ if grand is not None:
     tab = r"""\begin{table}[t]
 \caption{Expected-recourse saving over the reactive policy (\%, mean over
 the 40 Dethloff instances) for each planning gate and execution policy
-under the three-class fleet cost model. \textsc{Baton-ho} is the
+under the three-class fleet cost model; \emph{higher is better}, and the
+best non-clairvoyant value per gate is in bold. \textsc{Baton-ho} is the
 handoff-only restriction; DP$_{50\mathrm{k}}$ and the clairvoyant oracle
 are handoff-only reference points, so \textsc{Baton} may legitimately
 exceed them by exercising its richer action set.}
@@ -153,7 +154,9 @@ if sn is not None and city is not None:
         rows.append(_row(r"City, uniform", cityu))
     tab = r"""\begin{table}[t]
 \caption{Large-scale benchmarks under the fleet cost model
-(Det-gate plans; saving \% vs.\ reactive). Salhi--Nagy instances carry
+(Det-gate plans; saving \% vs.\ reactive, \emph{higher is better};
+the proposed policy is in bold, DP$_{50\mathrm{k}}$ and the oracle are
+reference points). Salhi--Nagy instances carry
 50--199 customers; the city instances (100--400 customers) place
 customers at real OSM shop locations on the road networks of Ho Chi Minh
 City, Hanoi, New York, Paris and Shanghai, and the uniform twins use the
@@ -210,7 +213,8 @@ if cs_files and grand is not None:
                     rf"\textbf{{{d.v2_act_saving.mean():.1f}}} & "
                     f"{d.oracle_saving.mean():.1f} \\\\")
     tab = r"""\begin{table}[t]
-\caption{Sensitivity of the recourse saving (\%) to the fleet-economics
+\caption{Sensitivity of the recourse saving (\%, \emph{higher is
+better}; best non-clairvoyant value per row in bold) to the fleet-economics
 parameters, one factor at a time around the defaults (12 Dethloff
 instances, \textsc{Det} and \textsc{SAA} gates). \textsc{Baton}
 re-balances its action mix as prices move and leads in every
@@ -281,7 +285,8 @@ def _rl_table():
     tab = r"""\begin{table}[t]
 \caption{Reinforcement-learning baseline (re-implementation of the policy
 architecture of Iklassov et al., 2024) versus \textsc{Baton-ho} on the
-identical 50 routes and out-of-sample test days. The learned policy is
+identical 50 routes and out-of-sample test days; saving \% vs.\ the
+reactive policy, \emph{higher is better}. The learned policy is
 trained on a GPU; \textsc{Baton} fits in milliseconds per route on a CPU.}
 \label{tab:rl}
 \centering
@@ -322,8 +327,9 @@ if syn is not None:
                     rf"\textbf{{{_ms(scen, 'v2_lsm_saving'):.1f}}} \\")
     tab = r"""\begin{table}[t]
 \caption{Structural synthetic scenarios (five seeds, $1.2\times10^4$ test
-routes each): saving \% over the reactive policy. On collect-then-deliver
-structure the endpoint-labelled predecessor never intervenes.}
+routes each): saving \% over the reactive policy, \emph{higher is
+better}. On collect-then-deliver structure the endpoint-labelled
+predecessor never intervenes.}
 \label{tab:synthetic}
 \centering
 \begin{tabular}{l ccc}

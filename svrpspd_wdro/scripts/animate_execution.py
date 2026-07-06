@@ -50,7 +50,7 @@ from core.otr2 import fit_otr_peak
 from core.costs import (LastMileCosts, route_cost_schedules,
                         fit_lsm_general, tune_tau_general)
 from make_figures import (_load_graph, _street_path, _pick_route_and_scenarios,
-                          C, ROAD, INK, MUTED, STATUS_CRITICAL)
+                          C, ROAD, STREET, INK, MUTED, STATUS_CRITICAL)
 
 VEH1   = C["blue"]
 VEH2   = C["aqua"]      # standby
@@ -163,7 +163,7 @@ def _draw_static(ax, G, lonr, latr, xs, ys, lon0, lat0):
         x1, y1 = G.nodes[u]["x"], G.nodes[u]["y"]
         if lonr[0] <= x1 <= lonr[1] and latr[0] <= y1 <= latr[1]:
             ax.plot([x1, G.nodes[v]["x"]], [y1, G.nodes[v]["y"]],
-                    color=ROAD, lw=0.5, zorder=1)
+                    color=STREET, lw=0.65, zorder=1)
     ax.scatter(xs, ys, s=46, facecolors="white", edgecolors=MUTED,
                linewidths=1.2, zorder=4)
     ax.scatter([lon0], [lat0], marker="*", s=380, color=INK, zorder=5,
