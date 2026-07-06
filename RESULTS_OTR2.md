@@ -183,6 +183,40 @@ reactive, tuned threshold, pi1-pi3 (Salavati-Khoshghalb 2019), rollout
 (Secomandi 2001), depot restocking (Florio/Legault family), the plug-in
 DP at equal data, the RL policy above, and the clairvoyant oracle bound.
 
+
+## 10. The combined-action policy (OTR-A): final comparison matrix
+
+Generalizing the OTR-2.0 backward induction to the full recourse action
+set {continue, hand off, depot-restock} — with exact fresh-suffix
+valuation of the restock reset and per-route train-set deployment
+selection (falls back to handoff-only where restocking cannot pay) —
+produces the strongest policy on every benchmark:
+
+| Gate | restock | tuned thresh | OTR-2.0 (HO) | **OTR-A** | DP-50k (HO) | oracle (HO) |
+|---|---|---|---|---|---|---|
+| Det | 5.6 | 24.8 | 26.1 | **27.8** | 26.5 | 40.7 |
+| SAA | 43.7 | 16.6 | 20.5 | **53.4** | 22.3 | 43.5 |
+| WDRO | 34.8 | -8.3 | 9.3 | **40.9** | 12.0 | 42.0 |
+| Gounaris | 43.3 | 17.0 | 21.2 | **52.8** | 22.9 | 43.5 |
+| Cui | 41.0 | 16.6 | 20.7 | **51.6** | 22.7 | 43.2 |
+| MDRO | 38.8 | -1.8 | 11.9 | **44.3** | 14.2 | 42.2 |
+
+(saving % vs reactive; HO = handoff-only action set.) Pooled over 240
+plan rows, OTR-A beats every competitor on 221-240/240 instances at
+p ~ 1e-39..1e-41 — including the handoff-only 50k-path DP (235/240) and,
+on four gates plus Salhi-Nagy (53.0 vs 49.0), it EXCEEDS the
+handoff-only clairvoyant oracle: richer actions legitimately beat a
+clairvoyant restricted to fewer actions. Salhi-Nagy: 53.0%. City: 11.5%
+(restock worthless there — deployment selection correctly falls back).
+
+Notes: the oracle column is a bound for the HANDOFF-ONLY class and is
+kept as the ablation anchor; the depot-restock action is priced with
+full SLA lateness for downstream customers (same rate as emergencies).
+The three-action finding also explains the literature: depot-return
+recourse (Florio/Legault) wins exactly where depots are central, handoff
+recourse wins where they are not, and OTR-A prices the choice per stop
+from data — subsuming both.
+
 ## Verdict
 
 OTR-2.0 dominates OTR 1.0 everywhere it matters: catastrophically on
