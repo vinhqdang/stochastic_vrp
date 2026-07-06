@@ -28,6 +28,10 @@ MIXTURES = [
 ]
 SEED       = 7
 OMEGA_RATIO = 50.0     
+GOUNARIS_ALPHA = 1.0     # factor = 0.50  (nếu overshoot K=7/EVx<0.01 thì lùi 0.80 -> factor 0.40)
+GOUNARIS_BETA  = 0.50
+CUI_ALPHA      = 0.30     # hat_d = 0.30*(p+d)
+CUI_GAMMA      = 0.80     # budget = 0.80 * #visited
 TLIM        = 60.0     
 NO_IMPROVE  = 15.0     # early-stop: break if no improving move for this many seconds
 DATA_DIR    = "dethloff_data"
@@ -222,101 +226,6 @@ class DetGate:
         return nominal_peak(route, self.dbar, self.pbar) <= self.cap + 1e-9
 
 
-class InflationGate:
-    """Gounaris et al. (2013)-style robust gate, static-inflation variant:
-    the nominal Model-A peak with every demand inflated by (1+alpha) must
-    fit the capacity. Matches the repo's validated adaptation of the
-    robust CVRP (algorithms/gounaris_exact final.py) with the same
-    default alpha=0.2 (the paper's Table-2 operating point)."""
-    mode = "gounaris"
-
-    def __init__(self, cap, dbar, pbar, alpha=0.2):
-        self.cap = cap
-        self.dbar = dbar * (1.0 + alpha)
-        self.pbar = pbar * (1.0 + alpha)
-        self.calls = self.pruned = 0
-
-    def feasible(self, route):
-        if not route:
-            return True
-        return nominal_peak(route, self.dbar, self.pbar) <= self.cap + 1e-9
-
-
-class BudgetGate:
-    """Bertsimas & Sim (2004) budget-uncertainty gate on the SPD load
-    profile: each node may deviate by hat_i = alpha_dev*(d_i+p_i), at most
-    Gamma = ceil(gamma_frac*m) nodes deviate simultaneously, and the
-    worst-case load at every stop must fit the capacity. At position k the
-    eligible deviations are hat_d of not-yet-served customers (still on
-    board) plus hat_p of already-served ones (collected)."""
-    mode = "bsim"
-
-    def __init__(self, cap, dbar, pbar, alpha_dev=0.2, gamma_frac=0.5):
-        self.cap = cap
-        self.dbar, self.pbar = dbar, pbar
-        self.hat_d = alpha_dev * (dbar + pbar)
-        self.hat_p = alpha_dev * (dbar + pbar)
-        self.gamma_frac = gamma_frac
-        self.calls = self.pruned = 0
-
-    def feasible(self, route):
-        if not route:
-            return True
-        self.calls += 1
-        r = np.asarray(route)
-        d, p = self.dbar[r], self.pbar[r]
-        hd, hp = self.hat_d[r], self.hat_p[r]
-        m = len(r)
-        Gamma = int(math.ceil(self.gamma_frac * m))
-        total_d = d.sum()
-        # nominal Model-A load after serving stop k (k=0 is departure)
-        L = np.concatenate(([total_d], total_d - np.cumsum(d) + np.cumsum(p)))
-        for k in range(m + 1):
-            elig = np.concatenate([hd[k:], hp[:k]])   # unserved deliveries + served pickups
-            if Gamma < len(elig):
-                add = np.partition(elig, -Gamma)[-Gamma:].sum()
-            else:
-                add = elig.sum()
-            if L[k] + add > self.cap + 1e-9:
-                return False
-        return True
-
-
-class MomentDROGate:
-    """Ghosal, Ho & Wiesemann (2024)-style distributionally robust gate
-    under moment ambiguity: the route is feasible iff the worst-case
-    probability of exceeding capacity, over ALL demand distributions with
-    the given mean and (equicorrelated) covariance, is at most eps at
-    every stop. By the one-sided Chebyshev (Cantelli) bound this reduces
-    to  M_k + sqrt((1-eps)/eps) * sd(L_k) <= Q  per position k — a
-    closed-form check, the moment-DRO analogue of the SAA/WDRO gates."""
-    mode = "mdro"
-
-    def __init__(self, cap, dbar, pbar, sig_d, sig_p, rho, eps=0.10):
-        self.cap = cap
-        self.dbar, self.pbar = dbar, pbar
-        self.sig_d, self.sig_p = sig_d, sig_p
-        self.rho = rho
-        self.kappa = math.sqrt((1.0 - eps) / eps)
-        self.calls = self.pruned = 0
-
-    def feasible(self, route):
-        if not route:
-            return True
-        self.calls += 1
-        d = self.dbar[route]; p = self.pbar[route]
-        sd = self.sig_d[route]; sp = self.sig_p[route]
-        total_d = d.sum()
-        M = np.concatenate(([total_d], total_d - np.cumsum(d) + np.cumsum(p)))
-        v2 = (sd ** 2).sum()
-        Vind = np.concatenate(([v2], v2 - np.cumsum(sd ** 2) + np.cumsum(sp ** 2)))
-        s1 = sd.sum()
-        S = np.concatenate(([s1], s1 - np.cumsum(sd) + np.cumsum(sp)))
-        Vcorr = (1.0 - self.rho) * Vind + self.rho * S ** 2
-        return bool(np.max(M + self.kappa * np.sqrt(np.clip(Vcorr, 0.0, None)))
-                    <= self.cap + 1e-9)
-
-
 class TwoPhaseGate:
     """SAA / W-DRO: Phase-1 O(route_len) rho-surrogate LOWER-BOUND prune (reject-only),
     Phase-2 exact empirical CVaR certificate (the only acceptance gate)."""
@@ -355,7 +264,143 @@ class TwoPhaseGate:
         return cvar(route_peaks(route, self.dsc, self.psc),          # Phase 2: exact certificate
                     self.alpha) <= self.cap + 1e-9
 
+class CantelliGate:
+    """M-DRO Baseline (Cantelli-Chebyshev). 
+    Enforces P(load > Q) <= 1-alpha using only mean and variance."""
+    mode = "cantelli"
+    def __init__(self, cap, alpha, dbar, pbar, sig_d, sig_p, rho):
+        self.cap = cap
+        self.alpha = alpha
+        self.dbar, self.pbar = dbar, pbar
+        self.sig_d, self.sig_p = sig_d, sig_p
+        self.rho = rho
+        self.multiplier = math.sqrt(alpha / (1.0 - alpha))
+        self.calls = self.pruned = 0
 
+    def feasible(self, route):
+        if not route:
+            return True
+        self.calls += 1
+        d = self.dbar[route]; p = self.pbar[route]
+        sd = self.sig_d[route]; sp = self.sig_p[route]
+        
+        total_d = d.sum()
+        M = np.concatenate(([total_d], total_d - np.cumsum(d) + np.cumsum(p)))
+        
+        v2 = (sd ** 2).sum()
+        Vind = np.concatenate(([v2], v2 - np.cumsum(sd ** 2) + np.cumsum(sp ** 2)))
+        s1 = sd.sum()
+        S = np.concatenate(([s1], s1 - np.cumsum(sd) + np.cumsum(sp)))
+        Vcorr = (1.0 - self.rho) * Vind + self.rho * S ** 2
+        
+        peak_cantelli = float(np.max(M + self.multiplier * np.sqrt(np.clip(Vcorr, 0.0, None))))
+        return peak_cantelli <= self.cap + 1e-9
+class CuiGate:
+    """
+    Cui et al. (2025) / Bertsimas & Sim (2004) Budgeted Uncertainty.
+    Core Idea: At most 'Gamma' fraction of nodes in a route can deviate
+    up to their maximum deviation bound (hat_d).
+    """
+    mode = "cui_budget"
+    
+    def __init__(self, cap, dbar, pbar, alpha=0.1, gamma=0.5):
+        self.cap = cap
+        self.alpha = alpha  # Max fractional deviation
+        self.gamma = gamma  # Budget fraction (0.0 to 1.0)
+        self.dbar = dbar
+        self.pbar = pbar
+        
+        # Max deviation bound for each node: hat_d_i = alpha * (P_i + D_i)
+        # This matches the logic from the Cui script
+        self.hat_d = alpha * (pbar + dbar)
+        
+        self.calls = 0
+        self.pruned = 0
+
+    def feasible(self, route):
+        if not route:
+            return True
+        self.calls += 1
+        
+        m = len(route)
+        d = self.dbar[route]
+        p = self.pbar[route]
+        h = self.hat_d[route]
+        
+        # 1. Tính Tải trọng danh nghĩa (Nominal Load) tại mọi trạm
+        total_d = d.sum()
+        nominal_M = np.concatenate(([total_d], total_d - np.cumsum(d) + np.cumsum(p)))
+        
+        # Nếu chỉ riêng Nominal Load đã vượt sức chứa -> Vứt luôn
+        if np.any(nominal_M > self.cap):
+            return False
+            
+        # 2. Xử lý Budgeted Worst-case cho từng trạm
+        # Mặc dù vòng lặp for trong python chậm hơn numpy, nhưng vì số trạm m nhỏ (thường < 20)
+        # nên việc tính Worst-case tại từng điểm dừng (như script của Cui) là bắt buộc.
+        
+        for k in range(m):
+            # Lấy các deviation của các trạm đã đi qua từ đầu đến trạm k
+            devs = h[:k+1]
+            
+            # Sắp xếp giảm dần để lấy những độ lệch tồi tệ nhất
+            sorted_devs = np.sort(devs)[::-1]
+            
+            # Tính Budget: Gamma * số trạm đã đi qua
+            budget_float = self.gamma * (k + 1)
+            budget_floor = int(math.floor(budget_float))
+            budget_frac = budget_float - budget_floor
+            
+            # Cộng dồn các deviation lớn nhất nằm trong Budget
+            worst_extra = np.sum(sorted_devs[:budget_floor])
+            if budget_frac > 0 and budget_floor < len(sorted_devs):
+                worst_extra += budget_frac * sorted_devs[budget_floor]
+            
+            # Tính Worst-case Load tại trạm k
+            # nominal_M có size m+1 (vị trí 0 là depot), nên trạm k tương ứng với nominal_M[k+1]
+            worst_load = nominal_M[k+1] + worst_extra
+            
+            if worst_load > self.cap + 1e-9:
+                return False  # Chỉ cần 1 trạm vỡ tải Worst-case là cấm cửa route này
+                
+        # Sống sót qua mọi kịch bản Worst-case
+        return True
+class GounarisGate:
+    """
+    Gounaris (2013) Robust CVRP - Static Demand Inflation (QB Support).
+    Core Idea: Inflate demand by (1 + alpha * beta) before checking capacity.
+    """
+    mode = "gounaris_qb"
+    
+    def __init__(self, cap, dbar, pbar, alpha=0.1, beta=0.5):
+        self.cap = cap
+        self.alpha = alpha
+        self.beta = beta
+        
+        # Mô phỏng chính xác logic inflate_demands_QB từ Gounaris 2013
+        factor = alpha if beta >= 1.0 else alpha * beta
+        
+        # Bơm phồng toàn bộ array nhu cầu một lần duy nhất (Vectorized)
+        self.d_inf = dbar * (1.0 + factor)
+        self.p_inf = pbar * (1.0 + factor)
+        self.calls = 0
+        self.pruned = 0 # Thêm biến này để tránh lỗi nếu code sếp có gọi tới
+
+    def feasible(self, route):
+        if not route:
+            return True
+        self.calls += 1
+        
+        # Lấy nhu cầu ĐÃ BỊ BƠM PHỒNG của các trạm trong tuyến
+        d = self.d_inf[route]
+        p = self.p_inf[route]
+        
+        # Tính toán Peak Load vật lý như bình thường
+        total_d = d.sum()
+        M = np.concatenate(([total_d], total_d - np.cumsum(d) + np.cumsum(p)))
+        peak_load = np.max(M)
+        
+        return float(peak_load) <= self.cap + 1e-9
 # ============================================================ ALNS (verbatim core + early stop)
 def cw_init(D, gate, n):
     routes = [[c] for c in range(1, n) if gate.feasible([c])]
@@ -397,16 +442,12 @@ def cw_init(D, gate, n):
     return sol
 
 
-def two_opt_gate(route, D, gate, max_passes=200):
-    """First-improvement 2-opt. The gain test assumes symmetric D; the pass
-    cap is a safety net against cycling if D is (accidentally) asymmetric."""
+def two_opt_gate(route, D, gate):
     if len(route) < 4:
         return route
     r = route[:]
     improved = True
-    passes = 0
-    while improved and passes < max_passes:
-        passes += 1
+    while improved:
         improved = False
         for i in range(len(r) - 1):
             for k in range(i + 1, len(r)):
@@ -503,19 +544,6 @@ def econ_cost(sol, D, omega_V):
     return sum(route_cost(r, D) for r in sol) + omega_V * sum(1 for r in sol if r)
 
 
-def solve_fast(D, gate, n):
-    """Large-instance planning: Clarke-Wright + per-route 2-opt only.
-
-    The pure-Python relocate/ILS machinery of solve() is O(n^2) Python
-    iterations per improvement and runs to convergence BEFORE its time
-    limit applies, which is impractical beyond ~150 customers. CW + 2-opt
-    builds a reasonable plan in seconds; since every execution policy is
-    evaluated on the SAME plan, planner optimality does not affect the
-    policy comparison."""
-    sol = [two_opt_gate(r, D, gate) for r in cw_init(D, gate, n) if r]
-    return [r for r in sol if r]
-
-
 def solve(D, gate, n, omega_V, time_limit, seed, no_improve=NO_IMPROVE):
     """Penalised-distance ILS (distance + omega_V*K). Early stop: break if no improving move for
     `no_improve` seconds, or when `time_limit` is hit."""
@@ -559,12 +587,9 @@ def eval_evextra(plan, dbar, pbar, n, Q, mixture=None, heavy_family="lognormal",
 
 
 # ============================================================ one instance
-def solve_instance(path, tlim, no_improve, use_prune=True, which=None):
-    """Solve the requested policies ONCE (default: all three). Returns plans + per-policy
-    K/dist/time/prune plus the data needed to (re-)price economics under any stress mixture
-    (omega_V is mixture-independent). `which`: optional list of gate names to solve, e.g.
-    ["Det"] — the scenario-gated SAA/WDRO gates are O(N_DATA) per feasibility call and
-    become impractical inside O(n^2) local search at n >= 200."""
+def solve_instance(path, tlim, no_improve, use_prune=True):
+    """Solve all three policies ONCE. Returns plans + per-policy K/dist/time/prune plus the data
+    needed to (re-)price economics under any stress mixture (omega_V is mixture-independent)."""
     D, dem, Q, n, scale = parse_dethloff(path)
     dbar = dem[:, 0].astype(float).copy()            # mean delivery (depot idx 0 = 0)
     pbar = dem[:, 1].astype(float).copy()            # native pickup
@@ -574,23 +599,17 @@ def solve_instance(path, tlim, no_improve, use_prune=True, which=None):
 
     dsc, psc = make_scenarios(dbar, pbar, N_DATA, CV, DIST, SEED)    # empirical Phat (the gate)
     gates = {
-        "Det":  DetGate(Q, dbar, pbar),
-        "SAA":  TwoPhaseGate(Q,    ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune),
-        "WDRO": TwoPhaseGate(Qeff, ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune),
-        # published robust-planning baselines (see class docstrings)
-        "GNRS": InflationGate(Q, dbar, pbar),
-        "BSIM": BudgetGate(Q, dbar, pbar),
-        "MDRO": MomentDROGate(Q, dbar, pbar, sig_d, sig_p, RHO, eps=1.0 - ALPHA),
+        "Det":      DetGate(Q, dbar, pbar),
+        "Gounaris": GounarisGate(Q, dbar, pbar, alpha=GOUNARIS_ALPHA, beta=GOUNARIS_BETA),
+        "Cui":      CuiGate(Q, dbar, pbar, alpha=CUI_ALPHA, gamma=CUI_GAMMA),
+        "MDRO":     CantelliGate(Q, ALPHA, dbar, pbar, sig_d, sig_p, RHO), # Phương sai
+        "SAA":      TwoPhaseGate(Q, ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune), # Lấy mẫu
+        "WDRO":     TwoPhaseGate(Qeff, ALPHA, dbar, pbar, sig_d, sig_p, Z_CVAR, RHO, dsc, psc, use_prune), # Trùm cuối
     }
-    if which:
-        gates = {k: v for k, v in gates.items() if k in which}
     res = {}
     for name, gate in gates.items():
         t0 = time.time()
-        if n > 90:                      # ILS impractical: CW + 2-opt (see solve_fast)
-            plan = solve_fast(D, gate, n)
-        else:
-            plan = solve(D, gate, n, omega_V_solve, tlim, SEED, no_improve)
+        plan = solve(D, gate, n, omega_V_solve, tlim, SEED, no_improve)
         elapsed = time.time() - t0
         K = sum(1 for r in plan if r)
         dist = sum(route_cost(r, D) for r in plan) / scale          # real units
