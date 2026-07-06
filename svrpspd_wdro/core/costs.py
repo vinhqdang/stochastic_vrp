@@ -448,16 +448,55 @@ def tune_restock(g_train: np.ndarray, B: float, E: np.ndarray,
 # ============================================================
 
 
+def _fresh_value(k: int, m: int, g: np.ndarray, B: float, H: np.ndarray,
+                 E: np.ndarray, R: np.ndarray, models: dict) -> float:
+    """Expected cost of the suffix k+1..m starting from the RESET state
+    (running sum 0 after a depot restock at stop k), simulated over the
+    training paths with the already-fitted downstream models. Nested
+    restocks use the F-values of later steps (available: backward order)."""
+    N = g.shape[0]
+    W = np.zeros(N)
+    cost = np.zeros(N)
+    stopped = np.zeros(N, dtype=bool)
+    for j in range(k + 1, m + 1):
+        active = ~stopped
+        if not active.any():
+            break
+        W[active] += g[active, j - 1]
+        em = active & (W > B)
+        cost[em] += E[j - 1]
+        stopped |= em
+        if j == m:
+            break
+        entry = models.get(j)
+        if entry is None:
+            continue
+        iso, Fj = entry
+        alive = active & ~em
+        if not alive.any():
+            continue
+        chat = np.asarray(iso.predict(W[alive]))
+        v_ho, v_rs = H[j - 1], R[j - 1] + Fj
+        idx = np.where(alive)[0]
+        do_ho = (v_ho < chat) & (v_ho <= v_rs)
+        do_rs = (v_rs < chat) & ~do_ho
+        cost[idx[do_ho]] += v_ho
+        stopped[idx[do_ho]] = True
+        cost[idx[do_rs]] += R[j - 1]
+        W[idx[do_rs]] = 0.0
+    return float(cost.mean())
+
+
 def fit_lsm_actions(g_hist: np.ndarray, B: float, H: np.ndarray,
                     E: np.ndarray, R: np.ndarray) -> dict:
-    """Backward induction over THREE actions: continue, hand off (H_k),
-    or depot-restock (R_k, resets the running sum to 0 — pickups emptied,
-    deliveries reloaded). The restock continuation is valued at the fitted
-    curve's own W=0 point (approximate DP: expectation in place of the
-    per-path fresh-suffix realization; consistent as N grows).
+    """Backward induction over THREE actions: continue, hand off (H_k), or
+    depot-restock (R_k, resets the running sum to 0 — pickups emptied,
+    deliveries reloaded). The restock continuation F_k is valued EXACTLY by
+    simulating the reset state through the already-fitted downstream policy
+    (backward order makes those models available), so nested restocks and
+    later handoffs are priced in; no clipped-extrapolation bias.
 
-    Returns {k: (iso_model, chat0_k)} — chat0_k is the continuation value
-    from the reset state used by both training updates and the online rule.
+    Returns {k: (iso_model, F_k)}.
     """
     N, m = g_hist.shape
     cum = np.cumsum(g_hist, axis=1)
@@ -478,19 +517,19 @@ def fit_lsm_actions(g_hist: np.ndarray, B: float, H: np.ndarray,
             iso = _ConstantModel(future[alive][0])
         else:
             iso = _ConstantModel(float(E[min(k, m - 1)]))
-        chat0 = float(np.asarray(iso.predict(np.array([0.0])))[0])
-        models[k] = (iso, chat0)
+        Fk = _fresh_value(k, m, g_hist, B, H, E, R, models)
+        models[k] = (iso, Fk)
 
         pred = np.asarray(iso.predict(cum[:, k - 1]))
         v_continue = pred
         v_handoff = H[k - 1]
-        v_restock = R[k - 1] + chat0
+        v_restock = R[k - 1] + Fk
         best = np.minimum(np.minimum(v_continue, v_handoff), v_restock)
         act_ho = alive & (v_handoff <= v_restock) & (best == v_handoff)
         act_rs = alive & ~act_ho & (best == v_restock)
         future = future.copy()
         future[act_ho] = v_handoff
-        future[act_rs] = v_restock          # expectation-valued reset
+        future[act_rs] = v_restock
     return models
 
 
