@@ -74,7 +74,18 @@ from dethloff_runner import (
 )
 
 RESULTS_DIR = _WDRO / "results"
+# plan cache. NOTE: keyed by instance NAME — datasets whose instances share
+# names (e.g. City vs CityUniform twins) must use separate cache dirs, set
+# via set_plans_dir() from the data directory in main().
 PLANS_DIR   = RESULTS_DIR / "plans"
+
+
+def set_plans_dir(data_dir: str) -> None:
+    global PLANS_DIR
+    base = Path(data_dir).name
+    # Dethloff and the (shops) City set keep the historical shared cache
+    if base not in ("Dethloff", "City"):
+        PLANS_DIR = RESULTS_DIR / f"plans_{base}"
 
 POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau",
                  "pi1", "pi2", "pi3", "rollout", "restock",
@@ -378,6 +389,7 @@ def main():
         else:
             print(f"  Unknown argument '{arg}' — ignored")
 
+    set_plans_dir(data_dir)     # dataset-scoped plan cache (before pool fork)
     files = sorted(glob.glob(str(Path(data_dir) / "*.vrpspd"))) or \
             sorted(glob.glob(str(Path(data_dir) / "*.txt")))
     if not files:
