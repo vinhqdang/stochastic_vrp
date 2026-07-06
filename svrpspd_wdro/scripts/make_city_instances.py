@@ -94,14 +94,52 @@ def _distance_matrix(G, node_ids: np.ndarray) -> np.ndarray:
     return np.round(D * SCALE).astype(np.int64)
 
 
-def _sample_nodes(G, depot_latlon, n_cust: int, rng) -> np.ndarray:
-    """Depot = street node nearest the city-centre point; customers are a
-    uniform sample (without replacement) of the remaining street nodes."""
+def _shop_points(city: str):
+    """Real shop locations from OSM (shop=* POIs) within the city disc.
+    Returns (lats, lons, names) arrays. Cached by osmnx."""
+    import warnings
+    import osmnx as ox
+    lat, lon, radius = CITIES[city]
+    gdf = ox.features_from_point((lat, lon), tags={"shop": True}, dist=radius)
+    with warnings.catch_warnings():
+        # geographic-CRS centroid error is <1 m at shop-polygon scale
+        warnings.simplefilter("ignore", UserWarning)
+        pts = gdf.geometry.centroid      # polygons (malls, markets) -> centroid
+    names = gdf.get("name")
+    names = names.fillna("shop") if names is not None else ["shop"] * len(gdf)
+    return (np.asarray(pts.y, dtype=float), np.asarray(pts.x, dtype=float),
+            [str(n) for n in names])
+
+
+def _sample_nodes(G, depot_latlon, n_cust: int, rng, city: str):
+    """Depot = street node nearest the city-centre point. Customers are a
+    random sample of REAL SHOPS (OSM shop=* points), each snapped to its
+    nearest drive-network node — so the instance reflects the city's actual
+    retail distribution (market streets, malls, commercial clusters), not a
+    uniform scatter. Duplicate snaps are dropped and resampled.
+
+    Returns (node_ids array incl. depot first, shop_names list)."""
     import osmnx as ox
     depot = ox.distance.nearest_nodes(G, X=depot_latlon[1], Y=depot_latlon[0])
-    others = np.array([v for v in G.nodes if v != depot])
-    cust = rng.choice(others, size=n_cust, replace=False)
-    return np.concatenate([[depot], cust])
+    lats, lons, names = _shop_points(city)
+    if len(lats) < n_cust * 2:
+        raise RuntimeError(f"{city}: only {len(lats)} shops found for "
+                           f"{n_cust} customers")
+    order = rng.permutation(len(lats))
+    chosen, chosen_names, seen = [], [], {depot}
+    snapped = ox.distance.nearest_nodes(
+        G, X=lons[order], Y=lats[order])          # vectorized snap
+    for j, node in zip(order, snapped):
+        if node in seen:
+            continue
+        seen.add(node)
+        chosen.append(node)
+        chosen_names.append(names[j])
+        if len(chosen) == n_cust:
+            break
+    if len(chosen) < n_cust:
+        raise RuntimeError(f"{city}: exhausted shops after {len(chosen)}")
+    return np.concatenate([[depot], chosen]), ["DEPOT"] + chosen_names
 
 
 def _demands(n_cust: int, rng) -> np.ndarray:
@@ -161,18 +199,21 @@ def main():
         for n_cust in sizes:
             for seed in seeds:
                 rng = np.random.default_rng(10_000 * n_cust + seed)
-                node_ids = _sample_nodes(G, centre, n_cust, rng)
+                node_ids, shop_names = _sample_nodes(G, centre, n_cust, rng,
+                                                     city)
                 t0 = time.time()
                 D = _distance_matrix(G, node_ids)
                 dem = _demands(n_cust, rng)
                 name = f"{city.upper()}-{n_cust}-{seed}"
                 write_vrpspd(out / f"{name}.vrpspd", name, D, dem, Q_VEHICLE,
-                             f"OSM drive network, depot {centre}, seed {seed}")
-                # coordinates sidecar for map visualization: OSM node ids and
-                # lat/lon of depot + customers, in instance node order
+                             f"OSM drive network, customers at real shops "
+                             f"(shop=* POIs), depot {centre}, seed {seed}")
+                # coordinates sidecar for map visualization: OSM node ids,
+                # lat/lon and the real shop name, in instance node order
                 import json
-                coords = [[int(v), float(G.nodes[v]["y"]), float(G.nodes[v]["x"])]
-                          for v in node_ids]
+                coords = [[int(v), float(G.nodes[v]["y"]),
+                           float(G.nodes[v]["x"]), shop_names[i]]
+                          for i, v in enumerate(node_ids)]
                 (out / f"{name}.coords.json").write_text(json.dumps(
                     {"city": city, "centre": centre, "nodes": coords}))
                 print(f"  wrote {name}.vrpspd  (n={n_cust}, "
