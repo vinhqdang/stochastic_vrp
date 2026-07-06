@@ -111,6 +111,18 @@ def _shop_points(city: str):
             [str(n) for n in names])
 
 
+def _sample_nodes_uniform(G, depot_latlon, n_cust: int, rng):
+    """SYNTHETIC variant: customers at a uniform random sample of street
+    nodes — no retail structure. Kept alongside the real-shop sampler so
+    the effect of true spatial clustering can be quantified."""
+    import osmnx as ox
+    depot = ox.distance.nearest_nodes(G, X=depot_latlon[1], Y=depot_latlon[0])
+    others = np.array([v for v in G.nodes if v != depot])
+    cust = rng.choice(others, size=n_cust, replace=False)
+    return (np.concatenate([[depot], cust]),
+            ["DEPOT"] + [f"node-{int(v)}" for v in cust])
+
+
 def _sample_nodes(G, depot_latlon, n_cust: int, rng, city: str):
     """Depot = street node nearest the city-centre point. Customers are a
     random sample of REAL SHOPS (OSM shop=* points), each snapped to its
@@ -180,13 +192,17 @@ def main():
     sizes  = [100, 200, 400]
     seeds  = [1]
     cities = list(CITIES)
-    out    = _WDRO / "data" / "City"
+    mode   = "shops"        # shops = real OSM retail; uniform = synthetic
+    out    = None
 
     for arg in sys.argv[1:]:
         if   arg.startswith("sizes="):  sizes  = [int(x) for x in arg[6:].split(",")]
         elif arg.startswith("seeds="):  seeds  = [int(x) for x in arg[6:].split(",")]
         elif arg.startswith("cities="): cities = arg[7:].split(",")
+        elif arg.startswith("mode="):   mode   = arg[5:]
         elif arg.startswith("out="):    out    = Path(arg[4:])
+    if out is None:
+        out = _WDRO / "data" / ("City" if mode == "shops" else "CityUniform")
 
     out.mkdir(parents=True, exist_ok=True)
     for city in cities:
@@ -199,8 +215,12 @@ def main():
         for n_cust in sizes:
             for seed in seeds:
                 rng = np.random.default_rng(10_000 * n_cust + seed)
-                node_ids, shop_names = _sample_nodes(G, centre, n_cust, rng,
-                                                     city)
+                if mode == "shops":
+                    node_ids, shop_names = _sample_nodes(G, centre, n_cust,
+                                                         rng, city)
+                else:
+                    node_ids, shop_names = _sample_nodes_uniform(G, centre,
+                                                                 n_cust, rng)
                 t0 = time.time()
                 D = _distance_matrix(G, node_ids)
                 dem = _demands(n_cust, rng)
