@@ -188,16 +188,26 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
 
     orc, orc_a = oracle_general_billed(g_test, B, Hd("oracle"), E, H)
 
-    # combined-action OTR: continue / handoff / depot-restock
+    # combined-action OTR: continue / handoff / depot-restock. Deployment
+    # choice is made per route ON TRAINING DATA (no test leakage): when the
+    # restock action cannot pay for itself (e.g. remote depots), the extra
+    # action only adds estimation noise, so fall back to handoff-only.
     am = fit_lsm_actions(g_train, B, Hd("v2_act"), E, R)
+    tr_act = simulate_actions(g_train, B, Hd("v2_act"), E, R, am)["mean_cost"]
+    tr_ho  = simulate_v2_general(g_train, B, Hd("v2_act"), E, cm)["mean_cost"]
+    use_actions = tr_act <= tr_ho
 
     out, acts = {}, {}
     out["rollout"], acts["rollout"] = simulate_v2_general(
         g_test, B, Hd("rollout"), E, ro_models, return_actions=True, H_bill=H)
     out["restock"], acts["restock"] = simulate_restock(
         g_test, B, E, R, thr_rs, return_actions=True)
-    out["v2_act"], acts["v2_act"] = simulate_actions(
-        g_test, B, Hd("v2_act"), E, R, am, return_actions=True, H_bill=H)
+    if use_actions:
+        out["v2_act"], acts["v2_act"] = simulate_actions(
+            g_test, B, Hd("v2_act"), E, R, am, return_actions=True, H_bill=H)
+    else:
+        out["v2_act"], acts["v2_act"] = simulate_v2_general(
+            g_test, B, Hd("v2_act"), E, cm, return_actions=True, H_bill=H)
     out["none"],   acts["none"]   = simulate_tau_general(g_test, B, Hd("none"), E, fb_models, tau=1.0, return_actions=True, H_bill=H)
     out["v1_end"], acts["v1_end"] = simulate_tau_general(g_test, B, Hd("v1_end"), E, v1_end_models, tau=tau_end, return_actions=True, H_bill=H)
     out["v1_myo"], acts["v1_myo"] = simulate_tau_general(g_test, B, Hd("v1_myo"), E, fb_models, tau=tau_myo, return_actions=True, H_bill=H)
