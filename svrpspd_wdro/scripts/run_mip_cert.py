@@ -61,7 +61,8 @@ PLANS_DIR   = RESULTS_DIR / "plans"
 
 def solve_vrpspd_mip(D: np.ndarray, deliv: np.ndarray, pick: np.ndarray,
                      Q: float, omega_V: float, tlim: float,
-                     warm_obj: float | None = None) -> dict:
+                     warm_obj: float | None = None,
+                     solver: str = "highs") -> dict:
     """Two-commodity flow VRPSPD MIP. deliv/pick are full node vectors
     (index 0 = depot, zeros). Returns incumbent objective, dual bound,
     solver status and wall time."""
@@ -100,18 +101,23 @@ def solve_vrpspd_mip(D: np.ndarray, deliv: np.ndarray, pick: np.ndarray,
         m += y[i, j] + z[i, j] <= Q * x[i, j]
 
     t0 = time.time()
-    solver = pulp.HiGHS(msg=False, timeLimit=tlim)
-    m.solve(solver)
+    if solver == "gurobi":
+        s = pulp.GUROBI(msg=False, timeLimit=tlim)
+    else:
+        s = pulp.HiGHS(msg=False, timeLimit=tlim)
+    m.solve(s)
     wall = time.time() - t0
 
     status = pulp.LpStatus[m.status]
     ub = pulp.value(m.objective) if m.status in (pulp.LpStatusOptimal,) or \
         pulp.value(m.objective) is not None else float("nan")
-    # HiGHS dual bound via solver model if exposed; PuLP does not surface it,
-    # so re-read from the solver's internals when available.
+    # dual bound via the underlying solver handle (PuLP doesn't surface it)
     lb = float("nan")
     try:
-        lb = m.solverModel.getInfo().mip_dual_bound      # highspy handle
+        if solver == "gurobi":
+            lb = m.solverModel.ObjBound                  # gurobipy handle
+        else:
+            lb = m.solverModel.getInfo().mip_dual_bound  # highspy handle
     except Exception:
         if status == "Optimal":
             lb = ub
@@ -140,7 +146,7 @@ def _load_plan(name: str) -> list | None:
 # Modes
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _cert_one(path: str, tlim: float) -> dict:
+def _cert_one(path: str, tlim: float, solver: str = "highs") -> dict:
     D, dem, Q, n, scale = parse_dethloff(path)
     name = Path(path).stem
     deliv = np.concatenate([[0.0], dem[1:, 0]]) if dem.shape[0] == n else dem[:, 0]
@@ -155,7 +161,8 @@ def _cert_one(path: str, tlim: float) -> dict:
         plan = sol["res"]["Det"]["plan"]
     alns_obj = _plan_objective(plan, D, omega_V)
 
-    mip = solve_vrpspd_mip(D, deliv, pick, Q, omega_V, tlim, warm_obj=alns_obj)
+    mip = solve_vrpspd_mip(D, deliv, pick, Q, omega_V, tlim,
+                           warm_obj=alns_obj, solver=solver)
     lb = mip["lb"]
     row = {
         "Instance": name, "n_cust": n - 1, "Q": Q,
@@ -172,11 +179,13 @@ def _cert_one(path: str, tlim: float) -> dict:
     return row
 
 
-def run_files(files: list, tlim: float, workers: int, out_stem: str):
+def run_files(files: list, tlim: float, workers: int, out_stem: str,
+              solver: str = "highs"):
     rows = []
     t0 = time.time()
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        futs = {pool.submit(_cert_one, f, tlim): Path(f).stem for f in files}
+        futs = {pool.submit(_cert_one, f, tlim, solver): Path(f).stem
+                for f in files}
         for i, fut in enumerate(as_completed(futs), 1):
             try:
                 r = fut.result()
@@ -228,10 +237,13 @@ def main():
     args = sys.argv[1:]
     mode = args[0] if args else "dethloff"
     tlim, max_n, workers = 300.0, None, min(3, os.cpu_count() or 1)
+    solver, out_stem = "highs", None
     for a in args[1:]:
         if a.startswith("tlim="):    tlim    = float(a[5:])
         elif a.startswith("max="):     max_n   = int(a[4:])
         elif a.startswith("workers="): workers = int(a[8:])
+        elif a.startswith("solver="):  solver  = a[7:]
+        elif a.startswith("out="):     out_stem = a[4:]
 
     if mode == "small":
         run_small(tlim)
@@ -239,9 +251,11 @@ def main():
     files = sorted(glob.glob(str(_WDRO / "data" / "Dethloff" / "*.vrpspd")))
     if max_n:
         files = files[:max_n]
-    print(f"MIP certification (HiGHS): {len(files)} instances, "
+    out_stem = out_stem or ("results_mip_cert_gurobi" if solver == "gurobi"
+                            else "results_mip_cert")
+    print(f"MIP certification ({solver}): {len(files)} instances, "
           f"tlim={tlim}s, workers={workers}")
-    run_files(files, tlim, workers, "results_mip_cert")
+    run_files(files, tlim, workers, out_stem, solver)
 
 
 if __name__ == "__main__":
