@@ -236,10 +236,11 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     return out, acts
 
 
-def _run_instance(path, tlim, n_train, n_test, active_policies, reuse):
+def _run_instance(path, tlim, n_train, n_test, active_policies, reuse,
+                  cost_overrides=None):
     log = []
     name = Path(path).stem
-    costs = LastMileCosts()
+    costs = LastMileCosts(**(cost_overrides or {}))
 
     D, _dem, Q, n, scale = parse_dethloff(path)
 
@@ -375,6 +376,7 @@ def main():
     policies  = ["Det", "SAA", "WDRO"]
     n_workers = os.cpu_count() or 1
     reuse     = True
+    cost_overrides = None
 
     for arg in sys.argv[1:]:
         if   arg.startswith("dir="):      data_dir  = arg[4:]
@@ -386,6 +388,10 @@ def main():
         elif arg.startswith("workers="):  n_workers = int(arg[8:])
         elif arg.startswith("policies="): policies  = arg[9:].split(",")
         elif arg.startswith("reuse="):    reuse     = bool(int(arg[6:]))
+        elif arg.startswith("costs="):
+            # e.g. costs=F_standby:10,p_late:3.0 — LastMileCosts overrides
+            cost_overrides = {kv.split(":")[0]: float(kv.split(":")[1])
+                              for kv in arg[6:].split(",") if kv}
         else:
             print(f"  Unknown argument '{arg}' — ignored")
 
@@ -415,7 +421,7 @@ def main():
     with ProcessPoolExecutor(max_workers=n_workers) as pool:
         futures = {
             pool.submit(_run_instance, f, tlim, n_train, n_test,
-                        policies, reuse): Path(f).stem
+                        policies, reuse, cost_overrides): Path(f).stem
             for f in files
         }
         done = 0
