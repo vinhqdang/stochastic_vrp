@@ -9,9 +9,11 @@
 \newif\ifanon
 \anonfalse
 
-\documentclass[preprint,12pt]{elsarticle}
+\documentclass[preprint,authoryear,12pt]{elsarticle}
 
 \usepackage{amsmath,amssymb,amsthm}
+\usepackage{setspace}
+\onehalfspacing
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{algorithm}
@@ -57,7 +59,7 @@
 
 \begin{frontmatter}
 
-\title{BATON: optimal-stopping recourse for vehicle routing with
+\title{Optimal-stopping recourse for vehicle routing with
 simultaneous pickup, delivery, and stochastic demands}
 
 \ifanon
@@ -969,7 +971,7 @@ training scenarios; \textsc{Baton} has no tunable parameter.}
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{l p{5.1cm} l}
+\begin{tabular}{l p{4.9cm} p{4.6cm}}
 \toprule
 Label & Policy & Source \\
 \midrule
