@@ -1,0 +1,5 @@
+Mid-route recourse in stochastic pickup-and-delivery cast as optimal stopping
+BATON prices handoff, depot return and emergency from real route geometry
+Proofs: fixed thresholds and endpoint risk labels are structurally suboptimal
+Beats rule-based, rollout, restocking and RL policies under six planning gates
+New instances on real road networks and shop locations; plans MIP-certified

@@ -4,10 +4,10 @@
 %% Double-blind toggle: \anontrue for an anonymised copy,
 %% \anonfalse for the submission copy with author identity.
 
-%% Submission copy is anonymised: author identity lives in the cover
-%% letter (cover_letter.tex). Flip to \anonfalse for a named copy.
+%% EJOR reviews single-blind: the submission carries author names
+%% (\anonfalse). Flip to \anontrue for an anonymised copy.
 \newif\ifanon
-\anontrue
+\anonfalse
 
 \documentclass[preprint,12pt]{elsarticle}
 
@@ -51,7 +51,7 @@
 % numbers regenerated from result files by make_tables.py — do not hand-edit
 \input{tables/macros}
 
-\journal{Omega}
+\journal{European Journal of Operational Research}
 
 \begin{document}
 
@@ -78,38 +78,35 @@ simultaneous pickup, delivery, and stochastic demands}
 In simultaneous pickup-and-delivery operations the load of a vehicle
 evolves stochastically along its route, and a mid-route capacity breach
 forces costly emergency recourse: a surge-priced replacement vehicle and
-compensation for every customer served late. Practical fleets hold two
-cheaper recourse levers---handing the remaining route to a standby
-vehicle, or detouring to the depot to unload collected pickups---whose
-value depends on the vehicle's position, its remaining customers, and
-prices built from the route's actual geometry. We study when to exercise
-which lever. The problem is a finite-horizon optimal-stopping problem
-under an empirical demand distribution, and we solve it with
+compensation for late customers. Fleets hold two cheaper
+levers---handing the remaining route to a standby vehicle, or detouring
+to the depot to unload collected pickups---whose value depends on the
+vehicle's position and prices built from the route's real geometry. We
+cast the question of when to exercise which lever as a finite-horizon
+optimal-stopping problem under an empirical demand distribution, solved
+by
 \textsc{Baton}, a policy that estimates per-stop continuation costs by
-backward induction over historical demand scenarios and intervenes
-exactly when continuing becomes dearer than the cheapest recourse action
-at the current stop. The policy has no tunable threshold, and we show
-analytically that no fixed threshold can reproduce the optimal
-intervention boundary under position-dependent prices, while the
-endpoint-based risk labels of prior work are provably blind to mid-route
-peaks. In a three-class fleet-cost model and across the Dethloff and
-Salhi--Nagy benchmarks plus new instances on the road networks and real
-retail locations of five cities, \textsc{Baton} dominates published
-recourse policies---rule-based restocking triggers, depot-return
-restocking, rollout, and a reinforcement-learning policy---under six
-planning regimes including three published robust planners. It attains
-92--99\% of a near-exact dynamic program supplied with fifty times its
-data, exceeds the clairvoyant bound of the handoff-only policy class by
-pricing the full action set, re-balances its recourse mix as fleet
-economics change without any re-tuning, and runs in milliseconds per
-route. The routing plans underlying all experiments are certified within
-\certGap{} of optimality on average by mixed-integer programming bounds.
+backward induction over historical scenarios and intervenes exactly
+when continuing becomes dearer than the cheapest recourse action. The
+policy has no tunable threshold; we prove that no fixed threshold
+reproduces the optimal intervention boundary under position-dependent
+prices, and that the endpoint-based risk labels of prior work are
+blind to mid-route peaks. Across the Dethloff and Salhi--Nagy
+benchmarks and new instances on the road networks and real retail
+locations of five cities, \textsc{Baton} dominates published recourse
+policies---rule-based restocking triggers, depot-return restocking,
+rollout, and a reinforcement-learning policy---under six planning
+regimes including three published robust planners. It attains
+92--99\% of a near-exact dynamic program given fifty times its data,
+exceeds the handoff-only clairvoyant bound by pricing the full action
+set, adapts its recourse mix to fleet economics without re-tuning, and
+runs in milliseconds per route; all underlying routing plans are
+certified by mixed-integer programming bounds.
 \end{abstract}
 
 \begin{keyword}
-routing \sep stochastic vehicle routing \sep recourse policies \sep
-optimal stopping \sep last-mile logistics \sep approximate dynamic
-programming
+Routing \sep stochastic vehicle routing \sep optimal stopping \sep
+recourse policies \sep last-mile logistics
 \end{keyword}
 
 \end{frontmatter}
