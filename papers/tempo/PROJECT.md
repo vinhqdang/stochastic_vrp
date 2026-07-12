@@ -1,0 +1,191 @@
+# TEMPO — Tilted E-Martingale Process for Online re-optimization
+
+Paper 2: an e-process that monitors a running routing plan and triggers
+re-optimization with anytime-valid type-I error control. TEMPO pairs
+with paper 1's BATON — the baton sets the tempo — and the name is the
+contribution: the paper decides *when* to replan.
+
+Status: ACTIVE — spec + core code. Venue targets (subscription/hybrid,
+OR-first): Transportation Science, INFORMS Journal on Computing, EJOR,
+Transportation Research Part B. Decide after results.
+
+## 1. One-paragraph pitch
+
+A dispatcher commits to routes optimized against a planning model
+`P0` — a joint law over demands, travel times (diurnal + weather),
+congestion shocks, accidents, breakdowns, and dwell times. As the day
+unfolds these quantities realize sequentially. When should the
+dispatcher replan? Fixed-interval replanning wastes solves and reacts
+late; ad-hoc rules ("replan when 30 min behind") have no error
+guarantee and invite alarm fatigue. We monitor the day with a single
+nonnegative supermartingale (an e-process) testing H0: "the day follows
+the planning model," and replan when it crosses 1/alpha. Ville's
+inequality makes the false-alarm guarantee anytime-valid — the
+dispatcher may peek continuously. The novel coupling: the bets inside
+the e-process are tilted by *decision relevance*, computed from the
+plan's own economic sensitivities (BATON's fitted continuation costs
+and per-stop recourse prices from paper 1), so the monitor is most
+sensitive exactly where drift would change the optimal decision — and
+provably remains a valid e-process because the tilts are predictable.
+
+## 2. The stochastic world (per factor)
+
+Event epochs t = leg traversals and node services of the running plan.
+
+| Factor | Model under H0 | Bet (e-factor) |
+|---|---|---|
+| Demand at stop k | net increment `g_k ~ N(mu_g, sig_g^2)` (or empirical, standardized) | Gaussian mean-shift LR `exp(theta*z - theta^2/2)` on standardized residual z |
+| Travel time on leg (i,j) at clock time t | `T = tau_ij * m(t) * w(R_t) * exp(eps)`, `eps ~ N(0, sig_T^2)`; m = diurnal multiplier (known curve), w = weather multiplier given rain indicator R_t (exogenous covariate) | same mean-shift LR on the log-residual z |
+| Dwell at stop k | `S = a + b*|demand| + eps`, `eps ~ N(0, sig_S^2)` | mean-shift LR on regression residual |
+| Accidents (zone-wide) | Poisson counts, rate `lam0 * dt` per interval | tilted-Poisson LR `exp(theta*N - lam0*dt*(e^theta - 1))` |
+| Breakdown per leg | Bernoulli(p0), p0 small | Bernoulli LR `(p1/p0)^X * ((1-p1)/(1-p0))^(1-X)` |
+
+Notes:
+- Rain/diurnal are *covariates* of the null, not things we test: the
+  monitor only fires on deviation from the *conditional* forecast. A
+  jam at 6pm that the m(t) curve predicted is NOT evidence.
+- A breakdown is a near-point-mass event under H0: its single-step
+  e-factor is `~p1/p0 >> 1/alpha`, so the master process fires
+  immediately — hard events need no side-channel special-casing.
+
+## 3. Master e-process
+
+Chain rule: with F_{t-1} the history before epoch t and independent
+channels given the state (assumption A1, to be defended/relaxed),
+
+    E_t = prod_{s<=t} prod_{k fires at s} e_s^(k)
+
+is a nonnegative martingale with E[E_t] = 1 under H0 for ANY
+predictable choice of the tilts theta_k(s), by the tower property.
+Ville: P(sup_t E_t >= 1/alpha) <= alpha. Channels that do not fire at
+epoch s contribute factor 1 — asynchronicity is free.
+
+Robustness to tuning: replace each `e(theta)` by a finite mixture
+`sum_j pi_j e(theta_j)` over a grid (mixtures of e-values are
+e-values). Default grid {0.25, 0.5, 1.0} with uniform pi.
+
+## 4. The novel coupling — decision-relevant predictable tilts
+
+Generic drift monitoring wastes power on harmless drift. We scale each
+channel's tilt by a predictable sensitivity s_k(t) in [0,1] computed
+from the current plan's economics (all F_{t-1}-measurable):
+
+- demand channel: s = closeness of BATON's continuation cost
+  `Chat_k(W)` to the cheapest recourse price min(H_k, R_k + F_k) —
+  i.e. how near the current load path is to the optimal-stopping
+  boundary. Near boundary -> small drift flips the decision -> bet big.
+- traffic channel: s = fraction of remaining planned distance in the
+  affected zone x tightness of downstream time economics (p_late
+  exposure of remaining stops).
+- accident channel: s = share of remaining legs in the elevated zone.
+- dwell channel: s = remaining stop count (late dwell drift hurts more
+  when many services remain).
+
+Then theta_k(t) = theta_max * s_k(t) (per mixture component). Because
+s_k(t) uses only the plan, fitted models, and realizations strictly
+before t, the tilt is predictable and validity is untouched. The paper
+formalizes this as: *e-process betting strategies informed by
+optimization sensitivity*, with BATON's fitted value functions playing
+the role that LP duals would play in an exact method.
+
+Equivalent framing (for the theory section): the multi-channel tilt is
+the independence-factorization special case of a single exponential
+tilt of the joint null in the direction of the plan's cost subgradient;
+per-channel weights fall out as the components of that subgradient.
+
+## 5. Decision layer
+
+- Soft trigger: E_t >= 1/alpha -> replan remaining customers with
+  warm-started ALNS (the paper-1 planner; we stay with ALNS), new plan
+  becomes the reference, all channels reset (E := 1) because H0's
+  conditional laws now condition on the new plan.
+- The reset makes the procedure a sequence of independent anytime-valid
+  tests; total false replans over a day are controlled at alpha per
+  segment (report both per-segment alpha and expected false replans).
+- Metrics: false-replan rate on null days (target <= alpha), detection
+  delay after an injected change-point, realized day cost vs (a) never
+  replanning, (b) periodic replanning, (c) CUSUM/Page-Hinkley trigger
+  (no anytime guarantee — the foil), (d) oracle replan at the true
+  change-point.
+
+## 6. What must be proved
+
+1. **Validity with predictable tilts** (Prop 1): E_t is a nonnegative
+   supermartingale with E[E_t] <= 1 under H0 for any F_{t-1}-measurable
+   theta_k(t) taking values in the allowed grid; Ville gives the
+   anytime false-alarm bound. (Direct; write carefully — the crux is
+   that s_k(t) never uses the epoch-t realization.)
+2. **Validity of the mixture + reset scheme** (Prop 2): per-segment
+   validity after data-dependent resets (restart at a stopping time is
+   again an e-process by optional stopping / segment-wise argument).
+3. **Power** (Prop 3 / empirical): under a change-point model where the
+   drift direction correlates with the plan's sensitive direction,
+   sensitivity-tilted bets have strictly higher log-growth (GRO
+   argument) than uniform bets; detection delay ~ log(1/alpha) / KL
+   per-epoch. Uniform-vs-tilted delay gap quantified in simulation.
+4. Honest discussion: independence assumption A1 across channels given
+   state (rain drives both traffic and accidents — either model rain as
+   covariate in BOTH nulls, which restores conditional independence, or
+   bound the effect).
+
+## 7. Evaluation plan (same evaluation set as BATON)
+
+- Instances: the 40 Dethloff instances, the 14 Salhi--Nagy instances,
+  and the 19 real-shop city instances — identical to paper 1, plans
+  from the same `results/plans/` ALNS cache. Also reuse city instances (real road networks, real shops) and
+  Dethloff; plans from the Det/Gounaris gates via cached ALNS solves.
+- Day simulator: `svrpspd_wdro/ev/world.py` — full timeline with all
+  five factors; drift scenarios injected at a change-point t*:
+  congestion surge (x1.5–2.5 log-mean), demand shift (+0.5–1.5 sd),
+  accident burst (x5 rate), dwell inflation, breakdown; plus pure-null
+  days for false-alarm calibration.
+- Detection layer first (this milestone): false-alarm rate, detection
+  delay, per-channel attribution. Replanning value layer second
+  (warm-started ALNS on trigger; realized-cost comparison).
+- Baselines: periodic replan; CUSUM per channel + Bonferroni;
+  fixed-sample-size GOF test at pre-committed times; naive untilted
+  e-process (ablation isolating the sensitivity coupling).
+
+## 8. Code map
+
+- `svrpspd_wdro/ev/world.py` — multi-factor day simulator on existing
+  instances/plans.
+- `svrpspd_wdro/ev/eprocess.py` — per-channel bets, mixture, predictable
+  sensitivity tilts, master process with per-channel log attribution.
+- `svrpspd_wdro/ev/baselines.py` — CUSUM, Page-Hinkley, periodic,
+  fixed-sample tests.
+- `svrpspd_wdro/scripts/ev_detect_eval.py` — milestone-1 experiment.
+- `svrpspd_wdro/tests/test_ev.py` — martingale/Ville/validity tests.
+
+## 9. Milestone-1 findings (2026-07-12, results_ev_detect.csv)
+
+40 Dethloff instances x 6 scenarios x 25 days, longest Det-gate route
+per instance, alpha = 0.05.
+
+- **Validity holds and the foil story works**: TEMPO false-alarm rate
+  0.019 <= alpha (tempo_flat 0.022), while CUSUM (h=8) is 0.054 and
+  Bonferroni-fixed 0.079 — both EXCEED their nominal level exactly as
+  the anytime-validity argument predicts, and periodic replans 90% of
+  null days by construction.
+- **Conditional on detection, TEMPO is as fast or faster** (mean delay
+  in events after t*): dwell 11.6 vs CUSUM 13.7; traffic 23.0 vs 24.7;
+  accident 21.2 vs 26.6.
+- **Raw detection rate is lower than CUSUM on demand/accident/
+  breakdown** — three known causes, all fixable or defensible:
+  (1) the rare-event breakdown bet crosses 1/alpha alone only from a
+  neutral wealth position; pre-drift null bleed (~ -1 to -2 log units
+  across five channels) means one breakdown may not suffice — raise the
+  stake margin or run breakdown as a parallel e-process with a
+  union-bound alpha split;
+  (2) demand sensitivity s = W/B is deliberately ~0 early in the route
+  — TEMPO is built to ignore drift that is not decision-relevant, so
+  raw detection rate is the WRONG metric for it: milestone 2 must score
+  detection conditional on days that actually end in (near-)breach, and
+  realized cost once the replanning layer exists;
+  (3) CUSUM's 0.054 false rate at h=8 means its detection rates are
+  bought with an invalid type-I level — tune h to match 0.019 false
+  rate for a like-for-like comparison.
+
+Next: (a) like-for-like CUSUM calibration; (b) harmful-day conditional
+scoring; (c) the replanning layer (warm-started ALNS on trigger) with
+realized-cost comparison; (d) extend runs to Salhi-Nagy + city sets.

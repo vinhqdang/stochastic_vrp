@@ -67,7 +67,9 @@ stochastic_vrp/
 │   │                    #    HCMC, Hanoi, NYC, Paris, Shanghai)
 │   ├── tests/           #   pytest suite (~185 tests)
 │   └── results/         #   CSVs + figures (paper tables regenerate from these)
-├── paper/               # Springer sn-jnl manuscript (tables via make_tables.py)
+├── papers/
+│   ├── baton/           # paper 1 manuscript — UNDER REVIEW at Computers & OR
+│   └── tempo/           # paper 2 (TEMPO: anytime-valid re-optimization) — active
 ├── RESULTS_OTR2.md      # running results summary — eight experiment layers
 ├── legacy/              # archived ECHO-era code (not maintained)
 └── requirements.txt
@@ -130,11 +132,12 @@ commands: [`svrpspd_wdro/README.md`](svrpspd_wdro/README.md).
 
 ## Manuscript
 
-`paper/` holds a double-blind Springer sn-jnl draft (optimal-stopping
+`papers/baton/` holds the Computers & Operations Research manuscript
+(optimal-stopping
 formulation, three propositions with proofs, all tables generated from the
-result CSVs by `paper/make_tables.py`). Citations are tracked with DOIs in
-`paper/references.bib`; unverified entries are flagged in
-`paper/VERIFY_CITATIONS.md`.
+result CSVs by `papers/baton/make_tables.py`). Citations are tracked with DOIs in
+`papers/baton/references.bib`; unverified entries are flagged in
+`papers/baton/VERIFY_CITATIONS.md`.
 
 ## License
 

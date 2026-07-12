@@ -49,7 +49,7 @@ scripts/
 
 data/    Dethloff (40x50 cust), SalhiNagy (14x50-199), City (9x100-400)
 tests/   pytest suite (~180 tests)
-results/ CSVs consumed by ../paper/make_tables.py; figures/
+results/ CSVs consumed by ../papers/baton/make_tables.py; figures/
 ```
 
 ## Reproducing the headline tables
@@ -82,4 +82,4 @@ python -m pytest tests/ -q
 Solved plans are cached per instance in `results/plans/*.json` (all gates
 merged), so evaluation reruns skip ALNS. Results roll up in
 `../RESULTS_OTR2.md`; the manuscript tables regenerate from the CSVs via
-`../paper/make_tables.py`.
+`../papers/baton/make_tables.py`.

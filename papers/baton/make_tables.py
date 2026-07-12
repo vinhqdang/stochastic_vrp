@@ -28,7 +28,7 @@ import pandas as pd
 from scipy import stats as sps
 
 HERE = Path(__file__).resolve().parent
-RES = HERE.parent / "svrpspd_wdro" / "results"
+RES = HERE.parent.parent / "svrpspd_wdro" / "results"
 OUT = HERE / "tables"
 OUT.mkdir(exist_ok=True)
 PLACEHOLDER = r"\emph{(pending)}"
@@ -246,7 +246,7 @@ Configuration & restock & threshold & \textsc{Baton-ho} &
 # ═══════════════════════════════════════════════════════════════════════════
 def _rl_table():
     import sys
-    sys.path.insert(0, str(HERE.parent / "svrpspd_wdro"))
+    sys.path.insert(0, str(HERE.parent.parent / "svrpspd_wdro"))
     try:
         from core.costs import fit_lsm_general, simulate_v2_general
     except Exception:

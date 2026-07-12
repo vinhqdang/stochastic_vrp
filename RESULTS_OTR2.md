@@ -13,7 +13,7 @@ stay frozen for reproducibility:
 
 
 *All experiments reproducible from `svrpspd_wdro/scripts/`; tables in the
-manuscript regenerate from these CSVs via `paper/make_tables.py`.*
+manuscript regenerate from these CSVs via `papers/baton/make_tables.py`.*
 
 ## What was evaluated
 
