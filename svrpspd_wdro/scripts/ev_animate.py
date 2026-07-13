@@ -32,6 +32,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
+from matplotlib.collections import LineCollection
 
 _SCRIPTS = Path(__file__).resolve().parent
 _WDRO = _SCRIPTS.parent
@@ -85,9 +86,19 @@ def main(fps=8):
     post = _nn_reorder(route[k_alarm:], pre[-1], lon, lat)
     visit = pre + post
 
-    # frames along real street paths; slower frames inside the jam
+    # realized leg/dwell durations from the simulated day drive the clock
+    from ev.world import diurnal_mult
+    T_real = [e["val"] for e in events if e["channel"] == "travel"]
+    S_real = [e["val"] for e in events if e["channel"] == "dwell"]
+    t_star = next(e["clock"] for e in events if e["ctx"]["drifted"])
+    jam_mult = 2.0                          # the drift magnitude used
+
+    # frames along real street paths; slower frames inside the jam;
+    # every frame knows the wall clock and the actual vs forecast
+    # network multiplier so the MAP ITSELF changes with time
     frames = []
     seq = [0] + visit
+    clock = p.t0
     for i, (a, b) in enumerate(zip(seq[:-1], seq[1:])):
         k = i + 1
         npts = 6 if k < k_drift else 9      # jammed legs crawl
@@ -97,9 +108,16 @@ def main(fps=8):
             pts = np.linspace([lon[a], lat[a]], [lon[b], lat[b]], npts)
         phase = ("plan" if k < k_drift else
                  "jam" if k <= k_alarm else "replan")
+        T = T_real[min(k - 1, len(T_real) - 1)]
+        S = S_real[min(k - 1, len(S_real) - 1)]
         for j, (x, y) in enumerate(pts):
-            frames.append(dict(x=x, y=y, k=k, phase=phase,
+            tj = clock + T * (j + 1) / npts
+            fc = diurnal_mult(tj, p.diurnal)
+            ac = fc * (jam_mult if tj >= t_star else 1.0)
+            frames.append(dict(x=x, y=y, k=k, phase=phase, clock=tj,
+                               fmult=fc, amult=ac,
                                arrive=(j == npts - 1)))
+        clock += T + S
         frames += [frames[-1]] * 2          # hold at the stop
 
     # figure
@@ -111,10 +129,11 @@ def main(fps=8):
     axE = fig.add_subplot(gs[0, 1])
     axB = fig.add_subplot(gs[1, 1])
 
-    for u, v in G.edges():
-        axM.plot([G.nodes[u]["x"], G.nodes[v]["x"]],
-                 [G.nodes[u]["y"], G.nodes[v]["y"]],
-                 color=STREET, lw=0.55, zorder=1)
+    segs = [[(G.nodes[u]["x"], G.nodes[u]["y"]),
+             (G.nodes[v]["x"], G.nodes[v]["y"])] for u, v in G.edges()]
+    streets = LineCollection(segs, colors=STREET, linewidths=0.55,
+                             zorder=1)
+    axM.add_collection(streets)
     xs = [lon[c] for c in visit] + [lon[0]]
     ys = [lat[c] for c in visit] + [lat[0]]
     pad = 0.004
@@ -129,8 +148,8 @@ def main(fps=8):
                 linewidths=1.1, zorder=4)
     axM.scatter([lon[0]], [lat[0]], marker="*", s=360, color=INK,
                 zorder=5, edgecolors="white", linewidths=1.0)
-    axM.set_title("HANOI-100-1 — a 2x traffic jam nobody announced",
-                  fontsize=13, color=INK)
+    axM.set_title("HANOI-100-1 — the network breathes with the clock",
+                  fontsize=12, color=INK, loc="left")
 
     trail = {"plan": axM.plot([], [], color=C["blue"], lw=2.4,
                               zorder=3, solid_capstyle="round")[0],
@@ -142,6 +161,22 @@ def main(fps=8):
                     mec="white", mew=1.2, zorder=8)
     banner = axM.text(0.02, 0.02, "", transform=axM.transAxes,
                       fontsize=11.5, color=INK, va="bottom")
+    clock_txt = axM.text(0.02, 0.975, "", transform=axM.transAxes,
+                         fontsize=15, color=INK, va="top",
+                         family="monospace")
+    traf_txt = axM.text(0.02, 0.935, "", transform=axM.transAxes,
+                        fontsize=10.5, color=INK, va="top")
+
+    def street_color(actual):
+        """Grey (free) -> amber (busy) -> red (jammed)."""
+        x = min(max((actual - 1.0) / 1.5, 0.0), 1.0)
+        base = np.array([0.753, 0.749, 0.714])       # STREET
+        amber = np.array([0.929, 0.631, 0.000])
+        red = np.array([0.776, 0.184, 0.180])
+        return tuple(base + (amber - base) * min(x, .5) * 2 * .55
+                     if x < .5 else
+                     base * 0 + amber + (red - amber) * (x - .5) * 2) \
+            if x > 0 else tuple(base)
 
     # TEMPO gauge
     thr = np.log(1 / ALPHA)
@@ -183,6 +218,15 @@ def main(fps=8):
 
     def update(fi):
         fr = frames[fi]
+        streets.set_color([street_color(fr["amult"])])
+        hh = int(fr["clock"]) % 24
+        mm = int((fr["clock"] % 1) * 60)
+        clock_txt.set_text(f"{hh:02d}:{mm:02d}")
+        gap = fr["amult"] / max(fr["fmult"], 1e-9)
+        traf_txt.set_text(
+            f"traffic {fr['amult']:.1f}x — forecast {fr['fmult']:.1f}x"
+            + ("  (as expected)" if gap < 1.05 else "  ← UNEXPECTED"))
+        traf_txt.set_color(INK if gap < 1.05 else STATUS_CRITICAL)
         trail_pts[fr["phase"]][0].append(fr["x"])
         trail_pts[fr["phase"]][1].append(fr["y"])
         for ph, ln in trail.items():
@@ -207,7 +251,8 @@ def main(fps=8):
         else:
             banner.set_text("TEMPO alarm → rest of day re-planned (BATON idle)")
             banner.set_color(STATUS_CRITICAL)
-        return [veh, eline, emark, wline, banner, *trail.values()]
+        return [veh, eline, emark, wline, banner, clock_txt, traf_txt,
+                streets, *trail.values()]
 
     anim = FuncAnimation(fig, update, frames=len(frames), blit=False)
     out = FIG_DIR / "anim_tempo_vs_baton.gif"

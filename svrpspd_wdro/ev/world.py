@@ -112,6 +112,7 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
         T = float(np.exp(logT))
         events.append(dict(
             channel="travel", z=float((logT - mu_log) / p.sig_T),
+            val=T, base=base,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
                                   drifted=drifted("traffic", clock))))
@@ -140,7 +141,7 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
         g = float(rng.normal(p.mu_g[k - 1] + gshift, p.sig_g[k - 1]))
         events.append(dict(
             channel="demand",
-            z=float((g - p.mu_g[k - 1]) / p.sig_g[k - 1]),
+            z=float((g - p.mu_g[k - 1]) / p.sig_g[k - 1]), val=g,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
                                   drifted=drifted("demand", clock))))
@@ -150,7 +151,7 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
         sshift = drift.magnitude * p.sig_S if drifted("dwell", clock) else 0.0
         S = max(0.0, float(rng.normal(mu_S + sshift, p.sig_S)))
         events.append(dict(
-            channel="dwell", z=float((S - mu_S) / p.sig_S),
+            channel="dwell", z=float((S - mu_S) / p.sig_S), val=S,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
                                   drifted=drifted("dwell", clock))))
