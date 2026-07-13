@@ -252,6 +252,34 @@ Remaining known limit: accident detection is information-limited
 (~1.8 informative events per drifted day at these rates); candidate
 improvement is exposure pooling across a sliding window. Not blocking.
 
+## 9d. Comprehensive grid (2026-07-13, results_ev_grid.csv)
+
+73 instances (40 Dethloff + 14 Salhi-Nagy + 19 real-shop City) x 19
+scenarios x 15 days; scenario registry in `ev/scenarios.py` (nulls incl.
+a hostile forecast-rain null, single-factor x severity, ramps, a
+transient jam, late onsets, compound storm/rush-crush/black-day).
+
+Headlines:
+- **The hostile null is the sharpest separator**: on fully-forecast
+  rainy days TEMPO's false-alarm rate DROPS to 0.005 (conditional null
+  absorbs the covariate), while oracle-calibrated CUSUM stays invalid
+  at 0.057 and Bonferroni at 0.07. A monitor on raw lateness cannot
+  tell forecast rain from drift; TEMPO can, by construction.
+- **At matched false-alarm budgets TEMPO v2 dominates nearly every
+  scenario** (tempo2 @0.016 vs cusum_match @0.038): traffic_mild 0.61
+  vs 0.11, traffic_transient 0.37 vs 0.03 (12x), demand_severe 0.88 vs
+  0.40, demand_ramp 0.70 vs 0.15, dwell_mild 0.87 vs 0.40, storm 0.98
+  vs 0.85, rush_crush 0.98 vs 0.78, black_day 1.00 vs 0.97. Only
+  accident_mild is a (information-limited) tie: 0.08 vs 0.10.
+- **Ramps and transients are where anytime validity shines**: CUSUM's
+  drain (the -k per step) forgets slow ramps and short windows; the
+  adaptive e-process accumulates and keeps them.
+- **Uniform across geographies**: tempo2 vs cusum_match detection —
+  City 0.82/0.54, Salhi-Nagy 0.78/0.58, Dethloff 0.71/0.52.
+- Ablation: tempo_flat collapses on exactly the scenarios that matter
+  (demand_severe 0.31, traffic_late 0.60) — adaptive betting is the
+  power source, the dual combination its safety net.
+
 ## 9c. Milestone 2 opener — the replanner is pluggable (2026-07-13)
 
 `ev/replan.py` makes the optimizer under the trigger swappable:
