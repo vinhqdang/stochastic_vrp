@@ -38,9 +38,10 @@ sys.path.insert(0, str(_SCRIPTS))
 
 from dethloff_runner import parse_dethloff                     # noqa: E402
 from ev.world import DriftSpec, simulate_route_day, params_from_route  # noqa: E402
-from ev.eprocess import MasterEProcess, run_day                # noqa: E402
+from ev.eprocess import MasterEProcess, TempoMonitor, run_day  # noqa: E402
 from ev.baselines import (CusumMonitor, PeriodicMonitor,       # noqa: E402
-                          BonferroniFixed)
+                          BonferroniFixed, PageHinkleyMonitor,
+                          calibrate_threshold)
 
 DATA = _WDRO / "data" / "Dethloff"
 PLANS = _WDRO / "results" / "plans"
@@ -59,11 +60,22 @@ SCENARIOS = [
 ]
 
 
-def monitors():
+N_CAL = 100          # null days for ORACLE calibration of the foils
+
+
+TEMPO_FA = 0.016     # TEMPO's realized false rate: matched-rate foils
+
+
+def monitors(h_cusum: float, h_ph: float, h_cusum_m: float,
+             h_ph_m: float):
     return {
-        "tempo": MasterEProcess(alpha=ALPHA, use_sensitivity=True),
+        "tempo2": TempoMonitor(alpha=ALPHA),
+        "tempo1": MasterEProcess(alpha=ALPHA, use_sensitivity=True),
         "tempo_flat": MasterEProcess(alpha=ALPHA, use_sensitivity=False),
-        "cusum": CusumMonitor(h=8.0),
+        "cusum_cal": CusumMonitor(h=h_cusum),
+        "cusum_match": CusumMonitor(h=h_cusum_m),
+        "ph_cal": PageHinkleyMonitor(h=h_ph),
+        "ph_match": PageHinkleyMonitor(h=h_ph_m),
         "bonferroni": BonferroniFixed(alpha=ALPHA),
         "periodic": PeriodicMonitor(period=40),
     }
@@ -77,12 +89,34 @@ def eval_instance(stem: str, n_days: int, rng: np.random.Generator):
     p = params_from_route(route, D, dem, Q, scale)
     p.tau = p.tau * (ROUTE_HOURS / max(p.tau.sum(), 1e-9))
 
+    # oracle calibration of the non-anytime foils on this instance's
+    # null distribution (a courtesy no real dispatcher can extend)
+    cal_streams = [simulate_route_day(p, DriftSpec(kind="none"),
+                                      np.random.default_rng(
+                                          int(rng.integers(1 << 31))))[0]
+                   for _ in range(N_CAL)]
+    h_cusum = calibrate_threshold(
+        lambda: CusumMonitor(h=np.inf), lambda m: max(m.stat.values(),
+                                                      default=0.0),
+        cal_streams, ALPHA)
+    h_ph = calibrate_threshold(
+        lambda: PageHinkleyMonitor(h=np.inf),
+        lambda m: m.m - m.m_min, cal_streams, ALPHA)
+    h_cusum_m = calibrate_threshold(
+        lambda: CusumMonitor(h=np.inf), lambda m: max(m.stat.values(),
+                                                      default=0.0),
+        cal_streams, TEMPO_FA)
+    h_ph_m = calibrate_threshold(
+        lambda: PageHinkleyMonitor(h=np.inf),
+        lambda m: m.m - m.m_min, cal_streams, TEMPO_FA)
+    mons = lambda: monitors(h_cusum, h_ph, h_cusum_m, h_ph_m)
+
     rows = []
     for kind, mag in SCENARIOS:
         drift = DriftSpec(kind=kind, t_star=p.t0 + T_STAR_OFFSET,
                           magnitude=mag)
         stats = {name: dict(fired=0, delay=[], false=0)
-                 for name in monitors()}
+                 for name in mons()}
         for day in range(n_days):
             seed = int(rng.integers(1 << 31))
             events, _ = simulate_route_day(
@@ -90,8 +124,20 @@ def eval_instance(stem: str, n_days: int, rng: np.random.Generator):
             # index of first drifted event (for delay scoring)
             first_drift = next((i for i, e in enumerate(events)
                                 if e["ctx"]["drifted"]), None)
-            for name, mon in monitors().items():
+            # a breakdown is OBSERVED, not inferred: every monitor gets
+            # the hard reactive trigger at the first realized breakdown
+            hard_idx = next((i for i, e in enumerate(events)
+                             if e["channel"] == "breakdown"
+                             and e.get("x", 0) == 1), None)
+            for name, mon in mons().items():
                 out = run_day(mon, events)
+                if hard_idx is not None and (out["alarm_idx"] is None
+                                             or out["alarm_idx"] > hard_idx):
+                    if kind != "none":       # null hard events are recourse,
+                        out = dict(fired=True, alarm_idx=hard_idx,  # not false
+                                   alarm_clock=events[hard_idx]["clock"],
+                                   alarm_on_drifted=bool(
+                                       events[hard_idx]["ctx"]["drifted"]))
                 if kind == "none":
                     stats[name]["false"] += int(out["fired"])
                 elif out["fired"]:

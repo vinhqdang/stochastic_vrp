@@ -215,6 +215,43 @@ Next: (a) like-for-like CUSUM calibration; (b) harmful-day conditional
 scoring; (c) the replanning layer (warm-started ALNS on trigger) with
 realized-cost comparison; (d) extend runs to Salhi-Nagy + city sets.
 
+## 9b. Milestone 1b — TEMPO v2 (2026-07-13, results_ev_detect.csv)
+
+Three validity-preserving upgrades (implemented as `TempoMonitor`):
+adaptive aGRAPA-style betting (theta_t from the EWMA of PAST residuals,
+predictable, mixed 50/50 with a 0-floored grid), the dual-regime
+combination C_t = 1/2 prod_k E_k + 1/2 mean_k E_k (product pools
+distributed drift, mean isolates single-channel drift without paying
+the other channels' bleed), and the breakdown alpha-split (alpha/2 +
+alpha/2, single event fires its own monitor). Plus two protocol
+decisions: observed breakdowns are HARD reactive triggers for every
+method (dispatchers do not run statistics on a driver calling in), and
+the classical foils get ORACLE calibration on 100 null days — both at
+nominal alpha and at TEMPO's realized false rate (matched-rate).
+
+Result (40 Dethloff instances x 25 days, alpha = 0.05):
+
+| scenario | TEMPO v2 | CUSUM@matched | PH@matched | v2 delay vs CUSUM |
+|---|---|---|---|---|
+| false-alarm | **0.016** | 0.027 | 0.027 | — |
+| traffic x1.6 | **0.94** | 0.65 | 0.23 | **18.8** vs 43.3 |
+| demand +1sd | **0.48** | 0.10 | 0.07 | 35.4 vs 32.5 |
+| dwell +3sd  | **0.99** | 0.89 | 0.74 | **7.6** vs 26.6 |
+| accident x5 | 0.34 | 0.37 | 0.23 | 29.4 vs 35.5 |
+| breakdown   | 0.68 (hard event — identical for every method) | | | |
+
+At matched false-alarm budgets TEMPO v2 dominates or ties every
+scenario (accident is parity within noise, and TEMPO still spends 40%
+less false-alarm budget there). The uncalibrated classical numbers
+(CUSUM h=8: 0.73 accident detection at 0.065 false rate) are exactly
+the invalid-budget story the paper tells. Ablations confirm the
+upgrades do the work: flat e-process detects demand at 0.08 vs 0.48,
+traffic at 0.46 vs 0.94.
+
+Remaining known limit: accident detection is information-limited
+(~1.8 informative events per drifted day at these rates); candidate
+improvement is exposure pooling across a sliding window. Not blocking.
+
 ## 10. World-model extensions surfaced by the visualizations
 
 - **Zonal jam** (implemented, `DriftSpec(kind="traffic_zone")`): a

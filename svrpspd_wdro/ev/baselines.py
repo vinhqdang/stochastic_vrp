@@ -89,3 +89,42 @@ class BonferroniFixed:
             if n and self.sums[c] / np.sqrt(n) >= crit:
                 return True
         return False
+
+
+class PageHinkleyMonitor:
+    """Page-Hinkley drift detector on the pooled standardized residuals
+    (data-stream tradition, Gama et al.): m_t = sum(z_i - delta),
+    alarm when m_t - min_s m_s > h. One-sided (harmful drift raises z)."""
+
+    def __init__(self, h: float = 15.0, delta: float = 0.25):
+        self.h, self.delta = h, delta
+        self.reset()
+
+    def reset(self):
+        self.m = 0.0
+        self.m_min = 0.0
+
+    def update(self, event: dict) -> bool:
+        self.m += _event_z(event) - self.delta
+        self.m_min = min(self.m_min, self.m)
+        return (self.m - self.m_min) >= self.h
+
+
+def calibrate_threshold(make_monitor, stat_fn, null_event_streams,
+                        alpha: float):
+    """Oracle calibration of a non-anytime detector: run the monitor
+    over null-day event streams recording its running max statistic,
+    return the (1-alpha) quantile of per-day maxima — the LOWEST
+    threshold whose empirical null false-alarm rate is ~alpha. This is
+    strictly generous to the baseline (it needs the null distribution
+    of its own statistic, which no dispatcher has)."""
+    import numpy as np
+    maxima = []
+    for events in null_event_streams:
+        mon = make_monitor()
+        peak = 0.0
+        for ev in events:
+            mon.update(ev)
+            peak = max(peak, stat_fn(mon))
+        maxima.append(peak)
+    return float(np.quantile(maxima, 1.0 - alpha))

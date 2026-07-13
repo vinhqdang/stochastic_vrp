@@ -36,7 +36,7 @@ from __future__ import annotations
 import numpy as np
 
 THETA_GRID = (0.0, 0.25, 0.5, 1.0)      # 0-component floors the null bleed
-POISSON_GRID = (0.0, 0.5, 1.0, 2.0)     # rare-event Poisson wants larger tilts
+POISSON_GRID = (0.0, 1.0, 2.0, 4.0)     # rare-event Poisson wants larger tilts
 S_MIN = 0.25
 
 
@@ -137,3 +137,112 @@ def run_day(monitor, events) -> dict:
                         alarm_on_drifted=bool(ev["ctx"].get("drifted", False)))
     return dict(fired=False, alarm_idx=None, alarm_clock=None,
                 alarm_on_drifted=False)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TEMPO v2 — adaptive bets, dual-regime combination, breakdown alpha-split
+# ═══════════════════════════════════════════════════════════════════════════
+
+ADAPT_GRID = (0.0, 0.5, 1.0, 2.0)
+
+
+class TempoMonitor:
+    """The v2 monitor. Three upgrades over MasterEProcess, all validity-
+    preserving:
+
+    1. **Adaptive betting** (aGRAPA-style): each continuous channel bets
+       with theta_t = clip(EWMA of its PAST residuals, 0, theta_max) —
+       an F_{t-1}-measurable tilt that learns the drift's size, mixed
+       50/50 with a fixed grid (with a 0 component) as a safety net.
+       The accident channel adapts via the EWMA of realized/expected
+       count ratios (MLE tilt log r).
+    2. **Dual-regime combination**: the alarm statistic is
+       C_t = 1/2 * prod_k E_k(t) + 1/2 * mean_k E_k(t).
+       The product pools distributed weak drift across channels; the
+       mean isolates single-channel drift without paying the other
+       channels' null bleed (a mean only dilutes by log K, a product
+       subtracts every quiet channel's decay). Both are martingales
+       under H0, so C_t is one, and Ville applies to C_t directly.
+    3. **Breakdown alpha-split**: the rare-event channel runs as a
+       PARALLEL e-process; the union bound splits alpha as alpha/2 for
+       C_t and alpha/2 for breakdowns, whose stake is calibrated so a
+       single event alone crosses its own threshold. Its per-leg
+       insurance premium therefore never taxes the continuous channels.
+
+    Total guarantee: P(any alarm on an on-model day) <= alpha, anytime.
+    """
+
+    CONT = ("travel", "demand", "dwell", "accident")
+
+    def __init__(self, alpha: float = 0.05, beta: float = 0.8,
+                 theta_max: float = 2.5, use_sensitivity: bool = False):
+        self.alpha = alpha
+        self.a_main = alpha / 2
+        self.a_brk = alpha / 2
+        self.beta = beta
+        self.theta_max = theta_max
+        self.use_sensitivity = use_sensitivity
+        self.reset()
+
+    def reset(self):
+        self.logE = {c: 0.0 for c in self.CONT}
+        self.logE_brk = 0.0
+        self.ewma = {c: 0.0 for c in self.CONT}
+        self.ewma["accident_ratio"] = 1.0
+        self.n_steps = 0
+
+    # ── combination statistic ────────────────────────────────────────
+    @property
+    def log_combined(self) -> float:
+        logs = np.array([self.logE[c] for c in self.CONT])
+        log_prod = logs.sum()
+        log_mean = float(np.logaddexp.reduce(logs) - np.log(len(logs)))
+        return float(np.logaddexp(log_prod, log_mean) - np.log(2.0))
+
+    @property
+    def fired(self) -> bool:
+        return (self.log_combined >= np.log(1.0 / self.a_main)
+                or self.logE_brk >= np.log(1.0 / self.a_brk))
+
+    def update(self, event: dict) -> bool:
+        ch = event["channel"]
+        s = _sensitivity(ch, event["ctx"]) if self.use_sensitivity else 1.0
+
+        if ch == "breakdown":
+            p0 = min(max(event["p0"], 1e-12), 1 - 1e-12)
+            w = min(0.5, 1.1 * (1.0 / self.a_brk - 1.0) / (1.0 / p0 - 1.0))
+            e = 1.0 - w + w * (event["x"] / p0)
+            self.logE_brk += float(np.log(max(e, 1e-300)))
+            self.n_steps += 1
+            return self.fired
+
+        if ch == "accident":
+            th_a = float(np.clip(np.log(max(
+                self.ewma["accident_ratio"], 1e-6)), 0.0, 4.0)) * s
+            lam = event["lam0dt"]
+            n = event["n"]
+            e_ad = np.exp(th_a * n - lam * (np.exp(th_a) - 1.0))
+            th = np.asarray(POISSON_GRID) * s
+            e_gr = np.mean(np.exp(th * n - lam * (np.exp(th) - 1.0)))
+            e = 0.5 * e_ad + 0.5 * e_gr
+            r = n / max(lam, 1e-9)
+            self.ewma["accident_ratio"] = (self.beta *
+                                           self.ewma["accident_ratio"]
+                                           + (1 - self.beta) * r)
+        else:
+            z = event["z"]
+            th_a = float(np.clip(self.ewma[ch], 0.0, self.theta_max)) * s
+            e_ad = np.exp(th_a * z - 0.5 * th_a ** 2)
+            th = np.asarray(ADAPT_GRID) * s
+            e_gr = np.mean(np.exp(th * z - 0.5 * th ** 2))
+            e = 0.5 * e_ad + 0.5 * e_gr
+            self.ewma[ch] = self.beta * self.ewma[ch] + (1 - self.beta) * z
+
+        self.logE[ch] += float(np.log(max(e, 1e-300)))
+        self.n_steps += 1
+        return self.fired
+
+    def attribution(self) -> dict:
+        d = dict(self.logE)
+        d["breakdown"] = self.logE_brk
+        return d
