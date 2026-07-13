@@ -265,12 +265,21 @@ Amazon's inter-stop travel times (forecast), planned service times
 (dwell), package volumes (demand). Results
 (`results_ev_amazon.csv`, 15 days/scenario):
 
-- validity transfers to real data: TEMPO false alarms 0.021 (plain
-  null) / 0.016 (forecast-rain null) <= alpha across all five metros;
-- severe/ramp scenarios are at the detection CEILING for everyone
-  (0.98-1.00) — 150+-stop routes carry so much evidence that the
-  matched foils catch severe drift too; the discriminating scenarios on
-  long routes are the mild/transient/late ones (next run);
+Full-grid run (50 routes, 10/metro, ALL 19 scenarios, 12 days,
+matched-rate foils):
+
+- validity on real data: TEMPO 0.018 (null) / 0.022 (forecast-rain)
+  <= alpha; CUSUM 0.032/0.022, PH 0.037/0.027 at their oracle-matched
+  thresholds;
+- the discriminator on industrial-length routes is MILD DEMAND drift:
+  TEMPO 0.70 vs CUSUM 0.23 vs PH 0.23 (3x) — the 'packages run
+  slightly heavy all day' case a dispatcher actually faces; demand_late
+  0.88 vs 0.82 vs 0.23, demand_ramp 0.95 vs 0.93 vs 0.30;
+- traffic scenarios sit at the ceiling for TEMPO and CUSUM alike
+  (0.86-0.97; 150-stop routes carry overwhelming travel evidence) while
+  Page-Hinkley collapses on traffic_mild (0.25); accident scenarios
+  remain information-limited ties; compound days ~0.95 for all;
+- uniform across metros: TEMPO 0.84-0.86 mean detection in all five;
 - known pilot conventions: delivery-only, one realization per route so
   cross-stop dispersion proxies day-to-day dispersion; drift still
   injected (the data set has no realized-vs-forecast traces). All

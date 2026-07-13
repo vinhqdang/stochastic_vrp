@@ -37,8 +37,8 @@ OUT = _WDRO / "results" / "results_ev_amazon.csv"
 ALPHA = 0.05
 TEMPO_FA = 0.016
 N_CAL = 60
-SCEN_SUBSET = ("null", "null_rain", "traffic_severe", "traffic_ramp",
-               "demand_severe", "dwell_severe", "storm")
+SCEN_SUBSET = tuple(SCENARIOS)      # the FULL grid, incl. mild /
+                                    # transient / late-onset scenarios
 
 
 def main():
@@ -76,11 +76,19 @@ def main():
                     force_rain=force_rain)
                 first_drift = next((i for i, e in enumerate(events)
                                     if e["ctx"]["drifted"]), None)
+                hard_idx = next((i for i, e in enumerate(events)
+                                 if e["channel"] == "breakdown"
+                                 and e.get("x", 0) == 1), None)
                 mons = {"tempo2": TempoMonitor(alpha=ALPHA),
                         "cusum_match": CusumMonitor(h=hcm),
                         "ph_match": PageHinkleyMonitor(h=hpm)}
                 for name, mon in mons.items():
                     out = run_day(mon, events)
+                    if hard_idx is not None and (
+                            out["alarm_idx"] is None
+                            or out["alarm_idx"] > hard_idx):
+                        if not is_null:
+                            out = dict(fired=True, alarm_idx=hard_idx)
                     if is_null:
                         stats[name]["false"] += int(out["fired"])
                     elif out["fired"]:
@@ -100,8 +108,8 @@ def main():
                                  else s["fired"] / n_days),
                     mean_delay=(float(np.mean(s["delay"]))
                                 if s["delay"] else np.nan)))
-        print(f"  [{ri+1}/25] {metro} {rid[:12]} ({len(order)} stops)",
-              flush=True)
+        print(f"  [{ri+1}/{len(routes)}] {metro} {rid[:12]} "
+              f"({len(order)} stops)", flush=True)
 
     df = pd.DataFrame(rows)
     df.to_csv(OUT, index=False)
