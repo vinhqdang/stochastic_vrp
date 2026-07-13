@@ -1,7 +1,7 @@
 %% TEMPO manuscript — INFORMS Transportation Science submission template
 %% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
 
-\documentclass[trsc,sglanonrev]{informs4}
+\documentclass[trsc,dblanonrev]{informs4}
 \usepackage{eqndefns-left}
 \RequirePackage{tgtermes}
 \RequirePackage{mathptmx}
@@ -39,7 +39,7 @@
 
 \begin{document}
 
-\RUNAUTHOR{Dang, Vu, and Nguyen}
+\RUNAUTHOR{Anonymous}
 
 \RUNTITLE{When to Replan in Stochastic Vehicle Routing}
 
@@ -47,15 +47,8 @@
 Re-Optimization in Stochastic Vehicle Routing}
 
 \ARTICLEAUTHORS{%
-\AUTHOR{Quang-Vinh Dang}
-\AFF{Department of Logistics, British University Vietnam, Hung Yen,
-Vietnam, \EMAIL{vinh.dq4@buv.edu.vn}}
-\AUTHOR{Hoang-Viet Vu}
-\AFF{Department of Logistics, British University Vietnam, Hung Yen,
-Vietnam, \EMAIL{30066555@st.buv.edu.vn}}
-\AUTHOR{Phuc-Son Nguyen}
-\AFF{UEH University, Ho Chi Minh City, Vietnam,
-\EMAIL{sonnp.3393@ueh.edu.vn}}
+\AUTHOR{Author names blinded for peer review}
+\AFF{Affiliations blinded for peer review}
 }
 
 \ABSTRACT{%
@@ -188,14 +181,16 @@ demand fluctuation that would never come close to breaching a
 vehicle's capacity as to one that would. This is wasteful, because the
 routing plan itself already encodes, through its fitted continuation
 costs and per-stop recourse prices, exactly where a small perturbation
-would flip the optimal decision and where it would not. Our companion
-paper on the planning and recourse layer \citep{dang2026baton} builds
-those continuation costs as a backward-induction value function over
-the demand process; the present paper shows how to read that value
-function's local sensitivity back into the design of a monitoring
-statistic, so that the same fitted model that tells the fleet
-\emph{what} to do when capacity is breached also tells the monitor
-\emph{where to look}.
+would flip the optimal decision and where it would not. A planning
+layer that solves for recourse under an optimal-stopping formulation
+--- estimating, by backward induction over historical demand
+scenarios, the continuation cost of carrying the current load onward
+versus the cheapest available recourse action --- already computes
+exactly this local sensitivity as a byproduct of fitting its own value
+function. The present paper shows how to read that value function's
+local sensitivity back into the design of a monitoring statistic, so
+that the same fitted model that tells the fleet \emph{what} to do when
+capacity is breached also tells the monitor \emph{where to look}.
 
 We call the resulting monitor TEMPO --- a Tilted E-Martingale Process
 for Online re-optimization --- and its four contributions are as
@@ -259,23 +254,23 @@ points because the rebalancer acts on realized loads rather than
 priors.
 
 The remainder of the paper is organized as follows.
-Section~\ref{sec:related} positions the paper against dynamic vehicle
-routing, classical sequential change detection, and the anytime-valid
-inference literature. Section~\ref{sec:model} formalizes the
-multi-factor stochastic routing day and its null hypothesis.
-Section~\ref{sec:eprocess} builds the master e-process and proves its
-validity. Section~\ref{sec:coupling} introduces the decision-relevant
-predictable tilts that couple the monitor to the plan's economics.
-Section~\ref{sec:tempo} assembles TEMPO's adaptive betting, dual-regime
+Section~\ref{sec:related}, closing out the introduction, positions the
+paper against dynamic vehicle routing, classical sequential change
+detection, and the anytime-valid inference literature.
+Section~\ref{sec:model} formalizes the multi-factor stochastic routing
+day and its null hypothesis, then builds the master e-process and
+proves its validity. Section~\ref{sec:tempo} introduces the
+decision-relevant predictable tilts that couple the monitor to the
+plan's economics and assembles TEMPO's adaptive betting, dual-regime
 combination, and rare-event separation into the final monitor.
-Section~\ref{sec:theory} proves the four economic theorems.
-Section~\ref{sec:decision} describes the pluggable replanning layer.
-Section~\ref{sec:study} reports the computational study.
-Section~\ref{sec:discussion} discusses managerial implications, and
-Section~\ref{sec:conclusion} concludes.
+Section~\ref{sec:theory} proves the four economic theorems and
+describes the pluggable replanning layer they govern.
+Section~\ref{sec:study} reports the computational study, and
+Section~\ref{sec:discussion} discusses managerial implications and
+concludes.
 
 % ══════════════════════════════════════════════════════════════════
-\section{Related work}\label{sec:related}
+\subsection{Related work}\label{sec:related}
 
 \textbf{Dynamic and stochastic vehicle routing.} The question of
 re-optimizing a routing plan as information arrives is as old as the
@@ -357,21 +352,21 @@ None of this statistical literature, to our knowledge, couples the
 design of the betting strategy to the economics of a decision the
 statistic will trigger. The present paper's contribution is exactly
 that coupling, made precise in Sections~\ref{sec:coupling}
-and~\ref{sec:theory}: the plan's own fitted continuation costs, the
-central object of \citet{dang2026baton}'s optimal-stopping recourse
-policy, supply the predictable sensitivity that tells each channel's
-bet how hard to push, and Theorem~\ref{thm:growth} shows this choice is
-not merely intuitive but growth-optimal against the class of
-alternatives that actually move the routing cost.
+and~\ref{sec:theory}: the planning layer's own fitted continuation
+costs supply the predictable sensitivity that tells each channel's bet
+how hard to push, and Theorem~\ref{thm:growth} shows this choice is not
+merely intuitive but growth-optimal against the class of alternatives
+that actually move the routing cost.
 
 % ══════════════════════════════════════════════════════════════════
-\section{The stochastic routing day}\label{sec:model}
+\section{The stochastic routing day and the master e-process}\label{sec:model}
 
 We take as given a routing plan --- a sequence of stops per vehicle ---
 produced by any planning-time optimizer against a demand and travel-
-time model; in our computational study this plan is produced by the
-adaptive large neighborhood search of \citet{dang2026baton}, but
-nothing in the construction below depends on how the plan was built.
+time model; in our computational study this plan is produced by an
+adaptive large neighborhood search over the same benchmark instances
+described in Section~\ref{sec:study}, but nothing in the construction
+below depends on how the plan was built.
 The paper's object of study is what happens \emph{after} the plan is
 fixed and the fleet departs: a chronological stream of events, each an
 independent opportunity to ask whether the plan is still trustworthy.
@@ -418,8 +413,8 @@ against $P_0$ under this construction, precisely because the monitor
 conditions on them.
 
 \emph{Demand.} The net demand increment at stop $k$ (pickup volume
-minus delivery volume, in the simultaneous pickup-and-delivery setting
-of \citet{dang2026baton}) is
+minus delivery volume, in a simultaneous pickup-and-delivery setting)
+is
 \begin{equation}\label{eq:demand}
 g_k \sim \N(\mu_k, \sigma_{g,k}^2),
 \end{equation}
@@ -482,12 +477,12 @@ Kullback--Leibler separation $\KL(P_1\Vert P_0) \ge \KL_{\min} > 0$
 between the post-change law and the null.
 
 % ══════════════════════════════════════════════════════════════════
-\section{The master e-process}\label{sec:eprocess}
+\subsection{The master e-process}\label{sec:eprocess}
 
 We now build a single statistic that tests, continuously, whether the
 event stream of Section~\ref{sec:model} is following $P_0$.
 
-\subsection{E-values and e-processes}
+\subsubsection{E-values and e-processes}
 
 \begin{definition}\label{def:evalue}
 A random variable $e \ge 0$ measurable with respect to $\F_n$ is an
@@ -516,7 +511,7 @@ statistic calibrated only at pre-committed checkpoints, which is
 exactly the distinction Section~\ref{sec:study} exploits in the
 Bonferroni-fixed baseline.
 
-\subsection{Per-channel bets}
+\subsubsection{Per-channel bets}
 
 Each factor of Section~\ref{sec:model} contributes a bet at the event
 where it is realized; the four continuous and count factors are
@@ -572,7 +567,7 @@ conditional expectation and Definition~\ref{def:evalue}; it licenses
 both the fixed-grid mixture of Equation~\eqref{eq:mixture} and the
 dual-regime combination of Section~\ref{sec:tempo}.
 
-\subsection{The master process and Proposition~\ref{prop:validity}}
+\subsubsection{The master process and Proposition~\ref{prop:validity}}
 
 At each event $n$ exactly one factor is realized; write $e_n$ for that
 factor's mixture bet, evaluated at $z_n$, $n_k$, or $x_k$ as
@@ -640,7 +635,9 @@ day.}
 \end{figure}
 
 % ══════════════════════════════════════════════════════════════════
-\section{Decision-relevant predictable tilts}\label{sec:coupling}
+\section{TEMPO: decision-relevant coupling and construction}\label{sec:tempo}
+
+\subsection{Decision-relevant predictable tilts}\label{sec:coupling}
 
 A master process built from Equation~\eqref{eq:mixture} alone is
 statistically sound but economically indiscriminate: it is exactly as
@@ -652,7 +649,7 @@ the routing plan's own economics, so that the monitor's statistical
 power is spent where a deviation would actually change the optimal
 recourse decision.
 
-\subsection{Sensitivity as a predictable weight}
+\subsubsection{Sensitivity as a predictable weight}
 
 For each factor $k \in \{\text{travel}, \text{demand}, \text{dwell},
 \text{accident}, \text{breakdown}\}$ we define a \emph{sensitivity}
@@ -663,7 +660,7 @@ tilt actually applied at event $n$ is then $\theta_j(n) = \theta_j
 \cdot s_k(n)$ for each grid point $\theta_j$ --- the grid itself is
 unchanged, but its reach is scaled by the plan's own sensitivity.
 
-\emph{Demand.} \citet{dang2026baton}'s recourse policy intervenes on a
+\emph{Demand.} The planning layer's recourse policy intervenes on a
 route exactly when the fitted continuation cost of carrying the
 current load onward, $\widehat C(W)$, exceeds the cheapest available
 recourse price, $\min(H, R+F)$ for a handoff price $H$ and a
@@ -751,16 +748,15 @@ used to factorize Equation~\eqref{eq:master}; Theorem~\ref{thm:growth}
 makes this equivalence precise and shows it is not merely a
 convenient reformulation but the growth-optimal choice.
 
-% ══════════════════════════════════════════════════════════════════
-\section{TEMPO: adaptive betting, dual-regime combination, and rare-event separation}\label{sec:tempo}
+\subsection{Adaptive betting, dual-regime combination, and rare-event separation}\label{sec:tempoconstruct}
 
 The construction of Sections~\ref{sec:eprocess}--\ref{sec:coupling}
-already delivers a valid, decision-relevant monitor; this section adds
-three refinements, each proved to preserve validity, that together
+already delivers a valid, decision-relevant monitor; this subsection
+adds three refinements, each proved to preserve validity, that together
 give the monitor used throughout Section~\ref{sec:study} and referred
 to there as TEMPO.
 
-\subsection{Adaptive betting}
+\subsubsection{Adaptive betting}
 
 The fixed grid $\Theta$ of Equation~\eqref{eq:mixture} is agnostic to
 the size of whatever drift eventually occurs, which costs detection
@@ -793,7 +789,7 @@ empirically, the ablation gap between the flat, untilted process and
 full TEMPO documented in Section~\ref{sec:study}
 (Table~\ref{tab:detection}'s discussion).
 
-\subsection{Dual-regime combination}
+\subsubsection{Dual-regime combination}
 
 Write $E_k(n) = \prod_{i \le n,\, \mathrm{channel}(i) = k} e_k(i)$ for
 channel $k$'s own running e-process (with $E_k(n) := E_k(n-1)$ at
@@ -836,7 +832,7 @@ $(C_n)$ is a nonnegative supermartingale with $\E_{P_0}[C_n] \le 1$, and
 the tail bound is again Lemma~\ref{lem:ville}. \Halmos
 \end{proof}
 
-\subsection{Rare-event separation}
+\subsubsection{Rare-event separation}
 
 The breakdown channel's stake $w$ in Equation~\eqref{eq:bernoullibet}
 is calibrated so that a \emph{single} breakdown crosses the alarm
@@ -867,7 +863,7 @@ e-process, so $\Prob_{P_0}(\exists\, n : E_{\mathrm{brk}}(n) \ge
 $\Prob_{P_0}(\tau < \infty) \le \alpha/2 + \alpha/2 = \alpha$. \Halmos
 \end{proof}
 
-\subsection{Reset on alarm}
+\subsubsection{Reset on alarm}
 
 When $\tau$ fires, the dispatcher invokes a replanner (any member of
 the family in Section~\ref{sec:decision}), the new plan becomes the
@@ -1277,7 +1273,7 @@ $\mathcal P_\Delta$ is equivalent to minimizing detection delay against
 the least detectable cost-$\Delta$ drift.
 
 % ══════════════════════════════════════════════════════════════════
-\section{The decision layer: pluggable replanners}\label{sec:decision}
+\subsection{The decision layer: pluggable replanners}\label{sec:decision}
 
 TEMPO answers \emph{when} to replan; none of Sections
 \ref{sec:eprocess}--\ref{sec:theory} constrains \emph{what} the new
@@ -1313,24 +1309,23 @@ merely resequencing within one, and Section~\ref{sec:study} shows this
 dimension, not sequencing quality, is where nearly all of the
 re-optimization value lies.
 
-The planning-time optimizer itself --- the adaptive large neighborhood
-search of \citet{dang2026baton} --- remains available as a fourth,
-warm-started backend for the full milestone-two comparison of
-Section~\ref{sec:study}; its neighborhood operators assume depot-rooted
-routes, so the lighter backends above serve the mid-route,
-partially-executed setting that a live re-optimization call actually
-faces.
+The planning-time optimizer itself --- an adaptive large neighborhood
+search --- remains available as a fourth, warm-started backend for the
+full milestone-two comparison of Section~\ref{sec:study}; its
+neighborhood operators assume depot-rooted routes, so the lighter
+backends above serve the mid-route, partially-executed setting that a
+live re-optimization call actually faces.
 
 % ══════════════════════════════════════════════════════════════════
 \section{Computational study}\label{sec:study}
 
 \subsection{Instances, plans, and scenarios}
 
-We evaluate on the same instance families as \citet{dang2026baton}: 40
+We evaluate on 73 instances: 40
 instances of \citet{dethloff2001vehicle}, 14 instances of
 \citet{salhi1999cluster}, and 19 new instances built from the real road
-networks and real retail locations of five cities, 73 instances in
-total. For each instance we take the longest route of the cached
+networks and real retail locations of five cities. For each instance we
+take the longest route of the cached
 adaptive-large-neighborhood-search plan under the deterministic
 capacity gate, fit the null-model parameters of
 Section~\ref{sec:model} from the same historical demand scenarios used
@@ -1523,6 +1518,24 @@ TEMPO still spends less of its false-alarm budget getting there
 (Table~\ref{tab:validity}).}
 \end{table}
 
+Figure~\ref{fig:baselines} visualizes the same comparison for a
+representative subset of scenarios spanning every drift category: the
+margin is largest, exactly as the theory of
+Section~\ref{sec:theory} predicts, on slow ramps, transient windows,
+and mild single-factor drift, where a classical detector's constant
+per-step drain forgets evidence the fastest, and narrows only on
+scenarios so severe that every monitor saturates near a detection rate
+of one.
+
+\begin{figure}
+\FIGURE
+{\includegraphics[width=0.92\textwidth]{figures/tempo_fig5_baselines.png}}
+{TEMPO against four baselines, by scenario.\label{fig:baselines}}
+{Detection rate at TEMPO's matched false-alarm budget
+(Table~\ref{tab:validity}), pooled over 73 instances and 15 days per
+scenario; the full 17-scenario table is Table~\ref{tab:detection}.}
+\end{figure}
+
 An ablation isolates where this margin comes from. Removing the
 adaptive betting and cost-relevance tilt of
 Sections~\ref{sec:coupling}--\ref{sec:tempo} and reverting to the flat,
@@ -1636,32 +1649,46 @@ Equation~\eqref{eq:vs}. Third, every backend of
 Section~\ref{sec:decision} is a drop-in replacement for any other,
 confirming the trigger and the replanner compose as designed.
 
-\subsection{TEMPO and BATON are complementary, and drift has a where}
+\subsection{TEMPO complements a capacity-triggered recourse policy, and drift has a where}
 
-Figure~\ref{fig:vsbaton} contrasts TEMPO's execution-time monitor with
-\citet{dang2026baton}'s planning-time recourse policy on the same
-route under two different drift days. On a demand-surge day, both
-layers react: BATON's continuation-cost boundary is approached and its
-recourse policy intervenes, while TEMPO's demand channel accumulates
-evidence in step. On a traffic-jam day, only TEMPO fires --- the jam
-never pushes any vehicle's load toward a capacity breach, so BATON's
-recourse policy correctly stays silent, yet the plan's realized
-lateness is climbing steadily, exactly the drift TEMPO exists to catch
-and BATON's planning-time policy has no mechanism to see. The two
-layers are complementary by design: BATON prices \emph{what to do} once
-a capacity constraint is in play; TEMPO decides \emph{when} the
-plan --- any part of it, capacity-related or not --- has stopped
-matching reality.
+TEMPO's execution-time monitor is complementary to, and can run
+alongside, any planning-layer recourse policy that intervenes only
+when a vehicle's running load approaches a capacity boundary. On a
+demand-surge day, both layers react: a capacity-triggered recourse
+policy's continuation-cost boundary is approached and it intervenes,
+while TEMPO's demand channel accumulates evidence in step. On a
+traffic-jam day, only TEMPO fires --- the jam never pushes any
+vehicle's load toward a capacity breach, so a purely capacity-triggered
+policy correctly stays silent, yet the plan's realized lateness is
+climbing steadily, exactly the drift TEMPO exists to catch and a
+load-based recourse policy has no state to see it with. The two layers
+are complementary by design: a capacity-triggered recourse policy
+prices \emph{what to do} once a capacity constraint is in play; TEMPO
+decides \emph{when} the plan --- any part of it, capacity-related or
+not --- has stopped matching reality.
+
+Figure~\ref{fig:fleet} illustrates TEMPO running on an entire fleet
+rather than one vehicle: one master e-process consumes every vehicle's
+events in shared clock order, so the dispatcher tests the \emph{plan},
+not any single route. As the jam pocket of
+Section~\ref{sec:model} opens and spreads across the road network, the
+evidence pooled from vehicles whose remaining routes enter the affected
+zone accumulates while vehicles routed elsewhere continue to contribute
+on-model evidence, and the alarm --- fired once the pooled log
+e-process crosses its threshold --- triggers a fleet-wide replan well
+before the day ends.
 
 \begin{figure}
 \FIGURE
-{\includegraphics[width=\textwidth]{figures/tempo_fig2_vs_baton.png}}
-{TEMPO and BATON on the same route under two drift days.
-\label{fig:vsbaton}}
-{Left: a demand-surge day, load path against the capacity boundary.
-Right: a traffic-jam day, cumulative lateness. Bottom row: TEMPO's
-evidence accumulation on each day --- both channels react to the demand
-day, only the traffic channel reacts to the jam day.}
+{\includegraphics[width=\textwidth]{figures/tempo_fig4_fleet.png}}
+{TEMPO monitoring an entire fleet under a spreading congestion
+pocket.\label{fig:fleet}}
+{Left: eleven vehicles (colored trails) on a real road network
+(colored by realized congestion), with a jam pocket opening at 09:00
+and spreading; the dashed segments are each vehicle's post-alarm
+replanned trail. Right, top to bottom: the pooled log e-process
+crossing the alarm threshold, the standardized residuals TEMPO bets on
+across channels, and cumulative customers served.}
 \end{figure}
 
 Figure~\ref{fig:map} illustrates the spatial extension of
@@ -1745,7 +1772,9 @@ before submission --- see \texttt{papers/tempo/PROJECT.md}\S9h for the
 current status.]}
 
 % ══════════════════════════════════════════════════════════════════
-\section{Managerial insights and discussion}\label{sec:discussion}
+\section{Discussion and conclusion}\label{sec:discussion}
+
+\subsection{Managerial insights}
 
 Three implications follow directly from the theory and the
 computational study, and each is stated in a form a fleet operator, not
@@ -1794,14 +1823,14 @@ depends on realized, not forecast, residual capacity.
 A natural objection is that TEMPO adds a second layer of machinery on
 top of an already-complex planning-time policy. We view the opposite as
 true: the coupling of Section~\ref{sec:coupling} means TEMPO requires no
-new fitted model beyond what \citet{dang2026baton}'s planning layer
-already produces for its own recourse decisions --- the continuation
-cost $\widehat C(\cdot)$ is read, not re-estimated --- so a fleet that
+new fitted model beyond what an optimal-stopping planning layer already
+produces for its own recourse decisions --- the continuation cost
+$\widehat C(\cdot)$ is read, not re-estimated --- so a fleet that
 has already adopted an optimal-stopping recourse policy at the planning
 layer acquires an anytime-valid re-optimization trigger at negligible
 additional modeling cost.
 
-\section{Conclusion}\label{sec:conclusion}
+\subsection{Conclusion}\label{sec:conclusion}
 
 We have posed the timing of vehicle-routing re-optimization as a
 sequential hypothesis test and shown that anytime-valid testing,

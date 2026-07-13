@@ -455,26 +455,51 @@ section for the outcome once complete.
 
 Full manuscript at `papers/tempo/main.tex` (informs4.cls, `trsc`
 option), compiling cleanly to a 37-page PDF (`pdflatex + bibtex +
-pdflatex x2`, no undefined references, no overfull boxes). Mirrors
-BATON's rigor: full flowing prose, all four theorems (Theorem 1 regret
+pdflatex x2`, no undefined references, no overfull boxes, no duplicate
+labels). Full flowing prose, all four theorems (Theorem 1 regret
 bound, Corollary 1 optimal alpha*, Theorem 2 value of waiting with a
 worked two-vehicle stylized model, Theorem 3 growth-optimality via a
 saddle-point argument) proved in full rather than left as proof
 routes, Propositions 1-5 for the validity chain (master process,
 coupled tilts, dual-regime combination, rare-event split), an
-algorithm-environment pseudocode listing for the monitor, all three
-existing figures placed and captioned, and results tables transcribed
-from
-`results_ev_grid.csv`, `results_ev_replan.csv`, `results_ev_amazon.csv`,
-and the alpha-sweep run. Section~9.10 (DGTA-RL) is a placeholder
-pending the Colab training run in \S9h --- fill in the realized-cost
-comparison once training completes, then rebuild
-(`pdflatex && bibtex main && pdflatex && pdflatex`). Citations mostly
-verified; three flagged in `VERIFY_CITATIONS.md` (Gmira et al. 2021's
-bibliographic record, and exact volume/page ranges for Ramdas et al.
-2023 and Waudby-Smith & Ramdas 2024). `main.pdf`/`.aux`/`.bbl`/`.log`
-are gitignored per `papers/tempo/.gitignore`, matching BATON's
-convention — rebuild locally to view.
+algorithm-environment pseudocode listing for the monitor, and results
+tables transcribed from `results_ev_grid.csv`, `results_ev_replan.csv`,
+`results_ev_amazon.csv`, and the alpha-sweep run. Section~9.10
+(DGTA-RL) is a placeholder pending the Colab training run in \S9h ---
+fill in the realized-cost comparison once training completes, then
+rebuild (`pdflatex && bibtex main && pdflatex && pdflatex`). Citations
+mostly verified; three flagged in `VERIFY_CITATIONS.md` (Gmira et al.
+2021's bibliographic record, and exact volume/page ranges for Ramdas
+et al. 2023 and Waudby-Smith & Ramdas 2024). `main.pdf`/`.aux`/`.bbl`/
+`.log` are gitignored per `papers/tempo/.gitignore` --- rebuild locally
+to view.
+
+**Revision (2026-07-13, same day):** per explicit direction, (a) the
+manuscript is now fully anonymous for double-blind review
+(`\documentclass[trsc,dblanonrev]{informs4}`, author/affiliation block
+blinded, `\RUNAUTHOR{Anonymous}`) and (b) every citation/mention of the
+sibling (unpublished) paper's authors and its "BATON" name is removed
+--- the planning-layer recourse policy is now described generically
+("a planning layer that solves for recourse under an optimal-stopping
+formulation") with no external attribution, and its bib entry is
+deleted; (c) restructured from 11 top-level sections down to the
+requested 6 (Introduction incl. Related Work; The stochastic routing
+day and the master e-process; TEMPO: decision-relevant coupling and
+construction; The economics of the trigger incl. the decision layer;
+Computational study; Discussion and conclusion) via section/subsection
+demotion, no content cut; (d) `tempo_fig2_vs_baton.png` removed (its
+title/labels literally said "BATON," which the sibling-paper module
+docstring had explicitly flagged as "does NOT go into the TEMPO
+manuscript" — the earlier draft included it by mistake); (e) two new
+figures added instead: `tempo_fig4_fleet.png` (a static frame pulled
+from `anim_tempo_fleet.gif` — many vehicles on a real road network
+colored by realized congestion, alongside the pooled e-process, is
+exactly the "traffic with colors and many vehicles" visualization
+requested) and `tempo_fig5_baselines.png` (a new grouped bar chart of
+TEMPO vs. CUSUM/Page-Hinkley/e-CUSUM/e-SR detection rate across nine
+representative scenarios, generated fresh from `results_ev_grid.csv`
+rather than reusing the sibling paper's reactive-vs-optimal-stopping
+comparison GIF, which was a different comparison entirely).
 
 ## 10. World-model extensions surfaced by the visualizations
 
