@@ -52,6 +52,7 @@ class DayParams:
     rain_prob: float = 0.25    # chance the day is rainy (exogenous, known to monitor)
     rain_mult: float = 1.30    # travel multiplier when raining
     diurnal: tuple = ((7.0, 9.5, 1.6), (16.5, 19.0, 1.8))  # (start, end, mult) peaks
+    stop_xy: np.ndarray | None = None  # (m,2) lon/lat of stops, for zonal drift
 
 
 def diurnal_mult(clock: float, peaks) -> float:
@@ -66,11 +67,30 @@ def diurnal_mult(clock: float, peaks) -> float:
 @dataclass
 class DriftSpec:
     """What goes wrong, and when. kind in {none, traffic, demand,
-    accident, dwell, breakdown}. t_star is clock hours; magnitude is
-    interpreted per kind (see simulate_route_day)."""
+    accident, dwell, breakdown, traffic_zone}. t_star is clock hours;
+    magnitude is interpreted per kind (see simulate_route_day).
+
+    kind="traffic_zone" is the SPATIAL jam: a congestion pocket centred
+    at `center` (lon, lat) whose radius grows from `radius0` by
+    `spread` per hour after t_star; only legs whose stop lies inside
+    the current zone are slowed (requires DayParams.stop_xy)."""
     kind: str = "none"
     t_star: float = 10.0
     magnitude: float = 1.5
+    center: tuple | None = None
+    radius0: float = 0.004
+    spread: float = 0.006
+
+    def zone_radius(self, clock: float) -> float:
+        return self.radius0 + self.spread * max(0.0, clock - self.t_star)
+
+    def in_zone(self, xy, clock: float) -> bool:
+        if self.kind != "traffic_zone" or self.center is None \
+                or clock < self.t_star:
+            return False
+        dx = float(xy[0]) - self.center[0]
+        dy = float(xy[1]) - self.center[1]
+        return (dx * dx + dy * dy) ** 0.5 <= self.zone_radius(clock)
 
 
 # ── simulator ────────────────────────────────────────────────────────────────
@@ -107,7 +127,10 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
         base = p.tau[k - 1] * diurnal_mult(clock, p.diurnal) * \
             (p.rain_mult if rain else 1.0)
         mu_log = np.log(base) - 0.5 * p.sig_T ** 2
-        shift = np.log(drift.magnitude) if drifted("traffic", clock) else 0.0
+        jammed = drifted("traffic", clock) or (
+            p.stop_xy is not None
+            and drift.in_zone(p.stop_xy[k - 1], clock))
+        shift = np.log(drift.magnitude) if jammed else 0.0
         logT = rng.normal(mu_log + shift, p.sig_T)
         T = float(np.exp(logT))
         events.append(dict(
@@ -115,7 +138,7 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
             val=T, base=base,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
-                                  drifted=drifted("traffic", clock))))
+                                  drifted=jammed)))
 
         lam = p.lam0 * (drift.magnitude if drifted("accident", clock) else 1.0)
         n_acc = int(rng.poisson(lam * T))

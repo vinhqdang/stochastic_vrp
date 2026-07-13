@@ -214,3 +214,29 @@ per instance, alpha = 0.05.
 Next: (a) like-for-like CUSUM calibration; (b) harmful-day conditional
 scoring; (c) the replanning layer (warm-started ALNS on trigger) with
 realized-cost comparison; (d) extend runs to Salhi-Nagy + city sets.
+
+## 10. World-model extensions surfaced by the visualizations
+
+- **Zonal jam** (implemented, `DriftSpec(kind="traffic_zone")`): a
+  congestion pocket with a centre and a radius growing over time; only
+  legs whose stop lies inside the current zone are slowed. Gives drift
+  a WHERE, not just a WHEN, and makes fleet-level pooling meaningful
+  (vehicles far from the pocket contribute null evidence).
+- **Fleet-pooled monitoring** (implemented in the fleet animation): one
+  master e-process consumes every vehicle's events in clock order —
+  the dispatcher tests the PLAN, not a vehicle. Empirical lesson: the
+  rare-event breakdown stake must run as a parallel e-process with a
+  union-bound alpha split (alpha/2 + alpha/2), otherwise its per-leg
+  insurance premium scales with fleet size x legs and drowns the
+  continuous channels (~ -8 log units for 11 vehicles). This deserves
+  a remark in the paper.
+- **Per-edge congestion field** (visualization layer today): every road
+  segment carries a static severity, its own jam-response exponent and
+  an AR(1) log-noise state with temporal persistence. The simulator's
+  per-leg lognormal is the marginal of this field; promoting the field
+  itself into the simulator (spatio-temporally correlated travel
+  noise) plus a zone-aware spatial sensitivity tilt is the natural
+  next modelling step — and a testable one: correlated noise breaks
+  the independence assumption A1, so the master process must switch to
+  conditional-law bets (chain rule handles it, the alternative just
+  needs the field's AR structure).
