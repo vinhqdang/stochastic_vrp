@@ -80,13 +80,27 @@ class DriftSpec:
     center: tuple | None = None
     radius0: float = 0.004
     spread: float = 0.006
+    profile: str = "step"      # step | ramp | transient
+    ramp_h: float = 1.5        # hours to full intensity (profile=ramp)
+    t_clear: float | None = None   # drift ends (profile=transient)
+
+    def rho(self, clock: float) -> float:
+        """Drift intensity in [0, 1] at this clock time."""
+        if self.kind == "none" or clock < self.t_star:
+            return 0.0
+        if self.profile == "transient" and self.t_clear is not None \
+                and clock >= self.t_clear:
+            return 0.0
+        if self.profile == "ramp":
+            return min(1.0, (clock - self.t_star) / max(self.ramp_h, 1e-9))
+        return 1.0
 
     def zone_radius(self, clock: float) -> float:
         return self.radius0 + self.spread * max(0.0, clock - self.t_star)
 
     def in_zone(self, xy, clock: float) -> bool:
         if self.kind != "traffic_zone" or self.center is None \
-                or clock < self.t_star:
+                or self.rho(clock) <= 0.0:
             return False
         dx = float(xy[0]) - self.center[0]
         dy = float(xy[1]) - self.center[1]
@@ -95,7 +109,8 @@ class DriftSpec:
 
 # ── simulator ────────────────────────────────────────────────────────────────
 
-def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator):
+def simulate_route_day(p: DayParams, drift, rng: np.random.Generator,
+                       force_rain: bool | None = None):
     """Simulate one day; return (events, meta).
 
     events: list of dicts, chronological. Every dict has
@@ -113,13 +128,30 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
     meta: dict with clock_end, rain (bool), m.
     """
     m = len(p.mu_g)
-    rain = bool(rng.random() < p.rain_prob)
+    specs = drift if isinstance(drift, (list, tuple)) else [drift]
+    rain = bool(rng.random() < p.rain_prob) if force_rain is None \
+        else bool(force_rain)
     clock = p.t0
     W = 0.0
     events = []
 
-    def drifted(kind, t):
-        return drift.kind == kind and t >= drift.t_star
+    def rho_of(kind, t, xy=None):
+        """Max drift intensity in [0,1] across specs of this kind."""
+        r = 0.0
+        for s in specs:
+            if s.kind == kind:
+                r = max(r, s.rho(t))
+            elif kind == "traffic" and s.kind == "traffic_zone" \
+                    and xy is not None and s.in_zone(xy, t):
+                r = max(r, s.rho(t))
+        return r
+
+    def mag_of(kind):
+        for s in specs:
+            if s.kind == kind or (kind == "traffic"
+                                  and s.kind == "traffic_zone"):
+                return s.magnitude
+        return 1.0
 
     for k in range(1, m + 1):
         rem_frac = (m - k + 1) / m
@@ -127,10 +159,10 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
         base = p.tau[k - 1] * diurnal_mult(clock, p.diurnal) * \
             (p.rain_mult if rain else 1.0)
         mu_log = np.log(base) - 0.5 * p.sig_T ** 2
-        jammed = drifted("traffic", clock) or (
-            p.stop_xy is not None
-            and drift.in_zone(p.stop_xy[k - 1], clock))
-        shift = np.log(drift.magnitude) if jammed else 0.0
+        xy_k = p.stop_xy[k - 1] if p.stop_xy is not None else None
+        rho_T = rho_of("traffic", clock, xy_k)
+        jammed = rho_T > 0.0
+        shift = rho_T * np.log(mag_of("traffic"))
         logT = rng.normal(mu_log + shift, p.sig_T)
         T = float(np.exp(logT))
         events.append(dict(
@@ -140,44 +172,46 @@ def simulate_route_day(p: DayParams, drift: DriftSpec, rng: np.random.Generator)
                                   rem_frac=rem_frac,
                                   drifted=jammed)))
 
-        lam = p.lam0 * (drift.magnitude if drifted("accident", clock) else 1.0)
+        rho_A = rho_of("accident", clock)
+        lam = p.lam0 * (1.0 + rho_A * (mag_of("accident") - 1.0))
         n_acc = int(rng.poisson(lam * T))
         events.append(dict(
             channel="accident", n=n_acc, lam0dt=p.lam0 * T,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
-                                  drifted=drifted("accident", clock))))
+                                  drifted=rho_A > 0.0)))
 
-        pb = min(0.9, p.p_break * (drift.magnitude
-                                   if drifted("breakdown", clock) else 1.0))
+        rho_B = rho_of("breakdown", clock)
+        pb = min(0.9, p.p_break * (1.0 + rho_B * (mag_of("breakdown") - 1.0)))
         x_break = int(rng.random() < pb)
         events.append(dict(
             channel="breakdown", x=x_break, p0=p.p_break,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
-                                  drifted=drifted("breakdown", clock))))
+                                  drifted=rho_B > 0.0)))
         clock += T
 
         # ── stop k: demand then dwell ────────────────────────────────
-        gshift = drift.magnitude * p.sig_g[k - 1] \
-            if drifted("demand", clock) else 0.0
+        rho_D = rho_of("demand", clock)
+        gshift = rho_D * mag_of("demand") * p.sig_g[k - 1]
         g = float(rng.normal(p.mu_g[k - 1] + gshift, p.sig_g[k - 1]))
         events.append(dict(
             channel="demand",
             z=float((g - p.mu_g[k - 1]) / p.sig_g[k - 1]), val=g,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
-                                  drifted=drifted("demand", clock))))
+                                  drifted=rho_D > 0.0)))
         W += g
 
         mu_S = p.dwell_a + p.dwell_b * abs(g)
-        sshift = drift.magnitude * p.sig_S if drifted("dwell", clock) else 0.0
+        rho_S = rho_of("dwell", clock)
+        sshift = rho_S * mag_of("dwell") * p.sig_S
         S = max(0.0, float(rng.normal(mu_S + sshift, p.sig_S)))
         events.append(dict(
             channel="dwell", z=float((S - mu_S) / p.sig_S), val=S,
             clock=clock, ctx=dict(k=k, m=m, W_prev=W, B=p.B,
                                   rem_frac=rem_frac,
-                                  drifted=drifted("dwell", clock))))
+                                  drifted=rho_S > 0.0)))
         clock += S
 
     return events, dict(clock_end=clock, rain=rain, m=m)
