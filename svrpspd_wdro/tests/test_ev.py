@@ -248,3 +248,114 @@ def test_exact_no_worse_than_heuristic():
     h = resequence_nn2opt(1, rem, D)
     e = exact_open_tsp(1, rem, D)
     assert _tour_len(D, 1, e) <= _tour_len(D, 1, h) + 1e-6
+
+
+# ── e-detectors (Shin, Ramdas & Rinaldo, 2024) — no calibration needed ──────
+
+def _arl(make_monitor, p, null, alpha, n_reps, max_events, seed0):
+    """Mean number of events to first false alarm on a CONTINUOUS
+    (non-reset) null stream — the object Theorem 2.4's ARL bound
+    E_infty[N*] >= 1/alpha actually constrains, as opposed to a
+    per-window false-alarm PROBABILITY (see baselines.py docstring)."""
+    stops = []
+    for r in range(n_reps):
+        mon = make_monitor()
+        rng = np.random.default_rng(seed0 + r)
+        n = 0
+        while n < max_events:
+            events, _ = simulate_route_day(p, null, rng)
+            for ev in events:
+                n += 1
+                if mon.update(ev):
+                    break
+            else:
+                continue
+            break
+        stops.append(n)
+    return float(np.mean(stops))
+
+
+def test_edetector_sr_arl_matches_theorem_2_4():
+    """Theorem 2.4 (Shin-Ramdas-Rinaldo 2024): the average run length
+    to a false alarm on an indefinitely-run null stream is >= 1/alpha.
+    Checked on a CONCATENATED (non-reset) stream, not per-day resets —
+    see the ARL-vs-per-window distinction in baselines.py."""
+    from ev.baselines import EShiryaevRoberts
+    p = _params(m=10)
+    alpha = 0.2                        # ARL >= 5 events: cheap to check
+    arl = _arl(lambda: EShiryaevRoberts(alpha=alpha), p,
+              DriftSpec(kind="none"), alpha, n_reps=300,
+              max_events=400, seed0=11000)
+    assert arl >= (1.0 / alpha) * 0.8  # MC slack
+
+
+def test_edetector_cusum_arl_matches_theorem_2_4():
+    from ev.baselines import ECusum
+    p = _params(m=10)
+    alpha = 0.2
+    arl = _arl(lambda: ECusum(alpha=alpha), p,
+              DriftSpec(kind="none"), alpha, n_reps=300,
+              max_events=400, seed0=11500)
+    assert arl >= (1.0 / alpha) * 0.8
+
+
+def test_edetector_sr_calibrated_matches_per_day_alpha():
+    """For the per-day (finite-window) comparison used throughout the
+    rest of the project, e-SR needs the SAME oracle calibration as the
+    classical foils — this is the honest, apples-to-apples protocol
+    ev_grid_eval.py uses, not a claim that e-SR needs no tuning at all
+    for THIS metric."""
+    from ev.baselines import EShiryaevRoberts
+    from ev.baselines import calibrate_threshold
+    p = _params(m=20)
+    null = DriftSpec(kind="none")
+    alpha = 0.10
+    cal = [simulate_route_day(p, null, np.random.default_rng(12000 + i))[0]
+           for i in range(300)]
+
+    h = calibrate_threshold(lambda: EShiryaevRoberts(alpha=alpha),
+                            lambda m: m.M, cal, alpha)
+    fired = 0
+    N = 400
+    for seed in range(N):
+        rng = np.random.default_rng(13000 + seed)
+        events, _ = simulate_route_day(p, null, rng)
+        mon = EShiryaevRoberts(alpha=alpha)
+        hit = False
+        for ev in events:
+            mon.update(ev)
+            if mon.M >= h:
+                hit = True
+                break
+        fired += int(hit)
+    bound = alpha + 3 * np.sqrt(alpha * (1 - alpha) / N)
+    assert fired / N <= bound
+
+
+def test_edetector_sr_at_least_as_fast_as_cusum():
+    """M^SR_n = sum_j Lambda_n^(j) >= max_j Lambda_n^(j) = M^CU_n
+    pointwise (every term is nonnegative), so for equal thresholds
+    e-SR must alarm no later than e-CUSUM on every sample path."""
+    from ev.baselines import EShiryaevRoberts, ECusum
+    p = _params(m=40)
+    drift = DriftSpec(kind="traffic", t_star=9.0, magnitude=1.8)
+    for seed in range(20):
+        rng = np.random.default_rng(9900 + seed)
+        events, _ = simulate_route_day(p, drift, rng)
+        sr, cu = EShiryaevRoberts(alpha=0.05), ECusum(alpha=0.05)
+        out_sr = run_day(sr, events)
+        out_cu = run_day(cu, events)
+        if out_sr["fired"] and out_cu["fired"]:
+            assert out_sr["alarm_idx"] <= out_cu["alarm_idx"]
+        elif out_cu["fired"]:
+            assert out_sr["fired"]        # SR must have also fired
+
+
+def test_rolling_opt_fires_every_stop_cycle():
+    from ev.baselines import RollingOptMonitor
+    p = _params(m=10)
+    rng = np.random.default_rng(1)
+    events, _ = simulate_route_day(p, DriftSpec(kind="none"), rng)
+    mon = RollingOptMonitor(events_per_stop=5)
+    n_fire = sum(mon.update(e) for e in events)
+    assert n_fire == len(events) // 5

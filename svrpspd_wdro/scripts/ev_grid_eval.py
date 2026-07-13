@@ -36,7 +36,8 @@ from ev.scenarios import SCENARIOS, NULL_NAMES                 # noqa: E402
 from ev.eprocess import MasterEProcess, TempoMonitor, run_day  # noqa: E402
 from ev.baselines import (CusumMonitor, PeriodicMonitor,       # noqa: E402
                           BonferroniFixed, PageHinkleyMonitor,
-                          calibrate_threshold)
+                          RollingOptMonitor, EShiryaevRoberts,
+                          ECusum, calibrate_threshold)
 
 PLANS = _WDRO / "results" / "plans"
 OUT = _WDRO / "results" / "results_ev_grid.csv"
@@ -52,16 +53,36 @@ ROUTE_HOURS = 6.0
 N_CAL = 100
 
 
-def monitors(hc, hp, hcm, hpm):
+def monitors(hc, hp, hcm, hpm, hesr, hecu):
     return {
         "tempo2": TempoMonitor(alpha=ALPHA),
         "tempo_flat": MasterEProcess(alpha=ALPHA, use_sensitivity=False),
         "cusum_cal": CusumMonitor(h=hc),
         "cusum_match": CusumMonitor(h=hcm),
         "ph_match": PageHinkleyMonitor(h=hpm),
+        "esr_match": EShiryaevRoberts(alpha=ALPHA),   # threshold set below
+        "ecusum_match": ECusum(alpha=ALPHA),
         "bonferroni": BonferroniFixed(alpha=ALPHA),
         "periodic": PeriodicMonitor(period=40),
+        "rolling_opt": RollingOptMonitor(events_per_stop=5),
     }
+
+
+class _ThreshWrap:
+    """Wrap an e-detector so .update() fires at a CALIBRATED threshold
+    on its .M statistic rather than its native 1/alpha — the ARL bound
+    those detectors carry natively does not translate into our per-day
+    false-alarm-probability protocol (see ev/baselines.py)."""
+
+    def __init__(self, mon, thresh):
+        self.mon, self.thresh = mon, thresh
+
+    def reset(self):
+        self.mon.reset()
+
+    def update(self, event):
+        self.mon.update(event)
+        return self.mon.M >= self.thresh
 
 
 def eval_instance(ds, stem, data_dir, n_days, rng):
@@ -86,13 +107,17 @@ def eval_instance(ds, stem, data_dir, n_days, rng):
                              lambda m: m.m - m.m_min, cal, ALPHA)
     hpm = calibrate_threshold(lambda: PageHinkleyMonitor(h=np.inf),
                               lambda m: m.m - m.m_min, cal, TEMPO_FA)
+    hesr = calibrate_threshold(lambda: EShiryaevRoberts(alpha=ALPHA),
+                               lambda m: m.M, cal, TEMPO_FA)
+    hecu = calibrate_threshold(lambda: ECusum(alpha=ALPHA),
+                               lambda m: m.M, cal, TEMPO_FA)
 
     rows = []
     for scen, make in SCENARIOS.items():
         drift, force_rain = make(p.t0)
         is_null = scen in NULL_NAMES
         stats = {name: dict(fired=0, delay=[], false=0)
-                 for name in monitors(hc, hp, hcm, hpm)}
+                 for name in monitors(hc, hp, hcm, hpm, hesr, hecu)}
         for _ in range(n_days):
             seed = int(rng.integers(1 << 31))
             events, _ = simulate_route_day(
@@ -103,7 +128,10 @@ def eval_instance(ds, stem, data_dir, n_days, rng):
             hard_idx = next((i for i, e in enumerate(events)
                              if e["channel"] == "breakdown"
                              and e.get("x", 0) == 1), None)
-            for name, mon in monitors(hc, hp, hcm, hpm).items():
+            mons = monitors(hc, hp, hcm, hpm, hesr, hecu)
+            mons["esr_match"] = _ThreshWrap(mons["esr_match"], hesr)
+            mons["ecusum_match"] = _ThreshWrap(mons["ecusum_match"], hecu)
+            for name, mon in mons.items():
                 out = run_day(mon, events)
                 if hard_idx is not None and (out["alarm_idx"] is None
                                              or out["alarm_idx"] > hard_idx):

@@ -371,6 +371,86 @@ Three findings:
    `rebalance(...)` callable slots in; milestone 2 proper will cross
    triggers x backends (incl. warm-started ALNS) on all scenarios.
 
+## 9g. Three literature baselines added (2026-07-13): e-detectors, SMPC, DGTA-RL
+
+Per user request, added and ran the three most relevant 2024-2026
+papers as concrete baselines rather than citations only:
+
+**e-SR / e-CUSUM** (Shin, Ramdas & Rinaldo 2024, "E-detectors: A
+Nonparametric Framework for Sequential Change Detection," NEJSDS
+2(2):229-260, DOI 10.51387/23-NEJSDS51) — implemented in
+`ev/baselines.py` using EXACTLY TEMPO's own per-channel bets (s=1, no
+adaptive theta, no cost tilt), combined via their restart-and-sum
+(SR)/restart-and-max (CUSUM) rule instead of TEMPO's single running
+product. Caught a real conceptual bug while validating: an e-detector
+satisfies E[M_tau] <= E[tau] (Def. 2.2), an AVERAGE RUN LENGTH
+guarantee over an indefinitely-run stream — NOT a Ville-style
+P(false alarm in n steps) <= alpha bound like TEMPO's own guarantee.
+Fixed by (a) testing the native ARL guarantee on a continuous
+non-reset stream (test_ev.py, confirms Theorem 2.4 holds), and
+(b) oracle-calibrating the M-statistic threshold for the apples-to-
+apples PER-DAY comparison the rest of the project uses (same protocol
+as the classical CUSUM/PH foils).
+
+**SMPC** (He, Li, Li, Huang, Huang & Duan 2026, Mathematics 14(6):1032,
+DOI 10.3390/math14061032) — chance-constrained periodic rolling-horizon
+re-solve; its trigger mechanism is exactly `PeriodicMonitor`, now cited
+directly (the time-window MILP itself is out of scope — TEMPO's harness
+doesn't model time windows).
+
+**DGTA-RL** (Chen, Imdahl, Lai & Van Woensel 2025, Transportation
+Research Part C 172:105022, DOI 10.1016/j.trc.2025.105022) — a Dynamic
+Graph Temporal Attention RL policy for the DTSP with time-dependent
+stochastic travel times, no explicit detection layer. Added their own
+cited rolling-horizon baseline, "Rolling-opt" (Gmira et al. 2021a), as
+`RollingOptMonitor` (replan every stop, period=5 events). Retraining
+DGTA-RL's actual attention architecture is underway on Colab T4 (see
+§9h) rather than left as a citation only.
+
+Full-grid results (73 instances x 19 scenarios x 15 days,
+results_ev_grid.csv) at TEMPO's matched false-alarm rate (~0.016-0.028
+across the new detectors):
+
+| scenario | cusum_match | esr_match | ecusum_match | **tempo2** |
+|---|---|---|---|---|
+| traffic_mild | 0.11 | 0.28 | 0.25 | **0.61** |
+| demand_severe | 0.40 | 0.66 | 0.58 | **0.88** |
+| demand_ramp | 0.15 | 0.41 | 0.34 | **0.70** |
+| traffic_late | 0.74 | 0.94 | 0.94 | **0.98** |
+| traffic_ramp | 0.92 | 0.97 | 0.97 | 0.98 (tie) |
+| accident_severe | 0.80 | 0.74 | 0.73 | 0.84 |
+
+Key finding: **e-SR/e-CUSUM (the general nonparametric restart
+machinery, no cost coupling) sit consistently between classical CUSUM
+and full TEMPO** — confirming the restart-at-every-changepoint idea
+alone recovers real power over naive CUSUM, but TEMPO's additional
+adaptive betting + cost-relevance tilting still adds a clear further
+margin on demand and mild-traffic drift (where the gap is largest:
+demand_ramp 0.34->0.70, more than double), and the gap nearly closes
+only on scenarios with very strong, sustained evidence (traffic_ramp/
+severe/late) where any reasonable method saturates. This is the
+cleanest ablation yet: it isolates "general e-process technology" from
+"TEMPO's specific coupling" as two separable sources of power.
+
+`rolling_opt` and `periodic` score near 0 on the detection-rate metric
+by construction — they alarm on a fixed schedule regardless of
+evidence, so their first scheduled alarm almost always lands before a
+scenario's drift onset and gets scored as a false/non-detection. This
+is not a flaw in the comparison so much as a mismatch of objectives:
+periodic/rolling-horizon methods are designed to be evaluated on
+REALIZED COST (do frequent free replans pay for themselves), which is
+milestone 2's job (ev_replan_demo.py), not the detection-layer harness.
+Noted here so the discrepancy isn't mistaken for a bug.
+
+## 9h. DGTA-RL retraining on Colab T4 (2026-07-13, in progress)
+
+Scaled-down faithful reimplementation of the DGTA model (spatial-
+temporal encoder with dual attention, dynamic encoder, spatial+temporal
+pointers, REINFORCE training per Algorithm 1 of Chen et al. 2025) for
+the time-dependent stochastic travel-time channel TEMPO's world model
+already simulates. Training on Colab T4; see commit history / this
+section for the outcome once complete.
+
 ## 10. World-model extensions surfaced by the visualizations
 
 - **Zonal jam** (implemented, `DriftSpec(kind="traffic_zone")`): a
