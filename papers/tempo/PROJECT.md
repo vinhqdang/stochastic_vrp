@@ -252,6 +252,30 @@ Remaining known limit: accident detection is information-limited
 (~1.8 informative events per drifted day at these rates); candidate
 improvement is exposure pooling across a sliding window. Not blocking.
 
+## 9e. Theory core drafted + Corollary 1 confirmed (2026-07-13)
+
+`THEORY.md` states the three OR-native theorems (regret bound for the
+statistically triggered replan; closed-form optimal evidence level
+alpha* = Delta_c/(g*C_fr); value of waiting; decision-relevant betting
+growth-optimality) with proof routes, plus the honest imported-vs-new
+inventory. Empirical witness (`ev_alpha_sweep.py`, 10 instances x 15
+days x 8 alphas, 50/50 null-surge population):
+
+alpha:   0.5    0.2    0.1    0.05   0.02   0.005  0.001  1e-4
+mixed:   167.0  165.1  163.1  161.4  158.3  153.8  152.1  161.8
+
+U-shaped with interior optimum near alpha ~ 1e-3 for these economics.
+Both arms are theorem-shaped: the RIGHT arm (1e-4) is detection
+delay/miss (Theorem 1's Delta_c*log(1/alpha)/g term); the LEFT arm is
+NOT false-alarm cost but information-poor replans — at alpha=0.5 the
+alarm fires after ~2 events and the rebalancer acts on priors (Theorem
+2's V(s) term), costing 191.1 vs 156.2 on surge days. Note: in this
+harness a replan on a null day is nearly free (the insertion heuristic
+slightly improves the remaining tour), so C_fr ~ 0 here; real
+deployments carry coordination costs — add an explicit replan fee to
+the harness when writing the paper so the corollary's trade-off shows
+in both terms.
+
 ## 9d. Comprehensive grid (2026-07-13, results_ev_grid.csv)
 
 73 instances (40 Dethloff + 14 Salhi-Nagy + 19 real-shop City) x 19
