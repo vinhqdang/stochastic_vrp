@@ -142,9 +142,34 @@ per-channel weights fall out as the components of that subgradient.
 - Detection layer first (this milestone): false-alarm rate, detection
   delay, per-channel attribution. Replanning value layer second
   (warm-started ALNS on trigger; realized-cost comparison).
-- Baselines: periodic replan; CUSUM per channel + Bonferroni;
-  fixed-sample-size GOF test at pre-committed times; naive untilted
-  e-process (ablation isolating the sensitivity coupling).
+- Baselines (the comparison set for the paper; anchors, published
+  detectors, and ablations):
+  1.  never-replan — static plan ridden to the end (lower anchor).
+  2.  periodic re-optimization every Delta events/minutes, Delta
+      grid-tuned — the rolling-horizon industry default (cf. the
+      dynamic-VRP survey tradition, Pillac et al. 2013).
+  3.  lateness-threshold rule — replan when cumulative delay exceeds a
+      tuned tau minutes; the practitioner heuristic.
+  4.  CUSUM per channel + Bonferroni across channels (Page 1954) — the
+      classical sequential detector; no anytime-valid guarantee, h
+      tuned (a) as published defaults and (b) calibrated to TEMPO's
+      realized false-alarm rate for a like-for-like power comparison.
+  5.  Page-Hinkley drift detector — the standard data-stream monitor
+      (Gama et al. 2014 tradition).
+  6.  fixed-sample GOF z-tests at pre-committed checkpoints with
+      Bonferroni — valid only at the committed peeks; shows exactly
+      what anytime validity buys.
+  7.  Bayesian online change-point detection (Adams & MacKay 2007),
+      alarm on posterior change probability — strong modern baseline,
+      no frequentist error control.
+  8.  untilted master e-process (uniform bets) — ablation isolating
+      the decision-relevance tilts.
+  9.  per-channel e-processes combined by equal-weight averaging
+      (Vovk & Wang) — ablation isolating the single-master design.
+  10. oracle trigger at the true change-point (upper anchor).
+  Milestone 2 pairs every trigger with the SAME warm-started ALNS
+  replanner and compares realized day cost on identical scenario
+  streams, plus a compute-unbounded re-optimize-every-stop anchor.
 
 ## 8. Code map
 
