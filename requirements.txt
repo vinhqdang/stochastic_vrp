@@ -16,3 +16,4 @@ matplotlib>=3.8
 # misc
 openpyxl>=3.1          # .xlsx result exports
 pytest>=7.0
+ijson>=3.2  # streaming the Amazon LMRRC open-data files

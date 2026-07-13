@@ -252,6 +252,30 @@ Remaining known limit: accident detection is information-limited
 (~1.8 informative events per drifted day at these rates); candidate
 improvement is exposure pooling across a sliding window. Not blocking.
 
+## 9f. Real data: Amazon LMRRC pilot (2026-07-13)
+
+Fifth evaluation family: the 2021 Amazon Last-Mile Routing Research
+Challenge data set (Merchan et al. 2024, Transportation Science 58(1),
+DOI 10.1287/trsc.2022.1173, CC-BY-4.0) — 25 evaluation routes, 5 per
+metro (LA, Boston, Seattle, Chicago, Austin), 100-200 REAL stops each,
+adapter `ev/amazon.py`, fetcher `scripts/fetch_amazon_pilot.py`
+(streams the 843 MB/166 MB bucket files, stores only the slice). The
+null P0 is built entirely from the data set's own planner quantities:
+Amazon's inter-stop travel times (forecast), planned service times
+(dwell), package volumes (demand). Results
+(`results_ev_amazon.csv`, 15 days/scenario):
+
+- validity transfers to real data: TEMPO false alarms 0.021 (plain
+  null) / 0.016 (forecast-rain null) <= alpha across all five metros;
+- severe/ramp scenarios are at the detection CEILING for everyone
+  (0.98-1.00) — 150+-stop routes carry so much evidence that the
+  matched foils catch severe drift too; the discriminating scenarios on
+  long routes are the mild/transient/late ones (next run);
+- known pilot conventions: delivery-only, one realization per route so
+  cross-stop dispersion proxies day-to-day dispersion; drift still
+  injected (the data set has no realized-vs-forecast traces). All
+  noted for the paper's limitations paragraph.
+
 ## 9e. Theory core drafted + Corollary 1 confirmed (2026-07-13)
 
 `THEORY.md` states the three OR-native theorems (regret bound for the
