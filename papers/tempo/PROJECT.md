@@ -451,6 +451,31 @@ the time-dependent stochastic travel-time channel TEMPO's world model
 already simulates. Training on Colab T4; see commit history / this
 section for the outcome once complete.
 
+## 9i. Manuscript drafted (2026-07-13, INFORMS Transportation Science template)
+
+Full manuscript at `papers/tempo/main.tex` (informs4.cls, `trsc`
+option), compiling cleanly to a 37-page PDF (`pdflatex + bibtex +
+pdflatex x2`, no undefined references, no overfull boxes). Mirrors
+BATON's rigor: full flowing prose, all four theorems (Theorem 1 regret
+bound, Corollary 1 optimal alpha*, Theorem 2 value of waiting with a
+worked two-vehicle stylized model, Theorem 3 growth-optimality via a
+saddle-point argument) proved in full rather than left as proof
+routes, Propositions 1-5 for the validity chain (master process,
+coupled tilts, dual-regime combination, rare-event split), an
+algorithm-environment pseudocode listing for the monitor, all three
+existing figures placed and captioned, and results tables transcribed
+from
+`results_ev_grid.csv`, `results_ev_replan.csv`, `results_ev_amazon.csv`,
+and the alpha-sweep run. Section~9.10 (DGTA-RL) is a placeholder
+pending the Colab training run in \S9h --- fill in the realized-cost
+comparison once training completes, then rebuild
+(`pdflatex && bibtex main && pdflatex && pdflatex`). Citations mostly
+verified; three flagged in `VERIFY_CITATIONS.md` (Gmira et al. 2021's
+bibliographic record, and exact volume/page ranges for Ramdas et al.
+2023 and Waudby-Smith & Ramdas 2024). `main.pdf`/`.aux`/`.bbl`/`.log`
+are gitignored per `papers/tempo/.gitignore`, matching BATON's
+convention — rebuild locally to view.
+
 ## 10. World-model extensions surfaced by the visualizations
 
 - **Zonal jam** (implemented, `DriftSpec(kind="traffic_zone")`): a
