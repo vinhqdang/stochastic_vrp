@@ -252,6 +252,40 @@ Remaining known limit: accident detection is information-limited
 (~1.8 informative events per drifted day at these rates); candidate
 improvement is exposure pooling across a sliding window. Not blocking.
 
+## 9c. Milestone 2 opener — the replanner is pluggable (2026-07-13)
+
+`ev/replan.py` makes the optimizer under the trigger swappable:
+per-vehicle open-TSP re-sequencing (NN + 2-opt), fleet-level 2-regret
+reinsertion that REBALANCES remaining customers across residual slack,
+and an exact Gurobi open-TSP (MTZ) anchor. ALNS remains the
+planning-time optimizer; these serve the mid-route replan.
+
+First cost experiment (`ev_replan_demo.py`: 12 Dethloff instances x 20
+demand-surge days, +0.8 sd, day cost = 0.1/unit travel + 40/breach,
+TEMPO v2 trigger, alarm rate 0.98):
+
+| policy | day cost | saving | breaches/day |
+|---|---|---|---|
+| never replan | 519.2 | — | 11.45 |
+| TEMPO + resequence | 399.5 | 23.0% | 8.46 |
+| TEMPO + exact TSP | 399.5 | 23.1% | 8.46 |
+| **TEMPO + rebalance** | **224.8** | **56.7%** | **3.79** |
+| replan-at-first-stop + rebalance | 255.5 | 50.8% | 4.60 |
+
+Three findings:
+1. **The trigger and the recourse DIMENSION dominate the optimizer.**
+   Exact TSP == NN+2-opt to 0.1%: sequencing quality is nearly
+   irrelevant under demand drift; reassignment across vehicles is
+   worth 2.5x more than any sequencing improvement.
+2. **TEMPO + rebalance beats replanning at the first stop** (56.7% vs
+   50.8%): waiting for evidence is not just statistically safer, it is
+   ECONOMICALLY better, because the replanner acts on realized loads
+   and true residual slack rather than priors — "the value of waiting
+   for evidence," a headline result candidate for the paper.
+3. Swappability is real: any `replan(cur, remaining, D)` /
+   `rebalance(...)` callable slots in; milestone 2 proper will cross
+   triggers x backends (incl. warm-started ALNS) on all scenarios.
+
 ## 10. World-model extensions surfaced by the visualizations
 
 - **Zonal jam** (implemented, `DriftSpec(kind="traffic_zone")`): a

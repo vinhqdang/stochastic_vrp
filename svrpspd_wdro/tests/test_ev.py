@@ -219,3 +219,32 @@ def test_pagehinkley_runs():
     events, _ = simulate_route_day(p, DriftSpec(kind="none"), rng)
     out = run_day(PageHinkleyMonitor(h=25.0), events)
     assert set(out) >= {"fired", "alarm_idx"}
+
+
+# ── replanner backends ───────────────────────────────────────────────────────
+
+def test_replan_backends_preserve_customers():
+    from ev.replan import resequence_nn2opt, exact_open_tsp, rebalance_regret
+    rng = np.random.default_rng(4)
+    n = 14
+    pts = rng.uniform(0, 10, (n, 2))
+    D = np.hypot(*(pts[:, None, :] - pts[None, :, :]).T).T
+    rem = [3, 5, 7, 9, 11]
+    for fn in (resequence_nn2opt, exact_open_tsp):
+        order = fn(1, rem, D)
+        assert sorted(order) == sorted(rem)
+    routes = rebalance_regret([1, 2], [[3, 5, 7], [9, 11]],
+                              [100.0, 100.0], D, np.zeros(n))
+    assert sorted(c for r in routes for c in r) == sorted(rem)
+
+
+def test_exact_no_worse_than_heuristic():
+    from ev.replan import resequence_nn2opt, exact_open_tsp, _tour_len
+    rng = np.random.default_rng(8)
+    n = 11
+    pts = rng.uniform(0, 10, (n, 2))
+    D = np.hypot(*(pts[:, None, :] - pts[None, :, :]).T).T
+    rem = list(range(2, 10))
+    h = resequence_nn2opt(1, rem, D)
+    e = exact_open_tsp(1, rem, D)
+    assert _tour_len(D, 1, e) <= _tour_len(D, 1, h) + 1e-6
