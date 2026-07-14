@@ -18,7 +18,7 @@
 \usepackage{natbib}
  \bibpunct[, ]{(}{)}{,}{a}{}{,}%
  \def\bibfont{\footnotesize}%
- \def\bibsep{\smallskipamount}%
+ \def\bibsep{1pt plus 1pt minus 1pt}%
  \def\bibhang{24pt}%
  \def\newblock{\ }%
  \def\BIBand{and}%
@@ -1765,7 +1765,8 @@ evidence, and the alarm --- fired once the pooled log e-process crosses
 its threshold --- triggers a fleet-wide replan well before the day
 ends; this spatial extension gives drift a location as well as a time,
 which is what keeps the pooled test from being swamped by vehicles the
-jam never touches.
+jam never touches. The Appendix shows the same congestion pocket
+against a single planned route in isolation (Figure~\ref{fig:map}).
 
 \begin{figure}
 \FIGURE
@@ -2416,7 +2417,7 @@ do. And every backend of Section~\ref{sec:decision} is a drop-in
 replacement for any other, confirming that trigger and replanner
 compose as designed.
 
-\subsection{The 19-scenario grid (Section~\ref{sec:study})}
+\subsection{The 19-scenario grid, and a zonal traffic jam on a single planned route (Section~\ref{sec:study})}
 
 \begin{table}[h]
 \TABLE
@@ -2440,6 +2441,18 @@ rainy), \texttt{rush\_crush} \\
 log-mean multipliers, demand/dwell magnitudes are standard-deviation
 shifts, accident/breakdown magnitudes are rate ratios.}
 \end{table}
+
+Figure~\ref{fig:map} isolates the spatial mechanism Figure~\ref{fig:fleet}
+shows fleet-wide: a single planned route against a growing congestion
+pocket on a real street network.
+
+\begin{figure}[h]
+\FIGURE
+{\includegraphics[width=0.46\textwidth]{figures/tempo_fig3_map.png}}
+{A zonal traffic jam on a real street network.\label{fig:map}}
+{Only legs whose destination currently lies inside the growing
+congestion pocket (Section~\ref{sec:model}) are slowed.}
+\end{figure}
 
 \end{APPENDIX}
 

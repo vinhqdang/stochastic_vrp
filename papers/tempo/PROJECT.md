@@ -661,6 +661,16 @@ took many more iterations than proof-relocation alone:
   three remaining figures (explainer, fleet, baselines) still cover
   both original asks: real-network traffic-with-vehicles, and a direct
   TEMPO-vs-baselines comparison.
+- **Update:** the user asked for the map figure back — they liked it —
+  so it was restored, but into the Appendix rather than the main body
+  (a new subsection alongside the scenario-grid table, cross-referenced
+  from the fleet-figure discussion), keeping the main body at exactly
+  35 pages. Getting back to 35 after re-adding it took one more small
+  fix: the reference list's own pagination is borderline (its last 2-3
+  entries flip between the previous and a fresh page on tiny upstream
+  reflow), so `\bibsep` was tightened from `\smallskipamount` to `1pt
+  plus 1pt minus 1pt` to reclaim those lines — a purely typographic
+  change, not a content cut.
 - A genuine latent bug was found and fixed along the way: the prior
   proof-relocation pass had left four labels
   (`eq:sensdemand`, `eq:vs`, `rem:growth`, `rem:independence`)
