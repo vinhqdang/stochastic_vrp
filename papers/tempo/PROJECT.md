@@ -685,3 +685,67 @@ Final state, verified via a from-scratch `pdflatex + bibtex + pdflatex
 markers, zero undefined or multiply-defined references, zero
 significant overfull boxes, structural begin/end balance clean across
 every environment, and no BATON/identity leaks.
+
+## 13. Real DGTA-RL retraining and matched-instance result (2026-07-14)
+
+Task tracker item #28 ("retrain DGTA-RL on Colab GPU") had been stuck
+since an earlier Colab GPU session was lost; the manuscript's DGTA-RL
+subsection (\S5, `sec:dgta`) carried a literal
+`[Placeholder: to be inserted before submission.]` in its place. Fixed
+with a real, honestly-reported result, run locally on CPU (a fresh
+attempt to actually use the environment's `colab-cli` GPU tool was
+blocked by the harness's own safety layer as an unconditional hard
+block on uploading private research source to external infrastructure
+— not something to route around, so training moved to local CPU
+instead):
+
+- **Training**: `svrpspd_wdro/ev/dgta/train.py`, unchanged, run for
+  1{,}000 REINFORCE epochs (batch 128, 20-customer instances, ~22
+  minutes on CPU). Real learning: mean held-out tour cost fell from
+  ~24.9 to ~19.5 (arbitrary units), with 8 statistically-significant
+  baseline updates (paired $t$-test, $p<0.05$) over the run. Weights
+  committed at `svrpspd_wdro/results/dgta/dgta_weights.pt`.
+- **Matched-instance evaluation** (`svrpspd_wdro/ev/dgta/eval_matched.py`,
+  new): compares never-replan, TEMPO-triggered resequencing (the real
+  `TempoMonitor`, travel-time channel only), and the trained DGTA-RL
+  policy's greedy rollout, on 40 held-out instances × 12 days, all
+  consuming identical realized travel-time draws under TEMPO's own
+  null/drift model rather than DGTA-RL's native training-time process
+  — the same train-on-your-own-convention, evaluate-on-TEMPO's-grid
+  protocol every other Section 5 baseline already gets.
+- **A real modeling bug caught before trusting any number**: the first
+  version of the drift used a uniform step-multiplier ("traffic_severe"
+  convention) applied identically to every edge — mathematically
+  incapable of being exploited by resequencing at all, since scaling
+  an entire distance matrix by one constant can never change which
+  tour order is shortest. Switched to the spatial, TRANSIENT zonal
+  congestion pocket already used elsewhere in the paper
+  (`traffic_transient` convention: grows, then fully clears), which is
+  the only drift shape that rewards both smarter routing among
+  currently-unaffected customers and waiting out a jam before serving
+  affected ones. Recalibrated the pocket's timing/size after checking
+  empirically that the monitor actually detects the jam while it is
+  still active (21/30 sampled days) rather than always firing after it
+  had already cleared.
+- **Result** (mean realized cost, null / drifted, 480 samples per
+  cell): never-replan 11.76 / 14.67; TEMPO-triggered resequencing
+  11.68 / 14.75; DGTA-RL 17.22 / 20.06. TEMPO's resequencing edge over
+  the static tour is small and not clearly distinguishable here (a
+  lightweight single-vehicle NN+2opt resequencer has far less
+  reassignment flexibility than the fleet-wide rebalancer behind
+  Table~\ref{tab:replan}'s much larger demand-scenario result) —
+  reported plainly rather than only the flattering half. DGTA-RL is
+  36--46\% \emph{more} costly than both construction-heuristic
+  baselines on both null and drifted days, a wide, consistent gap
+  attributed to the constrained training budget (CPU, 1{,}000 epochs)
+  rather than to the architecture's ceiling, and reported as such —
+  not spun as "TEMPO beats DGTA-RL," which the honest caveats above do
+  not support as unambiguously as the raw numbers alone might suggest.
+- Manuscript updated in both the main body (\S5's DGTA-RL paragraph)
+  and the Appendix (a new, fuller "DGTA-RL reimplementation, training,
+  and matched-instance evaluation details" subsection with the exact
+  protocol and numbers); no other placeholder text remains anywhere in
+  `main.tex` (checked by direct grep across the whole file). Held at
+  the 35-page hard limit throughout by trimming the main-body sentence
+  down to a pointer-plus-headline-numbers form once the fuller Appendix
+  text pushed the count to 36.

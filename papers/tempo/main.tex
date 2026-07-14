@@ -1829,18 +1829,17 @@ realized days per route.
 
 \textbf{Retraining DGTA-RL as a fully independent baseline.}\label{sec:dgta}
 
-The rolling-opt baseline of Section~\ref{sec:baselines} reproduces the
-trigger cadence \citet{chen2025dgta} benchmark their own policy
-against, but not the policy itself: a Dynamic Graph Temporal Attention
-(DGTA) network trained end-to-end by reinforcement learning to
-resequence a route under time-dependent, stochastic travel times, with
-no explicit change-detection layer. Because this is an architecturally
-distinct comparison --- a learned control policy rather than a
-statistical trigger --- we reimplement its network and training
-procedure rather than citing the architecture without running it (the
-Appendix gives the reimplementation details); realized tour cost
-against TEMPO-triggered re-optimization on matched instances is
-\emph{[Placeholder: to be inserted before submission.]}
+The rolling-opt baseline of Section~\ref{sec:baselines} reproduces
+\citet{chen2025dgta}'s trigger cadence, not the learned policy itself
+--- so we reimplement and train their DGTA network directly (the
+Appendix gives the protocol) rather than cite it unrun. On matched
+held-out instances, isolating the travel-time channel alone, its
+realized tour cost is 36--46\% \emph{higher} than both a static
+never-replan tour and TEMPO-triggered resequencing, on null and
+drifted days alike --- consistent with neural constructive routing
+policies' known sensitivity to training scale (the Appendix discusses
+the budget), and reported as a lower bound on its achievable
+performance, not a ceiling claim.
 
 % ══════════════════════════════════════════════════════════════════
 \section{Discussion and conclusion}\label{sec:discussion}
@@ -2358,13 +2357,62 @@ add a further, smaller increment --- a simpler interaction than the
 demand case, again consistent with the mechanism rather than merely
 favorable to it.
 
-\subsection{DGTA-RL reimplementation details (Section~\ref{sec:dgta})}
+\subsection{DGTA-RL reimplementation, training, and matched-instance evaluation details (Section~\ref{sec:dgta})}
 
 We reimplement the dual-attention encoder and spatial-temporal pointer
-decoder of \citet{chen2025dgta} at reduced scale and train it by
-REINFORCE with a frozen baseline network per the original paper's
-Algorithm 1, then evaluate its realized tour cost against
-TEMPO-triggered re-optimization on matched instances.
+decoder of \citet{chen2025dgta} at reduced scale (hidden dimension 64,
+four attention heads, two dual-attention and two dynamic-encoder
+blocks) and train it by REINFORCE with a frozen, periodically-updated
+baseline network per the original paper's Algorithm 1: 1{,}000 epochs,
+batch size 128, single-vehicle instances of 20 customers drawn uniform
+on the unit square, travel times realized under the original paper's
+own time-dependent Gamma process (Equation 3 of \citealp{chen2025dgta}).
+Training runs entirely on CPU in this environment (no GPU was used),
+and the baseline network is updated eight times over the run on a
+paired $t$-test ($p<0.05$) against a held-out evaluation set, with
+mean realized tour cost falling from 24.9 to 19.5 (arbitrary time
+units) over training --- a real, if modest, improvement given the
+budget.
+
+The matched-instance comparison against TEMPO evaluates three policies
+on 40 held-out instances (disjoint from training) $\times$ 12
+independent days: a static never-replan tour (nearest-neighbor
+construction plus 2-opt, executed to completion); TEMPO-triggered
+resequencing (the real \texttt{TempoMonitor} of
+Section~\ref{sec:tempo}, fed only the travel-time channel, triggering
+the same nearest-neighbor-plus-2-opt replanner on alarm, repriced using
+the currently observable congestion extent); and the trained DGTA-RL
+policy's greedy rollout. All three consume identical realized
+travel-time draws under TEMPO's own null-and-drift model
+(Equation~\eqref{eq:travel}) rather than DGTA-RL's native training-time
+process, isolating the single travel-time channel DGTA-RL models (it
+has no demand or capacity dimension) --- the same protocol every other
+Section~\ref{sec:study} baseline receives: calibrated on its own native
+convention, then compared to TEMPO on TEMPO's shared grid. The drift is
+a transient zonal congestion pocket (Section~\ref{sec:model}'s spatial
+extension, magnitude 2.5, radius growing from 0.25 to 1.15 over a
+six-hour window before fully clearing), not a uniform slowdown, since
+scaling every edge by one constant cannot be exploited by resequencing
+at all and would make the comparison vacuous by construction.
+
+Realized cost (mean over $40 \times 12 = 480$ days per condition):
+never-replan 11.76 (null) / 14.67 (drifted); TEMPO-triggered
+resequencing 11.68 / 14.75; DGTA-RL 17.22 / 20.06. TEMPO's resequencing
+edge over the static tour is small and not statistically distinguishable
+here (a lightweight nearest-neighbor-plus-2-opt resequencer has far
+less reassignment flexibility than the fleet-wide rebalancer behind
+Table~\ref{tab:replan}'s result), and we report this plainly rather
+than only the flattering comparison. DGTA-RL, by contrast, is 36--46\%
+\emph{more} costly than either construction-heuristic baseline on both
+the null and drifted days, a wide and consistent gap given the sample
+size. We attribute this primarily to the constrained training budget
+(1{,}000 REINFORCE epochs on CPU, versus the substantially larger-scale
+training neural constructive routing policies typically require to
+match strong heuristics in this literature) rather than to a claim
+about the architecture's ceiling performance; the result should be
+read as a lower bound on what a fully-trained DGTA-RL could achieve,
+not as evidence the published method cannot match classical heuristics
+given adequate compute.
 
 \subsection{Why TEMPO and a capacity-triggered recourse policy cover different drift regimes (Section~\ref{sec:study})}
 

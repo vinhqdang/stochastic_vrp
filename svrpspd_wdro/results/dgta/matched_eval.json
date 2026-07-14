@@ -1,0 +1,55 @@
+{
+  "config": {
+    "weights": "results/dgta/dgta_weights.pt",
+    "n_instances": 40,
+    "n_days": 12,
+    "n_customers": 20,
+    "t_star_offset": 2.0,
+    "clear_duration": 6.0,
+    "magnitude": 2.5,
+    "radius0": 0.25,
+    "spread": 0.15,
+    "seed": 4242,
+    "out": "results/dgta/matched_eval.json"
+  },
+  "results": {
+    "never_replan": {
+      "null": {
+        "mean": 11.75686057478685,
+        "std": 1.1776532923122496,
+        "n": 480
+      },
+      "traffic_transient": {
+        "mean": 14.666180465220629,
+        "std": 1.4846825156410932,
+        "n": 480
+      }
+    },
+    "tempo_resequence": {
+      "null": {
+        "mean": 11.676547410859316,
+        "std": 1.1877315648558013,
+        "n": 480
+      },
+      "traffic_transient": {
+        "mean": 14.752560462245437,
+        "std": 1.6575580542275445,
+        "n": 480,
+        "saving_vs_never_pct": -0.5889740497169658
+      }
+    },
+    "dgta_rl": {
+      "null": {
+        "mean": 17.22000006743665,
+        "std": 2.222669841859689,
+        "n": 480
+      },
+      "traffic_transient": {
+        "mean": 20.059125218949895,
+        "std": 2.742335486846902,
+        "n": 480,
+        "saving_vs_never_pct": -36.771296838451505
+      }
+    }
+  }
+}
