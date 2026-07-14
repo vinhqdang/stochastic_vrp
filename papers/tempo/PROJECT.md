@@ -620,3 +620,58 @@ the new equations (informs4's 240pt single-column check) were found and
 fixed iteratively; final compile is clean at 47 pages, zero undefined
 references, zero overfull boxes, zero ATTENTION markers, and the
 anonymity/no-self-citation sweep from the prior revision still holds.
+
+## 12. Manuscript revision: hitting TRSC's hard 35-page limit
+
+TRSC's submission guidelines cap the main body (including references,
+tables, and graphs) at 35 pages, plus a separate 15-page appendix
+allowance. The manuscript was at 46 pages main-body-equivalent after
+the adversarial-review revision (Section 11); a first pass moved all
+detailed proofs and several derivations into a formal `APPENDIX`
+environment (proofs of Propositions 2/3/4, Theorems 1/3, the
+delta-method derivation behind Theorem 2, and the discussion of several
+modeling choices), getting to 40 pages. Closing the remaining 5 pages
+took many more iterations than proof-relocation alone:
+
+- Prose tightened throughout (Introduction, Related Work, the
+  "economics of the trigger" framing paragraphs, Managerial
+  Insights/Conclusion) without cutting any citation, number, or claim.
+- More discussion moved to the Appendix: the mechanism behind the
+  ablation's non-monotonic finding, the "what's routine vs. new"
+  tool-by-tool breakdown, two of the three "value of waiting" findings,
+  and the reimplementation details of the DGTA-RL baseline — each
+  replaced in the main body by a one-line summary and pointer.
+- The 19-scenario grid catalog table (reference material, not a
+  result) moved to the Appendix; its prose description stayed in the
+  main body.
+- Several short subsections (Corollary 1, Metrics, Validity, the
+  significance-level and waiting-time confirmations, component
+  ablation, DGTA-RL, the capacity-triggered-recourse discussion,
+  Conclusion) were converted from numbered `\subsection`s to bold
+  run-in headers — no content lost, just less header overhead.
+- Figure widths were reduced project-wide (explainer/baselines/fleet
+  now 0.52–0.58\textwidth, down from full/near-full width).
+- **`tempo_fig3_map.png` (the single-vehicle zonal-traffic-jam figure)
+  was dropped entirely.** It visually overlapped `tempo_fig4_fleet.png`
+  (same congestion pocket, same real road network, already shown for
+  eleven vehicles), and after ~15 rounds of prose-only trimming
+  plateaued at 36/35 pages with zero further movement, removing the
+  redundant figure was the cleanest way to close the last page without
+  cutting any result. The user confirmed this call explicitly. The
+  three remaining figures (explainer, fleet, baselines) still cover
+  both original asks: real-network traffic-with-vehicles, and a direct
+  TEMPO-vs-baselines comparison.
+- A genuine latent bug was found and fixed along the way: the prior
+  proof-relocation pass had left four labels
+  (`eq:sensdemand`, `eq:vs`, `rem:growth`, `rem:independence`)
+  multiply-defined — duplicated verbatim between the main body and the
+  Appendix. Fixed by de-duplicating each into a single canonical label.
+  A separate copy-paste artifact (a stray, dangling half-sentence
+  fragment after Theorem 2's derivation) was also found and removed.
+
+Final state, verified via a from-scratch `pdflatex + bibtex + pdflatex
++ pdflatex` rebuild: **35 pages main-body-equivalent, 7-page Appendix**
+(well under its own 15-page cap), zero ATTENTION column-overflow
+markers, zero undefined or multiply-defined references, zero
+significant overfull boxes, structural begin/end balance clean across
+every environment, and no BATON/identity leaks.

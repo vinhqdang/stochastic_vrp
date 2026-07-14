@@ -17,11 +17,15 @@
 
 \usepackage{natbib}
  \bibpunct[, ]{(}{)}{,}{a}{}{,}%
- \def\bibfont{\small}%
+ \def\bibfont{\footnotesize}%
  \def\bibsep{\smallskipamount}%
  \def\bibhang{24pt}%
  \def\newblock{\ }%
  \def\BIBand{and}%
+
+\setlength\floatsep{10pt plus 4pt minus 4pt}
+\setlength\textfloatsep{12pt plus 4pt minus 4pt}
+\setlength\intextsep{10pt plus 4pt minus 4pt}
 
 \EquationsNumberedThrough
 \TheoremsNumberedThrough
@@ -106,16 +110,15 @@ continuously against reality: a road runs slower than forecast, a
 customer's parcel is heavier than its historical average, a delivery
 takes longer to sign for, an accident closes a lane, a vehicle breaks
 down. None of these events individually justifies tearing up the plan
-and re-solving the routing problem from the vehicles' current
-positions --- re-optimization is neither free nor riskless, since it
-consumes computation, disrupts drivers who have already committed to a
-sequence, and can occasionally make things worse if it acts on noise
-rather than signal. Yet delaying re-optimization has its own cost: a
-plan that no longer matches the world accumulates late deliveries,
-capacity breaches, and unnecessary distance with every additional
-event it is allowed to govern. The operational question, then, is not
-only \emph{how} to re-optimize but \emph{when}, and it is this second
-question that the present paper answers.
+and re-solving from the vehicles' current positions --- re-optimization
+is neither free nor riskless, since it consumes computation, disrupts
+drivers already committed to a sequence, and can make things worse if
+it acts on noise rather than signal. Yet delaying re-optimization has
+its own cost: a plan that no longer matches the world accumulates late
+deliveries, capacity breaches, and unnecessary distance with every
+additional event it is allowed to govern. The operational question,
+then, is not only \emph{how} to re-optimize but \emph{when}, and it is
+this second question that the present paper answers.
 
 Two families of answers exist in practice, and both are unsatisfying
 on close inspection. The first is periodic: re-solve the routing
@@ -125,28 +128,27 @@ regardless of whether anything has actually gone wrong
 is the industrial default, and recent work continues to refine the
 re-solve itself --- for instance as a chance-constrained model
 predictive control problem \citep{he2026smpc} --- without revisiting
-the question of when the re-solve should happen; the schedule is
-exogenous to the data. The second family is reactive but ad hoc: replan
-once cumulative lateness exceeds a tuned threshold, or once a load
-gets ``too close'' to capacity. Thresholds tuned this way have no
-error-rate guarantee, invite alarm fatigue when set too tight, and miss
-slow, compounding drift when set too loose. A third possibility,
-familiar from the statistics of sequential monitoring, is to treat the
-question honestly as a hypothesis test: classical sequential
-detectors such as CUSUM \citep{page1954} and its data-stream
-descendants \citep{gama2014survey} are designed exactly for ``has the
+when the re-solve should happen; the schedule is exogenous to the
+data. The second family is reactive but ad hoc: replan once cumulative
+lateness exceeds a tuned threshold, or once a load gets ``too close''
+to capacity. Thresholds tuned this way have no error-rate guarantee,
+invite alarm fatigue when set too tight, and miss slow, compounding
+drift when set too loose. A third possibility, familiar from the
+statistics of sequential monitoring, is to treat the question honestly
+as a hypothesis test: classical sequential detectors such as CUSUM
+\citep{page1954} and its data-stream descendants
+\citep{gama2014survey} are designed exactly for ``has the
 data-generating process changed,'' and in principle a dispatcher could
 run one per uncertainty factor and replan on the first alarm. The
 difficulty is that classical sequential tests control their false-alarm
 rate only at a threshold calibrated to the specific monitoring horizon
-and null distribution; used off the shelf, with the textbook constant
-or a threshold copied from a different operating regime, their realized
-false-alarm rate can exceed the nominal level by a wide margin, exactly
-because the guarantee is not anytime-valid --- it does not survive the
-dispatcher looking whenever she likes. Bayesian online change-point
-detection \citep{adams2007bayesian} sidesteps threshold tuning with a
-posterior probability of a regime change, but at the cost of any
-frequentist error-rate control at all.
+and null distribution; used off the shelf, their realized false-alarm
+rate can exceed the nominal level by a wide margin, exactly because the
+guarantee is not anytime-valid --- it does not survive the dispatcher
+looking whenever she likes. Bayesian online change-point detection
+\citep{adams2007bayesian} sidesteps threshold tuning with a posterior
+probability of a regime change, but at the cost of any frequentist
+error-rate control at all.
 
 A separate and more recent strand of statistics offers exactly the
 property routing dispatch needs: \emph{anytime-valid} sequential
@@ -159,30 +161,30 @@ arbitrarily long and even data-dependent monitoring horizon, is at
 most $\alpha$. A dispatcher can therefore watch the process after every
 single event --- every leg traversed, every stop serviced --- and
 replan the instant it crosses the threshold, with a false-alarm
-guarantee that holds regardless of how often she looks or how she
-decides to stop looking. This machinery is not new; it is the modern
-form of Wald's sequential probability ratio test, understood through
-the lens of testing by betting, and a 2024 line of work already
-generalizes it to nonparametric change detection through the
-\emph{e-detector} framework \citep{shin2024edetectors}. What is new in
-this paper is not the statistical technology but its coupling to the
-economics of the routing problem it monitors. A generic e-process,
-built from statistically natural bets on each uncertainty factor,
-spends its statistical power uniformly: it is exactly as alert to a
-demand fluctuation that would never come close to breaching a
-vehicle's capacity as to one that would. This is wasteful, because the
-routing plan itself already encodes, through its fitted continuation
-costs and per-stop recourse prices, exactly where a small perturbation
-would flip the optimal decision and where it would not. A planning
-layer that solves for recourse under an optimal-stopping formulation
---- estimating, by backward induction over historical demand
-scenarios, the continuation cost of carrying the current load onward
-versus the cheapest available recourse action --- already computes
-exactly this local sensitivity as a byproduct of fitting its own value
-function. The present paper shows how to read that value function's
-local sensitivity back into the design of a monitoring statistic, so
-that the same fitted model that tells the fleet \emph{what} to do when
-capacity is breached also tells the monitor \emph{where to look}.
+guarantee that holds regardless of how often or how she decides to
+stop looking. This machinery is not new; it is the modern form of
+Wald's sequential probability ratio test, understood through the lens
+of testing by betting, and a 2024 line of work already generalizes it
+to nonparametric change detection through the \emph{e-detector}
+framework \citep{shin2024edetectors}. What is new in this paper is not
+the statistical technology but its coupling to the economics of the
+routing problem it monitors. A generic e-process, built from
+statistically natural bets on each uncertainty factor, spends its
+statistical power uniformly: it is exactly as alert to a demand
+fluctuation that would never come close to breaching a vehicle's
+capacity as to one that would. This is wasteful, because the routing
+plan itself already encodes, through its fitted continuation costs and
+per-stop recourse prices, exactly where a small perturbation would
+flip the optimal decision and where it would not. A planning layer
+that solves for recourse under an optimal-stopping formulation ---
+estimating, by backward induction over historical demand scenarios,
+the continuation cost of carrying the current load onward versus the
+cheapest available recourse action --- already computes this local
+sensitivity as a byproduct of fitting its own value function. The
+present paper reads that value function's local sensitivity back into
+the design of a monitoring statistic, so that the same fitted model
+that tells the fleet \emph{what} to do when capacity is breached also
+tells the monitor \emph{where to look}.
 
 We call the resulting monitor TEMPO --- a Tilted E-Martingale Process
 for Online re-optimization --- and its four contributions are as
@@ -245,65 +247,57 @@ suspected drift, lowers realized day cost by a further six percentage
 points because the rebalancer acts on realized loads rather than
 priors.
 
-The remainder of the paper is organized as follows.
-Section~\ref{sec:related}, closing out the introduction, positions the
-paper against dynamic vehicle routing, classical sequential change
-detection, and the anytime-valid inference literature.
-Section~\ref{sec:model} formalizes the multi-factor stochastic routing
-day and its null hypothesis, then builds the master e-process and
-proves its validity. Section~\ref{sec:tempo} introduces the
-decision-relevant predictable tilts that couple the monitor to the
-plan's economics and assembles TEMPO's adaptive betting, dual-regime
-combination, and rare-event separation into the final monitor.
-Section~\ref{sec:theory} proves the four economic theorems and
-describes the pluggable replanning layer they govern.
+The remainder of the paper proceeds as follows.
+Section~\ref{sec:related} positions the paper against dynamic vehicle
+routing, classical sequential change detection, and anytime-valid
+inference. Section~\ref{sec:model} formalizes the multi-factor
+stochastic routing day and builds the master e-process.
+Section~\ref{sec:tempo} couples the monitor to the plan's economics and
+assembles TEMPO. Section~\ref{sec:theory} proves the four economic
+theorems and describes the pluggable replanning layer they govern.
 Section~\ref{sec:study} reports the computational study, and
-Section~\ref{sec:discussion} discusses managerial implications and
-concludes.
+Section~\ref{sec:discussion} concludes.
 
 % ══════════════════════════════════════════════════════════════════
 \subsection{Related work}\label{sec:related}
 
-\textbf{Dynamic and stochastic vehicle routing.} The question of
-re-optimizing a routing plan as information arrives is as old as the
+\textbf{Dynamic and stochastic vehicle routing.} Re-optimizing a
+routing plan as information arrives is as old a question as the
 dynamic vehicle routing literature itself; \citet{pillac2013review}
 survey the dominant re-optimization architectures, nearly all of which
 re-solve on an exogenous clock --- every $\Delta$ minutes, every
 completed stop, or at pre-committed decision epochs --- rather than in
-response to accumulated statistical evidence. The more recent
-comprehensive survey of \citet{ouertani2024dvrp}, covering work through
-early 2023, confirms that this exogenous-clock pattern has not been
-displaced by a decade of subsequent methodological progress: re-solve
-triggers remain overwhelmingly periodic, event-count-based, or
-tied to the arrival of a new customer request, with the re-solve
-\emph{algorithm} itself --- adaptive large neighborhood search,
-column generation, learned construction heuristics --- being the axis
-of innovation rather than the timing decision. \citet{he2026smpc}
-develop a chance-constrained model predictive control strategy for
-vehicle routing with correlated stochastic service times whose
-re-solve cadence is exactly this periodic pattern; our periodic
-baseline reproduces its trigger mechanism directly, since the
-time-window MILP it re-solves is outside the scope of the present
-paper's harness. On the learning side, \citet{chen2025dgta} train a
-Dynamic Graph Temporal Attention reinforcement-learning policy that
+response to accumulated statistical evidence. The more recent survey
+of \citet{ouertani2024dvrp}, covering work through early 2023, confirms
+that this exogenous-clock pattern has not been displaced by a decade
+of subsequent methodological progress: re-solve triggers remain
+overwhelmingly periodic, event-count-based, or tied to a new customer
+request, with the re-solve \emph{algorithm} itself --- adaptive large
+neighborhood search, column generation, learned construction
+heuristics --- being the axis of innovation rather than the timing
+decision. \citet{he2026smpc} develop a chance-constrained model
+predictive control strategy for vehicle routing with correlated
+stochastic service times whose re-solve cadence is exactly this
+periodic pattern; our periodic baseline reproduces its trigger
+mechanism directly, since the time-window MILP it re-solves is outside
+this paper's harness. On the learning side, \citet{chen2025dgta} train
+a Dynamic Graph Temporal Attention reinforcement-learning policy that
 reacts to time-dependent stochastic travel times end-to-end, with no
-explicit change-detection layer and consequently no error-rate
-guarantee of any kind; their own baseline for that policy is the
-rolling-horizon heuristic of \citet{gmira2021rollingopt}, which we also
-reproduce. \citet{kadyrov2025drl} train a graph-neural-network policy
-under proximal policy optimization for the closely related setting of
-joint demand and traffic uncertainty, again folding the
-re-optimization \emph{decision} into the learned policy implicitly
-rather than exposing it as a calibrated statistic a dispatcher could
-audit or reason about independently of the network's weights. Across
+explicit change-detection layer and no error-rate guarantee; their own
+baseline is the rolling-horizon heuristic of \citet{gmira2021rollingopt},
+which we also reproduce. \citet{kadyrov2025drl} train a graph-neural-
+network policy under proximal policy optimization for the closely
+related setting of joint demand and traffic uncertainty, again folding
+the re-optimization \emph{decision} into the learned policy implicitly
+rather than exposing it as a calibrated, auditable statistic. Across
 both the classical operations-research and the more recent
 learning-based strands of this literature, none poses re-optimization
-timing as a calibrated statistical decision with an explicit,
-auditable error-rate guarantee, which is precisely the gap the present
-paper fills.
+timing as a calibrated statistical decision with an explicit
+error-rate guarantee, which is precisely the gap the present paper
+fills.
 
 \textbf{Classical sequential change detection.} The CUSUM statistic of
-\citet{page1954} and its many descendants, surveyed for the data-stream
+\citet{page1954} and its descendants, surveyed for the data-stream
 setting by \citet{gama2014survey}, remain the workhorse tools for
 deciding when a stochastic process has drifted. Both require a
 threshold $h$ calibrated to the specific null distribution and
@@ -316,70 +310,61 @@ than a probability bound over a bounded, data-dependent stopping time.
 posterior probability of a regime change under a Bayesian online
 change-point model, trading the calibration problem for the absence of
 any frequentist type-I error control. Section~\ref{sec:study} shows
-this distinction is not a technicality: oracle-calibrating CUSUM and
-its Page--Hinkley relative to match TEMPO's realized false-alarm rate,
-exactly the generous comparison this literature invites, still leaves
-both classical detectors behind on most of the 19-scenario grid.
+this is not a technicality: oracle-calibrating CUSUM and
+Page--Hinkley to match TEMPO's realized false-alarm rate, the most
+generous comparison this literature invites, still leaves both
+classical detectors behind on most of the 19-scenario grid.
 
 \textbf{Anytime-valid inference and e-processes.} A test martingale, or
 e-process, is a nonnegative supermartingale under the null with
-expectation at most one; Ville's inequality
-\citep{ville1939etude} bounds the probability that such a process ever
-exceeds $1/\alpha$ by $\alpha$, uniformly over an arbitrary, even
-adaptively chosen, stopping time. \citet{shafer2021testing} reframes
-this classical fact as ``testing by betting'': an e-value is the payoff
-of a bet against the null that a rational bettor could have placed
-without knowing the outcome, and the game-theoretic perspective unifies
-sequential testing, confidence sequences, and multiple testing under
-one anytime-valid umbrella, surveyed by \citet{ramdas2023safi} and, in
-a comprehensive book-length treatment collating the field's rapid
-subsequent growth, by \citet{ramdaswang2025hypothesis}.
-\citet{waudbysmithramdas2024} develop adaptive, data-driven betting
-strategies (GRAPA and its regularized variant aGRAPA) that learn the
-growth-optimal tilt online from past increments while remaining
-predictable, and hence valid; TEMPO's adaptive channel bets are a
-direct application of this idea. \citet{vovkwang2021combining}
-establish that mixtures and simple averages of e-values are themselves
-e-values, which licenses both the fixed-grid mixture bets of
-Section~\ref{sec:eprocess} and TEMPO's dual-regime combination in
-Section~\ref{sec:tempo}. Closest in spirit to the present paper is the
-e-detector framework of \citet{shin2024edetectors}, which builds
-nonparametric change detectors by restarting an e-process at every
-candidate change-point and combining the restarted copies by a running
-sum (Shiryaev--Roberts) or running maximum (CUSUM-like) rule; we
-implement both variants using exactly TEMPO's own per-factor bets, with
-the cost-relevance tilt switched off, as a controlled ablation that
-isolates general nonparametric restart machinery from TEMPO's specific
-coupling to routing economics (Section~\ref{sec:study}). We are careful
-to distinguish the e-detector's native guarantee --- an average-run-
-length bound over an indefinitely long stream (their Theorem 2.4) ---
-from the finite-window false-alarm probability bound TEMPO's own Ville
-argument delivers; the two are not interchangeable, and conflating them
-is a mistake the reproduction in Section~\ref{sec:study} corrects
-through matched oracle calibration. A very recent line of work
-questions whether e-values are conceptually necessary for anytime
-validity at all: \citet{koningvanmeer2026} show that anytime-valid,
-optionally-continued sequential tests can be \emph{induced} directly
-from a family of classical fixed-sample tests, without an explicit
-betting or e-value construction as an intermediate step. This is a
-debate about foundations rather than about the guarantee itself --- an
-induced sequential test and a test built from an explicit e-process can
-coincide numerically --- and we adopt the betting formulation
-throughout because it is what makes the coupling of
-Section~\ref{sec:tempo} transparent: the sensitivity tilts of
-Section~\ref{sec:coupling} are stated most naturally as a modification
-of a bet's stake, and Theorem~\ref{thm:growth}'s growth-optimality
-argument is native to the betting perspective.
+expectation at most one; Ville's inequality \citep{ville1939etude}
+bounds the probability that such a process ever exceeds $1/\alpha$ by
+$\alpha$, uniformly over an arbitrary, even adaptively chosen, stopping
+time. \citet{shafer2021testing} reframes this as ``testing by
+betting'': an e-value is the payoff of a bet against the null a
+rational bettor could have placed without knowing the outcome, and the
+game-theoretic perspective unifies sequential testing, confidence
+sequences, and multiple testing under one anytime-valid umbrella,
+surveyed by \citet{ramdas2023safi} and, at book length, by
+\citet{ramdaswang2025hypothesis}. \citet{waudbysmithramdas2024} develop
+adaptive, data-driven betting strategies (GRAPA and its regularized
+variant aGRAPA) that learn the growth-optimal tilt online while
+remaining predictable and hence valid; TEMPO's adaptive channel bets
+are a direct application. \citet{vovkwang2021combining} establish that
+mixtures and averages of e-values are themselves e-values, licensing
+both the fixed-grid mixture bets of Section~\ref{sec:eprocess} and
+TEMPO's dual-regime combination in Section~\ref{sec:tempo}. Closest in
+spirit is the e-detector framework of \citet{shin2024edetectors}, which
+builds nonparametric change detectors by restarting an e-process at
+every candidate change-point and combining restarted copies by a
+running sum (Shiryaev--Roberts) or running maximum (CUSUM-like) rule;
+we implement both variants using exactly TEMPO's own per-factor bets
+with the cost-relevance tilt switched off, isolating general
+nonparametric restart machinery from TEMPO's specific coupling to
+routing economics (Section~\ref{sec:study}), and distinguish the
+e-detector's native guarantee --- an average-run-length bound over an
+indefinitely long stream (their Theorem 2.4) --- from the
+finite-window false-alarm bound TEMPO's own Ville argument delivers,
+which the reproduction in Section~\ref{sec:study} respects through
+matched oracle calibration. \citet{koningvanmeer2026} recently show
+that anytime-valid, optionally-continued sequential tests can be
+\emph{induced} directly from classical fixed-sample tests without an
+explicit betting construction; this is a debate about foundations
+rather than the guarantee itself, and we adopt the betting formulation
+because it makes Section~\ref{sec:tempo}'s coupling transparent ---
+Section~\ref{sec:coupling}'s sensitivity tilts are stated most
+naturally as a modification of a bet's stake, and
+Theorem~\ref{thm:growth}'s growth-optimality argument is native to it.
 
 None of this statistical literature, to our knowledge, couples the
-design of the betting strategy to the economics of a decision the
-statistic will trigger. The present paper's contribution is exactly
-that coupling, made precise in Sections~\ref{sec:coupling}
-and~\ref{sec:theory}: the planning layer's own fitted continuation
-costs supply the predictable sensitivity that tells each channel's bet
-how hard to push, and Theorem~\ref{thm:growth} shows this choice is not
-merely intuitive but growth-optimal against the class of alternatives
-that actually move the routing cost.
+betting strategy's design to the economics of the decision it
+triggers. The present paper's contribution is exactly that coupling,
+made precise in Sections~\ref{sec:coupling} and~\ref{sec:theory}: the
+planning layer's own fitted continuation costs supply the predictable
+sensitivity that tells each channel's bet how hard to push, and
+Theorem~\ref{thm:growth} shows this choice is growth-optimal against
+the class of alternatives that actually move the routing cost, not
+merely intuitive.
 
 % ══════════════════════════════════════════════════════════════════
 \section{The stochastic routing day and the master e-process}\label{sec:model}
@@ -473,15 +458,14 @@ factors switch to an alternative law $P_1$. We parameterize drift by a
 kind (which factor), a magnitude, an onset time $t^\ast$, and a profile
 --- a step onset, a ramp reaching full intensity over a fixed window, or
 a transient episode that clears after a fixed duration --- together
-with, for the travel-time factor specifically, a spatial extent: a
-congestion pocket centered at a point in the service area whose radius
-grows after $t^\ast$, so that only legs whose destination currently
-lies inside the pocket are slowed. This last extension matters for a
-fleet: it gives drift a \emph{where} as well as a \emph{when}, so that
-vehicles routed far from the affected zone correctly contribute
-on-model evidence even while the day, taken as a whole, has drifted.
+with, for travel time specifically, a spatial extent: a congestion
+pocket centered in the service area whose radius grows after $t^\ast$,
+so only legs whose destination currently lies inside it are slowed.
+This gives drift a \emph{where} as well as a \emph{when}, so vehicles
+routed far from the affected zone correctly contribute on-model
+evidence even while the day, taken as a whole, has drifted.
 Table~\ref{tab:scenarios} in Section~\ref{sec:study} catalogs the
-resulting 19-scenario grid used throughout the computational study.
+resulting 19-scenario grid.
 
 Under drift, each factor's law shifts multiplicatively in its natural
 parameter: the travel-time log-mean in Equation~\eqref{eq:travel}
@@ -646,7 +630,7 @@ Proposition~\ref{prop:validity} predicts.
 
 \begin{figure}
 \FIGURE
-{\includegraphics[width=0.72\textwidth]{figures/tempo_fig1_explainer.png}}
+{\includegraphics[width=0.58\textwidth]{figures/tempo_fig1_explainer.png}}
 {How the master e-process behaves on-model and under drift.
 \label{fig:explainer}}
 {Panel A: the log e-process over sixty simulated null days for one
@@ -798,25 +782,23 @@ is applied to} would violate predictability, which the paper's
 protocol never does. \Halmos
 \end{proof}
 
-This is the paper's central design principle, stated once so that it
-can be invoked without repetition: \emph{any} statistic computed from
-the plan's economics --- a continuation cost, a shadow price, a
-distance to a constraint boundary --- may be folded into a predictable
-tilt at no statistical cost, because validity depends only on
-measurability, not on where the tilt comes from. This is the precise
-sense in which the plan's fitted value function plays, for TEMPO, the
-role that a linear program's dual multipliers would play in an exact
-method: both report the local price of a unit of drift, and both may
-be read off without corrupting a downstream guarantee, in the LP case
-of feasibility, and in TEMPO's case of anytime validity. An equivalent
-and sometimes more transparent way to view the construction is as a
-single exponential tilt of the joint null in the direction of the
-plan's cost subgradient, with the per-channel sensitivities of
-Equations~\eqref{eq:sensdemand}--\eqref{eq:sensrest} arising as the
-components of that subgradient under the channel-wise independence
-used to factorize Equation~\eqref{eq:master}; Theorem~\ref{thm:growth}
-makes this equivalence precise and shows it is not merely a
-convenient reformulation but the growth-optimal choice.
+This is the paper's central design principle, stated once so it can be
+invoked without repetition: \emph{any} statistic computed from the
+plan's economics --- a continuation cost, a shadow price, a distance
+to a constraint boundary --- may be folded into a predictable tilt at
+no statistical cost, because validity depends only on measurability,
+not on where the tilt comes from. The plan's fitted value function
+thus plays, for TEMPO, the role a linear program's dual multipliers
+would play in an exact method: both report the local price of a unit
+of drift, and both may be read off without corrupting a downstream
+guarantee --- feasibility for the LP, anytime validity here. An
+equivalent, sometimes more transparent view is a single exponential
+tilt of the joint null in the direction of the plan's cost subgradient,
+with the per-channel sensitivities of
+Equations~\eqref{eq:sensdemand}--\eqref{eq:sensrest} arising as its
+components under Equation~\eqref{eq:master}'s channel-wise
+independence; Theorem~\ref{thm:growth} makes this precise and shows it
+is the growth-optimal choice, not merely a convenient reformulation.
 
 \subsection{Adaptive betting, dual-regime combination, and rare-event separation}\label{sec:tempoconstruct}
 
@@ -1014,35 +996,13 @@ is the growth-optimal choice against the class of alternatives that
 matter to the routing cost, and not merely a reasonable heuristic.
 
 \textbf{What is new here, stated plainly.} Every individual
-probabilistic tool this section invokes --- Ville's inequality, Wald's
-identity, the overshoot bounds of \citet{lorden1970excess} and
-\citet{woodroofe1982nonlinear}, and elementary convex calculus --- is
-classical, and Propositions~\ref{prop:validity}--\ref{prop:split} in
-Sections~\ref{sec:eprocess}--\ref{sec:tempo} are, individually, routine
-consequences of the tower property and the union bound, stated for
-completeness rather than as claims of technical difficulty. We say this
-explicitly because a paper that borrows well-established machinery
-should not be mistaken for one that reinvents it. What we believe is
-genuinely new is not any single probabilistic inequality but the
-\emph{composition}: Theorem~\ref{thm:regret} is the first bound, to our
-knowledge, that translates a sequential test's detection-delay
-guarantee directly into a bound on \emph{realized routing cost} rather
-than on sample size or type-I/II error; Corollary~\ref{cor:alphastar}
-is the closed-form significance level that composition implies, whose
-content is economic (a formula fleet operators can compute from three
-quantities they already track) rather than mathematical (the
-optimization itself is a two-line convexity argument, and we do not
-claim otherwise); Theorem~\ref{thm:waiting} formalizes, in a
-deliberately stylized model rather than full generality, why an
-evidence-gated trigger can dominate an immediate one when the
-downstream decision is itself statistical; and Theorem~\ref{thm:growth}
-is the paper's central methodological claim, showing that the
-decision-relevant sensitivity weights of Section~\ref{sec:coupling}
---- introduced there as a modeling choice --- are in fact the unique
-growth-optimal weights against a natural, if necessarily stylized,
-class of cost-relevant alternatives, rather than merely one heuristic
-choice among many. Section~\ref{sec:coupling} states, and this section
-proves, exactly how heuristic that choice is and is not.
+probabilistic tool this section invokes is classical; what is genuinely
+new is the \emph{composition} into a bound on \emph{realized routing
+cost} rather than sample size or type-I/II error, and the closed-form
+economic quantities --- a significance level, a waiting time, a
+growth-optimal tilt --- that composition delivers. The Appendix
+discusses, tool by tool, exactly which parts of this section are
+routine and which are not.
 
 \subsection{Setup}
 
@@ -1119,7 +1079,7 @@ composition into a bound on \emph{realized routing cost}, which is the
 object a dispatcher, as opposed to a statistician, actually wants
 controlled.
 
-\subsection{Corollary 1: the optimal evidence level}
+\textbf{Corollary 1: the optimal evidence level.}
 
 \begin{corollary}[the price of evidence]\label{cor:alphastar}
 $\mathrm{Regret}(\alpha)$ in Equation~\eqref{eq:regret} is convex in
@@ -1151,32 +1111,30 @@ do not present it as a technical contribution; the argument in
 Theorem~\ref{thm:regret} that produces $\mathrm{Regret}(\alpha)$'s
 particular functional form is where the work lies. What Corollary
 \ref{cor:alphastar} contributes is the translation of that form into a
-decision rule stated entirely in quantities a fleet already measures
---- a per-event staleness cost, an empirical detection rate, and an
+decision rule stated in quantities a fleet already measures --- a
+per-event staleness cost, an empirical detection rate, and an
 unnecessary-replan cost --- in place of a significance level chosen by
-disciplinary convention. The same closed form appears throughout
-economics and operations research whenever a convex trade-off between
-a logarithmic and a linear term is optimized (the classical
+disciplinary convention; the same closed form appears throughout
+economics and operations research whenever a convex trade-off between a
+logarithmic and a linear term is optimized (the classical
 economic-order-quantity formula has the same two-line derivation and
-the same practical status: not hard to derive, useful because of what
-it lets a manager compute); we make no larger claim for
+the same practical status), and we make no larger claim for
 Equation~\eqref{eq:alphastar} than that.
 
 Corollary~\ref{cor:alphastar} recasts $\alpha$ from a statistical
 convention into a price: the ratio of the per-event cost of staying
 stale to the product of the monitor's evidence rate and the cost of an
-unnecessary replan. Two consequences are immediately actionable.
-Cheap replans --- a software-only re-sequencing with no driver
-coordination cost, small $C_{\mathrm{fr}}$ --- push $\alpha^\ast$ toward
-one: replan liberally, and do not wait for strong evidence. Expensive
-replans --- those that require driver coordination or standby-vehicle
-dispatch, large $C_{\mathrm{fr}}$ --- push $\alpha^\ast$ down: demand
-strong evidence before disrupting the plan. No analogous closed-form
-recommendation exists in the rolling-horizon literature, where the
-re-optimization epoch is exogenous to the day's realized economics by
-construction. Section~\ref{sec:study} confirms the U-shaped trade-off
-Equation~\eqref{eq:alphastar} predicts on an empirical significance-level
-sweep (Table~\ref{tab:alphasweep}).
+unnecessary replan. Cheap replans --- a software-only re-sequencing
+with no driver coordination cost, small $C_{\mathrm{fr}}$ --- push
+$\alpha^\ast$ toward one: replan liberally, without waiting for strong
+evidence. Expensive replans --- those requiring driver coordination or
+standby-vehicle dispatch, large $C_{\mathrm{fr}}$ --- push
+$\alpha^\ast$ down: demand strong evidence before disrupting the plan.
+No analogous closed-form recommendation exists in the rolling-horizon
+literature, where the re-optimization epoch is exogenous to the day's
+realized economics by construction. Section~\ref{sec:study} confirms
+the U-shaped trade-off Equation~\eqref{eq:alphastar} predicts on an
+empirical significance-level sweep (Table~\ref{tab:alphasweep}).
 
 \subsection{Theorem 2: the value of waiting for evidence}
 
@@ -1234,9 +1192,7 @@ the simplest model in which the qualitative mechanism --- more
 realized information lowers the expected cost of a state-dependent
 decision --- can be made exact, not as a claim that Equation
 \eqref{eq:vs} literally governs the reinsertion heuristic used in
-Section~\ref{sec:study}.its achieved split
-$\widehat\rho(s) := \rho^\ast(\widehat\mu(s))$ deviates from
-Equation~
+Section~\ref{sec:study}.
 
 \begin{assumption}\label{ass:waiting}
 (B1) The rebalancer's plug-in excess cost obeys Equation~\eqref{eq:vs}
@@ -1285,15 +1241,15 @@ is treated as free and replans as costless: replanning immediately
 after a suspected drift is not merely statistically premature, it is
 \emph{economically} suboptimal whenever the rebalancer's plug-in
 estimate has not yet had time to accrue enough information to be
-trustworthy. TEMPO's alarm time, by construction, fires only once the
-accumulated evidence --- and hence, in this stylized model, the
-realized sample size available to any state-dependent replanner
-invoked at the alarm --- is already large, so it lands naturally near
-the interior optimum $s^\ast$ rather than at the boundary $s = \nu$.
-Section~\ref{sec:study} measures this effect directly: triggering the
-fleet-wide rebalancer of Section~\ref{sec:decision} on TEMPO's alarm,
-rather than at the first stop after a suspected drift, realizes a
-further six-percentage-point cost saving (Table~\ref{tab:replan}).
+trustworthy. TEMPO's alarm fires only once accumulated evidence ---
+and hence, in this stylized model, the realized sample size available
+to a state-dependent replanner invoked at the alarm --- is already
+large, so it lands naturally near the interior optimum $s^\ast$ rather
+than at the boundary $s = \nu$. Section~\ref{sec:study} measures this
+directly: triggering the fleet-wide rebalancer of
+Section~\ref{sec:decision} on TEMPO's alarm, rather than at the first
+stop after a suspected drift, realizes a further six-percentage-point
+cost saving (Table~\ref{tab:replan}).
 
 \subsection{Theorem 3: decision-relevant betting is growth-optimal}
 
@@ -1356,21 +1312,19 @@ $s_k(n)$.
 See the Appendix.
 \end{proof}
 
-The proof identifies exactly why a tilt not aligned with the plan's
-cost gradient is dominated: any component of the bet orthogonal to $c$
-can be exploited by an adversarial alternative that moves along that
+The proof identifies why a tilt not aligned with the plan's cost
+gradient is dominated: any component of the bet orthogonal to $c$ can
+be exploited by an adversarial alternative that moves along that
 component while leaving its cost impact, and hence its membership in
 $\mathcal P_\Delta$, unchanged, driving the bet's worst-case growth to
 $-\infty$; only a tilt parallel to $c$ has a worst case that does not
-degenerate, and the optimal scale along that direction is a routine
-concave maximization. Equation~\eqref{eq:thetastar} is, up to the
-normalization by $\lVert c \rVert^2$, exactly Section~\ref{sec:coupling}'s
-prescription: weight each channel's tilt by its sensitivity to the
-plan's economics. Theorem~\ref{thm:growth} is the formal statement that
-this is not merely a reasonable design choice but the unique
-minimax-optimal one against the class of alternatives that actually
-move the routing cost, and by the Wald-type argument underlying
-Theorem~\ref{thm:regret}, maximizing worst-case growth over
+degenerate. Equation~\eqref{eq:thetastar} is, up to normalization by
+$\lVert c \rVert^2$, exactly Section~\ref{sec:coupling}'s prescription:
+weight each channel's tilt by its sensitivity to the plan's economics.
+Theorem~\ref{thm:growth} is the formal statement that this is the
+unique minimax-optimal choice against the class of alternatives that
+actually move the routing cost, and, by the Wald-type argument
+underlying Theorem~\ref{thm:regret}, maximizing worst-case growth over
 $\mathcal P_\Delta$ is equivalent to minimizing detection delay against
 the least detectable cost-$\Delta$ drift.
 
@@ -1434,62 +1388,39 @@ Section~\ref{sec:model} from the same historical demand scenarios used
 to build the plan, and rescale the route's total planned duration to
 six hours, a representative single-shift last-mile route.
 
-Table~\ref{tab:scenarios} catalogs the 19-scenario grid crossed with
-every instance: two null variants for false-alarm calibration
-(including a hostile forecast-rain null, in which rain is correctly
-forecast and hence belongs to the conditional null of
-Equation~\eqref{eq:travel} rather than to any alternative), each of the
-five factors at a mild and a severe step-onset magnitude, four shape
-variants isolating onset profile (a slow ramp, a transient jam that
-clears, and two late-onset variants), and three compound days combining
-several factors at once. Every instance-scenario pair is simulated for
-15 independent days.
-
-\begin{table}
-\TABLE
-{The 19-scenario grid.\label{tab:scenarios}}
-{\footnotesize\begin{tabular}{@{}ll@{}}
-\toprule
-Group & Scenarios \\
-\midrule
-Nulls & \texttt{null}, \texttt{null\_rain} (forecast rain, no drift) \\
-Single factor, mild/severe & \texttt{traffic\_mild/severe},
-\texttt{demand\_mild/severe}, \texttt{dwell\_mild/severe}, \\
-& \texttt{accident\_mild/severe}, \texttt{breakdown} \\
-Shape variants & \texttt{traffic\_ramp}, \texttt{demand\_ramp},
-\texttt{traffic\_transient}, \texttt{traffic\_late}, \texttt{demand\_late} \\
-Compound days & \texttt{storm} (ramped traffic + dwell + accidents,
-rainy), \texttt{rush\_crush} \\
-& (demand + dwell), \texttt{black\_day} (all five factors) \\
-\bottomrule
-\end{tabular}}
-{Magnitudes follow a common convention: traffic magnitudes are
-log-mean multipliers, demand/dwell magnitudes are standard-deviation
-shifts, accident/breakdown magnitudes are rate ratios.}
-\end{table}
+The grid crosses every instance with 19 scenarios (catalogued in full
+in Table~\ref{tab:scenarios} in the Appendix): two null variants for
+false-alarm calibration (including a hostile forecast-rain null, in
+which rain is correctly forecast and hence belongs to the conditional
+null of Equation~\eqref{eq:travel} rather than to any alternative),
+each of the five factors at a mild and a severe step-onset magnitude,
+four shape variants isolating onset profile (a slow ramp, a transient
+jam that clears, and two late-onset variants), and three compound days
+combining several factors at once, with magnitudes following a common
+convention (traffic: log-mean multipliers; demand/dwell:
+standard-deviation shifts; accident/breakdown: rate ratios). Every
+instance-scenario pair is simulated for 15 independent days.
 
 \subsection{Baselines}\label{sec:baselines}
 
 We compare TEMPO against ten baselines spanning classical sequential
 detection, the anytime-valid e-detector framework, and the
 re-optimization literature's own rolling-horizon defaults.
-
 \emph{Never-replan} rides the static plan to the end of the day (a
 lower anchor). \emph{Periodic} re-solves every 40 events regardless of
-evidence, reproducing the fixed-epoch cadence of the chance-constrained
+evidence, matching the fixed-epoch cadence of the chance-constrained
 strategy of \citet{he2026smpc}. \emph{Rolling-opt} re-solves every five
-events (one stop cycle), reproducing the heuristic of
-\citet{gmira2021rollingopt} against which \citet{chen2025dgta} benchmark
-their own reinforcement-learning policy for the dynamic traveling
-salesman problem with time-dependent stochastic travel times;
-retraining that policy's Dynamic Graph Temporal Attention architecture
-end-to-end is a distinct, realized-tour-cost comparison reported
-separately in Section~\ref{sec:dgta}, since it has no detection layer to
-compare on the false-alarm and detection-rate metrics used here.
-\emph{Bonferroni-fixed} runs $z$-tests on each channel's running mean
-at four pre-committed checkpoints with a Bonferroni correction --- valid
-only at those exact checkpoints, illustrating what anytime validity
-buys over periodic peeking at a nominally controlled test.
+events (one stop cycle), the heuristic of \citet{gmira2021rollingopt}
+against which \citet{chen2025dgta} benchmark their own reinforcement-
+learning policy for the dynamic traveling salesman problem with
+time-dependent stochastic travel times; retraining that policy's
+Dynamic Graph Temporal Attention architecture end-to-end is a distinct,
+realized-tour-cost comparison reported separately in
+Section~\ref{sec:dgta}, since it has no detection layer to compare on
+the metrics used here. \emph{Bonferroni-fixed} runs $z$-tests on each
+channel's running mean at four pre-committed checkpoints with a
+Bonferroni correction --- valid only at those exact checkpoints,
+illustrating what anytime validity buys over periodic peeking.
 \emph{CUSUM} \citep{page1954} and \emph{Page--Hinkley}
 \citep{gama2014survey} are the classical sequential detectors, each run
 per channel with a Bonferroni combination across channels; because
@@ -1497,47 +1428,40 @@ their false-alarm rate is not itself anytime-valid, we report both a
 published-default threshold (\texttt{cusum\_cal}) and, for a fair
 power comparison, a threshold oracle-calibrated on 100 null days to
 match TEMPO's own realized false-alarm rate (\texttt{cusum\_match},
-\texttt{ph\_match}) --- a calibration a real dispatcher could not
-perform without already knowing TEMPO's answer, and hence one that is
-strictly generous to the baseline. \emph{e-SR and e-CUSUM}
-\citep{shin2024edetectors} are e-detectors built from exactly TEMPO's
-own per-channel bets with the cost-relevance tilt switched off ($s_k
-\equiv 1$) and no adaptive tilt, combined by their restart-and-sum
-(Shiryaev--Roberts) and restart-and-max rules respectively, isolating
-the general nonparametric restart machinery from TEMPO's specific
-coupling. As discussed in Section~\ref{sec:related}, an e-detector's
-native guarantee is an average-run-length bound over an indefinitely
-run stream (their Theorem 2.4), not a finite-window false-alarm
+\texttt{ph\_match}) --- generous to the baseline, since no real
+dispatcher could calibrate this way without already knowing TEMPO's
+answer. \emph{e-SR and e-CUSUM} \citep{shin2024edetectors} are
+e-detectors built from exactly TEMPO's own per-channel bets with the
+cost-relevance tilt switched off ($s_k \equiv 1$) and no adaptive
+tilt, combined by restart-and-sum (Shiryaev--Roberts) and
+restart-and-max rules respectively, isolating the general
+nonparametric restart machinery from TEMPO's specific coupling. As
+discussed in Section~\ref{sec:related}, an e-detector's native
+guarantee is an average-run-length bound over an indefinitely run
+stream (their Theorem 2.4), not a finite-window false-alarm
 probability bound; we verify the native guarantee separately on a
-continuous, non-reset stream, and for the per-day comparison reported
-here we oracle-calibrate the e-detector's own statistic to TEMPO's
-realized rate by the identical protocol used for CUSUM and
-Page--Hinkley, so that every non-anytime-valid or improperly-calibrated
-baseline is given the most favorable possible threshold before TEMPO's
-detection rate is compared against it.
+continuous, non-reset stream, and for the per-day comparison here the
+two e-detectors receive the same oracle calibration as CUSUM and
+Page--Hinkley, so every non-anytime-valid or improperly-calibrated
+baseline gets the most favorable threshold available before TEMPO is
+compared against it.
 
-\emph{Tuning protocol, stated explicitly.} TEMPO itself is not tuned
-per instance or per scenario: $\alpha = 0.05$, the fixed grids $\Theta$
-and the Poisson grid (Section~\ref{sec:eprocess}), the EWMA rate $\beta
-= 0.8$ and clip $\theta_{\max} = 2.5$ (Section~\ref{sec:tempo}) are
-fixed once across the entire 73-instance, 19-scenario grid; no
-per-scenario or per-instance search over these constants was performed.
-\emph{Periodic} and \emph{rolling-opt} use conventional, literature-
-default cadences (40 events and 5 events respectively) rather than
-cadences tuned to this data. \emph{CUSUM}, \emph{Page--Hinkley}, and
-the two e-detectors are the only baselines that receive any
-data-dependent tuning at all, and it is oracle calibration --- their
-threshold is set from 100 held-out null-day Monte Carlo streams to
-match TEMPO's own realized false-alarm rate exactly, a procedure no
-dispatcher could run without already knowing the answer TEMPO
-produces, and one which by construction can only help these baselines'
-reported detection rate relative to an untuned deployment of them. No
-monitor in the detection-rate comparison receives a materially
-different computational budget: every one of them is an $O(1)$-per-
-event streaming statistic (Section~\ref{sec:complexity} makes this
-precise for TEMPO), so there is no asymmetry in compute time to control
-for, only the asymmetry in calibration information just described,
-which is resolved in the baselines' favor throughout.
+\emph{Tuning protocol.} TEMPO itself is not tuned per instance or
+scenario: $\alpha = 0.05$, the fixed grids $\Theta$ and the Poisson
+grid (Section~\ref{sec:eprocess}), and the EWMA rate $\beta = 0.8$ and
+clip $\theta_{\max} = 2.5$ (Section~\ref{sec:tempo}) are fixed once
+across the entire 73-instance, 19-scenario grid. \emph{Periodic} and
+\emph{rolling-opt} use conventional literature-default cadences rather
+than cadences tuned to this data. Only CUSUM, Page--Hinkley, and the
+two e-detectors receive any data-dependent tuning, and it is oracle
+calibration to TEMPO's own realized false-alarm rate --- a procedure no
+dispatcher could run without already knowing TEMPO's answer, and one
+that by construction can only help these baselines' reported detection
+rate relative to an untuned deployment. Every monitor compared is an
+$O(1)$-per-event streaming statistic (Section~\ref{sec:complexity}
+makes this precise for TEMPO), so no asymmetry in compute time
+confounds the comparison, only the calibration asymmetry just
+described, which favors the baselines throughout.
 
 \textbf{Computational complexity.}\label{sec:complexity} Each event's
 update (Algorithm~\ref{alg:tempo}) is $O(J)$ per channel over the
@@ -1550,35 +1474,31 @@ Section~\ref{sec:decision}, the cheapest of which is already $O(m^2)$
 per call, so the monitor is never the bottleneck of the trigger-plus-
 replan pipeline.
 
-\subsection{Metrics}
+\emph{Metrics.} For each instance-scenario-monitor triple we report the
+false-alarm rate on null days (target $\le \alpha$), the detection
+rate on drift days (the fraction of days on which the monitor alarms
+at or after the true onset), and the mean detection delay in events,
+conditional on detection.
 
-For each instance-scenario-monitor triple we report the false-alarm
-rate on null days (target $\le \alpha$), the detection rate on drift
-days (the fraction of days on which the monitor alarms at or after the
-true onset), and the mean detection delay in events, conditional on
-detection.
-
-\subsection{Validity}
+\textbf{Validity.}
 
 Table~\ref{tab:validity} reports the false-alarm rate on both null
 variants, pooled over all 73 instances and 15 days each. TEMPO controls
 its false-alarm rate below the nominal $\alpha = 0.05$ on both nulls,
 and in fact \emph{tightens} on the hostile forecast-rain null (from
-0.016 to 0.005): because rain is a covariate of the conditional null
-rather than a target of the test, a fully-forecast rainy day supplies
+0.016 to 0.005): rain is a covariate of the conditional null rather
+than a target of the test, so a fully-forecast rainy day supplies
 essentially no evidence against $P_0$, exactly as
 Section~\ref{sec:model}'s construction intends. Every classical or
 improperly-calibrated baseline, by contrast, either exceeds its nominal
 level outright (Bonferroni-fixed, oracle CUSUM at a published default
 threshold) or is uncontrolled by construction (periodic, rolling-opt,
-which alarm on a fixed schedule irrespective of evidence and are
-included here only to make this point, not as detection-rate
-competitors on Table~\ref{tab:detection}). This is not a subtle
-statistical footnote: it is the exact gap Ville's inequality
+which alarm on a fixed schedule irrespective of evidence and appear
+here only to make this point, not as detection-rate competitors on
+Table~\ref{tab:detection}). This is the exact gap Ville's inequality
 (Lemma~\ref{lem:ville}) closes, and every subsequent detection-rate
-comparison is conducted \emph{after} equalizing this budget across
-monitors precisely so that a higher detection rate cannot be an
-artifact of a laxer false-alarm rate.
+comparison equalizes this budget across monitors first, so a higher
+detection rate cannot be an artifact of a laxer false-alarm rate.
 
 \begin{table}
 \TABLE
@@ -1665,44 +1585,33 @@ of one.
 
 \begin{figure}
 \FIGURE
-{\includegraphics[width=0.62\textwidth]{figures/tempo_fig5_baselines.png}}
+{\includegraphics[width=0.58\textwidth]{figures/tempo_fig5_baselines.png}}
 {TEMPO against four baselines, by scenario.\label{fig:baselines}}
 {Detection rate at TEMPO's matched false-alarm budget
 (Table~\ref{tab:validity}), pooled over 73 instances and 15 days per
 scenario; the full 17-scenario table is Table~\ref{tab:detection}.}
 \end{figure}
 
-An ablation isolates where this margin comes from. Removing the
-adaptive betting and cost-relevance tilt of
-Sections~\ref{sec:coupling}--\ref{sec:tempo} and reverting to the flat,
-untilted master process of Proposition~\ref{prop:validity}
-(\texttt{tempo\_flat}) collapses detection exactly on the scenarios
-where TEMPO's margin over the classical baselines is largest ---
-0.31 on \texttt{demand\_severe} against TEMPO's 0.88, 0.60 on
-\texttt{traffic\_late} against 0.98 --- confirming that the adaptive bet
-is the primary source of statistical power and the dual-regime
-combination its safety net against single-channel drift.
-Section~\ref{sec:ablation} isolates these two components, and the
-sensitivity tilt itself, incrementally rather than jointly. A second
-ablation, the e-SR/e-CUSUM comparison itself, isolates a different
-margin: the general nonparametric restart machinery of
-\citet{shin2024edetectors}, built from TEMPO's own bets but without
-adaptive tilting or cost-relevance weighting, already recovers real
-power over naive CUSUM (e.g.\ \texttt{demand\_ramp} 0.15 $\to$ 0.34--0.41)
-but leaves a further, and often larger, gap to full TEMPO
-(0.34--0.41 $\to$ 0.70) that only the decision-relevant coupling of
-Section~\ref{sec:coupling} closes --- direct empirical evidence that
-restart-based nonparametric machinery and cost-aware betting design are
-two separable sources of statistical power, and that this paper's
-contribution is squarely the second.
+An ablation isolates where this margin comes from. Reverting to the
+flat, untilted master process (\texttt{tempo\_flat}) collapses
+detection exactly where TEMPO's margin is largest (0.31 on
+\texttt{demand\_severe} against 0.88, 0.60 on \texttt{traffic\_late}
+against 0.98), confirming the adaptive bet as the primary source of
+power and the dual-regime combination as its safety net;
+Section~\ref{sec:ablation} isolates these components incrementally.
+The e-SR/e-CUSUM comparison isolates a further margin: the
+nonparametric restart machinery of \citet{shin2024edetectors}, built
+from TEMPO's own bets without adaptive tilting or cost-relevance
+weighting, already beats naive CUSUM (\texttt{demand\_ramp} 0.15 $\to$
+0.34--0.41) but leaves a further gap to full TEMPO ($\to$ 0.70) that
+only Section~\ref{sec:coupling}'s coupling closes --- restart-based
+machinery and cost-aware betting design are separable sources of
+power, and this paper's contribution is squarely the second. Detection
+is uniform across geography (0.82/0.78/0.71 for TEMPO on City,
+Salhi--Nagy, and Dethloff instances against \texttt{cusum\_match}'s
+0.54/0.58/0.52): the margin is not an artifact of any one benchmark.
 
-Detection is uniform across geography: pooling by instance family,
-TEMPO detects on 0.82 of City instances against \texttt{cusum\_match}'s
-0.54, 0.78 against 0.58 on Salhi--Nagy, and 0.71 against 0.52 on
-Dethloff --- the margin the grid documents is not an artifact of any one
-benchmark's structure.
-
-\subsection{Component ablation: which piece does the work}\label{sec:ablation}
+\textbf{Component ablation: which piece does the work.}\label{sec:ablation}
 
 The two-point ablation above (\texttt{tempo\_flat} versus full TEMPO)
 conflates three design choices --- the sensitivity tilt
@@ -1739,65 +1648,45 @@ every variant remains valid, since Propositions~\ref{prop:coupledvalidity}
 and~\ref{prop:dualregime} hold for any of the four configurations.}
 \end{table}
 
-The table contains a result we did not anticipate and report because
-it is informative rather than because it is flattering: the
-sensitivity tilt \emph{alone}, without adaptive betting, is not
-uniformly better than no tilt at all --- it \emph{hurts} on the two
-demand scenarios (\texttt{demand\_ramp} 0.111 $\to$ 0.040,
-\texttt{demand\_severe} 0.351 $\to$ 0.129) before adaptive betting is
-added. The mechanism is exactly what Section~\ref{sec:coupling}'s
-derivation predicts: the demand sensitivity $s_{\mathrm{demand}}(n)$ is
-small whenever the running load sits far from the capacity boundary,
-which correctly reflects low decision-relevance, but a \emph{fixed}
-grid tilt scaled down by a small $s(n)$ is also a \emph{weaker}
-statistical bet in absolute terms, and early-to-mid-route demand drift
-generates most of its evidence exactly where $s(n)$ is smallest. Only
-once the tilt is allowed to adapt --- learning the drift's true size
-online rather than relying on a fixed grid scaled by a proxy --- does
-the combination recover and exceed the untilted baseline
-(\texttt{tilt\_adapt}: 0.173 and 0.538, both above \texttt{flat}). This
-is precisely the sense in which the tilt and the adaptive mechanism are
-not independent design choices to be evaluated in isolation: the
-sensitivity weighting is only unambiguously beneficial once paired with
-a bet that can recover the strength the weighting removes, which the
-dual-regime combination then compounds further, especially on
-single-channel drift where the mean-isolation term matters most
-(\texttt{demand\_severe} \texttt{tilt\_adapt}$\to$\texttt{tempo2}:
-$0.538 \to 0.756$, the largest single-step gain in the table, against a
-near-ceiling, marginal gain on the already-multi-channel
-\texttt{rush\_crush} scenario, $0.991 \to 0.996$, exactly as
-Section~\ref{sec:tempo}'s account of when the mean term matters
-predicts). On \texttt{traffic\_late} and \texttt{traffic\_mild}, where
-travel-time drift is decision-relevant everywhere along the route
-(Equation~\eqref{eq:sensrest} is bounded away from zero throughout), the
-tilt alone already helps, and adaptive betting and the dual regime
-each add a further, smaller increment --- a different, and simpler,
-interaction than the demand case, again consistent with the
-mechanism rather than merely favorable to it.
+The table contains a result we did not anticipate and report because it
+is informative rather than flattering: the sensitivity tilt
+\emph{alone}, without adaptive betting, is not uniformly better than no
+tilt at all --- it \emph{hurts} on the two demand scenarios
+(\texttt{demand\_ramp} 0.111 $\to$ 0.040, \texttt{demand\_severe} 0.351
+$\to$ 0.129) before adaptive betting is added, and only recovers and
+exceeds the untilted baseline once the tilt is allowed to adapt online
+(\texttt{tilt\_adapt}: 0.173 and 0.538). The tilt and the adaptive
+mechanism are thus not independent design choices, and the dual-regime
+combination compounds the recovery further on single-channel drift
+(\texttt{demand\_severe} $0.538 \to 0.756$, the largest single-step
+gain in the table). The mechanism behind this non-monotonicity, and why
+travel-time drift (\texttt{traffic\_late}, \texttt{traffic\_mild})
+shows a simpler, monotonic pattern instead, is discussed in the
+Appendix.
 
-\subsection{The significance level as a price: confirming Corollary~\ref{cor:alphastar}}
+\textbf{The significance level as a price: confirming Corollary~\ref{cor:alphastar}.}
 
 Corollary~\ref{cor:alphastar} predicts a U-shaped realized-cost curve in
 $\alpha$ with an interior minimum. We confirm this on ten instances,
 15 days each, an equal mixture of null and demand-surge days, sweeping
-$\alpha$ over eight values (Table~\ref{tab:alphasweep}). Realized cost
-is U-shaped exactly as predicted, falling from $\alpha = 0.5$ to an
-interior minimum near $\alpha \approx 10^{-3}$ before rising again as
-$\alpha \to 10^{-4}$. The two arms are driven by the two terms of
-Equation~\eqref{eq:regret}: the right arm, at the smallest $\alpha$, is
-the detection-delay term $\Delta_c(\log(1/\alpha)+\kappa)/g$, since an
-overly conservative monitor waits so long for evidence that the
-stale-plan cost dominates; the left arm is not, in this harness, the
-false-alarm cost term $\alpha C_{\mathrm{fr}}$ --- a replan on an
-on-model day is here nearly free, since the insertion heuristic
-weakly improves the remaining tour even absent any drift, so $C_{\mathrm
-{fr}} \approx 0$ --- but rather Theorem~\ref{thm:waiting}'s information
-term $V(s)$: at $\alpha = 0.5$ the monitor alarms after only two or
-three events and the rebalancer acts on almost no information, costing
-191.1 against 156.2 on surge days at the interior optimum. A deployment
-in which unnecessary replans carry a real coordination cost would show
-both terms simultaneously; we flag this as the natural next refinement
-of the harness rather than a limitation of the theory.
+$\alpha$ over eight values (Table~\ref{tab:alphasweep}): realized cost
+falls from $\alpha = 0.5$ to an interior minimum near $\alpha \approx
+10^{-3}$ before rising again as $\alpha \to 10^{-4}$, exactly as
+predicted. The two arms trace the two terms of
+Equation~\eqref{eq:regret}. The right arm, at the smallest $\alpha$, is
+the detection-delay term $\Delta_c(\log(1/\alpha)+\kappa)/g$: an overly
+conservative monitor waits so long for evidence that the stale-plan
+cost dominates. The left arm, in this harness, is not the false-alarm
+cost term $\alpha C_{\mathrm{fr}}$ --- a replan on an on-model day is
+here nearly free, since the insertion heuristic weakly improves the
+remaining tour even absent drift, so $C_{\mathrm{fr}} \approx 0$ ---
+but rather Theorem~\ref{thm:waiting}'s information term $V(s)$: at
+$\alpha = 0.5$ the monitor alarms after only two or three events and
+the rebalancer acts on almost no information, costing 191.1 against
+156.2 on surge days at the interior optimum. A deployment in which
+unnecessary replans carry a real coordination cost would show both
+terms at once; we flag this as the natural next refinement of the
+harness rather than a limitation of the theory.
 
 \begin{table}
 \TABLE
@@ -1814,7 +1703,7 @@ cost & 167.0 & 165.1 & 163.1 & 161.4 & 158.3 & 153.8 & \textbf{152.1} & 161.8 \\
 $\alpha^\ast$ of Corollary~\ref{cor:alphastar}.}
 \end{table}
 
-\subsection{Confirming Theorem~\ref{thm:waiting}: the value of waiting for evidence}
+\textbf{Confirming Theorem~\ref{thm:waiting}: the value of waiting for evidence.}
 
 We isolate Theorem~\ref{thm:waiting}'s prediction on twelve Dethloff
 instances under a demand-surge scenario (mean shift $+0.8$ standard
@@ -1843,55 +1732,44 @@ average, well after $\nu$ but still early enough to prevent most
 breaches.}
 \end{table}
 
-Three findings follow. First, exact re-sequencing matches the
-lightweight nearest-neighbor-plus-2-opt heuristic to within 0.1\%:
-under demand drift, sequencing quality is nearly irrelevant, and
-essentially all of the re-optimization value lies in the ability to
-\emph{reassign} customers across vehicles, which only the fleet-wide
-rebalancer of Section~\ref{sec:decision} can do. Second, and this is
-the direct empirical confirmation of Theorem~\ref{thm:waiting}: TEMPO
-paired with the rebalancer beats rebalancing at the first stop after a
-suspected drift by a further six percentage points (56.7\% against
-50.8\%), even though the first-stop policy replans strictly earlier ---
-because the later, evidence-gated rebalance acts on realized loads and
-true residual slack rather than the noisy priors available at the
-first stop, exactly the mechanism formalized by $V(s)$ in
-Equation~\eqref{eq:vs}. Third, every backend of
-Section~\ref{sec:decision} is a drop-in replacement for any other,
-confirming the trigger and the replanner compose as designed.
+Three findings follow (the first and third are elaborated in the
+Appendix): sequencing quality barely matters under demand drift, so
+nearly all re-optimization value lies in \emph{reassigning} customers
+across vehicles; every backend of Section~\ref{sec:decision} is a
+drop-in replacement for any other. The central finding, and the direct
+empirical confirmation of Theorem~\ref{thm:waiting}, is the second:
+TEMPO paired with the rebalancer beats rebalancing at the first stop
+after a suspected drift by a further six percentage points (56.7\%
+against 50.8\%), even though the first-stop policy replans strictly
+earlier --- the later, evidence-gated rebalance acts on realized loads
+and true residual slack rather than the noisy priors at the first
+stop, exactly the mechanism formalized by $V(s)$ in
+Equation~\eqref{eq:vs}.
 
-\subsection{TEMPO complements a capacity-triggered recourse policy, and drift has a where}
+\textbf{TEMPO complements a capacity-triggered recourse policy, and drift has a where.}
 
 TEMPO's execution-time monitor is complementary to, and can run
 alongside, any planning-layer recourse policy that intervenes only
-when a vehicle's running load approaches a capacity boundary. On a
-demand-surge day, both layers react: a capacity-triggered recourse
-policy's continuation-cost boundary is approached and it intervenes,
-while TEMPO's demand channel accumulates evidence in step. On a
-traffic-jam day, only TEMPO fires --- the jam never pushes any
-vehicle's load toward a capacity breach, so a purely capacity-triggered
-policy correctly stays silent, yet the plan's realized lateness is
-climbing steadily, exactly the drift TEMPO exists to catch and a
-load-based recourse policy has no state to see it with. The two layers
-are complementary by design: a capacity-triggered recourse policy
-prices \emph{what to do} once a capacity constraint is in play; TEMPO
-decides \emph{when} the plan --- any part of it, capacity-related or
-not --- has stopped matching reality.
+when a vehicle's running load approaches a capacity boundary: the two
+layers cover different drift regimes, and why is discussed in the
+Appendix.
 
 Figure~\ref{fig:fleet} illustrates TEMPO running on an entire fleet
 rather than one vehicle: one master e-process consumes every vehicle's
 events in shared clock order, so the dispatcher tests the \emph{plan},
-not any single route. As the jam pocket of
-Section~\ref{sec:model} opens and spreads across the road network, the
-evidence pooled from vehicles whose remaining routes enter the affected
-zone accumulates while vehicles routed elsewhere continue to contribute
-on-model evidence, and the alarm --- fired once the pooled log
-e-process crosses its threshold --- triggers a fleet-wide replan well
-before the day ends.
+not any single route. As the jam pocket of Section~\ref{sec:model}
+opens and spreads across the real road network, evidence pooled from
+vehicles whose remaining routes enter the affected zone accumulates
+while vehicles routed elsewhere continue to contribute on-model
+evidence, and the alarm --- fired once the pooled log e-process crosses
+its threshold --- triggers a fleet-wide replan well before the day
+ends; this spatial extension gives drift a location as well as a time,
+which is what keeps the pooled test from being swamped by vehicles the
+jam never touches.
 
 \begin{figure}
 \FIGURE
-{\includegraphics[width=0.72\textwidth]{figures/tempo_fig4_fleet.png}}
+{\includegraphics[width=0.52\textwidth]{figures/tempo_fig4_fleet.png}}
 {TEMPO monitoring an entire fleet under a spreading congestion
 pocket.\label{fig:fleet}}
 {Left: eleven vehicles (colored trails) on a real road network
@@ -1902,29 +1780,7 @@ crossing the alarm threshold, the standardized residuals TEMPO bets on
 across channels, and cumulative customers served.}
 \end{figure}
 
-Figure~\ref{fig:map} illustrates the spatial extension of
-Section~\ref{sec:model}'s traffic factor on a real street network: a
-congestion pocket with a growing radius, visualized against the
-planned route, gives drift a location as well as a time, which matters
-once a monitor pools evidence across an entire fleet rather than one
-vehicle --- a vehicle routed away from the pocket contributes correctly
-null evidence throughout the day, and only vehicles whose remaining
-route enters the affected zone drive the alarm. A fleet-pooled monitor
-that consumes every vehicle's events in one shared clock order tests
-the \emph{plan}, not any single vehicle, and this spatial sensitivity
-is what keeps that pooled test from being swamped by vehicles the jam
-never touches.
-
-\begin{figure}
-\FIGURE
-{\includegraphics[width=0.55\textwidth]{figures/tempo_fig3_map.png}}
-{A zonal traffic jam on a real street network.\label{fig:map}}
-{The growing congestion pocket (Section~\ref{sec:model}) against the
-planned route on the Hanoi road network; only legs whose destination
-currently lies inside the pocket are slowed.}
-\end{figure}
-
-\subsection{Real data: the Amazon Last-Mile Routing Research Challenge}
+\textbf{Real data: the Amazon Last-Mile Routing Research Challenge.}
 
 To check that these findings are not an artifact of synthetic demand
 and travel-time models, we build a fifth evaluation family entirely
@@ -1938,58 +1794,52 @@ volumes rather than from any synthetic generator.
 Each route contributes 12 simulated days per scenario (50 routes
 $\times$ 12 days $=$ 600 Bernoulli trials per reported rate), so we
 report 95\% Wilson score confidence intervals alongside the point
-estimates rather than point estimates alone, computed directly from
-the underlying per-route outcomes. Validity holds on real routes
-exactly as on synthetic ones: TEMPO's false-alarm rate is $0.018\
-[0.010, 0.033]$ on the plain null and $0.022\ [0.013, 0.037]$ on the
-forecast-rain null, both within the nominal $\alpha = 0.05$ with the
-upper confidence bound comfortably below it, against $0.032\ [0.020,
-0.049]$ for oracle-matched CUSUM and $0.037\ [0.024, 0.055]$ for
-Page--Hinkley (whose interval's upper end exceeds $\alpha$, consistent
-with the theoretical point that its calibration guarantee is generous
-but not exact). The discriminating scenario on these industrial-length
-routes is mild, sustained demand drift --- packages running slightly
-heavy all day, a pattern a dispatcher plausibly faces without any
-dramatic single cause --- where TEMPO detects at $0.70\ [0.66, 0.73]$
-against oracle-matched CUSUM's $0.23\ [0.20, 0.27]$ and Page--Hinkley's
-$0.23\ [0.20, 0.27]$, non-overlapping intervals and a threefold margin,
-with the late-onset and ramped demand variants showing the same
-non-overlapping pattern ($0.88\ [0.86, 0.91]$ against $0.82\ [0.79,
-0.85]$ and $0.23\ [0.20, 0.26]$; $0.95\ [0.93, 0.96]$ against $0.93\
-[0.91, 0.95]$ and $0.30\ [0.26, 0.33]$). Traffic scenarios sit at a
-shared ceiling for TEMPO and CUSUM alike (0.86--0.97) since 150-stop
-routes carry overwhelming travel-time evidence regardless of how it is
-combined, while Page--Hinkley collapses on mild traffic drift (0.25);
-accident scenarios remain information-limited ties, and compound days
-saturate near 0.95 for every monitor. Detection is uniform across
-metropolitan areas (0.84--0.86 mean detection in each of the five). We
-note two limitations of this pilot for transparency, neither resolved
-by the confidence intervals above: the data set is delivery-only, so a
-single realization per route stands in for day-to-day dispersion (the
-$n=12$ simulated days per route share one real route geometry and one
-real set of planner forecasts, so the 600-trial count overstates the
-number of independent real-world realizations by roughly a factor of
-12), and because the data set records no realized-versus-forecast
-traces, drift is still injected rather than observed --- both are
-flagged for a future extension that pairs multiple realized days per
-route.
+estimates, computed directly from the underlying per-route outcomes.
+Validity holds on real routes exactly as on synthetic ones: TEMPO's
+false-alarm rate is $0.018\ [0.010, 0.033]$ on the plain null and
+$0.022\ [0.013, 0.037]$ on the forecast-rain null, both within the
+nominal $\alpha = 0.05$ with the upper confidence bound comfortably
+below it, against $0.032\ [0.020, 0.049]$ for oracle-matched CUSUM and
+$0.037\ [0.024, 0.055]$ for Page--Hinkley (whose interval's upper end
+exceeds $\alpha$, consistent with its calibration guarantee being
+generous but not exact). The discriminating scenario is mild,
+sustained demand drift --- packages running slightly heavy all day,
+without any dramatic single cause --- where TEMPO detects at $0.70\
+[0.66, 0.73]$ against oracle-matched CUSUM's and Page--Hinkley's
+$0.23\ [0.20, 0.27]$, non-overlapping intervals and a threefold margin;
+the late-onset and ramped demand variants show the same pattern
+($0.88\ [0.86, 0.91]$ against $0.82\ [0.79, 0.85]$ and $0.23\ [0.20,
+0.26]$; $0.95\ [0.93, 0.96]$ against $0.93\ [0.91, 0.95]$ and $0.30\
+[0.26, 0.33]$). Traffic scenarios sit at a shared ceiling for TEMPO and
+CUSUM alike (0.86--0.97), since 150-stop routes carry overwhelming
+travel-time evidence regardless of how it is combined, while
+Page--Hinkley collapses on mild traffic drift (0.25); accident
+scenarios remain information-limited ties, and compound days saturate
+near 0.95 for every monitor. Detection is uniform across the five
+metropolitan areas (0.84--0.86 mean). Two limitations bear noting,
+neither resolved by the intervals above: the data set is
+delivery-only, so a single real route geometry and one real set of
+planner forecasts stand in for day-to-day dispersion across its 12
+simulated days, overstating independent real-world realizations by
+roughly a factor of 12; and because the data set records no
+realized-versus-forecast traces, drift is still injected rather than
+observed. Both are flagged for a future extension pairing multiple
+realized days per route.
 
-\subsection{Retraining DGTA-RL as a fully independent baseline}\label{sec:dgta}
+\textbf{Retraining DGTA-RL as a fully independent baseline.}\label{sec:dgta}
 
-The rolling-opt baseline of Section~\ref{sec:baselines} reproduces the trigger cadence
-\citet{chen2025dgta} benchmark their own policy against, but not the
-policy itself: a Dynamic Graph Temporal Attention (DGTA) network
-trained end-to-end by reinforcement learning to resequence a route
-under time-dependent, stochastic travel times, with no explicit
-change-detection layer. Because this is an architecturally distinct
-comparison --- a learned control policy rather than a statistical
-trigger --- we reimplement its dual-attention encoder and
-spatial-temporal pointer decoder at reduced scale, train it by
-REINFORCE with a frozen baseline network per the original paper's
-Algorithm 1, and evaluate its realized tour cost against
-TEMPO-triggered re-optimization on matched instances, rather than
-citing the architecture without running it. \emph{[Placeholder:
-realized-cost comparison to be inserted before submission.]}
+The rolling-opt baseline of Section~\ref{sec:baselines} reproduces the
+trigger cadence \citet{chen2025dgta} benchmark their own policy
+against, but not the policy itself: a Dynamic Graph Temporal Attention
+(DGTA) network trained end-to-end by reinforcement learning to
+resequence a route under time-dependent, stochastic travel times, with
+no explicit change-detection layer. Because this is an architecturally
+distinct comparison --- a learned control policy rather than a
+statistical trigger --- we reimplement its network and training
+procedure rather than citing the architecture without running it (the
+Appendix gives the reimplementation details); realized tour cost
+against TEMPO-triggered re-optimization on matched instances is
+\emph{[Placeholder: to be inserted before submission.]}
 
 % ══════════════════════════════════════════════════════════════════
 \section{Discussion and conclusion}\label{sec:discussion}
@@ -2006,113 +1856,94 @@ Ville's inequality (Lemma~\ref{lem:ville}) and the reason
 Table~\ref{tab:validity} shows classical detectors, whose guarantees
 were never designed for continuous inspection, exceeding their nominal
 false-alarm level in exactly the deployment pattern --- watch after
-every event --- that operations naturally invite. A fleet that already
-monitors its routes continuously through a dashboard is, whether or not
-it realizes it, already violating the assumptions its CUSUM or
-Page--Hinkley thresholds were tuned under; replacing the statistic,
-not the monitoring cadence, closes the gap.
+every event --- that operations naturally invite. A fleet already
+monitoring its routes continuously is, whether or not it realizes it,
+already violating the assumptions its CUSUM or Page--Hinkley
+thresholds were tuned under; replacing the statistic, not the
+monitoring cadence, closes the gap.
 
 Second, \emph{the significance level is a dial with a defensible
 setting, not a convention}. Corollary~\ref{cor:alphastar}'s formula
 $\alpha^\ast = \Delta_c/(g\,C_{\mathrm{fr}})$ asks only for three
 numbers a fleet operations team already has some estimate of: the
-per-event cost of running one more stop on a stale plan, the monitor's
-empirical evidence rate on comparable historical drift, and the
-coordination cost of an unnecessary re-optimization. A fleet whose
-re-optimization is pure software --- no driver notified, no vehicle
-redirected until the new plan is confirmed --- should set $\alpha$ close
-to one and replan liberally; a fleet whose re-optimization triggers a
-phone call to a driver and a standby-vehicle dispatch should set
-$\alpha$ far below the conventional 0.05, and demand correspondingly
-stronger evidence, exactly the trade-off Table~\ref{tab:alphasweep}
+per-event cost of staying on a stale plan, the monitor's empirical
+evidence rate, and the coordination cost of an unnecessary
+re-optimization. Cheap, software-only replans push $\alpha^\ast$ toward
+one; replans requiring driver coordination push it far below the
+conventional 0.05, exactly the trade-off Table~\ref{tab:alphasweep}
 traces out empirically.
 
 Third, and least intuitively, \emph{acting on a statistical alarm can
-beat acting sooner}, not merely because sooner is statistically
-riskier but because a state-dependent replanner --- one that reassigns
-customers based on realized loads, as opposed to one that merely
-resequences a fixed customer set --- is itself better informed the
-later it is invoked, up to the point where staleness costs overtake the
-remaining information gain (Theorem~\ref{thm:waiting}). This is a
-genuine departure from the rolling-horizon literature's usual
-presumption that more frequent re-optimization is weakly better, since
-that presumption implicitly treats replanning as costless and
-information as free; neither holds once a fleet's rebalancing decision
+beat acting sooner}: a state-dependent replanner --- one that
+reassigns customers based on realized loads rather than merely
+resequencing a fixed set --- is itself better informed the later it is
+invoked, up to the point where staleness costs overtake the remaining
+information gain (Theorem~\ref{thm:waiting}). This departs from the
+rolling-horizon literature's usual presumption that more frequent
+re-optimization is weakly better, a presumption that treats replanning
+as costless and information as free; neither holds once rebalancing
 depends on realized, not forecast, residual capacity.
 
-A natural objection is that TEMPO adds a second layer of machinery on
-top of an already-complex planning-time policy. We view the opposite as
-true: the coupling of Section~\ref{sec:coupling} means TEMPO requires no
-new fitted model beyond what an optimal-stopping planning layer already
-produces for its own recourse decisions --- the continuation cost
-$\widehat C(\cdot)$ is read, not re-estimated --- so a fleet that
-has already adopted an optimal-stopping recourse policy at the planning
-layer acquires an anytime-valid re-optimization trigger at negligible
-additional modeling cost.
+TEMPO adds no new fitted model beyond what an optimal-stopping
+planning layer already produces for its own recourse decisions ---
+the continuation cost $\widehat C(\cdot)$ is read, not re-estimated ---
+so a fleet that has already adopted such a policy acquires an
+anytime-valid re-optimization trigger at negligible additional cost.
 
 \textbf{Limitations, collected.} The sensitivity proxies of
 Section~\ref{sec:coupling} and Theorem~\ref{thm:growth}'s alternative
-class are first-order and linearized approximations, respectively,
-chosen for tractability rather than derived as necessities; the
-channel-validity arguments require the null model's channels to be
-correctly specified conditional on observed covariates
+class are approximations chosen for tractability rather than derived
+necessities; the channel-validity arguments require the null model's
+channels to be correctly specified conditional on observed covariates
 (Remark~\ref{rem:independence}); and Theorem~\ref{thm:waiting} is
 proved in a deliberately stylized model rather than for the
-fleet-scale rebalancer actually used. Each limitation is discussed at
-the point it arises, and in the Appendix; none of them affects the
-validity guarantees of Section~\ref{sec:tempo}, which hold given the
-stated null model regardless of how well any proxy approximates the
-unobserved truth --- they bound how much of the empirically
-demonstrated \emph{power} should be attributed to this paper's
-specific closed forms versus to the general coupling principle they
-instantiate.
+fleet-scale rebalancer actually used. Each is discussed at the point it
+arises, and in the Appendix; none affects Section~\ref{sec:tempo}'s
+validity guarantees, which hold regardless of proxy quality --- they
+bound only how much of the demonstrated \emph{power} should be
+attributed to these specific closed forms versus to the general
+coupling principle they instantiate.
 
-\subsection{Conclusion}\label{sec:conclusion}
+\textbf{Conclusion.}\label{sec:conclusion}
 
 We have posed the timing of vehicle-routing re-optimization as a
 sequential hypothesis test and shown that anytime-valid testing,
 coupled to the routing plan's own economics through predictable
 sensitivity tilts, answers it with both a statistical guarantee and an
 economic interpretation that neither periodic re-optimization nor
-classical sequential detection can offer. The coupling is free of
-statistical cost by construction (Propositions~\ref{prop:coupledvalidity},
-\ref{prop:dualregime}, and~\ref{prop:split}), and is provably the right
-design, not merely a plausible one, against the class of alternatives
-that move routing cost (Theorem~\ref{thm:growth}). The resulting
+classical sequential detection offers. The coupling is free of
+statistical cost by construction
+(Propositions~\ref{prop:coupledvalidity}, \ref{prop:dualregime},
+and~\ref{prop:split}), and is provably the right design against the
+class of alternatives that move routing cost
+(Theorem~\ref{thm:growth}), not merely a plausible one. The resulting
 monitor, TEMPO, together with a regret bound
 (Theorem~\ref{thm:regret}), a closed-form significance level
 (Corollary~\ref{cor:alphastar}), and a theorem explaining why waiting
 for evidence can beat replanning immediately
 (Theorem~\ref{thm:waiting}), gives a dispatcher a defensible answer to
 a question current practice answers by convention or by clock. Across
-73 synthetic instances, a 19-scenario stochastic-drift grid, a pilot on
-real last-mile delivery data, and comparisons against ten baselines
-spanning three publication years up to 2026, TEMPO detects harmful
-drift faster and more reliably than every alternative at a matched
-false-alarm budget, and triggering a fleet-wide rebalance on its alarm
-realizes a further six percentage points of cost saving over replanning
-at the first sign of trouble.
+73 synthetic instances, a 19-scenario drift grid, and a real-data
+pilot, TEMPO detects harmful drift faster and more reliably than every
+one of ten baselines at a matched false-alarm budget, and triggering a
+fleet-wide rebalance on its alarm realizes a further six percentage
+points of cost saving over replanning at the first sign of trouble.
 
-Three extensions follow naturally from the limitations noted along the
-way. The channel-wise independence used to factorize
-Equation~\eqref{eq:master} is a modeling convenience broken by any
-common driver of two channels at once --- rain, in our construction,
-is handled by conditioning both the travel-time and (if desired)
-accident nulls on the same covariate, but a spatially and temporally
-correlated congestion field, of the kind visualized in
-Figure~\ref{fig:map}, would require the master process to bet against a
-genuinely joint conditional law rather than a product of marginals; the
-chain-rule construction of Section~\ref{sec:eprocess} accommodates this
-directly, at the cost of a richer null model to fit. The stylized
-two-vehicle model behind Theorem~\ref{thm:waiting} could be extended to
-an arbitrary fleet size and a general capacity-breach cost function, at
-the cost of a less closed-form $V(s)$. Finally, the milestone-two
-comparison of Section~\ref{sec:study} crossed triggers with lightweight
-replanners; crossing every trigger with a full warm-started
-adaptive-large-neighborhood-search replan, across the entire
-19-scenario grid, is the natural next computational study and is
-already supported by the pluggable interface of
-Section~\ref{sec:decision}.
+Three extensions follow from the limitations noted along the way. The
+channel-wise independence factorizing Equation~\eqref{eq:master} is a
+modeling convenience broken by any common driver of two channels at
+once; a spatially correlated congestion field beyond the rain case
+handled here would require betting against a genuinely joint
+conditional law, which the chain-rule construction of
+Section~\ref{sec:eprocess} accommodates at the cost of a richer null
+model. The stylized two-vehicle model behind Theorem~\ref{thm:waiting}
+could be extended to an arbitrary fleet size and general breach-cost
+function, at the cost of a less closed-form $V(s)$. Finally, crossing
+every trigger with a full warm-started adaptive-large-neighborhood-
+search replan across the entire 19-scenario grid, rather than the
+lightweight replanners used in Section~\ref{sec:study}, is the natural
+next computational study, already supported by the pluggable interface
+of Section~\ref{sec:decision}.
 
 \ACKNOWLEDGMENT{We thank the maintainers of the 2021 Amazon Last-Mile
 Routing Research Challenge data set for making real last-mile routing
@@ -2160,8 +1991,6 @@ $\E_{P_0}[C_n] \le 1$, and the tail bound is again Lemma~\ref{lem:ville}.
 
 \subsection{On the independence assumption (Remark~\ref{rem:independence})}
 
-\begin{remark}[what this proof does not need, and what it does not
-claim]\label{rem:independence}
 Proposition~\ref{prop:dualregime}'s validity is unconditional on
 whether the five factors are correlated with one another in reality;
 it holds as long as each channel's null law, \emph{as specified in
@@ -2187,7 +2016,6 @@ on that field explicitly, exactly as the travel-time channel
 conditions on $R$ here. We flag this as a modeling-fidelity question
 distinct from, and not resolved by, the martingale argument above, and
 return to it in Section~\ref{sec:discussion}.
-\end{remark}
 
 \subsection{Proof of Proposition~\ref{prop:segments} (segment-wise validity under reset)}
 
@@ -2332,7 +2160,7 @@ post-change observations, $\E\bigl[(\widehat\mu(s)-\mu)^2\bigr] =
 expectations of Equation~\eqref{eq:phiexpand} gives
 \begin{align}
 V(s) &:= \E\bigl[\Phi(\widehat\rho(s))\bigr] - \Phi(\rho^\ast(\mu))
-\ \approx\ \frac{\kappa_0\, \sigma^2}{s}, \label{eq:vs}\\
+\ \approx\ \frac{\kappa_0\, \sigma^2}{s}, \notag\\
 \kappa_0 &:= \tfrac12\, \Phi''(\rho^\ast(\mu))\,
 \bigl[(\rho^\ast)'(\mu)\bigr]^2, \notag
 \end{align}
@@ -2392,8 +2220,8 @@ location estimation rather than the only conceivable ones.
 Equation~\eqref{eq:truesens} requires the fitted derivative $\widehat
 C'(W_{n-1})$ at every event, which is an additional quantity beyond
 what the planning layer already reports. We instead use the
-closed-form proxy
-\begin{equation}\label{eq:sensdemand}
+closed-form proxy of Equation~\eqref{eq:sensdemand},
+\begin{equation}\notag
 s_{\mathrm{demand}}(n) = 1 - \min\!\left(\frac{|B - W_{n-1}|}{B}, 1\right),
 \end{equation}
 which coincides with $r(n)$'s qualitative behavior --- decreasing in
@@ -2444,7 +2272,6 @@ implicitly assume a homogeneous-penalty world is the general case).
 
 \subsection{On Assumption~\ref{ass:growth} (Remark~\ref{rem:growth})}
 
-\begin{remark}[what Assumption~\ref{ass:growth} does and does not buy]\label{rem:growth}
 $g > 0$ is not a technical convenience but the minimal identifiability
 condition any test of $P_0$ against $P_1$ must satisfy: if every grid
 tilt had zero or negative expected log-growth under $P_1$, no
@@ -2468,7 +2295,6 @@ convergence having approximately occurred by the time $\tau$ is
 reached, which the dual-regime combination of
 Section~\ref{sec:tempo} is designed to make robust to but which the
 theorem does not itself certify for small post-change sample sizes.
-\end{remark}
 
 \subsection{Proof of Theorem~\ref{thm:growth} (growth-optimality of the decision-relevant tilt)}
 
@@ -2502,6 +2328,118 @@ $\lambda^\ast = \Delta/\lVert c\rVert^2$ and $\theta_k^\ast = \lambda^\ast
 c_k = \Delta c_k /\lVert c\rVert^2$, Equation~\eqref{eq:thetastar}.
 \Halmos
 \end{proof}
+
+\subsection{Why the sensitivity tilt alone can hurt before adaptive betting is added (Table~\ref{tab:ablation})}
+
+The mechanism is exactly what Section~\ref{sec:coupling}'s derivation
+predicts: the demand sensitivity $s_{\mathrm{demand}}(n)$ is small
+whenever the running load sits far from the capacity boundary,
+correctly reflecting low decision-relevance, but a \emph{fixed} grid
+tilt scaled down by a small $s(n)$ is also a \emph{weaker} statistical
+bet in absolute terms, and early-to-mid-route demand drift generates
+most of its evidence exactly where $s(n)$ is smallest. Only once the
+tilt is allowed to adapt --- learning the drift's true size online
+rather than relying on a fixed grid scaled by a proxy --- does the
+combination recover and exceed the untilted baseline. The sensitivity
+weighting is thus only unambiguously beneficial once paired with a bet
+that can recover the strength it removes, which the dual-regime
+combination then compounds further on single-channel drift, where the
+mean-isolation term matters most (\texttt{demand\_severe}
+\texttt{tilt\_adapt}$\to$\texttt{tempo2}: $0.538 \to 0.756$, against a
+near-ceiling, marginal gain on the already-multi-channel
+\texttt{rush\_crush} scenario, $0.991 \to 0.996$, as
+Section~\ref{sec:tempo}'s account of the mean term predicts). On
+\texttt{traffic\_late} and \texttt{traffic\_mild}, where travel-time
+drift is decision-relevant everywhere along the route
+(Equation~\eqref{eq:sensrest} is bounded away from zero throughout), the
+tilt alone already helps and adaptive betting and the dual regime each
+add a further, smaller increment --- a simpler interaction than the
+demand case, again consistent with the mechanism rather than merely
+favorable to it.
+
+\subsection{DGTA-RL reimplementation details (Section~\ref{sec:dgta})}
+
+We reimplement the dual-attention encoder and spatial-temporal pointer
+decoder of \citet{chen2025dgta} at reduced scale and train it by
+REINFORCE with a frozen baseline network per the original paper's
+Algorithm 1, then evaluate its realized tour cost against
+TEMPO-triggered re-optimization on matched instances.
+
+\subsection{Why TEMPO and a capacity-triggered recourse policy cover different drift regimes (Section~\ref{sec:study})}
+
+On a demand-surge day, both layers react: a capacity-triggered
+policy's continuation-cost boundary is approached and it intervenes,
+while TEMPO's demand channel accumulates evidence in step. On a
+traffic-jam day, only TEMPO fires --- the jam never pushes any
+vehicle's load toward a capacity breach, so a purely capacity-triggered
+policy correctly stays silent even as the plan's realized lateness
+climbs steadily, a drift a load-based policy has no state to see. A
+capacity-triggered policy prices \emph{what to do} once a capacity
+constraint is in play; TEMPO decides \emph{when} the plan --- any part
+of it, capacity-related or not --- has stopped matching reality.
+
+\subsection{What is routine and what is new in Section~\ref{sec:theory} (economics of the trigger)}
+
+Every individual probabilistic tool Section~\ref{sec:theory} invokes
+--- Ville's inequality, Wald's identity, the overshoot bounds of
+\citet{lorden1970excess} and \citet{woodroofe1982nonlinear}, and
+elementary convex calculus --- is classical, and
+Propositions~\ref{prop:validity}--\ref{prop:split} are, individually,
+routine consequences of the tower property and the union bound, stated
+for completeness rather than as claims of technical difficulty; a
+paper that borrows well-established machinery should not be mistaken
+for one that reinvents it. What is genuinely new is the
+\emph{composition}: Theorem~\ref{thm:regret} is, to our knowledge, the
+first bound translating a sequential test's detection-delay guarantee
+directly into \emph{realized routing cost} rather than sample size or
+type-I/II error; Corollary~\ref{cor:alphastar} is the closed-form
+significance level that composition implies, economic in content (a
+formula computable from three quantities fleet operators already
+track) rather than mathematical; Theorem~\ref{thm:waiting} formalizes,
+in a deliberately stylized model, why an evidence-gated trigger can
+dominate an immediate one when the downstream decision is itself
+statistical; and Theorem~\ref{thm:growth}, the paper's central
+methodological claim, shows that Section~\ref{sec:coupling}'s
+decision-relevant sensitivity weights --- introduced there as a
+modeling choice --- are in fact the unique growth-optimal weights
+against a natural class of cost-relevant alternatives, not merely one
+heuristic choice among many.
+
+\subsection{Two further findings on the value of waiting (Table~\ref{tab:replan})}
+
+Exact re-sequencing matches the lightweight nearest-neighbor-plus-2-opt
+heuristic to within 0.1\%: under demand drift, sequencing quality is
+nearly irrelevant, and essentially all of the re-optimization value
+lies in the ability to \emph{reassign} customers across vehicles,
+which only the fleet-wide rebalancer of Section~\ref{sec:decision} can
+do. And every backend of Section~\ref{sec:decision} is a drop-in
+replacement for any other, confirming that trigger and replanner
+compose as designed.
+
+\subsection{The 19-scenario grid (Section~\ref{sec:study})}
+
+\begin{table}[h]
+\TABLE
+{The 19-scenario grid.\label{tab:scenarios}}
+{\footnotesize\begin{tabular}{@{}ll@{}}
+\toprule
+Group & Scenarios \\
+\midrule
+Nulls & \texttt{null}, \texttt{null\_rain} (forecast rain, no drift) \\
+Single factor, mild/severe & \texttt{traffic\_mild/severe},
+\texttt{demand\_mild/severe}, \texttt{dwell\_mild/severe}, \\
+& \texttt{accident\_mild/severe}, \texttt{breakdown} \\
+Shape variants & \texttt{traffic\_ramp}, \texttt{demand\_ramp},
+\texttt{traffic\_transient}, \texttt{traffic\_late}, \texttt{demand\_late} \\
+Compound days & \texttt{storm} (ramped traffic + dwell + accidents,
+rainy), \texttt{rush\_crush} \\
+& (demand + dwell), \texttt{black\_day} (all five factors) \\
+\bottomrule
+\end{tabular}}
+{Magnitudes follow a common convention: traffic magnitudes are
+log-mean multipliers, demand/dwell magnitudes are standard-deviation
+shifts, accident/breakdown magnitudes are rate ratios.}
+\end{table}
 
 \end{APPENDIX}
 
