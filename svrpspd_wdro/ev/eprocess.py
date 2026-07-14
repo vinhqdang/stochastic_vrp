@@ -175,13 +175,16 @@ class TempoMonitor:
     CONT = ("travel", "demand", "dwell", "accident")
 
     def __init__(self, alpha: float = 0.05, beta: float = 0.8,
-                 theta_max: float = 2.5, use_sensitivity: bool = False):
+                 theta_max: float = 2.5, use_sensitivity: bool = False,
+                 use_adaptive: bool = True, use_dual: bool = True):
         self.alpha = alpha
         self.a_main = alpha / 2
         self.a_brk = alpha / 2
         self.beta = beta
         self.theta_max = theta_max
         self.use_sensitivity = use_sensitivity
+        self.use_adaptive = use_adaptive   # ablation: False = fixed grid only
+        self.use_dual = use_dual           # ablation: False = product only
         self.reset()
 
     def reset(self):
@@ -196,6 +199,8 @@ class TempoMonitor:
     def log_combined(self) -> float:
         logs = np.array([self.logE[c] for c in self.CONT])
         log_prod = logs.sum()
+        if not self.use_dual:
+            return float(log_prod)
         log_mean = float(np.logaddexp.reduce(logs) - np.log(len(logs)))
         return float(np.logaddexp(log_prod, log_mean) - np.log(2.0))
 
@@ -221,21 +226,27 @@ class TempoMonitor:
                 self.ewma["accident_ratio"], 1e-6)), 0.0, 4.0)) * s
             lam = event["lam0dt"]
             n = event["n"]
-            e_ad = np.exp(th_a * n - lam * (np.exp(th_a) - 1.0))
             th = np.asarray(POISSON_GRID) * s
             e_gr = np.mean(np.exp(th * n - lam * (np.exp(th) - 1.0)))
-            e = 0.5 * e_ad + 0.5 * e_gr
+            if self.use_adaptive:
+                e_ad = np.exp(th_a * n - lam * (np.exp(th_a) - 1.0))
+                e = 0.5 * e_ad + 0.5 * e_gr
+            else:
+                e = e_gr
             r = n / max(lam, 1e-9)
             self.ewma["accident_ratio"] = (self.beta *
                                            self.ewma["accident_ratio"]
                                            + (1 - self.beta) * r)
         else:
             z = event["z"]
-            th_a = float(np.clip(self.ewma[ch], 0.0, self.theta_max)) * s
-            e_ad = np.exp(th_a * z - 0.5 * th_a ** 2)
             th = np.asarray(ADAPT_GRID) * s
             e_gr = np.mean(np.exp(th * z - 0.5 * th ** 2))
-            e = 0.5 * e_ad + 0.5 * e_gr
+            if self.use_adaptive:
+                th_a = float(np.clip(self.ewma[ch], 0.0, self.theta_max)) * s
+                e_ad = np.exp(th_a * z - 0.5 * th_a ** 2)
+                e = 0.5 * e_ad + 0.5 * e_gr
+            else:
+                e = e_gr
             self.ewma[ch] = self.beta * self.ewma[ch] + (1 - self.beta) * z
 
         self.logE[ch] += float(np.log(max(e, 1e-300)))

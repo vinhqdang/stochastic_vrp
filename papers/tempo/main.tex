@@ -689,49 +689,123 @@ $\F_{n-1}$, that measures how decision-relevant a unit of drift in
 factor $k$ would be at event $n$ given the plan's current state. The
 tilt actually applied at event $n$ is then $\theta_j(n) = \theta_j
 \cdot s_k(n)$ for each grid point $\theta_j$ --- the grid itself is
-unchanged, but its reach is scaled by the plan's own sensitivity.
+unchanged, but its reach is scaled by the plan's own sensitivity. We
+derive the general form these weights should take before fixing the
+specific closed forms used in the computational study, so that the
+closed forms can be judged as approximations to a stated target rather
+than as unmotivated definitions.
 
-\emph{Demand.} The planning layer's recourse policy intervenes on a
-route exactly when the fitted continuation cost of carrying the
-current load onward, $\widehat C(W)$, exceeds the cheapest available
-recourse price, $\min(H, R+F)$ for a handoff price $H$ and a
-restock-then-continue price $R+F$; the optimal-stopping boundary is
-therefore a level set of the running load $W$ relative to the route's
-residual capacity $B$. We define
+\emph{What the weight should measure, derived.} Write $D(W) :=
+\widehat C(W) - \min(H, R+F)$ for the (signed) distance, in cost units,
+between the fitted continuation cost of carrying load $W$ onward and
+the cheapest available recourse price; the planning layer's recourse
+policy intervenes exactly when $D(W) > 0$, so $\{D = 0\}$ is the
+optimal-stopping boundary. A demand realization $g_n$ at event $n$
+updates the load to $W_{n-1} + g_n$; to first order in $g_n$,
+\begin{equation}\label{eq:dtaylor}
+D(W_{n-1} + g_n) \approx D(W_{n-1}) + \widehat C'(W_{n-1})\, g_n,
+\end{equation}
+so the recourse decision \emph{flips} at event $n$ --- the event that
+makes the drift decision-relevant --- precisely when $|D(W_{n-1})| <
+|\widehat C'(W_{n-1})|\,|g_n|$. Since $g_n$ has scale $\sigma_{g,n}$,
+the probability of a flip is, to first order, a decreasing function of
+the single ratio
+\begin{equation}\label{eq:truesens}
+r(n) := \frac{D(W_{n-1})}{\widehat C'(W_{n-1})\, \sigma_{g,n}}
+\end{equation}
+--- large $|r(n)|$ means the load sits far from the boundary relative
+to the size of a typical shock, and a unit of drift is very unlikely to
+matter; $r(n) \approx 0$ means the load sits within one typical shock
+of the boundary, where drift is maximally decision-relevant. This
+$r(n)$, or more precisely a bounded monotone transform of it such as
+$1 - \min(|r(n)|,1)$, is the \emph{target} sensitivity: it is exactly
+the local, first-order-correct measure of decision relevance, and it is
+what Theorem~\ref{thm:growth}'s cost-gradient component $c_{\mathrm
+{demand}}(n)$ formally denotes.
+
+Equation~\eqref{eq:truesens} requires the fitted derivative $\widehat
+C'(W_{n-1})$ at every event, which is an additional quantity beyond
+what the planning layer already reports. We instead use the
+closed-form proxy
 \begin{equation}\label{eq:sensdemand}
 s_{\mathrm{demand}}(n) = 1 - \min\!\left(\frac{|B - W_{n-1}|}{B}, 1\right),
 \end{equation}
-the closeness of the running load $W_{n-1}$, before event $n$'s demand
-realizes, to the capacity boundary $B$: near the boundary, a small
-demand shock is enough to flip the optimal recourse decision, and the
-sensitivity is large; early in the route, with $W_{n-1}$ far from $B$,
-the same shock changes nothing, and the sensitivity --- correctly ---
-is small.
+which coincides with $r(n)$'s qualitative behavior --- decreasing in
+distance from a boundary, saturating away from it --- under two
+simplifying conditions we state explicitly rather than leave implicit:
+(i) the stopping boundary $\{D = 0\}$ lies near the physical capacity
+$B$, so that $B$ itself is a usable proxy for the boundary's location
+without fitting $D$ directly; and (ii) the product $\widehat
+C'(W)\,\sigma_{g,n}$ that rescales true distance into shock units in
+Equation~\eqref{eq:truesens} is approximately constant along the route,
+so that raw distance and rescaled distance are monotone transforms of
+one another. Both conditions hold by construction in the
+optimal-stopping recourse model of Section~\ref{sec:model} (the
+boundary is a level set of $W$ at $B$, and $\sigma_{g,n}$ is drawn from
+a common historical distribution across stops), but need not hold in
+every routing model, and we flag this as a stated limitation rather
+than a hidden one: a planning layer whose fitted $\widehat C(\cdot)$ is
+strongly nonlinear, or whose demand volatility varies sharply across
+stops, would be better served by computing Equation~\eqref{eq:truesens}
+directly from the fitted value function's own derivative, at the
+implementation cost of exposing that derivative to the monitor. Both
+$D(W_{n-1})$ and $\widehat C'(W_{n-1})$, when used, are functions of
+information realized strictly before event $n$ and hence
+$\F_{n-1}$-measurable, so Proposition~\ref{prop:coupledvalidity} below
+covers either choice identically; the two differ only in how closely
+they track the growth-optimal direction of Theorem~\ref{thm:growth},
+never in validity.
 
-\emph{Travel, dwell, and accidents.} These three factors' decision
-relevance is governed by how much of the plan remains to be executed,
-since a leg-time or dwell-time shock early in a long remaining route
-compounds over more downstream stops than the same shock late in a
-short one:
+\emph{Travel, dwell, and accidents.} An analogous first-order argument
+governs the remaining three continuous channels under an additive
+lateness-cost model: if each of the $m$ stops carries an (approximately
+uniform) lateness penalty and a delay on the leg into stop $k$
+propagates additively to every stop still to be served --- the standard
+delay-propagation assumption of deterministic scheduling theory --- then
+the marginal cost impact of a one-unit travel- or dwell-time shock at
+stop $k$ is proportional to the \emph{count} of downstream stops still
+exposed to it, giving the closed form
 \begin{equation}\label{eq:sensrest}
 s_{\mathrm{travel}}(n) = s_{\mathrm{dwell}}(n) = s_{\mathrm{accident}}(n)
 = \frac{m - k + 1}{m},
 \end{equation}
-the fraction of the route's $m$ stops still ahead at stop $k$. For the
-zonal congestion pocket of Section~\ref{sec:model}, the same fraction
-is computed only over legs whose destination currently lies inside the
-affected zone, so that a fleet-pooled monitor correctly assigns zero
-sensitivity to vehicles routed elsewhere.
+the fraction of the route's $m$ stops still ahead at stop $k$. We flag
+the same class of limitation as for demand: Equation~\eqref{eq:sensrest}
+weights every downstream stop equally, so it correctly captures how
+\emph{many} stops a shock threatens but not how much any one of them
+individually costs to miss. A stop with a hard time window and a high
+penalty contributes the same weight as an ordinary stop with slack;
+the reviewer-facing failure mode this produces --- a single, tightly
+windowed, high-value stop near the route's end receiving too little
+weight because the remaining-fraction $(m-k+1)/m$ is small there even
+though its own marginal cost is large --- is real, and the correct
+refinement is a per-stop-penalty-weighted downstream sum rather than a
+raw count, computable if per-stop time-window and penalty data are
+attached to each route (our harness, following
+Section~\ref{sec:model}, does not model time windows, so we cannot
+fit or evaluate that refinement here without introducing an entirely
+new set of null-model parameters, and we say so rather than
+implicitly assume a homogeneous-penalty world is the general case).
+For the zonal congestion pocket of Section~\ref{sec:model}, the same
+fraction is computed only over legs whose destination currently lies
+inside the affected zone, so that a fleet-pooled monitor correctly
+assigns zero sensitivity to vehicles routed elsewhere.
 
 \emph{Breakdowns.} A breakdown is decision-relevant at every point of
 the route by construction, $s_{\mathrm{breakdown}}(n) \equiv 1$; its
 statistical treatment is deferred to the rare-event stake of
 Equation~\eqref{eq:bernoullibet}.
 
-Every sensitivity above is a function of $W_{n-1}$, $B$, $k$, and $m$
---- all realized strictly before event $n$ --- and is therefore
-$\F_{n-1}$-measurable, so it may be substituted directly for a fixed
-tilt in Proposition~\ref{prop:validity} without disturbing its proof.
+Every sensitivity above is a function of information realized strictly
+before event $n$ and is therefore $\F_{n-1}$-measurable, so it may be
+substituted directly for a fixed tilt in Proposition~\ref{prop:validity}
+without disturbing its proof --- this measurability property, and only
+this property, is what Proposition~\ref{prop:coupledvalidity} certifies;
+it is deliberately agnostic to which of the sensitivity functions above,
+or their exact-gradient refinements, is used, which is why the
+approximations just flagged cost the paper nothing in validity and are
+purely a question of statistical power, addressed directly by
+Theorem~\ref{thm:growth}.
 
 \begin{proposition}[validity of the coupled process]\label{prop:coupledvalidity}
 Proposition~\ref{prop:validity} holds verbatim with $\theta_j(n)$
@@ -848,20 +922,69 @@ $\Prob_{P_0}(\exists\, n : C_n \ge 1/\alpha) \le \alpha$.
 \end{proposition}
 
 \begin{proof}{Proof}
-Each channel's process $E_k(n)$ is itself an e-process by
-Proposition~\ref{prop:coupledvalidity} applied channel-by-channel
-(treating events where $k$ does not fire as contributing a factor of
-one), hence $\E_{P_0}[E_k(n)] \le 1$ for every $k$ and every $n$. The
-product of independent e-processes is an e-process --- the tower-
-property argument of Proposition~\ref{prop:validity} applies verbatim
-to $\prod_k E_k(n)$ under the channel-wise conditional independence of
-Section~\ref{sec:model} --- and the simple average $\tfrac{1}{4}\sum_k
-E_k(n)$ is an e-process by Lemma~\ref{lem:mixture}. The convex
-combination of the two, Equation~\eqref{eq:dualregime}, is therefore an
-e-value by Lemma~\ref{lem:mixture} applied one further time, hence
-$(C_n)$ is a nonnegative supermartingale with $\E_{P_0}[C_n] \le 1$, and
-the tail bound is again Lemma~\ref{lem:ville}. \Halmos
+We first show $\prod_k E_k(n)$ is itself an e-process, and deliberately
+\emph{without} invoking any cross-channel independence assumption,
+because none is needed: by construction (Section~\ref{sec:model}),
+exactly one channel is realized at every event $n$. Consequently, at
+any event $n$ with $\mathrm{channel}(n) = k^\ast$, every factor
+$E_j(n-1)$ for $j \ne k^\ast$ is already $\F_{n-1}$-measurable (it did
+not update at $n$, by definition of $E_j$), and only $E_{k^\ast}(n) =
+E_{k^\ast}(n-1)\, e_{k^\ast}(n)$ contains genuine randomness at $n$.
+Hence
+\begin{align*}
+&\E_{P_0}\Bigl[\textstyle\prod\nolimits_k E_k(n) \,\Big|\, \F_{n-1}\Bigr] \\
+&\quad= \Bigl(\textstyle\prod\nolimits_{j \ne k^\ast} E_j(n-1)\Bigr)\,
+E_{k^\ast}(n-1) \\
+&\qquad {}\times \E_{P_0}\bigl[e_{k^\ast}(n) \mid \F_{n-1}\bigr] \\
+&\quad= \textstyle\prod\nolimits_k E_k(n-1),
+\end{align*}
+using only that the $F_{n-1}$-measurable factors pull out of the
+conditional expectation and that $\E_{P_0}[e_{k^\ast}(n) \mid \F_{n-1}]
+= 1$ by Proposition~\ref{prop:coupledvalidity} applied to the single
+channel that actually fires. This is the same asynchronous-update
+argument already used in the proof of
+Proposition~\ref{prop:validity}, applied here to a product of
+per-channel running processes rather than to a single running process;
+no assumption about the joint law across channels --- independent or
+otherwise --- enters at any step, because at most one channel's
+conditional distribution is ever queried at a given $n$. The simple
+average $\tfrac{1}{4}\sum_k E_k(n)$ is an e-process by
+Lemma~\ref{lem:mixture} directly (each $E_k(n)$ already is one). The
+convex combination of the two, Equation~\eqref{eq:dualregime}, is
+therefore an e-value by Lemma~\ref{lem:mixture} applied one further
+time, hence $(C_n)$ is a nonnegative supermartingale with
+$\E_{P_0}[C_n] \le 1$, and the tail bound is again Lemma~\ref{lem:ville}.
+\Halmos
 \end{proof}
+
+\begin{remark}[what this proof does not need, and what it does not
+claim]\label{rem:independence}
+Proposition~\ref{prop:dualregime}'s validity is unconditional on
+whether the five factors are correlated with one another in reality;
+it holds as long as each channel's null law, \emph{as specified in
+Section~\ref{sec:model}}, is the correct conditional law of that
+channel given the full history $\F_{n-1}$ at the moment it fires. This
+is a substantive assumption about model correctness, not a mathematical
+loophole: if two channels are driven by an unmodeled common factor ---
+for instance, if heavy rain elevates both travel times and accident
+rates, but only the travel-time null (Equation~\eqref{eq:travel})
+conditions on the rain indicator $R$ while the accident null
+(Equation~\eqref{eq:accident}) does not --- then observing unusually
+high realized travel times is, in reality, informative about the
+accident channel's true conditional distribution in a way our
+specification does not capture, and the guarantee is only as good as
+the null model's fidelity to that dependence. Our construction avoids
+this specific failure mode for the one common exogenous factor the
+world model includes (rain modulates only the travel-time null, and
+does so exactly, so no other channel's conditional law is
+misspecified by omitting it), but a fuller model with, say, a
+spatio-temporally correlated congestion field that also drives
+accident rates would need every affected channel's null to condition
+on that field explicitly, exactly as the travel-time channel
+conditions on $R$ here. We flag this as a modeling-fidelity question
+distinct from, and not resolved by, the martingale argument above, and
+return to it in Section~\ref{sec:discussion}.
+\end{remark}
 
 \subsubsection{Rare-event separation}
 
@@ -900,14 +1023,54 @@ When $\tau$ fires, the dispatcher invokes a replanner (any member of
 the family in Section~\ref{sec:decision}), the new plan becomes the
 reference against which every sensitivity and null law of
 Sections~\ref{sec:model}--\ref{sec:coupling} is recomputed, and every
-channel's log-evidence resets to zero. Because the reset occurs at a
-stopping time and the post-reset process is again a fresh e-process
-against the (new) conditional null, the sequence of segments between
-resets is a sequence of independent anytime-valid tests, and the
-false-alarm probability of Proposition~\ref{prop:split} applies
-identically to every segment; a day with $R$ segments therefore
-controls the false-alarm probability at $\alpha$ per segment, and the
-expected number of false replans over the day is at most $R\alpha$.
+channel's log-evidence resets to zero. We prove the resulting
+per-segment guarantee directly rather than by appeal to segment
+independence, because the segments are \emph{not} independent in
+general --- the replanner changes the state the next segment starts
+from, so later segments' statistics depend on earlier ones in whatever
+way the replanner induces. The argument below needs none of that
+independence.
+
+\begin{proposition}[segment-wise validity under reset]\label{prop:segments}
+Let $0 = \tau_0 < \tau_1 < \tau_2 < \dots$ be the successive alarm
+(reset) times on a fully on-model ($P_0$) day, and for $i \ge 1$ let
+$A_i$ denote the event that segment $i$ (the interval $(\tau_{i-1},
+\tau_i]$) ends in an alarm. Then $\Prob_{P_0}(A_i) \le \alpha$ for
+every $i$, regardless of any dependence of segment $i$'s statistics on
+the realized history of segments $1, \dots, i-1$; consequently, for any
+fixed number of candidate segments $R$, the expected number of alarms
+among the first $R$ segments of a null day is at most $R\alpha$.
+\end{proposition}
+
+\begin{proof}{Proof}
+Fix $i$ and condition on $\F_{\tau_{i-1}}$, the information available
+at the start of segment $i$ (whatever it is --- in particular, however
+it depends on segments $1,\dots,i-1$). By construction, segment $i$'s
+combined statistic $(C_n)_{n > \tau_{i-1}}$ is a fresh e-process
+restarted at value $1$ against the conditional null specified by the
+replanned state at $\tau_{i-1}$: that is, $\E_{P_0}[C_{\tau_{i-1}+1}
+\mid \F_{\tau_{i-1}}] \le 1$ and each subsequent step satisfies the
+same conditional-mean-one property by
+Propositions~\ref{prop:coupledvalidity} and~\ref{prop:dualregime}
+applied with $\F_{\tau_{i-1}}$ in place of $\F_0$. Ville's inequality
+(Lemma~\ref{lem:ville}) is itself proved by an application of Markov's
+inequality to a nonnegative supermartingale via the tower property, and
+that proof goes through conditionally, for any starting
+$\sigma$-algebra, verbatim: $\Prob_{P_0}\bigl(\exists\, n > \tau_{i-1} :
+C_n \ge 2/\alpha \text{ or } E_{\mathrm{brk}} \ge 2/\alpha \,\big|\,
+\F_{\tau_{i-1}}\bigr) \le \alpha$ almost surely, for whatever
+$\F_{\tau_{i-1}}$ turns out to be. Taking expectations of this a.s.\
+bound over $\F_{\tau_{i-1}}$ gives the unconditional bound
+$\Prob_{P_0}(A_i) \le \alpha$. This did not use independence between
+$A_i$ and the earlier segments at any point --- only that the
+restarted process is, conditionally, an e-process from $\F_{\tau_{i-1}}$
+onward, which is true by the construction of the reset regardless of
+how $\F_{\tau_{i-1}}$ was reached. Summing
+$\Prob_{P_0}(A_i) \le \alpha$ over $i = 1, \dots, R$ and applying
+linearity of expectation to the count $\sum_{i=1}^R \mathbf{1}\{A_i\}$
+gives the stated bound on the expected number of alarms. \Halmos
+\end{proof}
+
 Algorithm~\ref{alg:tempo} summarizes the resulting monitor as
 implemented.
 
@@ -958,6 +1121,37 @@ to Section~\ref{sec:coupling}, proving that the sensitivity-tilted bet
 is the growth-optimal choice against the class of alternatives that
 matter to the routing cost, and not merely a reasonable heuristic.
 
+\textbf{What is new here, stated plainly.} Every individual
+probabilistic tool this section invokes --- Ville's inequality, Wald's
+identity, the overshoot bounds of \citet{lorden1970excess} and
+\citet{woodroofe1982nonlinear}, and elementary convex calculus --- is
+classical, and Propositions~\ref{prop:validity}--\ref{prop:split} in
+Sections~\ref{sec:eprocess}--\ref{sec:tempo} are, individually, routine
+consequences of the tower property and the union bound, stated for
+completeness rather than as claims of technical difficulty. We say this
+explicitly because a paper that borrows well-established machinery
+should not be mistaken for one that reinvents it. What we believe is
+genuinely new is not any single probabilistic inequality but the
+\emph{composition}: Theorem~\ref{thm:regret} is the first bound, to our
+knowledge, that translates a sequential test's detection-delay
+guarantee directly into a bound on \emph{realized routing cost} rather
+than on sample size or type-I/II error; Corollary~\ref{cor:alphastar}
+is the closed-form significance level that composition implies, whose
+content is economic (a formula fleet operators can compute from three
+quantities they already track) rather than mathematical (the
+optimization itself is a two-line convexity argument, and we do not
+claim otherwise); Theorem~\ref{thm:waiting} formalizes, in a
+deliberately stylized model rather than full generality, why an
+evidence-gated trigger can dominate an immediate one when the
+downstream decision is itself statistical; and Theorem~\ref{thm:growth}
+is the paper's central methodological claim, showing that the
+decision-relevant sensitivity weights of Section~\ref{sec:coupling}
+--- introduced there as a modeling choice --- are in fact the unique
+growth-optimal weights against a natural, if necessarily stylized,
+class of cost-relevant alternatives, rather than merely one heuristic
+choice among many. Section~\ref{sec:coupling} states, and this section
+proves, exactly how heuristic that choice is and is not.
+
 \subsection{Setup}
 
 One operating day produces events $n = 1, \dots, N$ with observations
@@ -990,6 +1184,32 @@ P_0)$ by the consistency of the aGRAPA-style estimator
 \citep{waudbysmithramdas2024}.
 \end{assumption}
 
+\begin{remark}[what Assumption~\ref{ass:growth} does and does not buy]\label{rem:growth}
+$g > 0$ is not a technical convenience but the minimal identifiability
+condition any test of $P_0$ against $P_1$ must satisfy: if every grid
+tilt had zero or negative expected log-growth under $P_1$, no
+betting-based test --- ours or any competitor's --- could detect the
+change faster than chance, since $g \le 0$ is equivalent to the
+best available bet being unable to distinguish $P_1$ from $P_0$ in the
+direction the grid searches. For the fixed grid this is a property of
+the grid and the true alternative, verifiable in simulation
+(Section~\ref{sec:study} reports $g$ implicitly through the realized
+detection delays) but not guaranteed by construction for an arbitrary,
+unanticipated $P_1$: a change whose direction is orthogonal to every
+grid tilt is, correctly, not detected by this term of the theorem
+(this is exactly the information-limited regime documented for the
+mild accident scenario in Table~\ref{tab:detection}). For the adaptive
+bet, $g \to \KL(P_1 \Vert P_0)$ is a stated \emph{consistency} property
+of the aGRAPA estimator under the regularity conditions of
+\citet{waudbysmithramdas2024} (bounded increments and a persistently
+exciting residual stream), not an additional assumption we introduce;
+Theorem~\ref{thm:regret}'s bound is accordingly conditional on this
+convergence having approximately occurred by the time $\tau$ is
+reached, which the dual-regime combination of
+Section~\ref{sec:tempo} is designed to make robust to but which the
+theorem does not itself certify for small post-change sample sizes.
+\end{remark}
+
 We also record $C_{\mathrm{fr}} > 0$, the expected cost of one
 unnecessary invocation of $\Rmax$ on an on-model day (the detour or
 coordination cost $\Rmax$ induces when nothing was actually wrong).
@@ -1021,26 +1241,51 @@ policies have invoked the identical $\Rmax$ their subsequent costs
 coincide; telescoping over the $\tau - \nu$ stale events bounds the
 cost difference on this event by $\Delta_c (\tau - \nu)$.
 
-It remains to bound $\E[(\tau - \nu)^+ \mid \tau \ge \nu]$. Conditional
-on $\tau \ge \nu$, the log e-process increments after $\nu$ have
-conditional expectation at least $g$ under $P_1$ by
-Assumption~\ref{ass:growth}, so $(\log E_{\nu + j} - jg)_{j \ge 0}$ is
-(conditionally) a submartingale increment sequence bounded below in
-expectation, and $\tau - \nu$ is the first $j$ at which $\log E_{\nu+j}$
-exceeds $\log(1/\alpha)$. A standard sequential-analysis argument for
-randomly stopped sums with positive drift --- the same argument
-underlying Wald's identity for the expected sample size of a sequential
-probability ratio test --- gives
+It remains to bound $\E[(\tau - \nu)^+ \mid \tau \ge \nu]$, and here we
+give a complete argument rather than an appeal to informal analogy,
+distinguishing the two betting regimes of Section~\ref{sec:tempo}.
+
+For the fixed-grid mixture bet, and under the iid-post-change reading
+of Assumption~\ref{ass:kl}, the log-increments $Y_j := \log
+e^{\mathrm{g}}(\theta_j^\ast; z_{\nu+j})$ of the optimal grid component
+after $\nu$ are i.i.d.\ under $P_1$ with mean $g > 0$ by
+Assumption~\ref{ass:growth} and finite variance, since each $Y_j$ is
+almost surely bounded by $\max_j |\theta_j z - \tfrac12 \theta_j^2|$
+over the finite grid $\Theta$ (a bounded random variable has finite
+moments of every order). The quantity $\tau - \nu$ is exactly the
+first-passage time of the random walk $S_j = \sum_{i=1}^j Y_i$ over the
+level $\log(1/\alpha)$, which is almost surely finite by the strong law
+of large numbers ($g>0$ implies $S_j \to \infty$). Wald's identity
+\citep{wald1945sequential} applied to this a.s.-finite stopping time
+gives $\E[S_{\tau-\nu}] = g\,\E[\tau-\nu]$; since $S_{\tau-\nu} =
+\log(1/\alpha) + \big(S_{\tau-\nu} - \log(1/\alpha)\big)$ and the second
+term is the (nonnegative) overshoot of the random walk past its
+boundary, Lorden's classical inequality for the overshoot of a random
+walk with positive drift \citep{lorden1970excess} bounds its
+expectation by $\kappa := \E[Y_1^2]/(2g) < \infty$, the finiteness
+following from the boundedness of $Y_1$ established above. Combining,
 \begin{equation}\label{eq:wald}
 \E[(\tau - \nu)^+ \mid \tau \ge \nu] \ \le\ \frac{\log(1/\alpha) +
-\kappa}{g},
+\kappa}{g}.
 \end{equation}
-where $\kappa$ is the expected overshoot of $\log E_n$ past
-$\log(1/\alpha)$ in the single step that crosses it, bounded because
-each mixture bet's log-increment is bounded by $\max_j |\theta_j
-z_n - \tfrac12\theta_j^2|$ over the finite grid. Combining, the
-expected cost difference on $\{\tau \ge \nu\}$ is at most $\Delta_c
-(\log(1/\alpha)+\kappa)/g$.
+
+The adaptive bet of Equation~\eqref{eq:adaptivebet} complicates this
+argument only technically, not in substance: because its tilt
+$\widehat\theta_k(n)$ depends on the EWMA of past residuals, its
+log-increments are no longer i.i.d., so Wald's identity does not apply
+verbatim. The sequence $(\log E_{\nu+j} - jg)_{j \ge 0}$ is nonetheless
+a submartingale with increments bounded almost surely by the clipped
+tilt range $[0,\theta_{\max}]$ (Equation~\eqref{eq:ewma}), and the
+identical overshoot argument generalizes to this setting via nonlinear
+renewal theory \citep{woodroofe1982nonlinear}, which extends Lorden's
+bound to stopped sums of dependent, uniformly bounded increments with a
+uniform lower bound on conditional drift; the resulting bound has the
+same form as Equation~\eqref{eq:wald}, with $\kappa$ now governed by
+the uniform per-step increment bound $\theta_{\max}$ rather than a
+fixed second moment. In either regime $\kappa$ is a finite,
+well-defined constant determined entirely by the betting grid, and
+Equation~\eqref{eq:wald} holds. Combining, the expected cost difference
+on $\{\tau \ge \nu\}$ is at most $\Delta_c (\log(1/\alpha)+\kappa)/g$.
 
 \emph{Case $\tau < \nu$ (a false alarm before the true change).} By
 Proposition~\ref{prop:validity} (or~\ref{prop:split} for the assembled
@@ -1095,6 +1340,22 @@ minimizer by convexity; clipping to the feasible range $(0,1]$ gives
 Equation~\eqref{eq:alphastar}. \Halmos
 \end{proof}
 
+The optimization itself is two lines of undergraduate calculus, and we
+do not present it as a technical contribution; the argument in
+Theorem~\ref{thm:regret} that produces $\mathrm{Regret}(\alpha)$'s
+particular functional form is where the work lies. What Corollary
+\ref{cor:alphastar} contributes is the translation of that form into a
+decision rule stated entirely in quantities a fleet already measures
+--- a per-event staleness cost, an empirical detection rate, and an
+unnecessary-replan cost --- in place of a significance level chosen by
+disciplinary convention. The same closed form appears throughout
+economics and operations research whenever a convex trade-off between
+a logarithmic and a linear term is optimized (the classical
+economic-order-quantity formula has the same two-line derivation and
+the same practical status: not hard to derive, useful because of what
+it lets a manager compute); we make no larger claim for
+Equation~\eqref{eq:alphastar} than that.
+
 Corollary~\ref{cor:alphastar} recasts $\alpha$ from a statistical
 convention into a price: the ratio of the per-event cost of staying
 stale to the product of the monitor's evidence rate and the cost of an
@@ -1138,18 +1399,56 @@ $\mu$. The population-optimal split, were $\mu$ known, is the fraction
 \end{equation}
 of the remaining pool assigned to $A$; because the rebalancer instead
 uses $\widehat\mu(s) = \mu + O_p(\sigma/\sqrt s)$, its achieved split
-deviates from Equation~\eqref{eq:optsplit} by the same order, and a
-second-order (delta-method) expansion of the expected combined breach
-cost around the population optimum translates this estimation error
-into an expected excess cost
-\begin{equation}\label{eq:vs}
-V(s) = \frac{\kappa_0\, \sigma^2}{s},
-\end{equation}
-for a positive constant $\kappa_0$ that depends on the local curvature
-of the breach-cost function and the size of the remaining pool; $V(s)$
-is strictly decreasing in $s$, formalizing the intuition that
-information about $\mu$ accrues, and the value of a plug-in estimate
-improves, the longer the rebalancer waits.
+$\widehat\rho(s) := \rho^\ast(\widehat\mu(s))$ deviates from
+Equation~\eqref{eq:optsplit} by the same order. We complete the
+delta-method argument explicitly rather than leave it asserted. Let
+$\Phi(\rho)$ denote the expected combined breach cost of assigning
+fraction $\rho$ of the remaining pool to $A$, twice continuously
+differentiable near $\rho^\ast(\mu)$ with $\Phi'(\rho^\ast(\mu)) = 0$
+(the population optimum is interior and stationary) and
+$\Phi''(\rho^\ast(\mu)) > 0$ (a strict local minimum). A second-order
+Taylor expansion of $\Phi$ around the true optimum gives
+\begin{align}
+\Phi(\widehat\rho(s)) - \Phi(\rho^\ast(\mu))
+&\approx \tfrac12\, \Phi''(\rho^\ast(\mu)) \notag \\
+&\quad {}\times \bigl(\widehat\rho(s) - \rho^\ast(\mu)\bigr)^2,
+\label{eq:phiexpand}
+\end{align}
+since the first-order term vanishes at a stationary point. A first-order
+Taylor expansion of $\rho^\ast(\cdot)$ itself, which is smooth in $\mu$
+by its closed form~\eqref{eq:optsplit} with derivative $(\rho^\ast)'(\mu)
+= -(Y_A - Y_B)/\bigl(2(n-s)\mu^2\bigr)$, gives $\widehat\rho(s) -
+\rho^\ast(\mu) \approx (\rho^\ast)'(\mu)\,\bigl(\widehat\mu(s) -
+\mu\bigr)$. Since $\widehat\mu(s)$ is the mean of $s$ i.i.d.\
+post-change observations, $\E\bigl[(\widehat\mu(s)-\mu)^2\bigr] =
+\sigma^2/s$ exactly (the sampling variance of a sample mean), so taking
+expectations of Equation~\eqref{eq:phiexpand} gives
+\begin{align}
+V(s) &:= \E\bigl[\Phi(\widehat\rho(s))\bigr] - \Phi(\rho^\ast(\mu))
+\ \approx\ \frac{\kappa_0\, \sigma^2}{s}, \label{eq:vs}\\
+\kappa_0 &:= \tfrac12\, \Phi''(\rho^\ast(\mu))\,
+\bigl[(\rho^\ast)'(\mu)\bigr]^2, \notag
+\end{align}
+an explicit, computable constant given the breach-cost curvature
+$\Phi''$ and the closed-form split sensitivity $(\rho^\ast)'(\mu)$;
+both are, in principle, available from the same fleet-slack data
+$(Y_A, Y_B, n-s)$ that defines $\rho^\ast$ itself, though we do not fit
+$\Phi$ explicitly in the computational study and instead treat
+$\kappa_0$ as a free positive constant, exactly as $\Delta_c$ and $g$
+are treated in Theorem~\ref{thm:regret}. $V(s)$ is strictly decreasing
+in $s$, formalizing the intuition that information about $\mu$
+accrues, and the value of a plug-in estimate improves, the longer the
+rebalancer waits. We emphasize what this derivation does and does not
+establish: it is a local (small-estimation-error), single-parameter
+(scalar $\mu$) approximation for a two-vehicle, single-rebalancing-
+decision model: a real fleet rebalancer solves a combinatorial
+reinsertion problem over many customers and many routes
+(Section~\ref{sec:decision}), and Equation~\eqref{eq:vs} is offered as
+the simplest model in which the qualitative mechanism --- more
+realized information lowers the expected cost of a state-dependent
+decision --- can be made exact, not as a claim that Equation
+\eqref{eq:vs} literally governs the reinsertion heuristic used in
+Section~\ref{sec:study}.
 
 \begin{assumption}\label{ass:waiting}
 (B1) The rebalancer's plug-in excess cost obeys Equation~\eqref{eq:vs}
@@ -1232,6 +1531,34 @@ the cost-relevant alternative class
 \end{equation}
 the hyperplane of joint drift directions whose first-order impact on
 routing cost equals a fixed threshold $\Delta > 0$.
+
+$\mathcal P_\Delta$ is a modeling choice, not a derived object, and we
+state plainly why we make it rather than leave it to be inferred: it is
+the routing-cost analogue of the contamination and shrinking
+neighborhoods long used to define worst-case performance in robust
+statistics, where an estimator or test is designed to be optimal
+against the \emph{least favorable} member of a constraint set rather
+than against every conceivable alternative
+\citep{huber1964robust}. Just as Huber's minimax framework does not
+claim that every real deviation from a parametric model lies exactly on
+its contamination neighborhood's boundary, we do not claim every real
+drift lies exactly on the hyperplane $\mathcal P_\Delta$; the theorem
+below characterizes the tilt that is optimal \emph{against the worst
+case within this class}, and the class is chosen to formalize
+``alternatives with a specified linearized cost impact'' in the
+simplest possible way, a linear constraint on the same cost-gradient
+vector $c$ that Section~\ref{sec:coupling} already uses to build the
+sensitivity proxies. A different, non-linear specification of ``equal
+cost impact'' would define a different, generally curved constraint
+set and could in principle favor a different tilt direction; we see no
+evidence in the computational study
+(Section~\ref{sec:study}) that this matters in practice --- the
+detection-rate margins of Table~\ref{tab:detection} are consistent with
+the linearized theory throughout the drift magnitudes tested --- but we
+do not claim the linear class is forced upon us by the routing problem
+itself, only that it is the natural first-order one, exactly as
+Huber's neighborhoods are the natural first candidates for robust
+location estimation rather than the only conceivable ones.
 
 \begin{theorem}[growth-optimality of the decision-relevant tilt]\label{thm:growth}
 Among predictable joint tilts $\theta \in \mathbb R^K$, the worst-case
@@ -1397,7 +1724,7 @@ log-mean multipliers, demand/dwell magnitudes are standard-deviation
 shifts, accident/breakdown magnitudes are rate ratios.}
 \end{table}
 
-\subsection{Baselines}
+\subsection{Baselines}\label{sec:baselines}
 
 We compare TEMPO against ten baselines spanning classical sequential
 detection, the anytime-valid e-detector framework, and the
@@ -1444,6 +1771,53 @@ realized rate by the identical protocol used for CUSUM and
 Page--Hinkley, so that every non-anytime-valid or improperly-calibrated
 baseline is given the most favorable possible threshold before TEMPO's
 detection rate is compared against it.
+
+\emph{Tuning protocol, stated explicitly.} TEMPO itself is not tuned
+per instance or per scenario: $\alpha = 0.05$, the fixed grids $\Theta$
+and the Poisson grid (Section~\ref{sec:eprocess}), the EWMA rate $\beta
+= 0.8$ and clip $\theta_{\max} = 2.5$ (Section~\ref{sec:tempo}) are
+fixed once across the entire 73-instance, 19-scenario grid; no
+per-scenario or per-instance search over these constants was performed.
+\emph{Periodic} and \emph{rolling-opt} use conventional, literature-
+default cadences (40 events and 5 events respectively) rather than
+cadences tuned to this data. \emph{CUSUM}, \emph{Page--Hinkley}, and
+the two e-detectors are the only baselines that receive any
+data-dependent tuning at all, and it is oracle calibration --- their
+threshold is set from 100 held-out null-day Monte Carlo streams to
+match TEMPO's own realized false-alarm rate exactly, a procedure no
+dispatcher could run without already knowing the answer TEMPO
+produces, and one which by construction can only help these baselines'
+reported detection rate relative to an untuned deployment of them. No
+monitor in the detection-rate comparison receives a materially
+different computational budget: every one of them is an $O(1)$-per-
+event streaming statistic (Section~\ref{sec:complexity} makes this
+precise for TEMPO), so there is no asymmetry in compute time to control
+for, only the asymmetry in calibration information just described,
+which is resolved in the baselines' favor throughout.
+
+\subsection{Computational complexity}\label{sec:complexity}
+
+Before turning to results, we record the monitor's cost, since a
+detection layer that competes with re-optimization on realized economics
+must itself be cheap relative to the re-optimization it gates. Each
+event's update (Algorithm~\ref{alg:tempo}) touches one channel and costs
+$O(J)$ arithmetic operations to evaluate its mixture bet over a grid of
+$J$ points ($J \le 4$ throughout), plus an $O(1)$ EWMA update
+(Equation~\eqref{eq:ewma}); the combination statistic
+(Equation~\eqref{eq:dualregime}) is $O(K)$ in the number of channels
+($K=5$, fixed). State is $O(K)$ words --- one running log-evidence and
+one EWMA per channel --- independent of the route length $m$ or the
+elapsed horizon $n$, since the monitor is a streaming statistic rather
+than one that revisits past events. Pooling a fleet of $F$ vehicles into
+one monitor (Section~\ref{sec:study}) does not change this per-event
+cost; it only increases the number of events processed over the day to
+$O(Fm)$, so total monitor cost over a day is $O(FmJ)$, with $J$ and $K$
+small constants. This is negligible next to any of the replanning
+backends of Section~\ref{sec:decision}: even the cheapest,
+nearest-neighbor-plus-2-opt re-sequencing, is $O(m^2)$ per call, and the
+exact and fleet-rebalancing backends are more expensive still, so the
+monitor's cost is not the bottleneck of the trigger-plus-replan pipeline
+under any backend we evaluate.
 
 \subsection{Metrics}
 
@@ -1576,7 +1950,9 @@ where TEMPO's margin over the classical baselines is largest ---
 0.31 on \texttt{demand\_severe} against TEMPO's 0.88, 0.60 on
 \texttt{traffic\_late} against 0.98 --- confirming that the adaptive bet
 is the primary source of statistical power and the dual-regime
-combination its safety net against single-channel drift. A second
+combination its safety net against single-channel drift.
+Section~\ref{sec:ablation} isolates these two components, and the
+sensitivity tilt itself, incrementally rather than jointly. A second
 ablation, the e-SR/e-CUSUM comparison itself, isolates a different
 margin: the general nonparametric restart machinery of
 \citet{shin2024edetectors}, built from TEMPO's own bets but without
@@ -1594,6 +1970,79 @@ TEMPO detects on 0.82 of City instances against \texttt{cusum\_match}'s
 0.54, 0.78 against 0.58 on Salhi--Nagy, and 0.71 against 0.52 on
 Dethloff --- the margin the grid documents is not an artifact of any one
 benchmark's structure.
+
+\subsection{Component ablation: which piece does the work}\label{sec:ablation}
+
+The two-point ablation above (\texttt{tempo\_flat} versus full TEMPO)
+conflates three design choices --- the sensitivity tilt
+(Section~\ref{sec:coupling}), adaptive EWMA betting, and the dual-regime
+combination (Section~\ref{sec:tempo}) --- into a single comparison. We
+isolate each incrementally on a smaller, tractable grid (15 instances,
+five per family, $\times$ eight representative scenarios $\times$ 15
+days) to avoid conflating their effects: \texttt{flat} has none of the
+three; \texttt{tilt} adds only the sensitivity weighting to a fixed
+grid; \texttt{tilt\_adapt} adds adaptive betting on top of that; and
+\texttt{tempo2} adds the dual-regime combination on top of both,
+recovering the full monitor.
+
+\begin{table}
+\TABLE
+{Component ablation: detection rate by incremental feature (15
+instances, 15 days).\label{tab:ablation}}
+{\begin{tabular}{@{}lcccc@{}}
+\toprule
+scenario & flat & +tilt & +tilt+adapt & \textbf{tempo2 (+dual)} \\
+\midrule
+\texttt{demand\_mild}   & 0.000 & 0.000 & 0.022 & \textbf{0.013} \\
+\texttt{demand\_ramp}   & 0.111 & 0.040 & 0.173 & \textbf{0.276} \\
+\texttt{demand\_severe} & 0.351 & 0.129 & 0.538 & \textbf{0.756} \\
+\texttt{dwell\_mild}    & 0.333 & 0.698 & 0.956 & \textbf{0.973} \\
+\texttt{rush\_crush}    & 0.982 & 0.982 & 0.991 & \textbf{0.996} \\
+\texttt{traffic\_late}  & 0.671 & 0.707 & 0.942 & \textbf{0.960} \\
+\texttt{traffic\_mild}  & 0.076 & 0.236 & 0.600 & \textbf{0.684} \\
+\bottomrule
+\end{tabular}}
+{False-alarm rate on the null (not shown per-scenario) is 0.004 for
+flat/tempo2 and 0.009 for tilt/tilt\_adapt, all $\le \alpha = 0.05$;
+every variant remains valid, since Propositions~\ref{prop:coupledvalidity}
+and~\ref{prop:dualregime} hold for any of the four configurations.}
+\end{table}
+
+The table contains a result we did not anticipate and report because
+it is informative rather than because it is flattering: the
+sensitivity tilt \emph{alone}, without adaptive betting, is not
+uniformly better than no tilt at all --- it \emph{hurts} on the two
+demand scenarios (\texttt{demand\_ramp} 0.111 $\to$ 0.040,
+\texttt{demand\_severe} 0.351 $\to$ 0.129) before adaptive betting is
+added. The mechanism is exactly what Section~\ref{sec:coupling}'s
+derivation predicts: the demand sensitivity $s_{\mathrm{demand}}(n)$ is
+small whenever the running load sits far from the capacity boundary,
+which correctly reflects low decision-relevance, but a \emph{fixed}
+grid tilt scaled down by a small $s(n)$ is also a \emph{weaker}
+statistical bet in absolute terms, and early-to-mid-route demand drift
+generates most of its evidence exactly where $s(n)$ is smallest. Only
+once the tilt is allowed to adapt --- learning the drift's true size
+online rather than relying on a fixed grid scaled by a proxy --- does
+the combination recover and exceed the untilted baseline
+(\texttt{tilt\_adapt}: 0.173 and 0.538, both above \texttt{flat}). This
+is precisely the sense in which the tilt and the adaptive mechanism are
+not independent design choices to be evaluated in isolation: the
+sensitivity weighting is only unambiguously beneficial once paired with
+a bet that can recover the strength the weighting removes, which the
+dual-regime combination then compounds further, especially on
+single-channel drift where the mean-isolation term matters most
+(\texttt{demand\_severe} \texttt{tilt\_adapt}$\to$\texttt{tempo2}:
+$0.538 \to 0.756$, the largest single-step gain in the table, against a
+near-ceiling, marginal gain on the already-multi-channel
+\texttt{rush\_crush} scenario, $0.991 \to 0.996$, exactly as
+Section~\ref{sec:tempo}'s account of when the mean term matters
+predicts). On \texttt{traffic\_late} and \texttt{traffic\_mild}, where
+travel-time drift is decision-relevant everywhere along the route
+(Equation~\eqref{eq:sensrest} is bounded away from zero throughout), the
+tilt alone already helps, and adaptive betting and the dual regime
+each add a further, smaller increment --- a different, and simpler,
+interaction than the demand case, again consistent with the
+mechanism rather than merely favorable to it.
 
 \subsection{The significance level as a price: confirming Corollary~\ref{cor:alphastar}}
 
@@ -1755,33 +2204,48 @@ of Section~\ref{sec:model} fitted directly from the data set's own
 planner-forecast travel times, planned service times, and package
 volumes rather than from any synthetic generator.
 
-Validity holds on real routes exactly as on synthetic ones: TEMPO's
-false-alarm rate is 0.018 on the plain null and 0.022 on the
-forecast-rain null, both within the nominal $\alpha = 0.05$, against
-0.032/0.022 for oracle-matched CUSUM and 0.037/0.027 for
-Page--Hinkley. The discriminating scenario on these industrial-length
+Each route contributes 12 simulated days per scenario (50 routes
+$\times$ 12 days $=$ 600 Bernoulli trials per reported rate), so we
+report 95\% Wilson score confidence intervals alongside the point
+estimates rather than point estimates alone, computed directly from
+the underlying per-route outcomes. Validity holds on real routes
+exactly as on synthetic ones: TEMPO's false-alarm rate is $0.018\
+[0.010, 0.033]$ on the plain null and $0.022\ [0.013, 0.037]$ on the
+forecast-rain null, both within the nominal $\alpha = 0.05$ with the
+upper confidence bound comfortably below it, against $0.032\ [0.020,
+0.049]$ for oracle-matched CUSUM and $0.037\ [0.024, 0.055]$ for
+Page--Hinkley (whose interval's upper end exceeds $\alpha$, consistent
+with the theoretical point that its calibration guarantee is generous
+but not exact). The discriminating scenario on these industrial-length
 routes is mild, sustained demand drift --- packages running slightly
 heavy all day, a pattern a dispatcher plausibly faces without any
-dramatic single cause --- where TEMPO detects at 0.70 against
-oracle-matched CUSUM's 0.23 and Page--Hinkley's 0.23, a threefold
-margin, with the late-onset and ramped demand variants showing the same
-pattern (0.88 against 0.82 and 0.23; 0.95 against 0.93 and 0.30).
-Traffic scenarios sit at a shared ceiling for TEMPO and CUSUM alike
-(0.86--0.97) since 150-stop routes carry overwhelming travel-time
-evidence regardless of how it is combined, while Page--Hinkley
-collapses on mild traffic drift (0.25); accident scenarios remain
-information-limited ties, and compound days saturate near 0.95 for
-every monitor. Detection is uniform across metropolitan areas (0.84--0.86
-mean detection in each of the five). We note two limitations of this
-pilot for transparency: the data set is delivery-only, so a single
-realization per route stands in for day-to-day dispersion, and because
-the data set records no realized-versus-forecast traces, drift is
-still injected rather than observed --- both are flagged for a future
-extension that pairs multiple realized days per route.
+dramatic single cause --- where TEMPO detects at $0.70\ [0.66, 0.73]$
+against oracle-matched CUSUM's $0.23\ [0.20, 0.27]$ and Page--Hinkley's
+$0.23\ [0.20, 0.27]$, non-overlapping intervals and a threefold margin,
+with the late-onset and ramped demand variants showing the same
+non-overlapping pattern ($0.88\ [0.86, 0.91]$ against $0.82\ [0.79,
+0.85]$ and $0.23\ [0.20, 0.26]$; $0.95\ [0.93, 0.96]$ against $0.93\
+[0.91, 0.95]$ and $0.30\ [0.26, 0.33]$). Traffic scenarios sit at a
+shared ceiling for TEMPO and CUSUM alike (0.86--0.97) since 150-stop
+routes carry overwhelming travel-time evidence regardless of how it is
+combined, while Page--Hinkley collapses on mild traffic drift (0.25);
+accident scenarios remain information-limited ties, and compound days
+saturate near 0.95 for every monitor. Detection is uniform across
+metropolitan areas (0.84--0.86 mean detection in each of the five). We
+note two limitations of this pilot for transparency, neither resolved
+by the confidence intervals above: the data set is delivery-only, so a
+single realization per route stands in for day-to-day dispersion (the
+$n=12$ simulated days per route share one real route geometry and one
+real set of planner forecasts, so the 600-trial count overstates the
+number of independent real-world realizations by roughly a factor of
+12), and because the data set records no realized-versus-forecast
+traces, drift is still injected rather than observed --- both are
+flagged for a future extension that pairs multiple realized days per
+route.
 
 \subsection{Retraining DGTA-RL as a fully independent baseline}\label{sec:dgta}
 
-The rolling-opt baseline of Section~9.2 reproduces the trigger cadence
+The rolling-opt baseline of Section~\ref{sec:baselines} reproduces the trigger cadence
 \citet{chen2025dgta} benchmark their own policy against, but not the
 policy itself: a Dynamic Graph Temporal Attention (DGTA) network
 trained end-to-end by reinforcement learning to resequence a route
@@ -1860,6 +2324,46 @@ $\widehat C(\cdot)$ is read, not re-estimated --- so a fleet that
 has already adopted an optimal-stopping recourse policy at the planning
 layer acquires an anytime-valid re-optimization trigger at negligible
 additional modeling cost.
+
+\textbf{Limitations, collected.} We gather here, in one place, the
+limitations flagged individually alongside the results that exposed
+them. The sensitivity proxies of Equations~\eqref{eq:sensdemand} and
+\eqref{eq:sensrest} are first-order approximations to the true,
+fitted-derivative sensitivity of Equation~\eqref{eq:truesens}, chosen
+for requiring no additional fitted quantity beyond what the planning
+layer already reports; Section~\ref{sec:coupling} states explicitly the
+conditions under which this approximation is accurate and the specific
+failure mode (a high-penalty, tightly-windowed stop weighted by raw
+stop-count rather than by its own economic importance) it does not
+capture, since our harness does not model time windows. The channel
+validity arguments of Propositions~\ref{prop:validity}--\ref{prop:split}
+require the null model's channels to be correctly specified conditional
+on the shared covariates the monitor observes (Remark
+\ref{rem:independence}); a real fleet's channels may be linked by
+unmodeled common factors beyond the single rain covariate this paper
+includes, and the martingale guarantee is only as good as that
+specification. Theorem~\ref{thm:waiting}'s value-of-waiting result is
+proved in a deliberately stylized two-vehicle, single-parameter model
+rather than for the fleet-scale, combinatorial rebalancer actually used
+in Section~\ref{sec:study}; we verify its qualitative prediction
+empirically (Table~\ref{tab:replan}) but do not claim the stylized
+model's exact functional form governs the reinsertion heuristic.
+Theorem~\ref{thm:growth}'s alternative class $\mathcal P_\Delta$ is a
+linearized, Huber-style modeling device rather than a derived
+necessity, chosen for tractability in the same spirit as classical
+robust-statistics neighborhoods. The Amazon pilot's confidence
+intervals (Section~\ref{sec:study}) quantify sampling uncertainty
+within the simulated-day design but not the roughly twelvefold
+overstatement of independent real-world realizations that design
+implies, since the data set supplies one real route geometry per
+instance rather than repeated real operating days. None of these
+limitations affects the validity guarantees of
+Section~\ref{sec:tempo}, which hold given the stated null model
+regardless of how well any proxy approximates the unobserved true
+sensitivity or true alternative class; they bound how much of the
+\emph{power} demonstrated empirically should be attributed to the
+specific closed forms in this paper versus to the general coupling
+principle they instantiate.
 
 \subsection{Conclusion}\label{sec:conclusion}
 
