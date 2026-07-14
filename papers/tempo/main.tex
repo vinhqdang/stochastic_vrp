@@ -52,47 +52,39 @@ Re-Optimization in Stochastic Vehicle Routing}
 }
 
 \ABSTRACT{%
-A dispatcher who has committed a fleet to routes optimized against a
-planning model faces a question that recurs every minute of the
-operating day: has enough gone wrong to justify the cost and
-disruption of re-optimizing, or is the plan still worth following? We
-formalize this question as a sequential hypothesis test, run
-continuously, of the null hypothesis that the day is unfolding
-according to the planning model's joint law over travel time, demand,
-dwell time, accidents, and vehicle breakdowns. The test statistic is an
-e-process --- a nonnegative process whose expectation under the null
-never exceeds one --- built as a running product of per-factor
-likelihood-ratio bets; Ville's inequality then bounds the probability
-of a false alarm uniformly over the entire monitoring horizon, so the
-dispatcher may inspect the statistic after every event without
-inflating the error rate, a guarantee no fixed-checkpoint or
-fixed-threshold monitor provides. Our contribution is to couple the
-design of these bets to the economics of the routing plan itself: each
-factor's statistical evidence is weighted, at every instant, by a
-predictable sensitivity computed from the plan's own fitted
-continuation costs, so that the monitor spends its power exactly where
-a small deviation would flip the optimal recourse decision, and we
-prove this coupling remains a valid e-process and is, moreover,
-growth-optimal against the class of cost-relevant alternatives. Four
-new results connect the statistical trigger to routing economics: a
-regret bound for the induced re-optimization policy, a closed-form
-expression for the significance level a dispatcher should use as a
-function of fleet economics rather than statistical convention, a
-theorem showing that waiting for evidence dominates replanning
-immediately once uncertainty is realized, and the growth-optimality
-result above. We validate the resulting monitor, TEMPO, across 73
-synthetic instances spanning established vehicle-routing benchmarks and
-real road networks, a 19-scenario stochastic-drift grid, a pilot on
-real last-mile delivery data, and head-to-head comparisons against ten
-baselines spanning classical sequential tests, a 2024 nonparametric
-e-detector framework, a 2026 chance-constrained model-predictive
-strategy, and a 2025 reinforcement-learning policy for time-dependent
-stochastic routing. At matched false-alarm budgets the coupled monitor
-detects harmful drift faster and more often than every baseline on
-nearly every scenario, and a companion experiment on re-optimization
-cost shows that waiting for its alarm, rather than replanning at the
-first sign of trouble, lowers realized fleet cost by a further six
-percentage points.
+\textbf{Problem definition:} A dispatcher running a fleet against a
+planning model must decide, continuously, whether enough has gone
+wrong to justify re-optimizing --- a decision current practice makes on
+a fixed clock or an untuned threshold, neither with any error-rate
+guarantee. \textbf{Methodology/results:} We formalize the decision as a
+sequential test of the null hypothesis that the day follows the
+planning model's joint law over travel time, demand, dwell time,
+accidents, and breakdowns. The test statistic is an e-process, a
+nonnegative process whose null expectation never exceeds one; Ville's
+inequality bounds the false-alarm probability uniformly over the entire
+monitoring horizon, so the dispatcher may inspect it after every event
+without inflating the error rate. Our contribution couples the
+underlying bets to the routing plan's own economics: each factor's
+evidence is weighted by a predictable sensitivity derived from the
+plan's fitted continuation costs, concentrating power where a
+deviation would flip the optimal recourse decision; we prove this
+coupling stays valid and is growth-optimal against the class of
+cost-relevant alternatives. Four results connect the trigger to routing
+economics: a regret bound for the induced re-optimization policy, a
+closed-form significance level in fleet-economics terms, a theorem that
+waiting for evidence dominates replanning immediately, and the
+growth-optimality result. We validate the monitor, TEMPO, across 73
+synthetic instances, a 19-scenario drift grid, a real last-mile
+delivery pilot, and ten baselines spanning classical sequential tests,
+a 2024 nonparametric e-detector, a 2026 chance-constrained strategy,
+and a 2025 reinforcement-learning routing policy. At matched
+false-alarm budgets TEMPO detects drift faster and more often than
+every baseline on nearly every scenario, and triggering
+re-optimization on its alarm, rather than at the first sign of
+trouble, lowers fleet cost by six further points.
+\textbf{Implications:} Fleet operators gain an anytime-valid,
+economics-calibrated answer to when to replan, at no cost beyond what
+an optimal-stopping recourse policy already produces.
 }%
 
 \KEYWORDS{vehicle routing, sequential change detection, e-values,
