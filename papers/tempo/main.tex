@@ -278,21 +278,37 @@ dynamic vehicle routing literature itself; \citet{pillac2013review}
 survey the dominant re-optimization architectures, nearly all of which
 re-solve on an exogenous clock --- every $\Delta$ minutes, every
 completed stop, or at pre-committed decision epochs --- rather than in
-response to accumulated statistical evidence. \citet{he2026smpc}
+response to accumulated statistical evidence. The more recent
+comprehensive survey of \citet{ouertani2024dvrp}, covering work through
+early 2023, confirms that this exogenous-clock pattern has not been
+displaced by a decade of subsequent methodological progress: re-solve
+triggers remain overwhelmingly periodic, event-count-based, or
+tied to the arrival of a new customer request, with the re-solve
+\emph{algorithm} itself --- adaptive large neighborhood search,
+column generation, learned construction heuristics --- being the axis
+of innovation rather than the timing decision. \citet{he2026smpc}
 develop a chance-constrained model predictive control strategy for
 vehicle routing with correlated stochastic service times whose
 re-solve cadence is exactly this periodic pattern; our periodic
 baseline reproduces its trigger mechanism directly, since the
 time-window MILP it re-solves is outside the scope of the present
-paper's harness. \citet{chen2025dgta} take a different route entirely,
-training a Dynamic Graph Temporal Attention reinforcement-learning
-policy that reacts to time-dependent stochastic travel times
-end-to-end, with no explicit change-detection layer and consequently no
-error-rate guarantee of any kind; their own baseline for that policy is
-the rolling-horizon heuristic of \citet{gmira2021rollingopt}, which we
-also reproduce. None of this literature poses re-optimization timing as
-a calibrated statistical decision, which is precisely the gap the
-present paper fills.
+paper's harness. On the learning side, \citet{chen2025dgta} train a
+Dynamic Graph Temporal Attention reinforcement-learning policy that
+reacts to time-dependent stochastic travel times end-to-end, with no
+explicit change-detection layer and consequently no error-rate
+guarantee of any kind; their own baseline for that policy is the
+rolling-horizon heuristic of \citet{gmira2021rollingopt}, which we also
+reproduce. \citet{kadyrov2025drl} train a graph-neural-network policy
+under proximal policy optimization for the closely related setting of
+joint demand and traffic uncertainty, again folding the
+re-optimization \emph{decision} into the learned policy implicitly
+rather than exposing it as a calibrated statistic a dispatcher could
+audit or reason about independently of the network's weights. Across
+both the classical operations-research and the more recent
+learning-based strands of this literature, none poses re-optimization
+timing as a calibrated statistical decision with an explicit,
+auditable error-rate guarantee, which is precisely the gap the present
+paper fills.
 
 \textbf{Classical sequential change detection.} The CUSUM statistic of
 \citet{page1954} and its many descendants, surveyed for the data-stream
@@ -323,7 +339,9 @@ this classical fact as ``testing by betting'': an e-value is the payoff
 of a bet against the null that a rational bettor could have placed
 without knowing the outcome, and the game-theoretic perspective unifies
 sequential testing, confidence sequences, and multiple testing under
-one anytime-valid umbrella, surveyed by \citet{ramdas2023safi}.
+one anytime-valid umbrella, surveyed by \citet{ramdas2023safi} and, in
+a comprehensive book-length treatment collating the field's rapid
+subsequent growth, by \citet{ramdaswang2025hypothesis}.
 \citet{waudbysmithramdas2024} develop adaptive, data-driven betting
 strategies (GRAPA and its regularized variant aGRAPA) that learn the
 growth-optimal tilt online from past increments while remaining
@@ -346,7 +364,20 @@ length bound over an indefinitely long stream (their Theorem 2.4) ---
 from the finite-window false-alarm probability bound TEMPO's own Ville
 argument delivers; the two are not interchangeable, and conflating them
 is a mistake the reproduction in Section~\ref{sec:study} corrects
-through matched oracle calibration.
+through matched oracle calibration. A very recent line of work
+questions whether e-values are conceptually necessary for anytime
+validity at all: \citet{koningvanmeer2026} show that anytime-valid,
+optionally-continued sequential tests can be \emph{induced} directly
+from a family of classical fixed-sample tests, without an explicit
+betting or e-value construction as an intermediate step. This is a
+debate about foundations rather than about the guarantee itself --- an
+induced sequential test and a test built from an explicit e-process can
+coincide numerically --- and we adopt the betting formulation
+throughout because it is what makes the coupling of
+Section~\ref{sec:tempo} transparent: the sensitivity tilts of
+Section~\ref{sec:coupling} are stated most naturally as a modification
+of a bet's stake, and Theorem~\ref{thm:growth}'s growth-optimality
+argument is native to the betting perspective.
 
 None of this statistical literature, to our knowledge, couples the
 design of the betting strategy to the economics of a decision the
@@ -1052,11 +1083,11 @@ Write $A = \Delta_c/g$ and $B = \Delta_c \kappa / g$, both constants
 with respect to $\alpha$, so that
 $\mathrm{Regret}(\alpha) = A\log(1/\alpha) + B + \alpha\, C_{\mathrm{fr}}$.
 Then
-\[
-\frac{d}{d\alpha}\mathrm{Regret}(\alpha) = -\frac{A}{\alpha} +
-C_{\mathrm{fr}}, \qquad
-\frac{d^2}{d\alpha^2}\mathrm{Regret}(\alpha) = \frac{A}{\alpha^2} > 0,
-\]
+\begin{align*}
+\frac{d}{d\alpha}\mathrm{Regret}(\alpha) &= -\frac{A}{\alpha} +
+C_{\mathrm{fr}}, \\
+\frac{d^2}{d\alpha^2}\mathrm{Regret}(\alpha) &= \frac{A}{\alpha^2} > 0,
+\end{align*}
 so $\mathrm{Regret}$ is strictly convex on $(0,1]$. Setting the first
 derivative to zero gives the unconstrained stationary point $\alpha =
 A/C_{\mathrm{fr}} = \Delta_c/(g\,C_{\mathrm{fr}})$, which is the global
