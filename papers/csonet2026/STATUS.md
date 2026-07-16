@@ -18,21 +18,16 @@
   to the same "do not modify while under review" policy as
   `papers/baton/`; until then it is an active work-in-progress
   directory, editable freely.
-- Authors: Quang-Vinh Dang (British University Vietnam), sole author.
-  **The manuscript body (`main.tex`/`main.pdf`) is currently
-  author-blinded** ("Blinded for review") at the author's request, for
-  anonymous review — real identity is preserved in a comment
-  immediately above the blinded `\author*`/`\affil*` lines in
-  `main.tex` for easy restoration. Note: JOCO's own submission
-  guidelines (verified earlier in this project) state the venue is
-  **not** double-blind and normally expects author name, affiliation,
-  and ORCID on the title page — confirm before submitting whether to
-  restore real identity in `main.tex` itself, since Editorial Manager
-  may otherwise expect it there. `cover_letter.md`, `title_page.md`,
-  and `conference_abstract_submission.md` still carry the real name
-  and contact email, since editorial systems need genuine
-  corresponding-author contact information regardless of whether the
-  manuscript file itself is blinded.
+- Authors (4, real identity now on the title page — no longer
+  blinded, per explicit author instruction since JOCO is not a
+  double-blind venue):
+  1. Quang-Vinh Dang, British University Vietnam — corresponding author
+  2. Minh Ngoc Dinh, Millennia Education
+  3. Hoang-Viet Vu, British University Vietnam
+  4. Phuc-Son Nguyen, UEH University
+  All four appear on `main.tex`'s title page, in the "Author
+  Contributions" declaration, and across `cover_letter.md`,
+  `title_page.md`, and `conference_abstract_submission.md`.
 - Submission set: `main.pdf` (manuscript, 32 pages: 4 theorems, 1
   proposition, full pseudocode, a running numerical example, 5 figures
   (schematic of the running example, 3 plots of the synthetic

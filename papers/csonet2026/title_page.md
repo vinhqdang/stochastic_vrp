@@ -6,9 +6,11 @@ Exact Algorithm, and an FPTAS
 **Short title / running head:** Minimum Weighted Hazard-Exposure
 Dispatch
 
-**Author:** Quang-Vinh Dang (sole author)
-
-**Affiliation:** British University Vietnam, Hung Yen, Vietnam
+**Authors:**
+1. Quang-Vinh Dang — British University Vietnam, Hung Yen, Vietnam — vinh.dq4@buv.edu.vn (corresponding author)
+2. Minh Ngoc Dinh — Millennia Education, Ho Chi Minh City, Vietnam — minh.dinh@maeducation.com
+3. Hoang-Viet Vu — British University Vietnam, Hung Yen, Vietnam — 30066555@st.buv.edu.vn
+4. Phuc-Son Nguyen — UEH University, Ho Chi Minh City, Vietnam — son.np33@ueh.edu.vn
 
 **Corresponding author:** Quang-Vinh Dang, vinh.dq4@buv.edu.vn
 

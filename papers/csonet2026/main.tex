@@ -28,12 +28,17 @@
 \title[Minimum Weighted Hazard-Exposure Dispatch]{Minimum Weighted
 Hazard-Exposure Dispatch: Complexity, an Exact Algorithm, and an FPTAS}
 
-%% Real author identity (restore before a non-blind submission):
-%% \author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
-%% \affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung
-%% Yen}, \country{Vietnam}}}
-\author*[1]{\fnm{Blinded} \sur{for review}}
-\affil*[1]{\orgname{Blinded for review}}
+\author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+\author[2]{\fnm{Minh Ngoc} \sur{Dinh}}\email{minh.dinh@maeducation.com}
+\author[1]{\fnm{Hoang-Viet} \sur{Vu}}\email{30066555@st.buv.edu.vn}
+\author[3]{\fnm{Phuc-Son} \sur{Nguyen}}\email{son.np33@ueh.edu.vn}
+
+\affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung
+Yen}, \country{Vietnam}}}
+\affil[2]{\orgname{Millennia Education}, \orgaddress{\city{Ho Chi Minh
+City}, \country{Vietnam}}}
+\affil[3]{\orgname{UEH University}, \orgaddress{\city{Ho Chi Minh
+City}, \country{Vietnam}}}
 
 \abstract{We study a dispatch-scheduling problem arising when a single
 depot must send a vehicle or crew to a set of sites before a spreading
@@ -1688,16 +1693,24 @@ $W(\hat S) \ge (1-\epsilon)W^\ast$, matching Theorem~\ref{thm:fptas}.
 \section*{Statements and Declarations}
 
 \subsection*{Funding}
-The author did not receive support from any organization for the
-submitted work.
+The authors declare that no funds, grants, or other support were
+received during the preparation of this manuscript.
 
 \subsection*{Competing Interests}
-The author has no relevant financial or non-financial interests to
+The authors have no relevant financial or non-financial interests to
 disclose.
 
 \subsection*{Author Contributions}
-The sole author conceived the problem, proved all results, ran the
-numerical illustration, and wrote the manuscript.
+Q.V.D.\ conceived the problem and developed the theoretical results
+(the hardness reduction, the exact dynamic program, the FPTAS, the
+matroid-greedy special case, and the naive-policy lower bound).
+H.V.V.\ implemented the algorithms, ran the numerical experiments and
+the real-world case study, and produced the figures. M.N.D.\ conducted
+the literature review and helped position the work relative to prior
+scheduling and disaster-response research. P.S.N.\ designed the
+real-world case study and its practical interpretation. Q.V.D.\ wrote
+the first draft of the manuscript, and all authors commented on
+previous versions, reviewed, and approved the final manuscript.
 
 \subsection*{Data Availability}
 The synthetic instance generators and all code used to produce every
@@ -1705,7 +1718,7 @@ table in Section~\ref{sec:experiments} are included with this
 submission and are self-contained, except for
 Section~\ref{sec:campfire}'s real-world instance, whose inputs are
 public-domain figures (a NIST technical report and U.S.\ Census data,
-both cited in the text) rather than data collected by the author; the
+both cited in the text) rather than data collected by the authors; the
 script that derives the instance from those public figures and
 reproduces Tables~\ref{tab:campfire} and~\ref{tab:campfire-results} is
 also included with this submission.
@@ -1715,7 +1728,7 @@ An AI coding assistant (Claude, Anthropic) was used to assist with
 LaTeX formatting and to run the numerical illustration code reported in
 Section~\ref{sec:experiments}. All theorem statements, proofs, and the
 manuscript text were authored, verified, and are taken responsibility
-for by the author.
+for by the authors.
 
 \bibliography{references}
 

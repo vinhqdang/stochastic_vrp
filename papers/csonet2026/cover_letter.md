@@ -45,13 +45,13 @@ tractable case we give here, though the underlying scheduling problem
 it recovers is classical.
 
 This manuscript is original, has not been published previously, and is
-not under consideration at any other journal. The author has approved
-the submission and has no competing interests to disclose. Per the
-journal's editorial policy, the use of an AI coding assistant during
-manuscript preparation (LaTeX formatting and running the reported
-numerical illustration) is disclosed in the manuscript's Statements and
-Declarations section; all theorem statements, proofs, and text are
-authored and taken responsibility for by the author.
+not under consideration at any other journal. All authors have
+approved the submission and have no competing interests to disclose.
+Per the journal's editorial policy, the use of an AI coding assistant
+during manuscript preparation (LaTeX formatting and running the
+reported numerical illustration) is disclosed in the manuscript's
+Statements and Declarations section; all theorem statements, proofs,
+and text are authored and taken responsibility for by the authors.
 
 As required, the paper's abstract will also be submitted separately to
 the CSoNet 2026 conference submission system to secure a presentation
@@ -59,8 +59,13 @@ slot.
 
 Thank you for your consideration. We look forward to your response.
 
-Sincerely,
+Sincerely, on behalf of all authors,
 
-Quang-Vinh Dang
+Quang-Vinh Dang (corresponding author)
 British University Vietnam, Hung Yen, Vietnam
 vinh.dq4@buv.edu.vn
+
+Co-authors:
+Minh Ngoc Dinh, Millennia Education, Ho Chi Minh City, Vietnam
+Hoang-Viet Vu, British University Vietnam, Hung Yen, Vietnam
+Phuc-Son Nguyen, UEH University, Ho Chi Minh City, Vietnam
