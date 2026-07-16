@@ -40,9 +40,13 @@ second, structurally distinct special case — equal round-trip dispatch
 times, corresponding to sites equidistant from the depot — solvable
 exactly in near-linear time by a matroid greedy algorithm, showing
 that hardness requires the joint heterogeneity of dispatch cost and
-criticality, not either alone. A numerical illustration confirms the
-approximation scheme tracks the exact optimum closely, while a naive
-dispatch order without optimization degrades substantially. The
+criticality, not either alone. We also show the natural fallback of
+dispatching sites in deadline order with no reconsideration has
+unbounded worst-case loss relative to the optimum, so an exact or
+near-exact algorithm is necessary, not merely convenient. A numerical
+illustration confirms the approximation scheme tracks the exact
+optimum closely as instance size grows to 100 sites, while this naive
+dispatch order degrades substantially. The
 results give infrastructure and emergency-response planners exact and
 near-exact tools for a provably hard scheduling problem central to
 transportation and infrastructure-network resilience, and delineate

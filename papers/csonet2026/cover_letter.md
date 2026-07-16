@@ -28,7 +28,11 @@ structurally distinct tractable special case — equal dispatch cost,
 solvable in near-linear time via a matroid greedy algorithm — showing
 precisely that it is the *combination* of heterogeneous dispatch cost
 and heterogeneous criticality, not either alone, that drives the
-problem's hardness.
+problem's hardness; and we prove that the natural fallback of
+dispatching sites in deadline order with no reconsideration at all has
+unbounded worst-case loss relative to the optimum, so an exact or
+near-exact algorithm is necessary for any guarantee, not merely
+convenient.
 
 We believe this work fits the Journal of Combinatorial Optimization's
 scope directly: it is a new combinatorial scheduling problem, with a
