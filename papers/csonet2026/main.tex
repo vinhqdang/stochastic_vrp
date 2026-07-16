@@ -205,6 +205,26 @@ exactly a 0/1 knapsack instance, whose NP-hardness is classical
 reduction, or of the equal-processing-time tractable special case of
 Theorem~\ref{thm:equalp}, in transportation-network language.
 
+This classical scheduling problem remains an active research topic:
+\citet{hejl2022} give a refined pseudo-polynomial dynamic program for
+the practically important ``strongly correlated'' regime (where
+processing times and weights are close in value), and
+\citet{hermelin2024} improve the Lawler--Moore-style DP's running time
+via $(\max,+)$-convolution techniques---an algorithmic refinement
+orthogonal to, and compatible with, Theorem~\ref{thm:dp}'s DP.
+\citet{heegerhermelin2024} sharpen the complexity picture further,
+proving $1\|\sum w_jU_j$ is $W[1]$-hard parameterized by either the
+number of distinct processing times or the number of distinct weights
+in the instance---a result that, translated into MWHED's language,
+says that even a small number of distinct dispatch costs or
+criticality levels does not, by itself, guarantee tractability, sharpening
+the boundary Theorem~\ref{thm:equalp} and Remark~\ref{rem:hardness-boundary}
+draw between the fully-heterogeneous and equal-cost cases. On the
+heuristic side, \citet{antonov2026} give a data-driven (machine-learning-guided)
+heuristic for the same objective, a more sophisticated relative of the
+weighted greedy-repair heuristic we use as an empirical baseline in
+Section~\ref{sec:experiments}.
+
 \textbf{Real-time and deadline-driven systems.} Earliest-deadline-first
 ordering is also the central object of classical real-time scheduling
 theory, where \citet{liulayland1973} show that, for periodic tasks on
@@ -232,7 +252,15 @@ site-by-site exchange argument, and no analogous single-inequality
 feasibility test exists for MWHED's one-shot dispatch problem---indeed,
 Theorem~\ref{thm:hardness} shows that even deciding the size of the
 best \emph{weighted} feasible subset, let alone a simple aggregate
-test for it, is NP-hard.
+test for it, is NP-hard. More recent real-time scheduling work extends
+EDF-style analysis to richer task models: \citet{gunzel2022} give a
+unified schedulability test for self-suspending periodic tasks that
+recovers EDF (among other policies) as a special case, and
+\citet{wang2025} refine the schedulability analysis for that same
+self-suspending, EDF-like setting. Both retain the periodic,
+run-forever structure that makes an aggregate utilization test
+possible; MWHED's one-shot, single-visit-per-site structure is exactly
+what rules out an analogous test here.
 
 \textbf{Approximation.} The 0/1 knapsack problem admits a fully
 polynomial-time approximation scheme via scaling and rounding of item
@@ -246,7 +274,17 @@ feasibility against each site's individual $d_i$ rather than a single
 global bound, and the case split we make explicit in
 Appendix~\ref{app:fptas-detail} (between the scaling being vacuous or
 not) has no counterpart in the standard knapsack presentation, where
-$w_{\max}$ and $n$ play a comparatively simpler role.
+$w_{\max}$ and $n$ play a comparatively simpler role. The classical
+$O(n^3/\epsilon)$-style FPTAS we adapt is not the fastest knapsack FPTAS
+known today: \citet{jin2019} improve the running time via a more
+careful scaling scheme, and \citet{chen2025fptas} give a nearly
+quadratic-time FPTAS, $\tilde O(n + 1/\epsilon^2)$, that is conditionally
+near-optimal. We adapt the classical (rather than the fastest known)
+construction because its case structure is what Theorem~\ref{thm:fptas}'s
+proof and Appendix~\ref{app:fptas-detail}'s derivation build on
+directly; porting the faster constructions to MWHED's per-site-deadline
+setting (rather than knapsack's single shared capacity) is a natural
+avenue for tightening Theorem~\ref{thm:fptas}'s runtime bound.
 
 \textbf{Matroids and greedy algorithms.} The equal-processing-time
 special case of Theorem~\ref{thm:equalp} is an instance of the
@@ -268,7 +306,13 @@ the matroid exchange property failing. This is why a single large,
 low-value commitment can block a strictly better pair of smaller
 commitments, and is the structural reason Theorem~\ref{thm:hardness}'s
 hardness survives even though the matroid case (Theorem~\ref{thm:equalp})
-is easy.
+is easy. Matroid algorithms themselves remain an active area:
+\citet{terao2025} give faster matroid partition algorithms, and
+\citet{ma2026} prove a greedy algorithm is simultaneously optimal and
+fair for a multiagent matroid-upgrading problem, reinforcing that
+``greedy is optimal on a matroid'' continues to be a productive
+template well beyond the classical setting Theorem~\ref{thm:equalp}
+uses.
 
 \textbf{Routing and dispatch under a spreading hazard.} Wildfire
 suppression is the application area where the ``race a spreading
@@ -289,7 +333,23 @@ the routing decision's combinatorial complexity without changing its
 underlying deadline structure. \citet{alvelos2025} go further, jointly
 optimizing dispatching, the positioning of resources in anticipation of
 the fire's advance, and their routing, in a single integrated model.
-Across all three, the fire's own spatial spread is modeled in detail
+More recently, \citet{granda2025} give a mathematical programming
+formulation for wildfire suppression resource allocation, and, closest
+in spirit to our own complexity results, \citet{delazeri2026} prove
+NP-completeness for a landscape-graph model of wildfire suppression
+resource allocation, alongside a competitive mixed-integer program and
+a physics-grounded (Rothermel fire-spread model) instance generator---an
+independent hardness result in essentially our application domain,
+though for a differently structured (graph-based, simultaneous
+multi-resource) model than MWHED's single-vehicle dispatch-ordering
+question. Two recent systematic reviews position the broader
+literature: \citet{tezcan2025} survey optimization approaches to
+forest-fire suppression, and \citet{rostamian2026} review 177 papers on
+wildfire management optimization under uncertainty and complexity,
+both confirming that pure complexity-theoretic characterizations of a
+dispatch-ordering subproblem---as opposed to joint suppression,
+positioning, and routing models---remain rare in this literature.
+Across all of these, the fire's own spatial spread is modeled in detail
 and coupled tightly to the routing and positioning decisions; MWHED
 instead abstracts the hazard's spread into a per-site deadline (a
 natural reduction once the hazard's spread model is fixed and known, as
@@ -304,14 +364,18 @@ tractable case we give here.
 
 \textbf{Positioning.} MWHED sits at the intersection of these four
 literatures without duplicating any of them: it inherits its complexity
-classification from classical scheduling theory
-(\citealp{moore1968,lawlermoore1969,lenstra1977}), its algorithmic
-toolkit from knapsack approximation and matroid theory
-(\citealp{ibarrakim1975,kortevygen2018}), its deadline-ordering
-intuition from real-time systems (\citealp{liulayland1973}), and its
-motivating application from disaster-response operations research
-(\citealp{harris2023,avci2024,alvelos2025}), but the specific problem
---- and every result we prove about it --- is new. Table~\ref{tab:summary}
+classification from classical scheduling theory, both the founding
+results and their recent refinements
+(\citealp{moore1968,lawlermoore1969,lenstra1977,hejl2022,hermelin2024,heegerhermelin2024,antonov2026}),
+its algorithmic toolkit from knapsack approximation and matroid theory,
+including recent speedups
+(\citealp{ibarrakim1975,kortevygen2018,jin2019,chen2025fptas,terao2025,ma2026}),
+its deadline-ordering intuition from real-time systems
+(\citealp{liulayland1973,gunzel2022,wang2025}), and its motivating
+application from disaster-response operations research
+(\citealp{harris2023,avci2024,alvelos2025,granda2025,delazeri2026,tezcan2025,rostamian2026}),
+but the specific problem --- and every result we prove about it --- is
+new. Table~\ref{tab:summary}
 in Section~\ref{sec:theory} summarizes how each of our five main
 results maps onto this classification. The overall pattern---a
 transportation reparametrization of a classical scheduling problem,
@@ -871,7 +935,7 @@ all $16$ subsets confirms $22$ is indeed optimal.
 \end{algorithmic}
 \end{algorithm}
 
-\begin{remark}
+\begin{remark}\label{rem:hardness-boundary}
 Theorems~\ref{thm:hardness} and~\ref{thm:equalp} together show that
 neither heterogeneous dispatch cost nor heterogeneous deadlines alone
 is responsible for MWHED's hardness: it is specifically the interaction
@@ -1160,7 +1224,16 @@ open; this connects MWHED-$m$ to the parallel-machine scheduling
 literature's own maximum-weighted-on-time-jobs problem, whose
 complexity landscape beyond a single machine is considerably less
 settled than the single-machine case we resolve here
-\citep{lenstra1977}. We conjecture the FPTAS of Theorem~\ref{thm:fptas}
+\citep{lenstra1977}. Recent evidence confirms this: \citet{heegermolter2025}
+show that even the parallel-machine analogue of our \emph{tractable}
+equal-cost special case---identical processing times across identical
+machines, $P|r_j, p_j{=}p|\sum w_jU_j$---is already NP-hard, and $W[2]$-hard
+parameterized by the number of machines, once release dates are
+allowed. Translated into our setting, this suggests that
+Theorem~\ref{thm:equalp}'s tractability for MWHED-$1$ is unlikely to
+survive as cleanly into MWHED-$m$ for $m\ge 2$, even restricted to the
+equal-dispatch-cost case---the multi-vehicle relaxation appears to
+cost more than just an exponent in the DP's table size. We conjecture the FPTAS of Theorem~\ref{thm:fptas}
 extends to MWHED-$m$ for fixed $m$ via the same value-scaling idea
 applied to an $m$-dimensional state (the scaled-weight axis is
 untouched by the number of vehicles), but we have not verified this in
