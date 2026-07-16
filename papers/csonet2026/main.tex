@@ -1066,6 +1066,16 @@ Naive EDD (no repair) & 0.380 & 0.343 & 0.622 & 0.369 & 0.323 & 0.482 & 0.515 & 
 \end{tabular}
 \end{table}
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/accuracy_vs_n.pdf}
+\caption{Table~\ref{tab:illustration} plotted: mean ratio to the true
+optimum against instance size $n$. The FPTAS and greedy-repair curves
+sit on top of each other at $1.0$; naive EDD fluctuates with no
+trend of improving as $n$ grows, exactly as
+Proposition~\ref{prop:naive} predicts.}\label{fig:accuracy}
+\end{figure}
+
 At both approximation levels tested, the FPTAS recovers the true
 optimum on essentially every one of the 160 random instances (mean
 ratio rounds to $1.000$ throughout), far outperforming its worst-case
@@ -1103,14 +1113,23 @@ $p_{\max}$ grows (so $P=\sum_i p_i$ grows roughly proportionally).}\label{tab:ru
 \toprule
 $p_{\max}$ & 50 & 200 & 800 & 3{,}200 & 12{,}800 \\
 \midrule
-Exact DP (Theorem~\ref{thm:dp}) & 2.7 & 9.8 & 38.4 & 166.6 & 663.4 \\
-FPTAS (Theorem~\ref{thm:fptas}) & 4.9 & 5.1 & 4.6 & 4.4 & 4.8 \\
+Exact DP (Theorem~\ref{thm:dp}) & 4.7 & 16.8 & 65.3 & 275.7 & 1137.9 \\
+FPTAS (Theorem~\ref{thm:fptas}) & 8.3 & 8.4 & 7.8 & 7.7 & 7.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.68\textwidth]{figures/runtime_scaling.pdf}
+\caption{Table~\ref{tab:runtime} plotted on log-log axes: the exact
+DP's pseudo-polynomial $O(nP)$ dependence on $p_{\max}$ is visibly
+linear, while the FPTAS's $O(n^3/\epsilon)$ runtime---independent of
+$p_{\max}$---stays flat.}\label{fig:runtime}
+\end{figure}
+
 The exact DP's runtime grows essentially linearly with $p_{\max}$, as
-its $O(nP)$ bound predicts, increasing roughly $250$-fold as $p_{\max}$
+its $O(nP)$ bound predicts, increasing roughly $240$-fold as $p_{\max}$
 increases $256$-fold; the FPTAS's runtime stays flat, within
 measurement noise, across the same range, since its table size
 $O(n^3/\epsilon)$ never depends on $P$ at all. At the smallest
@@ -1139,10 +1158,20 @@ over the same 20 random instances at each $\epsilon$.}\label{tab:epsilon}
 $\epsilon$ & 0.50 & 0.30 & 0.20 & 0.10 & 0.05 & 0.01 \\
 \midrule
 Mean ratio to optimum & 0.9999 & 1.0000 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
-Mean time (ms) & 1.9 & 2.9 & 2.8 & 2.8 & 2.8 & 3.1 \\
+Mean time (ms) & 2.5 & 3.9 & 3.9 & 3.8 & 4.2 & 3.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/epsilon_sensitivity.pdf}
+\caption{Table~\ref{tab:epsilon} plotted: accuracy (left) is
+essentially flat at $1.0$ across the entire tested range of
+$\epsilon$, while runtime (right) grows only mildly as $\epsilon$
+shrinks two orders of magnitude---both axes with $\epsilon$
+decreasing left to right.}\label{fig:epsilon}
+\end{figure}
 
 Even at the loosest setting tested, $\epsilon=0.5$ (a $50\%$ worst-case
 loss allowed), the FPTAS already recovers $99.99\%$ of the optimum on
@@ -1152,7 +1181,7 @@ Section~\ref{sec:experiments}'s accuracy table, the worst-case bound
 $(1-\epsilon)W^\ast$ is a safety margin that is rarely approached in
 practice, not a description of typical behavior. The runtime grows only
 mildly over this range at $n=30$ (a two-order-of-magnitude shrinkage in
-$\epsilon$, from $0.5$ to $0.01$, produces roughly a $60\%$ increase in
+$\epsilon$, from $0.5$ to $0.01$, produces roughly a $50\%$ increase in
 running time, not the $50\times$ the $O(n^3/\epsilon)$ bound alone
 would suggest as an upper bound), because the table's row dimension is
 capped by $\sum_i w_i'$, which grows sub-linearly in $1/\epsilon$ once
@@ -1262,6 +1291,18 @@ Paradise & 70 & 44 & 71 & 26{,}218 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/campfire_map.pdf}
+\caption{The real geography behind Table~\ref{tab:campfire}: the
+depot, the fire's real ignition point, and the four real communities,
+plotted from their real coordinates (dotted lines show each
+community's real distance from the ignition point, the basis for the
+documented and extrapolated $d_i$ values). The solid arrow is the
+optimal dispatch, in both response-speed scenarios: straight to
+Paradise, bypassing every other community.}\label{fig:campfire-map}
+\end{figure}
 
 \begin{table}[h]
 \caption{Outcome of each algorithm on the Camp Fire instance, at both

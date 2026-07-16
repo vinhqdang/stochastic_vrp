@@ -13,9 +13,11 @@ the Journal Track's dual-submission rule) — see `STATUS.md`.
 
 - `main.tex` / `main.pdf` — the manuscript (Springer `sn-jnl` class,
   `sn-mathphys-ay` style: author-year citations, as JOCO requires).
-  30 pages: 4 theorems + 1 proposition, full pseudocode for all four
+  32 pages: 4 theorems + 1 proposition, full pseudocode for all four
   algorithms, a running numerical example threaded through every
-  result, a "Discussion and extensions" section, two appendices
+  result, 5 figures (a schematic of the running example, three plots
+  of the synthetic experiments, and a real-geography map for the case
+  study), a "Discussion and extensions" section, two appendices
   (exhaustive hand-verification of the running example; a fully
   spelled-out FPTAS approximation-ratio derivation), and a real-world
   case study (Section 5.5). Builds clean: `pdflatex main && bibtex main
@@ -39,6 +41,14 @@ the Journal Track's dual-submission rule) — see `STATUS.md`.
   assumption (response speed, deadline extrapolation for two sites) is
   documented in the script's docstring and in main.tex
   Section~5.5. Regenerate with `python3 case_study_campfire.py`.
+- `figures/` — the source for all 5 figures: `make_running_example_figure.py`
+  (Fig. 1, the running-example schematic), `make_result_figures.py`
+  (Figs. 2–4, plotting `results_illustration.json`'s already-verified
+  numbers -- computes nothing new), and `make_campfire_map.py` (Fig. 5,
+  a real-geography map plotted from the same coordinates used in
+  `case_study_campfire.py`). Regenerate all of them from within
+  `figures/` with `python3 make_running_example_figure.py && python3
+  make_result_figures.py && python3 make_campfire_map.py`.
 - `cover_letter.md` — cover letter for the JOCO submission; explicitly
   states "This manuscript is submitted to the journal track of CSoNet
   2026" per the Journal Track's requirement.
