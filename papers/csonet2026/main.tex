@@ -28,9 +28,12 @@
 \title[Minimum Weighted Hazard-Exposure Dispatch]{Minimum Weighted
 Hazard-Exposure Dispatch: Complexity, an Exact Algorithm, and an FPTAS}
 
-\author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
-\affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung
-Yen}, \country{Vietnam}}}
+%% Real author identity (restore before a non-blind submission):
+%% \author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+%% \affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung
+%% Yen}, \country{Vietnam}}}
+\author*[1]{\fnm{Blinded} \sur{for review}}
+\affil*[1]{\orgname{Blinded for review}}
 
 \abstract{We study a dispatch-scheduling problem arising when a single
 depot must send a vehicle or crew to a set of sites before a spreading
@@ -474,6 +477,21 @@ gap between naive earliest-deadline dispatch and the true optimum is
 exactly the phenomenon Section~\ref{sec:experiments}'s numerical study
 documents at scale.
 \end{example}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/running_example_schematic.pdf}
+\caption{A schematic illustration of Example~\ref{ex:running}. Site
+positions are laid out at a radius proportional to each site's
+round-trip dispatch time $p_i$, purely for visual spacing---this is an
+abstract schematic of the instance, not a real road network or a
+geographic map (MWHED's theory is instance-agnostic and this paper
+uses no real-world coordinate data). Marker size is proportional to
+criticality weight $w_i$; green markers and arrows show the optimal
+dispatch $S^\ast=\{1,2,4\}$ and each site's completion time; the gray
+marker is site $3$, sacrificed to make room for the higher-value site
+$4$.}\label{fig:running-example}
+\end{figure}
 
 % ══════════════════════════════════════════════════════════════════
 \section{Complexity and algorithms}\label{sec:theory}
