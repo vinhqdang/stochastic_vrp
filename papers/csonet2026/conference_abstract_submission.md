@@ -14,7 +14,7 @@ Exact Algorithm, and an FPTAS
 Quang-Vinh Dang, British University Vietnam, Hung Yen, Vietnam (vinh.dq4@buv.edu.vn) — corresponding author
 Minh Ngoc Dinh, Millennia Education, Ho Chi Minh City, Vietnam (minh.dinh@maeducation.com)
 Hoang-Viet Vu, British University Vietnam, Hung Yen, Vietnam (30066555@st.buv.edu.vn)
-Phuc-Son Nguyen, UEH University, Ho Chi Minh City, Vietnam (son.np33@ueh.edu.vn)
+Phuc-Son Nguyen, UEH University, Ho Chi Minh City, Vietnam (son.np3393@ueh.edu.vn)
 
 **Submission type:** Journal Track (Journal of Combinatorial
 Optimization)
