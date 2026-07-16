@@ -1,0 +1,32 @@
+{
+  "10": {
+    "opt_mean": 414.15,
+    "fptas02_ratio": 1.0,
+    "fptas01_ratio": 1.0,
+    "naive_ratio": 0.37988401095362356
+  },
+  "15": {
+    "opt_mean": 693.05,
+    "fptas02_ratio": 1.0,
+    "fptas01_ratio": 1.0,
+    "naive_ratio": 0.34303331180632074
+  },
+  "20": {
+    "opt_mean": 937.95,
+    "fptas02_ratio": 1.0,
+    "fptas01_ratio": 1.0,
+    "naive_ratio": 0.6222856129214782
+  },
+  "25": {
+    "opt_mean": 1191.0,
+    "fptas02_ratio": 1.0,
+    "fptas01_ratio": 1.0,
+    "naive_ratio": 0.36945559257348964
+  },
+  "30": {
+    "opt_mean": 1407.4,
+    "fptas02_ratio": 1.0,
+    "fptas01_ratio": 1.0,
+    "naive_ratio": 0.32270736506444475
+  }
+}

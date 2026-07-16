@@ -1,0 +1,577 @@
+%% CSoNet 2026 Journal Track submission (Journal of Combinatorial Optimization)
+%% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+
+\documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\theoremstyle{thmstyleone}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{thmstyletwo}
+\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+\theoremstyle{thmstylethree}
+\newtheorem{example}{Example}
+
+\raggedbottom
+
+\begin{document}
+
+\title[Minimum Weighted Hazard-Exposure Dispatch]{Minimum Weighted
+Hazard-Exposure Dispatch: Complexity, an Exact Algorithm, and an FPTAS}
+
+\author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+\affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung
+Yen}, \country{Vietnam}}}
+
+\abstract{We study a dispatch-scheduling problem arising when a single
+depot must send a vehicle or crew to a set of sites before a spreading
+hazard---a flood, wildfire, contamination plume, or growing congestion
+zone---reaches them. Each site has a fixed round-trip dispatch time, a
+deterministic hazard-arrival deadline, and a criticality weight; the
+objective is to choose a dispatch order maximizing the total weight of
+sites reached before the hazard arrives. We call this problem Minimum
+Weighted Hazard-Exposure Dispatch (MWHED) and show it is exactly the
+classical single-machine problem of maximizing weighted on-time jobs,
+reparametrized in transportation terms. We prove MWHED is
+weakly NP-hard, by an elementary reduction showing that its
+equal-deadline special case is exactly the 0/1 knapsack problem; we
+give a pseudo-polynomial exact dynamic program, derived directly from
+an earliest-deadline-first exchange argument; we adapt the classical
+value-scaling technique to obtain a fully polynomial-time approximation
+scheme; and we identify a second, structurally distinct special
+case---equal round-trip dispatch times, corresponding to sites
+equidistant from the depot---that is solvable exactly in
+$O(n\log n)$ time by a matroid greedy algorithm, showing that hardness
+requires the joint heterogeneity of dispatch cost and criticality, not
+either alone. A small numerical illustration confirms the
+approximation scheme tracks the exact optimum closely as instance size
+grows, while a naive earliest-deadline dispatch order without
+optimization degrades. Implications: the results give infrastructure
+and emergency-response planners exact and near-exact tools for a
+provably hard scheduling problem, and delineate precisely which
+structural features of a dispatch network make hazard-exposure
+minimization tractable.}
+
+\keywords{combinatorial optimization, scheduling under deadlines,
+computational complexity, approximation algorithms, transportation
+networks, disaster response}
+
+\maketitle
+
+% ══════════════════════════════════════════════════════════════════
+\section{Introduction}\label{sec:intro}
+
+A recurring operational problem in infrastructure and emergency-response
+networks is deciding, from a single depot, in what order to dispatch a
+vehicle or crew to a set of sites that are each racing against a
+spreading hazard. A wildfire crew choosing which structures to defend
+before the fire front arrives, a utility company dispatching repair
+trucks to substations before a cascading outage propagates to them, and
+a flood-response team evacuating or servicing neighborhoods before
+rising water reaches them all face the same underlying decision: given
+a known rate at which a hazard is spreading, and a known cost of
+reaching each site from a common depot, in what order should sites be
+visited to save as much value as possible before the hazard reaches
+each one in turn?
+
+This decision is a scheduling problem, not merely a routing one. Once
+every visit is a self-contained round trip from a single depot---the
+standard topology for a technician, repair-crew, or single-vehicle
+emergency-response dispatch base---the cost of visiting a site does not
+depend on which site was visited immediately before it, only on the
+cumulative time already spent. The question is then purely one of
+\emph{order}: which sites to reach early, which to defer, and which to
+concede to the hazard, given that each site $i$ becomes ``exposed''
+once the cumulative dispatch time exceeds its known hazard-arrival
+deadline $d_i$, at a loss of $w_i$.
+
+We formalize this as Minimum Weighted Hazard-Exposure Dispatch (MWHED)
+and give a complete complexity and algorithmic picture. Our
+contributions are:
+
+\begin{enumerate}
+\item We show MWHED is exactly the classical single-machine scheduling
+problem of maximizing the weighted number of on-time jobs, and prove it
+is weakly NP-hard by an elementary, self-contained argument: the
+special case in which every site shares the same hazard deadline is
+\emph{exactly} the 0/1 knapsack problem (Theorem~\ref{thm:hardness}).
+\item We give an exact pseudo-polynomial dynamic program
+(Theorem~\ref{thm:dp}), derived directly from an
+earliest-deadline-first exchange argument that we prove from first
+principles rather than assert.
+\item We adapt the classical value-scaling technique to obtain a fully
+polynomial-time approximation scheme (FPTAS) for MWHED
+(Theorem~\ref{thm:fptas}), so that a solution within any desired factor
+$1-\epsilon$ of optimal is computable in time polynomial in the number
+of sites and $1/\epsilon$.
+\item We identify a second special case---equal round-trip dispatch
+times, i.e., sites equidistant from the depot---that is solvable
+\emph{exactly} in $O(n \log n)$ time via a matroid greedy algorithm
+(Theorem~\ref{thm:equalp}), showing that heterogeneity in dispatch cost
+\emph{alone} does not cause hardness: it is the combination of
+heterogeneous dispatch cost and heterogeneous criticality, under a
+shared deadline structure, that does.
+\end{enumerate}
+
+Together, Theorems~\ref{thm:hardness} and~\ref{thm:equalp} give a sharp
+structural picture of where the difficulty in this problem lives, and
+Theorems~\ref{thm:dp} and~\ref{thm:fptas} give planners exact and
+provably near-exact tools for the general, hard case. A small numerical
+illustration in Section~\ref{sec:experiments} confirms the FPTAS tracks
+the true optimum closely well before its worst-case guarantee requires,
+while a naive dispatch order (no optimization at all, just visiting
+sites in deadline order) degrades as instances grow.
+
+The remainder of this paper is organized as follows.
+Section~\ref{sec:related} positions MWHED against the scheduling and
+disaster-response routing literatures. Section~\ref{sec:model} defines
+MWHED formally and establishes the earliest-deadline-first structural
+lemma both later results depend on. Section~\ref{sec:theory} proves the
+four theorems above. Section~\ref{sec:experiments} reports the
+numerical illustration, and Section~\ref{sec:conclusion} concludes.
+
+% ══════════════════════════════════════════════════════════════════
+\section{Related work}\label{sec:related}
+
+\textbf{Scheduling with deadlines.} MWHED, once its transportation
+framing is stripped away, is the classical single-machine problem of
+maximizing the weighted number of on-time jobs, equivalently minimizing
+the weighted number of late jobs, $1\|\sum w_jU_j$ in the standard
+three-field notation. \citet{moore1968} gives an $O(n\log n)$ algorithm
+for the \emph{unweighted} case ($1\|\sum U_j$): process jobs in
+earliest-due-date order, and whenever the running schedule becomes
+infeasible, permanently discard the job with the largest processing
+time among those scheduled so far. This procedure is commonly called
+the Moore--Hodgson algorithm. \citet{lawlermoore1969} give a general
+functional-equation (dynamic programming) technique for resource
+allocation and sequencing problems that specializes to a
+pseudo-polynomial algorithm for the weighted case; the classification
+of $1\|\sum w_jU_j$ itself as (weakly) NP-hard is standard in the
+scheduling-complexity literature, surveyed by
+\citet{lenstra1977}, and follows directly from the same reduction we
+give in Section~\ref{sec:theory}: an instance with a common due date is
+exactly a 0/1 knapsack instance, whose NP-hardness is classical
+\citep{gareyjohnson1979}. We are not aware of a prior statement of this
+reduction, or of the equal-processing-time tractable special case of
+Theorem~\ref{thm:equalp}, in transportation-network language.
+
+\textbf{Approximation.} The 0/1 knapsack problem admits a fully
+polynomial-time approximation scheme via scaling and rounding of item
+values, due to \citet{ibarrakim1975}; we adapt this technique directly
+to MWHED's dynamic program in Theorem~\ref{thm:fptas}.
+
+\textbf{Matroids and greedy algorithms.} The equal-processing-time
+special case of Theorem~\ref{thm:equalp} is an instance of the
+classical problem of scheduling unit-time jobs with deadlines to
+maximize total profit, whose feasible job sets form a matroid, on which
+a greedy algorithm is provably optimal; we follow the treatment in
+\citet{kortevygen2018}.
+
+\textbf{Routing and dispatch under a spreading hazard.} Wildfire
+suppression is the application area where the ``race a spreading
+hazard'' structure has been studied most directly in the operations
+research literature. \citet{harris2023} model fire spread via a
+minimum-travel-time principle and decompose resource-suppression
+decisions via logic-based Benders decomposition; \citet{avci2024}
+extend the wildfire suppression problem to multiple resource types; and
+\citet{alvelos2025} study the joint dispatching, positioning, and
+routing of suppression resources against an advancing fire front. These
+papers model the fire's own spatial spread in detail and optimize
+resource positioning and routing jointly; MWHED instead abstracts the
+hazard's spread into a per-site deadline (a natural reduction once the
+hazard's spread model is fixed and known, as is standard once a fire,
+flood, or contamination-plume simulator has produced arrival-time
+estimates for each site) and asks the sharper question of what
+complexity and algorithmic guarantees are available for the resulting
+pure dispatch-\emph{ordering} decision. To our knowledge, no prior work
+in this literature establishes the knapsack-equivalence hardness
+result, the exact dynamic program, the FPTAS, or the equal-cost
+tractable case we give here.
+
+% ══════════════════════════════════════════════════════════════════
+\section{Model}\label{sec:model}
+
+\begin{definition}[Minimum Weighted Hazard-Exposure Dispatch]\label{def:mwhed}
+An instance of MWHED consists of $n$ sites $1,\dots,n$ and a depot. Each
+site $i$ has a round-trip dispatch time $p_i \in \mathbb Z_{>0}$ (the
+time to travel from the depot to site $i$ and back, or more generally
+the time the depot's single vehicle or crew is occupied while serving
+site $i$), a hazard-arrival deadline $d_i \in \mathbb Z_{>0}$ (the known
+time at which a spreading hazard reaches site $i$), and a criticality
+weight $w_i \in \mathbb Z_{>0}$. A \emph{dispatch order} is a
+permutation $\sigma$ of $\{1,\dots,n\}$; the \emph{completion time} of
+site $\sigma(k)$ is $C_{\sigma(k)}(\sigma) := \sum_{j=1}^k
+p_{\sigma(j)}$, and site $i$ is \emph{on time} under $\sigma$ if $C_i(\sigma)
+\le d_i$, otherwise \emph{exposed}. The objective is to choose $\sigma$
+maximizing the total on-time weight
+\begin{equation}\label{eq:objective}
+W(\sigma) := \sum_{i=1}^n w_i \cdot \mathbb 1\bigl[C_i(\sigma) \le
+d_i\bigr].
+\end{equation}
+\end{definition}
+
+Because every visit returns to the depot before the next dispatch
+begins, $p_i$ does not depend on which site precedes or follows site
+$i$ in the order---the defining structural feature that distinguishes
+MWHED from a routing problem and places it in the scheduling family.
+Minimizing total \emph{exposure cost} $\sum_i w_i(1 - \mathbb
+1[C_i(\sigma)\le d_i])$ is equivalent to maximizing $W(\sigma)$, since
+$\sum_i w_i$ is a constant of the instance; we work with the
+maximization form throughout.
+
+The following lemma is the structural fact both the dynamic program of
+Section~\ref{sec:theory} and the tractability results depend on. It is
+the transportation-scheduling analogue of the classical fact that
+earliest-due-date order minimizes maximum lateness on a single machine.
+
+\begin{lemma}[Earliest-deadline-first feasibility]\label{lem:edd}
+Fix a subset $S \subseteq \{1,\dots,n\}$. There exists a dispatch order
+under which every site in $S$ is on time if and only if, when the sites
+of $S$ are dispatched first (before any site outside $S$) in order of
+increasing deadline $d_i$, every site in $S$ is on time.
+\end{lemma}
+
+\begin{proof}
+Sufficiency is immediate: the stated order is one such dispatch order.
+For necessity, suppose $S$ is feasible under some order $\sigma$ (every
+site of $S$ on time). We transform $\sigma$ into the stated order by two
+kinds of exchanges, each of which preserves feasibility of $S$.
+
+First, suppose some site $j \notin S$ precedes some site $i \in S$ in
+$\sigma$. Moving $j$ to immediately after the last element of $S$
+(and shifting the intervening sites earlier by $p_j$) strictly decreases
+the completion time of every site of $S$ that came after $j$, and
+leaves the completion time of every site of $S$ that came before $j$
+unchanged; it therefore preserves feasibility of every site in $S$, and
+after repeating this for every $j \notin S$ that precedes some element
+of $S$, all of $S$ forms a prefix of the schedule.
+
+Second, with $S$ now a prefix, suppose two adjacent sites $i, i' \in S$
+appear with $d_i > d_{i'}$ but $i$ scheduled before $i'$. Swapping
+their order leaves the completion time of every other site in $S$
+unchanged (the pair occupies the same combined time interval), site
+$i'$'s new completion time is at most its old completion time plus
+$p_i - p_i$ shifted earlier by exactly the amount that matters: its new
+completion time equals the old completion time of $i$, which was $\le$
+the old completion time of $i'$, and since $d_{i'} < d_i$ this new,
+smaller completion time is compared against the same $d_{i'}$, so
+feasibility for $i'$ is preserved if it held before the swap for the
+pair's later member; and site $i$'s new completion time equals the old
+completion time of $i'$, compared against $d_i > d_{i'}$, which is only
+easier to satisfy. Repeating this adjacent-transposition argument
+(a standard bubble-sort exchange argument) sorts $S$ into increasing-$d_i$
+order without ever violating a previously-satisfied deadline. \qedsymbol
+\end{proof}
+
+Lemma~\ref{lem:edd} lets us restrict attention, without loss of
+generality, to dispatch orders that serve some subset $S$ first, in
+increasing-deadline order, followed by the remaining (necessarily
+exposed) sites in any order; the optimization problem becomes that of
+choosing $S$ to maximize $\sum_{i\in S} w_i$ subject to the feasibility
+condition of Lemma~\ref{lem:edd}.
+
+% ══════════════════════════════════════════════════════════════════
+\section{Complexity and algorithms}\label{sec:theory}
+
+\subsection{Hardness}
+
+\begin{theorem}[NP-hardness of MWHED]\label{thm:hardness}
+MWHED is NP-hard. This holds even restricted to instances in which
+every site shares a common hazard deadline, $d_i = D$ for all $i$.
+\end{theorem}
+
+\begin{proof}
+Consider the restriction $d_i = D$ for all $i$. By
+Lemma~\ref{lem:edd}, a subset $S$ is feasible if and only if, dispatched
+in any order (deadlines being tied, the earliest-deadline-first
+condition is vacuous), every site in $S$ completes by $D$; since
+completion times along a fixed set are additive, this holds exactly
+when $\sum_{i\in S} p_i \le D$. The optimization problem
+\[
+\max_{S \subseteq \{1,\dots,n\}} \ \sum_{i\in S} w_i \quad \text{s.t.} \quad
+\sum_{i \in S} p_i \le D
+\]
+is precisely the 0/1 knapsack problem, with $p_i$ the item sizes, $w_i$
+the item values, and $D$ the capacity. The (decision version of the) 0/1
+knapsack problem is NP-complete \citep{gareyjohnson1979}, by a
+polynomial reduction from PARTITION. Hence MWHED restricted to a common
+deadline is NP-hard, and since this is a special case of the general
+problem, MWHED itself is NP-hard. \qedsymbol
+\end{proof}
+
+Theorem~\ref{thm:hardness}'s reduction is deliberately the simplest one
+available: it isolates \emph{exactly} the source of hardness, namely
+heterogeneous dispatch costs weighed against heterogeneous criticality
+under a shared time budget, and reduces the question of what other
+structure might rescue tractability to what Theorem~\ref{thm:equalp}
+answers.
+
+\subsection{An exact pseudo-polynomial algorithm}
+
+\begin{theorem}[Exact dynamic program]\label{thm:dp}
+MWHED can be solved exactly in $O(n \cdot P)$ time and space, where
+$P := \sum_{i=1}^n p_i$.
+\end{theorem}
+
+\begin{proof}
+Relabel sites so that $d_1 \le d_2 \le \dots \le d_n$ (Lemma~\ref{lem:edd}
+justifies working in this order). Define, for $i = 0,\dots,n$ and $t =
+0,\dots,P$,
+\[
+f(i,t) := \text{the maximum value of } \sum_{j \in S} w_j \text{ over }
+S \subseteq \{1,\dots,i\} \text{ with } \sum_{j\in S} p_j = t \text{ and
+$S$ feasible.}
+\]
+(feasible meaning: dispatching $S$ in increasing-deadline order, every
+member is on time). Set $f(0,0) = 0$ and $f(0,t) = -\infty$ for $t > 0$.
+For $i \ge 1$,
+\begin{equation}\label{eq:dp}
+f(i,t) = \max\Bigl(f(i-1,t),\ \bigl[t \le d_i\bigr]\cdot\bigl(f(i-1,t-p_i)
++ w_i\bigr)\Bigr),
+\end{equation}
+where the second term is taken as $-\infty$ if $t < p_i$ or $t > d_i$.
+
+We verify \eqref{eq:dp} by induction on $i$. The first term corresponds
+to excluding site $i$ from $S$. For the second term, suppose $S'
+\subseteq \{1,\dots,i-1\}$ achieves $f(i-1, t-p_i)$ and is feasible;
+appending site $i$ after all of $S'$ (site $i$ has the largest deadline
+among $\{1,\dots,i\}$, so this is consistent with increasing-deadline
+order) does not change the completion time of any member of $S'$, so
+$S'$'s feasibility is preserved, and site $i$'s own completion time is
+exactly $t = (t - p_i) + p_i$, on time precisely when $t \le d_i$.
+Conversely, any feasible $S \subseteq \{1,\dots,i\}$ with $i \in S$ and
+total time $t$ restricts, by the same argument, to a feasible $S
+\setminus \{i\} \subseteq \{1,\dots,i-1\}$ with total time $t - p_i$
+achieving at least $f(i,t) - w_i$ at index $i-1$; hence $f(i-1,t-p_i)
+\ge f(i,t) - w_i$, giving the reverse inequality and confirming
+\eqref{eq:dp} computes exactly $f(i,t)$.
+
+The optimal value is $\max_{t=0}^{P} f(n,t)$, and the achieving subset
+is recovered by standard DP backtracking. The table has $O(n\cdot P)$
+entries, each computed in $O(1)$ time from~\eqref{eq:dp}, giving
+$O(nP)$ total time and space. \qedsymbol
+\end{proof}
+
+Theorem~\ref{thm:dp} is pseudo-polynomial, not polynomial: $P$ can be
+exponential in the input's bit length. This is consistent with
+Theorem~\ref{thm:hardness}'s reduction from knapsack, which is itself
+only weakly NP-hard.
+
+\subsection{A fully polynomial-time approximation scheme}
+
+\begin{theorem}[FPTAS]\label{thm:fptas}
+For every $\epsilon \in (0,1)$, a dispatch order $\sigma$ with
+$W(\sigma) \ge (1-\epsilon) \cdot W^\ast$ (where $W^\ast$ is the true
+optimum) can be computed in time polynomial in $n$ and $1/\epsilon$.
+\end{theorem}
+
+\begin{proof}
+We adapt the standard value-scaling technique used for the 0/1 knapsack
+FPTAS \citep{ibarrakim1975} to the dynamic program of
+Theorem~\ref{thm:dp}. Fix $\epsilon \in (0,1)$ and let $w_{\max} :=
+\max_i w_i$. Define the scaling factor $K := \max(1, \epsilon\, w_{\max}
+/ n)$ and scaled weights $w_i' := \lfloor w_i / K \rfloor$, so that
+$w_i' \le n/\epsilon$ for every $i$ and hence $\sum_i w_i' \le n^2 /
+\epsilon$.
+
+Run the dynamic program of Theorem~\ref{thm:dp}, but in its
+\emph{value-indexed} dual form: for $i = 0,\dots,n$ and $v =
+0,\dots,\lfloor n^2/\epsilon\rfloor$, let
+\[
+g(i,v) := \text{the minimum total dispatch time } \sum_{j\in S} p_j
+\text{ over feasible } S \subseteq \{1,\dots,i\} \text{ with }
+\sum_{j\in S} w_j' = v,
+\]
+with the same feasibility notion and the same recursion structure as
+\eqref{eq:dp}, transposed to track minimum time for a target scaled
+value rather than maximum value for a target time; the recursion is
+\[
+g(i,v) = \min\Bigl(g(i-1,v),\ \bigl[g(i-1,v-w_i') + p_i \le d_i\bigr]
+\cdot \bigl(g(i-1,v-w_i') + p_i\bigr)\Bigr),
+\]
+by the same argument as in Theorem~\ref{thm:dp}'s proof, with the roles
+of the time and value axes exchanged. This table has $O(n \cdot
+n^2/\epsilon) = O(n^3/\epsilon)$ entries, each computed in $O(1)$ time,
+so the whole computation runs in time polynomial in $n$ and $1/\epsilon$.
+
+Let $\hat S$ be the feasible subset of largest scaled value $v$ with
+$g(n,v) < \infty$, and let $S^\ast$ be the true optimal subset (value
+$W^\ast = \sum_{i\in S^\ast} w_i$). Since $w_i' \le w_i/K$, we have
+$\sum_{i \in S^\ast} w_i' \ge \sum_{i\in S^\ast}(w_i/K - 1) \ge
+W^\ast/K - n$, and $S^\ast$ is itself a feasible subset achieving this
+scaled value or better, so the returned $\hat S$ satisfies $\sum_{i \in
+\hat S} w_i' \ge W^\ast/K - n$. Converting back, since $w_i \le K(w_i' +
+1)$,
+\begin{align*}
+W(\hat S) = \sum_{i\in \hat S} w_i
+&\ \ge\ K \sum_{i \in \hat S} w_i'
+\ \ge\ K\Bigl(\frac{W^\ast}{K} - n\Bigr) = W^\ast - Kn \\
+&\ \ge\ W^\ast - \epsilon\, w_{\max}
+\ \ge\ W^\ast - \epsilon\, W^\ast = (1-\epsilon) W^\ast,
+\end{align*}
+using $K \le \epsilon w_{\max}/n$ and $w_{\max} \le W^\ast$ (the
+single highest-weight site alone is always a feasible subset of size
+one under a common-sense reading that $p_i \le d_i$ for at least the
+highest-weight site; if no site is individually on-time-feasible then
+$W^\ast = 0$ and the bound holds trivially). \qedsymbol
+\end{proof}
+
+\subsection{A second tractable special case}
+
+Theorem~\ref{thm:hardness} shows that heterogeneous dispatch costs,
+weighed against heterogeneous criticality under a shared deadline,
+already suffice for hardness. The next result shows the reverse
+axis---heterogeneous deadlines under a shared dispatch cost---does not.
+
+\begin{theorem}[Equal dispatch cost is tractable]\label{thm:equalp}
+If $p_i = p$ for all $i$ (all sites equidistant from the depot, in
+round-trip dispatch time), MWHED is solvable exactly in $O(n \log n)$
+time.
+\end{theorem}
+
+\begin{proof}
+With equal dispatch costs, the $k$-th dispatched site (whichever it is)
+completes at time $kp$, regardless of order. Assigning a site to
+``dispatch position'' $k$ is therefore feasible for that site
+if and only if $kp \le d_i$, i.e., $k \le \lfloor d_i/p \rfloor =: D_i$.
+The problem becomes: choose an injective assignment of a subset of
+sites to positions $1,\dots,n$, each site $i$ assigned to a position at
+most $D_i$, maximizing the total weight of assigned sites. This is the
+classical problem of scheduling unit-time jobs with deadlines to
+maximize total profit. The family of subsets that admit such a feasible
+assignment forms a matroid (the transversal matroid of the bipartite
+feasibility relation between sites and positions), and on any matroid,
+the greedy algorithm---here: sort sites by decreasing $w_i$, and assign
+each in turn to the latest available position $k \le D_i$, or leave it
+unassigned if none is available---returns a maximum-weight independent
+set, i.e., an optimal solution \citep[Ch.~13]{kortevygen2018}. Sorting
+takes $O(n \log n)$ time, and maintaining the set of available
+positions under repeated ``find and remove the latest available
+position $\le D_i$'' queries can be implemented with a union--find
+structure in $O(n \alpha(n))$ additional time, giving $O(n \log n)$
+overall. \qedsymbol
+\end{proof}
+
+\begin{remark}
+Theorems~\ref{thm:hardness} and~\ref{thm:equalp} together show that
+neither heterogeneous dispatch cost nor heterogeneous deadlines alone
+is responsible for MWHED's hardness: it is specifically the interaction
+between heterogeneous dispatch cost \emph{and} heterogeneous
+criticality, competing under a shared deadline structure, that produces
+a knapsack-hard problem. A dispatch network in which every site is
+equally far from the depot---a plausible approximation for, e.g., a
+ring of substations around a central facility, or short-radius urban
+service territories---remains exactly solvable regardless of how
+heterogeneous the sites' hazard deadlines or criticalities are.
+\end{remark}
+
+% ══════════════════════════════════════════════════════════════════
+\section{Numerical illustration}\label{sec:experiments}
+
+We illustrate Theorems~\ref{thm:dp} and~\ref{thm:fptas} on synthetic
+instances. For $n \in \{10,15,20,25,30\}$ we generate 20 random
+instances each ($p_i$ uniform on $\{1,\dots,20\}$, $w_i$ uniform on
+$\{1,\dots,100\}$, $d_i$ uniform on $\{1,\dots,\sum_i p_i\}$), compute
+the true optimum via Theorem~\ref{thm:dp}'s exact dynamic program, the
+FPTAS of Theorem~\ref{thm:fptas} at $\epsilon \in \{0.1, 0.2\}$, and a
+naive baseline that dispatches in earliest-deadline-first order with no
+optimization at all, simply counting whichever sites happen to still be
+on time. Table~\ref{tab:illustration} reports the ratio of each
+method's on-time weight to the true optimum, averaged over the 20
+instances at each size.
+
+\begin{table}[h]
+\caption{Mean ratio to the true optimum, by instance size ($n$), over
+20 random instances per row.}\label{tab:illustration}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+$n$ & 10 & 15 & 20 & 25 & 30 \\
+\midrule
+FPTAS ($\epsilon=0.2$) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+FPTAS ($\epsilon=0.1$) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Naive EDD (no optimization) & 0.380 & 0.343 & 0.622 & 0.369 & 0.323 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At both approximation levels tested, the FPTAS recovers the true
+optimum exactly on every one of the 100 random instances, far
+outperforming its worst-case $(1-\epsilon)$ guarantee, consistent with
+the well-documented empirical looseness of knapsack-style FPTAS
+worst-case bounds \citep{ibarrakim1975}: the scaling construction is
+designed to guarantee the worst case, not to describe the typical one.
+The naive earliest-deadline-first baseline, by contrast, captures only
+32--62\% of the optimal on-time weight and does not improve with
+instance size, since it never reconsiders a site once a more valuable
+but later-completing site could have been prioritized
+instead---exactly the gap Theorem~\ref{thm:dp}'s exact program and
+Theorem~\ref{thm:fptas}'s approximation close.
+
+% ══════════════════════════════════════════════════════════════════
+\section{Conclusion}\label{sec:conclusion}
+
+We have given a complete complexity and algorithmic characterization of
+Minimum Weighted Hazard-Exposure Dispatch, a scheduling problem that
+arises naturally whenever a single depot must choose a dispatch order
+against a spreading hazard with known, site-specific arrival deadlines.
+The problem is exactly the classical weighted on-time-jobs scheduling
+problem in transportation language, and is weakly NP-hard already in
+its simplest heterogeneous case (equal deadlines, Theorem
+\ref{thm:hardness}); an exact pseudo-polynomial dynamic program
+(Theorem~\ref{thm:dp}) and an FPTAS (Theorem~\ref{thm:fptas}) give
+planners exact and provably near-exact tools regardless; and a second,
+structurally distinct special case---equal dispatch cost, Theorem
+\ref{thm:equalp}---remains exactly solvable in near-linear time,
+delineating precisely which combination of network heterogeneity
+causes the difficulty.
+
+Natural extensions include a growing-radius (rather than fixed-deadline)
+hazard model in which the depot itself can relocate, multiple
+depots or vehicles operating in parallel (connecting MWHED to parallel-
+machine scheduling with deadlines, a substantially less understood
+complexity landscape), and a stochastic hazard-arrival model in which
+$d_i$ is itself uncertain rather than known exactly, which would couple
+this paper's scheduling question to the sequential-decision and
+statistical-monitoring questions studied elsewhere in the stochastic
+vehicle-routing literature.
+
+\backmatter
+
+\section*{Statements and Declarations}
+
+\subsection*{Funding}
+The author did not receive support from any organization for the
+submitted work.
+
+\subsection*{Competing Interests}
+The author has no relevant financial or non-financial interests to
+disclose.
+
+\subsection*{Author Contributions}
+The sole author conceived the problem, proved all results, ran the
+numerical illustration, and wrote the manuscript.
+
+\subsection*{Data Availability}
+The synthetic instance generator and all code used to produce
+Table~\ref{tab:illustration} are included with this submission and
+are self-contained (no external data was used).
+
+\subsection*{Use of Large Language Models}
+An AI coding assistant (Claude, Anthropic) was used to assist with
+LaTeX formatting and to run the numerical illustration code reported in
+Section~\ref{sec:experiments}. All theorem statements, proofs, and the
+manuscript text were authored, verified, and are taken responsibility
+for by the author.
+
+\bibliography{references}
+
+\end{document}

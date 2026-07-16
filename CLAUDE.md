@@ -33,7 +33,7 @@ see `svrpspd_wdro/core/costs.py`.
 **Do not modify `papers/baton/` while the paper is under review** (see
 its STATUS.md); revisions only when the decision arrives.
 
-### Paper 2 — TEMPO (papers/tempo/, ACTIVE)
+### Paper 2 — TEMPO (papers/tempo/, UNDER REVIEW at Transportation Science)
 
 E-process (e-value) monitoring of a running routing plan under multiple
 stochastic factors — demand, diurnal/weather travel times, congestion
@@ -47,14 +47,41 @@ TEMPO = Tilted E-Martingale Process for Online re-optimization.
 Evaluation set is identical to BATON's (Dethloff + Salhi-Nagy + city,
 same plan cache). Spec: `papers/tempo/PROJECT.md`. Code: `svrpspd_wdro/ev/`.
 
+**Do not modify `papers/tempo/` while the paper is under review** (see
+its STATUS.md); revisions only when the decision arrives.
+
+### Paper 3 — CSoNet 2026 / JOCO combinatorial-scheduling paper
+### (papers/csonet2026/, PREPARED, NOT YET SUBMITTED)
+
+A standalone, independent combinatorial-optimization theory paper:
+Minimum Weighted Hazard-Exposure Dispatch (MWHED), a single-machine
+scheduling problem for dispatching a vehicle/crew from one depot to
+sites racing a spreading hazard (wildfire, flood, contamination,
+congestion) before a per-site deadline. NP-hardness via an equal-
+deadline-reduces-to-knapsack argument, an exact pseudo-polynomial DP,
+an FPTAS, and a matroid-greedy tractable special case (equal dispatch
+cost). Target: CSoNet 2026's Journal Track → Journal of Combinatorial
+Optimization. Deliberately shares NO code, instances, or results with
+BATON or TEMPO — see `papers/csonet2026/README.md` for why (both other
+papers are under review elsewhere; JOCO/CSoNet explicitly prohibit
+simultaneous submission and salami-slicing).
+
 ## Layout
 
 - `svrpspd_wdro/` — the shared engine + all experiment scripts (see its
   README for the module map and reproduction commands). `core/` is
-  BATON-era machinery reused everywhere; `ev/` is paper 2.
+  BATON-era machinery reused everywhere; `ev/` is paper 2. Paper 3
+  (`papers/csonet2026/`) does NOT use this engine at all — its code is
+  self-contained inside its own directory.
 - `papers/baton/` — C&OR manuscript (frozen; tables ONLY via its
   `make_tables.py`, never hand-edit `tables/*`).
-- `papers/tempo/` — paper 2 (TEMPO) spec and (later) manuscript.
+- `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
+- `papers/csonet2026/` — paper 3, prepared but not yet submitted;
+  freely editable until the STATUS.md there says otherwise.
+- **Three parallel papers, three independent review clocks** — always
+  check each paper's own `STATUS.md` before touching it; "frozen" is a
+  per-paper state, not a repo-wide one, and a paper can move from
+  editable to frozen mid-session the moment the author submits it.
 - Citations: real papers with DOIs; anything unverified goes in the
   paper's `VERIFY_CITATIONS.md`.
 - `RESULTS_OTR2.md` — BATON results summary.
