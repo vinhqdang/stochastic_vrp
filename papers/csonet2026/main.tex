@@ -992,14 +992,17 @@ random instances of realistic size.
 \section{Numerical illustration}\label{sec:experiments}
 
 We illustrate Theorems~\ref{thm:dp} and~\ref{thm:fptas} and
-Proposition~\ref{prop:naive} on synthetic instances, in four
-complementary experiments: an accuracy comparison across four
-algorithms; a runtime comparison isolating the pseudo-polynomial
-(Theorem~\ref{thm:dp}) versus truly polynomial
-(Theorem~\ref{thm:fptas}) dependence on the instance's numerical
-magnitude; a sensitivity sweep over the FPTAS's accuracy parameter
-$\epsilon$; and a robustness check repeating the accuracy comparison
-under two alternative instance-generation regimes.
+Proposition~\ref{prop:naive} in five complementary experiments: an
+accuracy comparison across four algorithms on synthetic instances; a
+runtime comparison isolating the pseudo-polynomial (Theorem~\ref{thm:dp})
+versus truly polynomial (Theorem~\ref{thm:fptas}) dependence on the
+instance's numerical magnitude; a sensitivity sweep over the FPTAS's
+accuracy parameter $\epsilon$; a robustness check repeating the
+accuracy comparison under two alternative synthetic instance-generation
+regimes; and, finally, a small instance built directly from public
+records of a real wildfire (Section~\ref{sec:campfire}), to confirm
+the synthetic findings are not an artifact of how the synthetic
+instances are generated.
 
 \subsection{Accuracy across instance sizes}
 
@@ -1195,6 +1198,113 @@ increasing weight heterogeneity both widen the gap between the single
 early commitment naive EDD makes and the value it forecloses, since
 there is less slack to absorb a poor early choice and more value
 concentrated in whichever sites get displaced by it.
+
+\subsection{A real-world illustration: the 2018 Camp Fire}\label{sec:campfire}
+
+The instances above are synthetic by design---MWHED is a new problem
+with no existing benchmark set, and the robustness check just given
+specifically needs controllable distributional properties that only a
+generator, not a single fixed dataset, can provide. To ground the
+model's scale and behavior in a real event, we also build one small
+instance directly from public records of the 2018 Camp Fire (Butte
+County, California), the deadliest wildfire in California history (85
+fatalities, over 18,000 structures destroyed). We emphasize which
+numbers below are real measurements and which are disclosed modeling
+assumptions, rather than blending the two silently.
+
+\textbf{Real inputs.} The fire's ignition point (a PG\&E transmission
+tower near Pulga, CA) and its progression timeline---in particular,
+fire reaching Concow approximately $52$ minutes after ignition, and
+spot fires igniting in Paradise approximately $71$ minutes after
+ignition---are as documented in a National Institute of Standards and
+Technology forensic reconstruction \citep{nist2021campfire}. We take
+four real, named communities threatened by the fire (Concow, Paradise,
+Magalia, and Yankee Hill, Butte County) with their real geographic
+coordinates and 2010 U.S.\ Census populations (the census immediately
+preceding the fire, used as a proxy criticality weight $w_i$; later
+counts reflect the fire's aftermath, not the population at risk). A
+real regional fire-agency depot (Oroville, CA) anchors the dispatch
+side.
+
+\textbf{Disclosed modeling assumptions.} Two quantities are not
+directly measured. First, $p_i$ is computed from the real great-circle
+distance between the depot and each site (a real lower bound on true
+road distance) divided by an assumed average response speed; we report
+results at two illustrative speeds, $50$~km/h (conservative, winding
+mountain roads) and $80$~km/h (an optimistic highway-speed upper
+bound). Second, Magalia and Yankee Hill have no directly documented
+fire-arrival timestamp in the source we use, so their deadlines $d_i$
+are extrapolated: we compute the real fire-spread rate implied by
+Concow's and Paradise's real distance-from-ignition and real
+documented arrival time ($12.1$ and $14.2$~km/h respectively, averaging
+$13.1$~km/h), then apply this averaged rate to Magalia's and Yankee
+Hill's own real distance from the ignition point. Table~\ref{tab:campfire}
+reports the resulting instance and Table~\ref{tab:campfire-results} the
+outcome of running Algorithms~\ref{alg:exact}--\ref{alg:repair}
+unmodified on it (code and full source citations:
+\texttt{case\_study\_campfire.py}).
+
+\begin{table}[h]
+\caption{The Camp Fire instance. $p_i$ (round-trip dispatch minutes
+from the Oroville depot) is shown at both response-speed assumptions;
+$d_i$ (minutes after ignition) is documented for Concow and Paradise,
+extrapolated for the other two (see text); $w_i$ is 2010 census
+population.}\label{tab:campfire}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Site & $p_i$ (50 km/h) & $p_i$ (80 km/h) & $d_i$ & $w_i$ \\
+\midrule
+Concow & 63 & 39 & 52 & 710 \\
+Magalia & 89 & 55 & 58 & 11{,}310 \\
+Yankee Hill & 54 & 34 & 64 & 333 \\
+Paradise & 70 & 44 & 71 & 26{,}218 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{Outcome of each algorithm on the Camp Fire instance, at both
+response-speed assumptions.}\label{tab:campfire-results}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & $50$~km/h & $80$~km/h \\
+\midrule
+Exact optimum (Thm.~\ref{thm:dp}) & $26{,}218$ (Paradise) & $26{,}218$ (Paradise) \\
+FPTAS, $\epsilon=0.1$ (Thm.~\ref{thm:fptas}) & $26{,}218$ & $26{,}218$ \\
+Greedy repair (M--H style) & $26{,}218$ & $26{,}218$ \\
+Naive EDD (no repair) & $0$ & $710$ (Concow) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At the conservative $50$~km/h response speed, Concow and Magalia are
+individually infeasible---even dispatched first and alone, a crew from
+the Oroville depot cannot reach them before the fire does, a sobering
+but real reflection of how far this fire's actual spread outran any
+single-vehicle response. The optimal policy recognizes this
+immediately and sends the crew directly to Paradise, saving all
+$26{,}218$ people at risk there; naive earliest-deadline dispatch,
+recall, tries Concow and Magalia first \emph{because} their deadlines
+are earlier, exhausts the time budget on two sites it can never
+reach, and arrives at Paradise too late to help anyone---an
+on-the-nose illustration of Proposition~\ref{prop:naive}'s unbounded
+worst-case loss, not a constructed adversarial example. At the more
+optimistic $80$~km/h speed all four sites are individually reachable,
+yet the optimal policy \emph{still} goes straight to Paradise alone
+rather than visiting Concow, Magalia, or Yankee Hill first: any
+detour through the smaller communities consumes time Paradise's
+deadline cannot absorb. Naive EDD, dispatching earliest-deadline-first
+regardless, manages to save only Concow's $710$ residents and misses
+Paradise entirely. Both the exact DP and the FPTAS recover the true
+optimum in every case, and the greedy repair heuristic matches them
+here as well. This single real instance cannot substitute for the
+synthetic sweep's statistical evidence, but it shows the same
+qualitative pattern is not a synthetic-data artifact, and the
+$50$~km/h scenario's already-infeasible sites are exactly the kind of
+situation Section~\ref{sec:disc-multi}'s discussion of multiple
+vehicles is motivated by: a single depot's single crew has a hard
+limit on what it can save, regardless of how it is scheduled.
 
 % ══════════════════════════════════════════════════════════════════
 \section{Discussion and extensions}\label{sec:discussion}
@@ -1551,7 +1661,13 @@ numerical illustration, and wrote the manuscript.
 \subsection*{Data Availability}
 The synthetic instance generators and all code used to produce every
 table in Section~\ref{sec:experiments} are included with this
-submission and are self-contained (no external data was used).
+submission and are self-contained, except for
+Section~\ref{sec:campfire}'s real-world instance, whose inputs are
+public-domain figures (a NIST technical report and U.S.\ Census data,
+both cited in the text) rather than data collected by the author; the
+script that derives the instance from those public figures and
+reproduces Tables~\ref{tab:campfire} and~\ref{tab:campfire-results} is
+also included with this submission.
 
 \subsection*{Use of Large Language Models}
 An AI coding assistant (Claude, Anthropic) was used to assist with

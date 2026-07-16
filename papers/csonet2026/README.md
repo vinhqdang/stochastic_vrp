@@ -13,23 +13,32 @@ the Journal Track's dual-submission rule) — see `STATUS.md`.
 
 - `main.tex` / `main.pdf` — the manuscript (Springer `sn-jnl` class,
   `sn-mathphys-ay` style: author-year citations, as JOCO requires).
-  25 pages: 4 theorems + 1 proposition, full pseudocode for all four
+  30 pages: 4 theorems + 1 proposition, full pseudocode for all four
   algorithms, a running numerical example threaded through every
-  result, a "Discussion and extensions" section, and two appendices
+  result, a "Discussion and extensions" section, two appendices
   (exhaustive hand-verification of the running example; a fully
-  spelled-out FPTAS approximation-ratio derivation). Builds clean:
-  `pdflatex main && bibtex main && pdflatex main && pdflatex main`.
-- `references.bib` — all citations verified against live
-  publisher/DOI records before use (see the verification notes in the
-  session that produced this).
-- `experiment.py` — self-contained numerical experiments: the exact
-  DP, the FPTAS (implemented as the value-indexed dual DP from the
-  proof, not a shortcut), a weighted Moore–Hodgson-style greedy repair
-  heuristic, and the naive EDD baseline, across four experiments
-  (accuracy vs. instance size, runtime scaling, epsilon sensitivity,
-  robustness to alternative instance-generation regimes). Regenerate
-  every table with `python3 experiment.py`.
-- `results_illustration.json` — the experiments' raw output.
+  spelled-out FPTAS approximation-ratio derivation), and a real-world
+  case study (Section 5.5). Builds clean: `pdflatex main && bibtex main
+  && pdflatex main && pdflatex main`.
+- `references.bib` — 26 citations, all verified against live
+  publisher/DOI/arXiv records before use, spanning 1968–2026 (four
+  2026 papers included).
+- `experiment.py` — self-contained numerical experiments on synthetic
+  instances: the exact DP, the FPTAS (implemented as the value-indexed
+  dual DP from the proof, not a shortcut), a weighted
+  Moore–Hodgson-style greedy repair heuristic, and the naive EDD
+  baseline, across four experiments (accuracy vs. instance size,
+  runtime scaling, epsilon sensitivity, robustness to alternative
+  instance-generation regimes). Regenerate every synthetic table with
+  `python3 experiment.py`.
+- `results_illustration.json` — the synthetic experiments' raw output.
+- `case_study_campfire.py` / `case_study_campfire_results.txt` — a
+  real-world MWHED instance built from public records of the 2018
+  Camp Fire (NIST fire-progression timeline, real community
+  coordinates and 2010 Census populations); every disclosed modeling
+  assumption (response speed, deadline extrapolation for two sites) is
+  documented in the script's docstring and in main.tex
+  Section~5.5. Regenerate with `python3 case_study_campfire.py`.
 - `cover_letter.md` — cover letter for the JOCO submission; explicitly
   states "This manuscript is submitted to the journal track of CSoNet
   2026" per the Journal Track's requirement.

@@ -1,0 +1,20 @@
+=== Response speed = 50 km/h (derived hazard spread rate = 13.12 km/h) ===
+  Concow       p= 63 d= 52 w=   710  [INFEASIBLE ALONE]
+  Magalia      p= 89 d= 58 w= 11310  [INFEASIBLE ALONE]
+  Yankee Hill  p= 54 d= 64 w=   333  [OK]
+  Paradise     p= 70 d= 71 w= 26218  [OK]
+  Exact optimum   W* =    26218  dispatched = ['Paradise']
+  Naive EDD          =        0  dispatched = []
+  Greedy repair      =    26218  dispatched = ['Paradise']
+  FPTAS (eps=0.1)    =    26218  dispatched = ['Paradise']
+
+=== Response speed = 80 km/h (derived hazard spread rate = 13.12 km/h) ===
+  Concow       p= 39 d= 52 w=   710  [OK]
+  Magalia      p= 55 d= 58 w= 11310  [OK]
+  Yankee Hill  p= 34 d= 64 w=   333  [OK]
+  Paradise     p= 44 d= 71 w= 26218  [OK]
+  Exact optimum   W* =    26218  dispatched = ['Paradise']
+  Naive EDD          =      710  dispatched = ['Concow']
+  Greedy repair      =    26218  dispatched = ['Paradise']
+  FPTAS (eps=0.1)    =    26218  dispatched = ['Paradise']
+

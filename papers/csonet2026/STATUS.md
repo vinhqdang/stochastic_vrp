@@ -33,9 +33,11 @@
   and contact email, since editorial systems need genuine
   corresponding-author contact information regardless of whether the
   manuscript file itself is blinded.
-- Submission set: `main.pdf` (manuscript, 25 pages: 4 theorems, 1
+- Submission set: `main.pdf` (manuscript, 30 pages: 4 theorems, 1
   proposition, full pseudocode, a running numerical example, a
-  schematic figure of the running example, 4 numerical experiments, a
+  schematic figure of the running example, 4 numerical experiments on
+  synthetic instances plus a real-world case study built from the 2018
+  Camp Fire (Section 5.5, `case_study_campfire.py`), a
   discussion/extensions section, 2 appendices), `cover_letter.md`,
   `conference_abstract_submission.md`, `title_page.md` (convenience
   copy of title/author/abstract/keywords for pasting into
