@@ -4,7 +4,7 @@
 abandoned as scooped, so the repo currently has **no open paper**. This file is
 the running record of the search for the next one: every idea evaluated, every
 verdict, and — most valuable — **the citation ledger of prior art that killed
-things**, so no dead idea gets re-trodden. Six ideas have been rejected so far.
+things**, so no dead idea gets re-trodden. Seven ideas have been rejected so far.
 Without this note that history is invisible and repeatable.
 
 Keep appending. Newest findings at the top of each section. Every citation here
@@ -12,11 +12,14 @@ was retrieved and checked, not recalled; anything unverified is labelled so.
 
 ---
 
-## Working name: **KAIROS** *(provisional)*
+## Working name: **KAIROS** *(on hold — the direction it named is dead)*
 
-Greek for *the opportune moment* — apt, because the live candidate direction is
-about a decision that chooses **when** to act, and thereby chooses which
-distribution of travel times it faces.
+Greek for *the opportune moment* — coined for the decision-dependent-reference
+candidate, which chose **when** to act and thereby chose which travel-time
+distribution it faced. **That idea was abandoned as scooped on 2026-07-27**, so
+the name is unattached. It stays here because it would still fit any routing
+paper about choosing dispatch timing under uncertainty — reuse it only if that
+is what the next idea turns out to be.
 
 > **K**eyed **A**mbiguity over **I**nterval-conditioned **R**eference measures
 > with **O**ptimal-transport **S**moothing
@@ -26,8 +29,8 @@ initialism (BATON, TEMPO), so this fits. **"SIDRA" was considered and
 rejected** — it is established traffic-engineering software (SIDRA
 Intersection), and a name collision inside the transport domain would be a
 persistent nuisance. **Do not commit to this name until the tractability
-verdict below lands** — if the direction changes, the name should change with
-it.
+verdict below lands** — and that verdict came back ABANDON, so the name is
+parked rather than adopted.
 
 ---
 
@@ -120,6 +123,55 @@ driven by first-stage **integer** decisions, MINLP via Lagrangian duality.
 **Note for future searches: Xian Yu is a co-author on both killing papers.**
 One group is systematically working decision-dependent DRO. Treat that whole
 area as contested.
+
+**An independent second check confirmed this and found an EARLIER, cleaner
+kill.** Recorded because it predates everything above by four years:
+
+- **Noyan, Rudolf & Lejeune (2022), "Distributionally Robust Optimization Under
+  a Decision-Dependent Ambiguity Set with Applications to Machine Scheduling and
+  Humanitarian Logistics," *INFORMS J. on Computing* 34(2):729–751, DOI
+  `10.1287/ijoc.2021.1096`** — abstract verbatim: *"as our ambiguity sets, we
+  consider **balls centered on a decision-dependent probability distribution**.
+  The balls are based on a class of earth mover's distances that includes both
+  the total variation distance and the Wasserstein metrics."* And the nominal is
+  explicitly a **finite mixture selected by the decision** (§3):
+  `P = Σ_{s=1}^S π_s(x) P_s` with `π_s` affine in `x`. Selection is the
+  degenerate case `π ∈ {0,1}^S`. So "the decision picks its reference measure
+  from a finite menu, with a Wasserstein ball centred on it" was **published in
+  a journal in 2022**.
+- **Yu & Basciftci §5.1 names our exact case by name**: *"assume p̄_l = 0, ∀l,
+  Σ_l λ_l = 1 and **Σ_i y_i = 1**. This reduces to the convex combination of
+  distributions discussed in Section 4.1.2 of Hellemo et al. (2018)."* With
+  binary `y` summing to one, `p̂(y)` *is* a selection indicator. Our idea is
+  their `ρ = 0` corner — strictly *less* general than what they published, and
+  flagged in their own text.
+- **Hellemo, Barton & Tomasgard (2018), *Computational Management Science*
+  15(3–4):369–395, DOI `10.1007/s10287-018-0330-0`**, §4.1.2 — the
+  decision-selects-a-distribution construction in two-stage recourse, pre-DRO.
+  (Verified via Crossref and via Yu & Basciftci's citation; its full text not
+  obtained.)
+- **Qu, Jia & You, arXiv:`2508.06965`** (preprint, single-stage) — Definition 3
+  plus Remark 1: nearest-neighbour interpolation over per-decision empirical
+  measures *is* pure selection, with the ball centred on the selected one.
+- **Chen, Sim & Xiong (2020), *Management Science* 66(8):3329–3339, DOI
+  `10.1287/mnsc.2020.3603`** — **event-wise ambiguity sets**: finitely many
+  events, ambiguous conditional per event. Our structure minus
+  decision-dependence.
+- **Field-maturity signal:** *Mathematical Programming* ran a **special issue**
+  on "stochastic programming and distributionally robust optimization with
+  decision-dependent uncertainty" — Lejeune, Romeijnders & Krokhmal (2026), DOI
+  `10.1007/s10107-026-02383-9`. When a top journal devotes a special issue to
+  the exact topic, the area is fully staffed. Likely referees include the very
+  authors above.
+
+**One genuinely open thing found, and it matters for what comes next.** The
+second check found **no routing/VRP paper** where "departure-time or
+service-window selection picks the demand or travel-time distribution", and
+optimization-online returns **zero** hits for "contextual decision-dependent".
+So the *phrase* and the *routing application* are unclaimed even though the
+mathematics is thoroughly claimed. Any future use of this must position itself
+as an **instantiation** of Noyan–Rudolf–Lejeune / Yu–Basciftci, with all novelty
+in the routing layer — never as a new ambiguity-set class.
 
 **Two corrections to our own reasoning, recorded because both were wrong:**
 1. **The convexity fear was unfounded.** We worried log-sum-exp composed with an
