@@ -3,21 +3,26 @@
 - **Title:** Minimum Weighted Hazard-Exposure Dispatch: Complexity, an
   Exact Algorithm, and an FPTAS
 - **Venue:** Journal of Combinatorial Optimization (Springer), via
-  CSoNet 2026's Journal Track — **PREPARED, NOT YET SUBMITTED.**
-- **Deadline:** Journal Track submission — July 15, 2026 (extended),
-  per the CFP text available earlier in this project. **As of today
-  (2026-07-16) this date has already passed by one day** — verify the
-  live CSoNet 2026 call before submitting: check whether the window
-  was extended again, whether JOCO's Editorial Manager enforces this
-  date at all for a direct journal submission (journals often accept
-  papers year-round; the CSoNet-linked window mainly affects whether
-  the abstract submission to meteor.springer.com/CSoNet2026 secures a
-  presentation slot), and submit as soon as possible regardless.
-- **Policy:** once actually submitted (editorialmanager.com/joco),
-  update this file with the submission date and switch this directory
-  to the same "do not modify while under review" policy as
-  `papers/baton/`; until then it is an active work-in-progress
-  directory, editable freely.
+  CSoNet 2026's Journal Track — **SUBMITTED.**
+- **Submission record:**
+  - JOCO / Editorial Manager (editorialmanager.com/joco, username
+    `dqvinh87@gmail.com`): submitted and **received**. The editorial
+    office then sent it back with one pre-review request — *"provide
+    the corresponding author email address in the manuscript."* The
+    manuscript already carries it (`main.tex` line 31,
+    `\author*[1]{...}\email{vinh.dq4@buv.edu.vn}`, rendering on the
+    title page as "Corresponding author(s). E-mail(s):
+    vinh.dq4@buv.edu.vn"), so the fix is to re-upload the current
+    `main.pdf` via *Submissions Sent Back to Author → Edit Submission
+    → Attach Files*, rebuild the PDF, and approve. The file uploaded
+    originally predated the finalized author block.
+  - CSoNet 2026 conference abstract (meteor.springer.com/CSoNet2026):
+    submitted, **submission ID 374764**. Listed only Quang-Vinh Dang
+    as author; a request to Meteor support to add the three co-authors
+    is the author's outstanding action.
+- **Policy:** treat as frozen — **do not modify** except for
+  editor-requested fixes like the one above, same convention as
+  `papers/baton/STATUS.md`. Record any further editorial exchange here.
 - Authors (4, real identity now on the title page — no longer
   blinded, per explicit author instruction since JOCO is not a
   double-blind venue):

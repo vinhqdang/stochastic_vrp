@@ -51,7 +51,7 @@ same plan cache). Spec: `papers/tempo/PROJECT.md`. Code: `svrpspd_wdro/ev/`.
 its STATUS.md); revisions only when the decision arrives.
 
 ### Paper 3 — CSoNet 2026 / JOCO combinatorial-scheduling paper
-### (papers/csonet2026/, PREPARED, NOT YET SUBMITTED)
+### (papers/csonet2026/, SUBMITTED to JOCO)
 
 A standalone, independent combinatorial-optimization theory paper:
 Minimum Weighted Hazard-Exposure Dispatch (MWHED), a single-machine
@@ -76,12 +76,22 @@ simultaneous submission and salami-slicing).
 - `papers/baton/` — C&OR manuscript (frozen; tables ONLY via its
   `make_tables.py`, never hand-edit `tables/*`).
 - `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
-- `papers/csonet2026/` — paper 3, prepared but not yet submitted;
-  freely editable until the STATUS.md there says otherwise.
-- **Three parallel papers, three independent review clocks** — always
-  check each paper's own `STATUS.md` before touching it; "frozen" is a
-  per-paper state, not a repo-wide one, and a paper can move from
-  editable to frozen mid-session the moment the author submits it.
+- `papers/csonet2026/` — paper 3, **SUBMITTED** to JOCO's Editorial
+  Manager; treat as frozen except for editor-requested fixes.
+- **Parallel papers, independent review clocks** — always check each
+  paper's own `STATUS.md` before touching it; "frozen" is a per-paper
+  state, not a repo-wide one, and a paper can move from editable to
+  frozen mid-session the moment the author submits it. As of now
+  papers 1–3 are all closed to edits.
+- **Adding a new paper:** create `papers/<shortname>/` holding the
+  manuscript, a `STATUS.md` (venue, review state, freeze policy), a
+  `README.md` with the file manifest and how each table/figure
+  regenerates, `references.bib`, and the cover letter. New shared
+  machinery goes in a new subpackage of `svrpspd_wdro/` (alongside
+  `core/` and `ev/`) with tests in `svrpspd_wdro/tests/` — *unless*
+  the paper must demonstrably share nothing with a paper under review
+  elsewhere, in which case keep its code self-contained in its own
+  directory and record that argument in its README, as paper 3 does.
 - Citations: real papers with DOIs; anything unverified goes in the
   paper's `VERIFY_CITATIONS.md`.
 - `RESULTS_OTR2.md` — BATON results summary.
