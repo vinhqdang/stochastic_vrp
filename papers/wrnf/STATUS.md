@@ -49,6 +49,21 @@
      model. And it is an extension of our own MWHED paper currently
      under review at JOCO, by the same authors, so an editor could
      reasonably read it as salami-slicing. Poor COAP fit besides.
+- **Novelty check, first result (2026-07-27).** The collapse *identity*
+  is prior art and must not be claimed: Huang, Li & Mao, "When
+  Wasserstein DRO Reduces Exactly" (Optimization Online, Sept 2025,
+  rev. Feb 2026), Proposition 7 eq. (36), states the type-1
+  regularization identity in general form, and our identity is a
+  special case of its mechanism. Verified against the paper's full
+  text that it contains **no** two-stage, recourse, value-function,
+  network, or newsvendor content — its loss is static and its
+  applications are chance-constrained programming and classification.
+  So the surviving contribution is narrower than first framed: (1) the
+  Lipschitz modulus of a two-stage *recourse value function* equals the
+  recourse penalty, (2) the decision-irrelevance corollary that follows
+  from it being independent of x, (3) the bounded-support /
+  capacitated-arc frontier. `PROJECT.md` §2 and §7 record this. Two
+  further literature checks were still running when this was written.
 - **Relationship to the other papers in this repo.** Independent by
   construction. BATON also uses Wasserstein-DRO machinery, but as a
   capacity-feasibility *gate* inside a route constructor, whereas here

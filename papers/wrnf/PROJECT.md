@@ -56,12 +56,41 @@ available so $\pi_j \le p$; as demand grows capacity is exhausted, $\mu_i$
 grows, and $\pi_j \to p$. Hence the Lipschitz modulus of $Q$ in the norm dual
 to $\ell_1$ is exactly $p$, independent of $x$.
 
-*This is the intended headline.* The general mechanism (worst case = sample
-average + $\varepsilon\cdot$Lipschitz modulus for convex costs over a type-1
-ball with unbounded support) is known — Mohajerin Esfahani & Kuhn, Gao &
-Kleywegt — and must be cited as known, not claimed. What is ours is the
-identification of the modulus with the recourse penalty for network flow, and
-the resulting *decision*-irrelevance conclusion.
+**The identity itself is prior art — do not claim it.** The general mechanism
+(worst case = reference expectation + $\varepsilon\cdot$Lipschitz modulus over
+a type-1 ball) is established, and as of February 2026 it is stated in
+considerable generality:
+
+> Huang, Li & Mao, *When Wasserstein DRO Reduces Exactly: Complete
+> Characterizations of Projection Equivalence and Regularization*,
+> Optimization Online, Sept 2025, rev. Feb 2026.
+> [preprint](https://optimization-online.org/2025/09/when-wasserstein-dro-reduces-exactly-complete-characterization-projection-equivalence-and-regularization/)
+> Their **Proposition 7, eq. (36)**:
+> $\sup_{F\in B_1(F_0,\varepsilon)} H_1^F(f(\xi)) = H_1^{F_0}(f(\zeta)) + b\,\mathrm{Lip}(f)\,\varepsilon$.
+> Taking $H_1$ to be the expectation ($b=1$) gives our identity's mechanism
+> exactly. Also cite Mohajerin Esfahani & Kuhn; Gao & Kleywegt;
+> Shafieezadeh-Abadeh, Kuhn & Mohajerin Esfahani (regularization via mass
+> transportation).
+
+Checked directly against the full text (`pdftotext`): that paper contains
+**zero** occurrences of "two-stage", "recourse", "second stage", "value
+function", "network", or "newsvendor". Its $f$ is a static loss on $\xi$; its
+worked applications are chance-constrained programs and classification. It
+never computes $\mathrm{Lip}(f)$ for an optimization value function and never
+draws a conclusion about the *decision*.
+
+So the contribution narrows to three things, and the manuscript must be framed
+this way from the first paragraph:
+
+1. **The modulus of a two-stage recourse value function is the recourse
+   penalty**: $\mathrm{Lip}(Q(x,\cdot)) = p$ for network flow with simple
+   recourse. A structural computation about an optimization value function, not
+   a static loss — this is what nobody has done.
+2. **Decision irrelevance.** Because that modulus does not depend on $x$, the
+   robust argmin equals the SAA argmin. Robustness is not merely equivalent to
+   a regularizer here; it is *inert*. The corollary is the point.
+3. **The frontier.** Bounded support and capacitated arcs restore relevance;
+   tractability dichotomy around that boundary.
 
 **Finding 2 (bounded support restores relevance).** Truncating the support to
 $\xi \le 6$ with $\varepsilon = 2$ moves the robust optimum to $[5.5, 6.5]$
@@ -167,7 +196,20 @@ Rules adopted, mirroring `papers/csonet2026/`:
 
 ## 7. Prior art that must be engaged head-on
 
-All DOIs below verified against Crossref.
+All DOIs below verified against Crossref. **This section is still too
+pre-2021-weighted and must be rebuilt on 2024–2026 work before drafting** —
+that is where the scooping risk actually lives, and a referee will expect the
+current frontier engaged, not just the foundational papers. Research in
+progress; `optimization-online.org` is the venue this community preprints to
+and is worth searching directly, not only Crossref/arXiv.
+
+- **Huang, Li & Mao (2025, rev. Feb 2026), Optimization Online** — *When
+  Wasserstein DRO Reduces Exactly.* Proposition 7 states the type-1
+  regularization identity in general form; our collapse identity is a special
+  case of its mechanism. **Cite prominently as prior art; claim only the
+  value-function modulus, the decision-irrelevance corollary, and the
+  frontier.** Verified from full text: no two-stage, recourse, value-function,
+  or network content anywhere in it.
 
 - Hanasusanto & Kuhn (2018), *Operations Research* 66(3),
   [10.1287/opre.2017.1698](https://doi.org/10.1287/opre.2017.1698) — two-stage
