@@ -207,3 +207,8 @@ marimo/_lsp/
 __marimo__/
 cache/
 svrpspd_wdro/data/City/_cache/
+
+# data probe caches
+/tmp/wrnf_probe/
+data_sources/*.parquet
+data_sources/*.json
