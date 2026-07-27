@@ -83,6 +83,46 @@ On January 2025 (3,355,999 clean trips, 734 hours):
   Confounded (clear cold nights, lower volume in storms). Do not present it as
   a congestion driver without a mechanism.
 
+## Built: link-level congestion-multiplier distributions
+
+`python3 data_sources/build_nyc_link_distributions.py --start 2025-01-01 --end 2025-01-07`
+
+Turns the NYC DOT feed into the object a stochastic or robust routing model
+actually needs: per (link, hour-of-day, weather state), an empirical
+distribution over the **congestion multiplier**
+`r = observed travel time / free-flow travel time`. Multipliers rather than raw
+seconds is the portability step — raw NYC seconds mean nothing on a Hanoi edge,
+but "this road runs 1.8x free-flow at 17:00 in rain" transfers anywhere
+free-flow time is known. Needs **no OSM/Overpass access**: free-flow speed comes
+from each link's own 90th-percentile speed and length from the feed's polyline.
+
+Result on 2025-01-01..07 — 245,012 raw rows, 197,213 after cleaning (80.5%
+kept), **96 usable links, 156,283 observations**:
+
+| | |
+|---|---|
+| multiplier `r` | median **1.348**, p90 **4.859**, p99 **14.939** (heavy right tail) |
+| diurnal | mean `r` rises from **2.03** at 03:00 to **2.98** at 15:00 |
+| wet − dry | mean multiplier **+0.153**, CV **+0.011** |
+
+**The wet−dry row is the finding, and it now replicates across two independent
+measurement systems.** The trip-level probe (TLC taxi durations) and this
+link-level feed (DOT loop/sensor travel times) are different instruments on
+different spatial units, and both say weather **shifts the centre and barely
+touches the spread**: here the mean multiplier moves +0.153 on a base of ~2.2
+(≈7%) while CV moves +0.011 on a base of ~1.1 (≈1%), so the mean effect is
+roughly seven times larger in relative terms.
+
+Caveat worth stating in any write-up: link-level CV (~1.0–1.2) is far above the
+trip-level CV (0.301), because 1–5 minute sensor samples are much noisier than
+whole-trip aggregates and the multiplier has a p99 near 15. The two agree on the
+*direction and relative size* of the weather effect, not on absolute dispersion.
+
+Outputs: aggregate cell statistics go to `out/nyc_cells_*.csv` (committed —
+derived statistics are publishable); per-observation rows go to
+`out/nyc_multipliers_*.parquet` (**git-ignored**, because NYC DOT states no
+licence and bulk rows should not be redistributed — cite the URL instead).
+
 ## Recommended pipeline to an empirical ambiguity-set centre
 
 Using #1 as primary and #2 as the licence-clean secondary:
