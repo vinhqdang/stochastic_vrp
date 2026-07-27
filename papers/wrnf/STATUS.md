@@ -2,18 +2,31 @@
 
 - **Working title:** Decision relevance and tractability of two-stage
   Wasserstein-robust network flow with ambiguous demand
-- **Venue:** Computational Optimization and Applications (Springer) —
-  **NOT YET WRITTEN.** Regular stream, not a special issue: both open
-  COAP special issues are restricted to conference participants, and
-  the Brazilian Workshop one is continuous-optimization only.
-- **State:** spec + verified prototype. `PROJECT.md` holds the plan;
-  `prototype_check.py` / `prototype_results.txt` hold the numerical
-  evidence for the three central claims. No manuscript file yet, no
-  algorithm implementation yet.
-- **Policy:** this directory is an **active work-in-progress** and is
-  freely editable — unlike `papers/baton/`, `papers/tempo/`, and
-  `papers/csonet2026/`, which are all frozen. Switch it to the frozen
-  convention the moment it is submitted, and record the date here.
+- **Venue:** was targeting Computational Optimization and Applications.
+- **State: ABANDONED, 2026-07-27 — scooped. Never drafted.** The result
+  is published: MEK (2018) Remark 6.7 states the decision-irrelevance
+  thesis verbatim, and Duque, Mehrotra & Morton (SIOPT 32(3), 2022) do
+  the two-stage version including both of this project's "findings",
+  with a supply-allocation testbed that is essentially this model.
+  Byeon-Fang-Kim (SIOPT 2025) and Byeon (arXiv:2501.05619) own the
+  dual-vertex modulus mechanism with the corrected constant;
+  Lee-Kim-Moon (JORS 2021) already have "modulus = recourse penalty"
+  for the newsvendor. Full citation list and the two technical errors
+  found in our own claim are recorded at the top of `PROJECT.md`.
+- **Policy:** kept as a documented negative result, not a plan. Do not
+  resume without reading `PROJECT.md`'s abandonment banner first. The
+  numerics in `prototype_check.py` are *correct* and reproduce a real
+  (published) phenomenon — they are just not novel.
+- **Worth salvaging (the one live thread).** BATON's W-DRO capacity gate
+  (`svrpspd_wdro/core/wdro_exact.py`) computes
+  `Phi(r) = CVaR_alpha(max(0, f_r(xi) - Q)) + epsilon/(1-alpha)`, whose
+  regularizer is a **route-independent additive constant** — the same
+  phenomenon. Because the gate is a *feasibility constraint* rather than
+  an objective, the constant tightens the threshold instead of
+  cancelling, so the gate is not vacuous; but it does make the W-DRO
+  gate equivalent to the SAA-CVaR gate at a shifted threshold. Worth
+  checking against the BATON manuscript's claims when its decision
+  arrives (it is frozen now); a referee could plausibly raise it.
 - **Authors:** not yet fixed. Decide before drafting; the other papers
   in this repo use Quang-Vinh Dang (BUV, corresponding) plus a subset
   of Minh Ngoc Dinh (Millennia Education), Hoang-Viet Vu (BUV), and

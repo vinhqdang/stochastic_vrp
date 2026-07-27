@@ -1,3 +1,49 @@
+> # ⛔ ABANDONED — 2026-07-27. DO NOT BUILD THIS.
+>
+> The central result is **comprehensively published**. Verified directly
+> against the source PDFs, not via secondary claims:
+>
+> - **Mohajerin Esfahani & Kuhn (2018), Math. Prog. 171:115–166,
+>   [Remark 6.7](https://arxiv.org/pdf/1505.05116) "ε-insensitive
+>   optimizers"** — states this paper's entire thesis verbatim: *"For loss
+>   functions whose Lipschitz modulus with respect to ξ is independent of
+>   x (e.g., the newsvendor loss), however, κ(x) is constant. In this case
+>   the distributionally robust optimization problem and the SAA problem
+>   share the same minimizers irrespective of the Wasserstein radius ε."*
+>   Mechanism, conclusion, and example, all of it, in 2018.
+> - **Duque, Mehrotra & Morton, "Distributionally Robust Two-Stage
+>   Stochastic Programming," SIAM J. Optimization 32(3):1499–1522 (2022),
+>   DOI 10.1137/20M1370227** — the two-stage version, including both of
+>   this spec's "findings": *"when using the Wasserstein distance and the
+>   support of the random parameters is an unbounded convex cone, there is
+>   no point in solving the DRTSP"* (§3.1, Thm 1) and hyper-rectangular
+>   support restoring a hedging first-stage solution (§3.2). Their §5
+>   numerical testbed is a supply-allocation problem — this model plus a
+>   holding cost.
+> - **Byeon, Fang & Kim, SIAM J. Opt. 35(1):506–536 (2025), DOI
+>   10.1137/23M1626839**, Cor. 3.8 / Rmk 3.9, and **Byeon, arXiv:2501.05619
+>   (2025), Prop. 2** — own the "modulus = max over second-stage dual
+>   vertices, independent of x" mechanism, with the *corrected* constant
+>   (BFK Example 3.10 is a counterexample to DMM's constant on proper
+>   cones; the collapse itself survives).
+> - **Lee, Kim & Moon, JORS 72(8):1879–1897 (2021), DOI
+>   10.1080/01605682.2020.1746203** — "modulus = the recourse penalty" in
+>   print for the newsvendor (κ = b), explicitly citing MEK Remark 6.7.
+> - **Huang, Li & Mao (2025, rev. Feb 2026)** — the general type-1
+>   regularization identity (Prop. 7, eq. 36).
+>
+> Two genuine errors in the spec below, worth recording so they are not
+> repeated: (1) over Ξ = ℝⁿ the second stage is **infeasible** for ξⱼ < 0,
+> so the worst-case expectation is +∞, not SAA + εp — the claim needs
+> Ξ = ℝⁿ₊; (2) the argument that πⱼ ≤ p bounds the dual from **above
+> only**, whereas the modulus is maxₚᵢ ‖π‖_∞, which also needs a lower
+> bound over the dual feasible set.
+>
+> What remained after the scoop was a corollary of BFK Thm 3.2 plus a
+> one-paragraph LP-duality evaluation — not a paper, and in a line two
+> active groups have a three-year head start on. Files kept as a record of
+> the negative result, not as a plan. See `STATUS.md`.
+
 # Paper 4 — WRNF: when does distributional robustness change a network-flow decision?
 
 **Working title.** *Decision relevance and tractability of two-stage

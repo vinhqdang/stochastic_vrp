@@ -66,26 +66,30 @@ BATON or TEMPO — see `papers/csonet2026/README.md` for why (both other
 papers are under review elsewhere; JOCO/CSoNet explicitly prohibit
 simultaneous submission and salami-slicing).
 
-### Paper 4 — WRNF (papers/wrnf/, IN PROGRESS, targeting COAP)
+### Paper 4 — WRNF (papers/wrnf/, ABANDONED 2026-07-27 — scooped)
 
-Two-stage Wasserstein-robust network flow with ambiguous demand, aimed at
-Computational Optimization and Applications. The spine: over an
-*unbounded* support the type-1 Wasserstein robust problem equals the
-sample-average problem plus the constant `eps * p`, so the robust
-decision is *identical* to the SAA decision (robustness is
-decision-irrelevant); over a *bounded* support the collapse fails,
-decisions differ, and the worst case needs a cutting-plane method with a
-combinatorial separation oracle. Prior art that constrains the claims:
-Hanasusanto & Kuhn (2018) copositivity, Atamturk & Zhang (2007)
-NP-hardness of separation for bipartite two-stage robust network flow.
+Abandoned before drafting. The thesis — that type-1 Wasserstein
+robustness over unbounded support leaves the decision unchanged — is
+**published**: Mohajerin Esfahani & Kuhn (2018) Remark 6.7 states it
+verbatim (naming the newsvendor), and Duque, Mehrotra & Morton, SIAM J.
+Optimization 32(3):1499-1522 (2022) do the two-stage version, including
+the bounded-support contrast, with a supply-allocation testbed that is
+essentially the model we built. Byeon-Fang-Kim (SIOPT 2025) and Byeon
+(arXiv:2501.05619) own the dual-vertex modulus mechanism.
 
-Spec: `papers/wrnf/PROJECT.md`. The three central claims are numerically
-verified against brute force in `papers/wrnf/prototype_check.py` — rerun
-it before trusting any theorem statement that depends on them. Code is
-**self-contained** in `papers/wrnf/` and must not import from
-`svrpspd_wdro/` (or vice versa): BATON, under review, also uses
-Wasserstein-DRO machinery, and the two must stay visibly distinct — see
-`PROJECT.md` §6. This directory is **editable**, unlike papers 1–3.
+Do NOT resume it. `papers/wrnf/PROJECT.md` opens with an abandonment
+banner listing every scooping citation plus two technical errors found
+in our own claim; `STATUS.md` records the decision. Kept as a
+documented negative result. The prototype numerics are correct, just
+not novel.
+
+One live thread from it: BATON's W-DRO gate in
+`svrpspd_wdro/core/wdro_exact.py` adds a **route-independent** constant
+`epsilon/(1-alpha)` to a CVaR gate. As a feasibility constraint that
+tightens the threshold rather than cancelling, so not vacuous — but it
+does make the W-DRO gate equivalent to the SAA-CVaR gate at a shifted
+threshold. Check against the manuscript's claims when BATON's decision
+arrives; a referee could raise it. BATON is frozen, so do not act now.
 
 ## Layout
 
@@ -99,13 +103,14 @@ Wasserstein-DRO machinery, and the two must stay visibly distinct — see
 - `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
 - `papers/csonet2026/` — paper 3, **SUBMITTED** to JOCO's Editorial
   Manager; treat as frozen except for editor-requested fixes.
-- `papers/wrnf/` — paper 4 (COAP), **active work-in-progress**, freely
-  editable; self-contained code, no engine imports.
+- `papers/wrnf/` — paper 4, **ABANDONED (scooped)**; kept as a
+  documented negative result. Do not resume — see its PROJECT.md banner.
 - **Parallel papers, independent review clocks** — always check each
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1–3 are closed to edits and paper 4 is open.
+  papers 1–3 are closed to edits and paper 4 is abandoned, so there is
+  **no open paper** — a new one needs a fresh directory.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
   manuscript, a `STATUS.md` (venue, review state, freeze policy), a
   `README.md` with the file manifest and how each table/figure
