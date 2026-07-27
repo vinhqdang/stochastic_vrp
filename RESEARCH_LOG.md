@@ -79,6 +79,38 @@ set is the wrong instrument for it. That is a substantive modelling observation
 and it points toward an applied/computational paper where the contribution is
 the algorithm plus the data-grounded evaluation, rather than a new ambiguity set.
 
+### The one verified open gap, with its risks
+
+**There is no distributionally robust time-dependent VRP, and no DR
+time-dependent shortest path.** Verified by negative search across Crossref,
+arXiv, optimization-online and publisher pages. Time-dependence is currently
+modelled deterministically (piecewise-linear travel-time functions), by
+scenarios (Kubek 2025, DOI `10.3390/su172411308`), by a Markov background
+process (Kamphuis, Levering & Mandjes 2025, *Computers & OR* 183:107148, DOI
+`10.1016/j.cor.2025.107148`), or by a budget uncertainty set — **never as a
+period-indexed ambiguity set with a finite-sample guarantee.**
+
+Three risks to price in before touching it:
+1. **It is publicly signposted and funded.** Filippi, Maggioni & Speranza's
+   2025 survey (*Computers & OR* 182:107096, DOI
+   `10.1016/j.cor.2025.107096`) names it in future directions — *"utilizing
+   historical and spatio-temporal data (such as weather conditions,
+   time-of-day patterns, or congestion levels) … estimate conditional
+   distributions of uncertain parameters"* — under PRIN grants. We would be
+   racing Speranza's and Maggioni's groups.
+2. **The robust version is already being built.** Malheiros, Poss, Nesello &
+   Subramanian, "The robust time-dependent VRP with time windows and budget
+   uncertainty" — ROADEF 2026 and EURO 34 abstracts, no journal version yet.
+   Travel time `t_ij(s,delta)` with both components piecewise-linear in
+   departure time and `delta` in a Bertsimas–Sim budget set.
+3. **"Index the ambiguity set by the chosen slot and dualize" is scooped
+   several times over.** To survive, the contribution must be something the
+   general theory does not hand you — e.g. exploiting the **finite, totally
+   ordered** period index plus FIFO monotonicity to get a polynomial or exactly
+   convex reformulation where generic decision-dependent DRO is bilinear, or a
+   **monotone comparative statics** result on the optimal departure period as
+   the radius grows.
+
 **Recommendation on record:** stop competing in DRO theory. Next candidate
 should either (a) be an applied computational paper built on the real-data
 pipeline, or (b) sit in self-contained combinatorial optimization like MWHED,
@@ -163,6 +195,79 @@ kill.** Recorded because it predates everything above by four years:
   `10.1007/s10107-026-02383-9`. When a top journal devotes a special issue to
   the exact topic, the area is fully staffed. Likely referees include the very
   authors above.
+
+**Confirmed dead on a THIRD, independent ground — our own numerics, plus a
+conceptual objection that is worse than the novelty problem.**
+
+`probes/sinkhorn_collapse_check.py` tested the question nobody in the
+literature had: does Sinkhorn collapse to Wasserstein at a shifted radius, the
+way the type-1 ball collapsed in WRNF? Results:
+
+- **C1 — no collapse.** Best-matching Wasserstein radius leaves residual
+  sd **2.02** (a reparametrisation would give ~0) and the argmins genuinely
+  differ. So the WRNF trap does *not* apply — this is a real model.
+- **C2 — the claimed differentiator holds.** Max |second difference| in the
+  decision: **3.7e-2 (Sinkhorn) vs 4.0e-1 (Wasserstein)**, i.e. ~10.8x
+  smoother, as the entropic soft-max predicts.
+- **C3/C3b — but it never changes the decision.** Across a location sweep and a
+  dispersion sweep, the two models selected the same cell every time
+  (**0/6 flips**). Sinkhorn buys a smoother objective and never a different
+  action.
+
+**Methodological finding worth keeping** (it generalises beyond this idea): a
+*location* difference between cells cannot discriminate between ambiguity
+models for a translation-equivariant loss. Translating a cell's samples
+translates the optimal decision and leaves the optimal value exactly unchanged,
+so both models are indifferent by symmetry — the Wasserstein gaps came out
+identically `0.0000` at every shift, and small non-zero Sinkhorn gaps (~1e-3)
+were support-truncation artefacts. **Only dispersion differences can
+discriminate.** This bites directly: our real data says weather shifts the
+travel-time **mean without inflating the spread**, i.e. reality supplies
+exactly the kind of difference that provably cannot separate these models. The
+application could not have justified the method.
+
+**The conceptual objection, which is the real kill.** If the decision merely
+*selects* an exogenous conditional and does not deform it, the model is **not
+decision-dependent ambiguity at all**: index the periods, take the ambiguity
+set over the joint period-indexed vector, and the decision enters only the
+objective and constraints — ordinary two-stage DRO, no new duality, no
+bilinearity, no hardness. **Shehadeh, *Transportation Science* 57(1):197–229
+(2023), DOI `10.1287/trsc.2022.1153`, builds exactly this construction** — one
+exogenous ambiguity set per period, the schedule decides which bind — **and
+correctly declines to call it decision-dependent**, while citing Luo–Mehrotra
+and Basciftci et al. So the framing is either wrong (selection only) or already
+published (if the decision truly deforms the conditional). Structurally the
+same trap as WRNF: a robustness claim that cancels into a known model.
+
+**And the "decision selects the travel-time distribution" framing has three
+separate owners:**
+- **Hall (1986), *Transportation Science* 20:182–188, DOI
+  `10.1287/trsc.20.3.182`** — arc travel-time distributions conditional on
+  departure time. Forty years old; it is why the optimal object is a policy,
+  not a path.
+- **Wang, Delage & Coelho (2026), *M&SOM*, DOI `10.1287/msom.2024.0899`** —
+  "Data-Driven Stochastic VRP with Deadlines Under **Decision-Dependent Travel
+  Time**": a route feature vector selects the conditional travel-time
+  distribution via kNN/KDE weights, logic-based Benders, real food-delivery
+  data. Owns the framing in a VRP, published. (SAA, not DRO; no departure-time
+  or weather conditioning — that is all it leaves open.)
+- **Kong, Li, Liu, Teo & Yan (2020), *Management Science* 66(8):3480–3500, DOI
+  `10.1287/mnsc.2019.3366`** — DR appointment scheduling where the *scheduled
+  time* selects the no-show distribution, explicitly endogenous-on-time,
+  bilinear copositive program. "Timing selects the distribution" was proved in
+  a top-5 journal six years ago.
+- Also: **Cheng, Adulyasak & Rousseau (2024), *M&SOM* 26(4):1402–1421, DOI
+  `10.1287/msom.2022.0339`** — real **wind data** → cluster-wise ambiguity set
+  over flight times → adaptive DRO. Real weather conditioning a travel-time
+  ambiguity set, in an INFORMS A-journal.
+
+**Effect-size warning from the same problem class.** Bao, Vogiatzis & Kontou,
+"Risk-Averse Stochastic User Equilibrium on Uncertain Transportation Networks"
+(Optimization Online 2026/03, no DOI; PDF prefixed `TranSci__`, i.e. submitted
+to the same venue as TEMPO) report that risk aversion and distributional
+robustness *"refine rather than fundamentally alter"* equilibrium flow
+patterns. That is the WRNF failure mode restated by someone else, in road
+networks.
 
 **One genuinely open thing found, and it matters for what comes next.** The
 second check found **no routing/VRP paper** where "departure-time or
