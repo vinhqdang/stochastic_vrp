@@ -11,9 +11,13 @@ Two sources, both verified reachable headlessly from this container:
      No account, no API key. ~50-70 MB/month, ~3.5 M trips/month.
      https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_YYYY-MM.parquet
      Gives per-trip pickup/dropoff timestamps, trip distance, and origin /
-     destination **taxi-zone IDs**. Note: recent years are zone-level
-     (`PULocationID` / `DOLocationID`, 263 zones), *not* lat/lon — so trips
-     map to zone-pair OD travel times, not to individual OSM edges.
+     destination **taxi-zone IDs** (`PULocationID` / `DOLocationID`, 263
+     zones), *not* lat/lon — so trips give zone-pair OD travel times and can
+     never be matched to individual OSM edges. Raw coordinates survive only in
+     the 2009 and 2010 files; from 2011-01 onward every month is zone-only
+     (the belief that lat/lon persists to mid-2016 refers to the retired CSVs,
+     not to what CloudFront serves now). For link-level travel time use the
+     NYC DOT Traffic Speeds feed instead — see `data_sources/README.md`.
 
   2. **Open-Meteo historical archive** — hourly reanalysis, no API key.
      https://archive-api.open-meteo.com/v1/archive
