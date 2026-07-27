@@ -137,10 +137,46 @@ objective — into a *theorem about when the combinatorial decision switches*,
 with an exact breakpoint characterisation and a path-following algorithm
 beating grid search over epsilon. Algorithm + complexity + numerics, and our
 real-data pipeline supplies the instances.
-**Precondition before building:** the model's path must be non-degenerate, i.e.
-actually have breakpoints. Ours currently is not (see the BATON gate note
-below). Check numerically first — the tooling in
-`probes/sinkhorn_collapse_check.py` is the right shape for it.
+**PRECONDITION MET, and the theory fell out — 2026-07-27.**
+`probes/radius_breakpoints.py`, on the *real* calibrated NYC multipliers:
+
+- **Homogeneous moduli: 0 switches.** With every alternative sharing the same
+  free-flow time, each option's worst-case value rose by exactly
+  `late_rate x freeflow = 80.0` per unit epsilon — the *same* slope for all —
+  so the epsilon-term was decision-independent and the argmin never moved.
+- **Heterogeneous moduli: 2 switches.** Give the alternatives different
+  free-flow times (34/26/22/18/15 min, so moduli 136/104/88/72/60) and the
+  optimum walks: `h5 -> h12` at eps ~ 0.500, `h12 -> h17` at eps ~ 0.800,
+  settling on the **smallest-modulus** option as epsilon grows.
+
+**The mechanism, which is the paper.** Each alternative's worst-case value is
+**affine in epsilon with slope equal to its own Lipschitz modulus** in the
+uncertainty. So the DRO objective over a discrete alternative set is the
+**lower envelope of finitely many lines in epsilon**. Immediately:
+- **equal moduli => parallel lines => never cross => the optimum is
+  radius-INVARIANT.** This is the mechanism behind *all four* nulls in this log
+  (WRNF, the BATON gate, the partition variance term, regime 1 here) — stated
+  as a checkable condition rather than recurring bad luck;
+- **distinct moduli => at most K-1 breakpoints**, each a closed-form line
+  intersection, whole path computable in **O(K log K)** by a lower-envelope
+  sweep;
+- the optimal modulus is **non-increasing in epsilon** — a monotone
+  comparative-statics statement about a *discrete* decision, which is precisely
+  what the smooth-decision literature does not cover.
+
+**The open research step is the combinatorial case.** When the alternatives are
+routes rather than an explicit list, the envelope has exponentially many lines
+and cannot be enumerated. Parametric optimisation suggests the breakpoint count
+can be superpolynomial there (cf. Carstensen's bound for parametric shortest
+path), so the real questions are the complexity of the path and algorithms for
+structured cases — genuinely COAP/EJCO-shaped, and it is where the contribution
+would live.
+
+**Caveat to settle early:** the affine structure holds for a type-1 ball over
+unbounded support. On bounded support the per-alternative value is *concave* in
+epsilon, so the envelope still has finitely many breakpoints but they are no
+longer closed-form line intersections. That general case is the interesting one
+and must be handled, not assumed away.
 
 **(ii) B3-1: joint optimum stratification with integer sample allocation.**
 Ordered index `1..n` with per-cell populations and variances; choose a
