@@ -66,6 +66,27 @@ BATON or TEMPO — see `papers/csonet2026/README.md` for why (both other
 papers are under review elsewhere; JOCO/CSoNet explicitly prohibit
 simultaneous submission and salami-slicing).
 
+### Paper 4 — WRNF (papers/wrnf/, IN PROGRESS, targeting COAP)
+
+Two-stage Wasserstein-robust network flow with ambiguous demand, aimed at
+Computational Optimization and Applications. The spine: over an
+*unbounded* support the type-1 Wasserstein robust problem equals the
+sample-average problem plus the constant `eps * p`, so the robust
+decision is *identical* to the SAA decision (robustness is
+decision-irrelevant); over a *bounded* support the collapse fails,
+decisions differ, and the worst case needs a cutting-plane method with a
+combinatorial separation oracle. Prior art that constrains the claims:
+Hanasusanto & Kuhn (2018) copositivity, Atamturk & Zhang (2007)
+NP-hardness of separation for bipartite two-stage robust network flow.
+
+Spec: `papers/wrnf/PROJECT.md`. The three central claims are numerically
+verified against brute force in `papers/wrnf/prototype_check.py` — rerun
+it before trusting any theorem statement that depends on them. Code is
+**self-contained** in `papers/wrnf/` and must not import from
+`svrpspd_wdro/` (or vice versa): BATON, under review, also uses
+Wasserstein-DRO machinery, and the two must stay visibly distinct — see
+`PROJECT.md` §6. This directory is **editable**, unlike papers 1–3.
+
 ## Layout
 
 - `svrpspd_wdro/` — the shared engine + all experiment scripts (see its
@@ -78,11 +99,13 @@ simultaneous submission and salami-slicing).
 - `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
 - `papers/csonet2026/` — paper 3, **SUBMITTED** to JOCO's Editorial
   Manager; treat as frozen except for editor-requested fixes.
+- `papers/wrnf/` — paper 4 (COAP), **active work-in-progress**, freely
+  editable; self-contained code, no engine imports.
 - **Parallel papers, independent review clocks** — always check each
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1–3 are all closed to edits.
+  papers 1–3 are closed to edits and paper 4 is open.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
   manuscript, a `STATUS.md` (venue, review state, freeze policy), a
   `README.md` with the file manifest and how each table/figure

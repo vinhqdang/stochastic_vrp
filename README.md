@@ -16,7 +16,7 @@ review clock, and its own `STATUS.md`.
 | 1 | **BATON** — [`papers/baton/`](papers/baton/) | Optimal-stopping recourse for SVRPSPD: peak-aware Longstaff–Schwartz labels + a zero-parameter handoff trigger, under six capacity-feasibility gates | Computers & Operations Research | **under review** — frozen | `svrpspd_wdro/core/` |
 | 2 | **TEMPO** — [`papers/tempo/`](papers/tempo/) | *When to replan*: an anytime-valid e-process monitoring a running plan across demand, travel-time, congestion, accident, breakdown and dwell channels, with decision-relevant previsible tilting | Transportation Science (INFORMS) | **under review** — frozen, double-anonymous | `svrpspd_wdro/ev/` |
 | 3 | **MWHED** — [`papers/csonet2026/`](papers/csonet2026/) | Minimum Weighted Hazard-Exposure Dispatch: NP-hardness via knapsack equivalence, an exact pseudo-polynomial DP, an FPTAS, and a matroid-greedy tractable case | J. of Combinatorial Optimization, via CSoNet 2026 Journal Track | **submitted** | self-contained in its own directory |
-| 4 | *(next)* | — | Computational Optimization and Applications | topic selection | TBD |
+| 4 | **WRNF** — [`papers/wrnf/`](papers/wrnf/) | Decision relevance and tractability of two-stage Wasserstein-robust network flow: robustness provably cannot change the decision on unbounded support, and a tractability frontier for where it can | Computational Optimization and Applications | **spec + verified prototype** — editable | self-contained in its own directory |
 
 **Read a paper's own `STATUS.md` before touching it.** "Frozen" is a
 per-paper state, not a repo-wide one, and a paper flips from editable to
@@ -101,7 +101,8 @@ stochastic_vrp/
 ├── papers/              # one directory per paper, one review clock each
 │   ├── baton/           #   paper 1 — UNDER REVIEW at Computers & OR (frozen)
 │   ├── tempo/           #   paper 2 — UNDER REVIEW at Transportation Science (frozen)
-│   └── csonet2026/      #   paper 3 — SUBMITTED to JOCO; self-contained code
+│   ├── csonet2026/      #   paper 3 — SUBMITTED to JOCO; self-contained code
+│   └── wrnf/            #   paper 4 — COAP, in progress; self-contained code
 ├── RESULTS_OTR2.md      # BATON results summary — eight experiment layers
 ├── legacy/              # archived ECHO-era code (not maintained, do not import)
 └── requirements.txt
