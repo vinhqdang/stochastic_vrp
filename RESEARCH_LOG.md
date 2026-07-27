@@ -111,15 +111,181 @@ Three risks to price in before touching it:
    **monotone comparative statics** result on the optimal departure period as
    the radius grows.
 
-**Recommendation on record:** stop competing in DRO theory. Next candidate
-should either (a) be an applied computational paper built on the real-data
-pipeline, or (b) sit in self-contained combinatorial optimization like MWHED,
-where the repo has already succeeded. Get a novelty check before any building —
-that discipline has now saved seven manuscripts.
+**Recommendation on record:** stop competing in DRO theory. Get a novelty check
+before any building — that discipline has now saved eleven manuscripts.
+
+### The cells that ARE open (checked 2026-07-27) — two papers' worth
+
+**(i) Solution path / breakpoints in the ambiguity radius, for a DISCRETE
+decision.** Verifiably empty, by several independent negative searches: arXiv
+`"solution path" AND "distributionally robust"` = **0**; arXiv
+`"comparative statics" AND "distributionally robust"` = **0**; the 225-page
+Kuhn–Shafiee–Wiesemann survey (*Acta Numerica* 34:579–804, DOI
+`10.1017/S0962492924000084`, arXiv:`2411.02549`) contains **zero** occurrences of
+"comparative statics" and has no monotonicity-in-radius or solution-path
+section; Long, Qi & Zhang's supermodularity paper (*Management Science*, DOI
+`10.1287/mnsc.2023.4748`) has **no radius parameter at all**; and Tang & Fan's
+"solution path algorithm for distributionally robust regression" (*Optimization*
+73:3275–3296, 2024, DOI `10.1080/02331934.2024.2341938`) paths over the two
+**elastic-net hyperparameters**, *not* the Wasserstein radius. The existing
+inertness theory (Bartl et al.; Gao–Chen–Kleywegt; Gotoh–Kim–Lim) is about
+**smooth decisions and objective values**; none of it says anything about
+*discrete solution identity*.
+**Why this is the strongest thing to come out of the whole search:** it turns
+the null result that has dogged every idea here — robustness barely moves the
+objective — into a *theorem about when the combinatorial decision switches*,
+with an exact breakpoint characterisation and a path-following algorithm
+beating grid search over epsilon. Algorithm + complexity + numerics, and our
+real-data pipeline supplies the instances.
+**Precondition before building:** the model's path must be non-degenerate, i.e.
+actually have breakpoints. Ours currently is not (see the BATON gate note
+below). Check numerically first — the tooling in
+`probes/sinkhorn_collapse_check.py` is the right shape for it.
+
+**(ii) B3-1: joint optimum stratification with integer sample allocation.**
+Ordered index `1..n` with per-cell populations and variances; choose a
+contiguous partition into `k` strata **and** an integer allocation
+`n_1..n_k` with `sum n_b <= B`, minimising `sum_b W_b^2 sigma_b^2 / n_b`. Both
+halves are classical — allocation alone is separable convex resource allocation
+(Hochbaum, *Math. of OR* 19:390–409, 1994, DOI `10.1287/moor.19.2.390`),
+stratification alone is the Bühler–Deutler/Eubank DP — but **the joint problem
+has no stated complexity class anywhere**: no hardness proof, no approximation
+guarantee, no Monge characterisation. Zero MWHED adjacency, and, importantly, a
+*different technical skeleton* (DP + Monge/SMAWK + convex-allocation proximity,
+versus MWHED's knapsack-DP + value-scaling FPTAS + matroid greedy) — which is
+what a salami-hunting referee actually pattern-matches on.
+**Precondition:** settle whether it is NP-hard *before* drafting. If weakly
+NP-hard, the full package follows (hardness, pseudo-poly DP, FPTAS,
+Monge-tractable case). If polynomial via proximity/scaling, it is a shorter but
+still clean paper — just a different one.
+**Downgraded after a deep dive (same day).** The stratification half is a
+**51-year-old literature already using this cost structure**: Khan, Nand & Ahmad,
+*Survey Methodology* 34(2):205–214 (2008) solve `minimise sum_h phi_h(x_{h-1},x_h)`
+over ordered cut points with per-stratum cost `W_h sigma_h^2 (W_h/n_h - 1/N)` —
+variance divided by the stratum's sample count — by the Bühler–Deutler DP; and
+Eubank's *SIAM Review* survey declares optimal grouping/spacing/stratification a
+single solved breakpoint problem. So only the **integer** allocation is arguably
+new, which is thin. Do not start this without first reading Wu, *J. Algorithms*
+12(4):663–673 (1991), DOI `10.1016/0196-6774(91)90039-2` (O(kn) via SMAWK for
+weighted least-squares interval partitioning) and Elomaa & Rousu, "On the
+Complexity of Optimal Multisplitting" (ISMIS 2000, DOI
+`10.1007/3-540-39963-1_58`; journal version *Fundamenta Informaticae*
+47(1-2):35–52) — a direct title collision that neither agent could access.
+**Runner-up:** Budgeted Active Time (maximisation-under-budget dual of the
+Active Time problem; Chang, Gabow & Khuller, *Algorithmica* 70:368–405, DOI
+`10.1007/s00453-013-9807-y`; NP-completeness settled recently in
+arXiv:`2112.03255`). Better-shaped for JOCO but its paper skeleton is
+MWHED's exactly — flagged as a real salami hazard.
+
+**(iii) The Amazon LMRRC uncertainty derivative.** 9,184 real 2018 routes, five
+US cities, per-instance point-to-point travel times **and real service times**,
+CC BY-NC on AWS Open Data (Merchán et al., *Transportation Science*, DOI
+`10.1287/trsc.2022.1173`). No derivative adding calibrated travel-time
+uncertainty exists. Better raw material than either SVRPBench or BonnTour used,
+and BonnTour's Uber Movement source is **discontinued** while ours (NYC DOT,
+Open-Meteo) is live and refreshable. Pair with LaDe (arXiv:`2306.10675`) for
+dwell-time laws.
+
+### Venue correction — COAP is probably the wrong journal
+
+Benchmark/computational precedents at COAP *do* exist (Martí, Reinelt & Duarte,
+COAP 51:1297–1317, 2011, DOI `10.1007/s10589-010-9384-9`; de Moraes & Coelho,
+COAP 88:349–378, 2024, DOI `10.1007/s10589-024-00551-1`), correcting an earlier
+note here that claimed none. **But the journal is overwhelmingly continuous
+optimization** — Riemannian methods, proximal gradient, SQP, cubic
+regularisation — and routing appears roughly once a decade. Precedent exists;
+the referee pool does not. Better homes for a discrete/routing computational
+paper: **EJCO**, **Discrete Optimization** (the BonnTour precedent: benchmark
+bundled with theory), *Transportation Science*, or *EJOR*.
 
 ---
 
 ## Ideas evaluated, with verdicts
+
+### 8-11. Four candidates checked 2026-07-27 — all four dead as pitched
+
+**B1 ordered partitioning of a context index — SOLVED-ALREADY, and two of our
+own claims about it were technically wrong.**
+
+Two corrections from a dedicated deep dive, both worth keeping because they
+generalise:
+1. **The Monge intuition was backwards.** Tested exhaustively over all valid
+   quadruples: the `sigma^2/n_b` term alone gives **0/210 quadrangle-inequality
+   violations** — for `w(i,j) = f(N(i,j))` with N additive over the interval, QI
+   collapses to `f(P+C)+f(P+D) <= f(P+C+D)+f(P)`, which holds **iff f is
+   convex**, and `1/x` is convex. So the variance term is the *friendly* one. It
+   is the **bias/SSE term** that breaks QI — 0/210 violations when values are
+   monotone along the index, **75/210 when they are not**. Since the diurnal
+   conditional mean is *not* monotone in hour-of-day, QI generically **fails**
+   for our actual use case and SMAWK/Knuth/LARSCH would not apply. That is
+   precisely why Jagadish et al. only achieved O(N^2 B) and Guha–Koudas–Shim
+   §3.1 wrote *"the answer, unfortunately, is no"* with an Omega(n) obstruction.
+2. **The variance term risks being a placement-independent constant — the WRNF
+   failure mode, third occurrence.** If per-block variance is mass-weighted as an
+   integrated-MSE risk requires, `sum_b (n_b/n)(sigma^2/n_b) = sigma^2 k/n`,
+   **independent of where the cuts fall**, so the objective collapses to plain
+   V-optimal segmentation with a k-penalty. Avoiding that needs a
+   decision-theoretic justification for weighting every block equally regardless
+   of mass. **Check for this degeneracy in any partition objective before
+   building on it.**
+
+ Every piece
+exists in three literatures that already cite each other: the O(n^2 k) DP is the
+V-Optimal histogram problem (Jagadish et al., VLDB 1998 — *no DOI exists, do not
+invent one*) and earlier Bühler & Deutler, *Metrika* 22:161–175 (1975), DOI
+`10.1007/BF01899725`, unified by Eubank, *SIAM Review* 30(3):404–420 (1988), DOI
+`10.1137/1030092`; (1+eps) approximation by Guha, Koudas & Shim, *ACM TODS*
+31(1):396–438 (2006), DOI `10.1145/1132863.1132873`; Monge/SMAWK speedups are the
+textbook application (Aggarwal et al., *Algorithmica* 2:195–208, DOI
+`10.1007/BF01840359`; Burkard, Klinz & Rudolf, *Discrete Applied Math* 70:95–161,
+DOI `10.1016/0166-218X(95)00103-X` — in the target journal, so a referee has read
+it). The 2-D product case I hoped was open is **NP-hard with a published
+sum-objective reduction**: Grigni & Manne, DOI `10.1007/BFb0030123`; Ahrens &
+Boman, arXiv:`2005.12414`.
+
+**B2 period-dependent dispatch cost with release windows — SOLVED-ALREADY, and
+it is a textbook exercise.** Lenstra & Shmoys, *Elements of Scheduling*,
+arXiv:`2001.06005`, Ch. 2 §2.1 pp. 37–38 constructs this exact instance as a
+min-cost flow. The constraint matrix is a network matrix, totally unimodular by
+Hoffman–Kruskal *regardless of which arcs are deleted*, so the "interval windows
+give consecutive-ones tractability" theorem would be **vacuous**. The owning
+literature is time-of-use scheduling, not time-dependent processing times: Wan &
+Qi, *NRL* 57(2):159–171 (2010), DOI `10.1002/nav.20393`; Fang et al., *Annals of
+OR* 238:199–227 (2016), DOI `10.1007/s10479-015-2003-5` (**already has the
+polynomial algorithm for equal workload + unimodal "pyramidal" prices** — our
+unimodal-congestion variant); Penn & Raviv, *J. Scheduling* 24(1):83–102 (2021),
+DOI `10.1007/s10951-020-00674-3` (extends to release times and due dates).
+Structurally cannot yield the FPTAS/matroid shape, because the base problem is
+polynomial and the transportation polytope is already integral.
+
+**A1 real-data uncertainty benchmark + decision-relevance study — CROWDED, the
+framing SCOOPED.** Three separate occupants: **SVRPBench** (arXiv:`2505.21887`)
+claims "first open benchmark ... stochastic dynamics in vehicle routing at urban
+scale" — though its congestion is a hard-coded Gaussian mixture on synthetic 2-D
+points, i.e. parameter-picking, not calibration; **BonnTour** (Blauth et al.,
+*Discrete Optimization* 53:100848, 2024, DOI `10.1016/j.disopt.2024.100848`)
+already ships OSM networks + **measured Uber Movement speeds** for 10 cities
+including New York; and the decision-relevance design is **Chassein, Dokka &
+Goerigk**, *EJOR* 274:671–686 (2019), DOI `10.1016/j.ejor.2018.10.006` — six
+uncertainty sets built from a **live Chicago traffic feed**, evaluating which are
+"actually valuable", seven years ago, on shortest path. **Mahmutoğulları & Guns**,
+arXiv:`2310.17368`, already reports our null in routing: a deterministic model
+with one well-chosen quantile matches formal robust optimization.
+
+**A2 DR time-dependent VRP — DEAD, both escape hatches closed.** Hatch (a),
+FIFO monotonicity for tractability, is taken by **Malheiros, Poss, Nesello &
+Subramanian** (ROADEF 2026 abstract, full PDF read): their Assumption 1 *is*
+FIFO, **Theorem 3.1** proves relaxing it makes robust time-dependent path
+feasibility NP-complete, **Proposition 1** gives a polynomial DP under FIFO, and
+they already report that their model "yields better reliability–cost trade-offs
+than robust models ignoring time dependence" on real data. What remains is
+"replace the budget set with a Wasserstein ball" — the move this log already
+records as scooped. Hatch (b), monotone comparative statics in the radius, is
+largely taken by **Blanchet, Murthy & Zhang**, *Math. of OR* 47(2):1500–1529
+(2022), DOI `10.1287/moor.2021.1178`, whose §2.4 is literally titled
+"Comparative statics analysis", and by **Bartl, Drapeau, Obłój & Wiesel**, *Proc.
+R. Soc. A* 477(2256), DOI `10.1098/rspa.2021.0176`, which gives explicit
+first-order corrections to the **optimizer** in epsilon.
 
 ### 7. Sinkhorn ball with a decision-dependent reference measure — **ABANDONED, scooped (2026-07-27)**
 
