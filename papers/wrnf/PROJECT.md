@@ -20,12 +20,26 @@
 >   support restoring a hedging first-stage solution (§3.2). Their §5
 >   numerical testbed is a supply-allocation problem — this model plus a
 >   holding cost.
+> - **Byeon, arXiv:2501.05619 (Jan 2025), Proposition 2 — the sharpest
+>   scoop, read this one first.** For two-stage conic LPs with RHS
+>   uncertainty over a type-1 Wasserstein ball, on **both ℝᵏ and ℝᵏ₊**:
+>   $\sup_{\mathbb{P}} \mathbb{E}[Z(x,\tilde\xi)] = \varepsilon L + \frac1N\sum_i Z(x,\zeta^i)$
+>   with $L = \max_{\pi\in\Pi}\|\pi\|_q$, followed immediately by *"Proposition 2
+>   implies that x̃¹_N(ε) is ε-invariant and always coincides with x̃^SAA_N
+>   unless ε = ∞."* Note this covers ℝᵏ₊, so it closes error (1) below as
+>   well — there is not even a technical gap left. §4 covers the
+>   compact-support breakdown; Prop. 5 gives the newsvendor closed form
+>   (a simple-recourse instance). Its Remark 1 further attributes the ℝᵏ
+>   case to MEK (2018), Hanasusanto & Kuhn (2018) and Byeon–Fang–Kim —
+>   i.e. the core is 2018 folklore whose orthant/conic extension closed
+>   in Jan 2025.
 > - **Byeon, Fang & Kim, SIAM J. Opt. 35(1):506–536 (2025), DOI
->   10.1137/23M1626839**, Cor. 3.8 / Rmk 3.9, and **Byeon, arXiv:2501.05619
->   (2025), Prop. 2** — own the "modulus = max over second-stage dual
->   vertices, independent of x" mechanism, with the *corrected* constant
->   (BFK Example 3.10 is a counterexample to DMM's constant on proper
->   cones; the collapse itself survives).
+>   10.1137/23M1626839** — **Lemma 2.2** proves the two-stage value
+>   function is $L$-Lipschitz with $L=\max_{\pi\in\Pi}\|\pi\|_q$; Cor. 3.4
+>   gives the exact-penalty saturation. Our "modulus = recourse penalty p"
+>   is this $L$ with $q=\infty$ for simple recourse — a two-line corollary,
+>   not a mechanism discovery. Example 3.10 is a counterexample to DMM's
+>   constant on proper cones (the collapse itself survives).
 > - **Lee, Kim & Moon, JORS 72(8):1879–1897 (2021), DOI
 >   10.1080/01605682.2020.1746203** — "modulus = the recourse penalty" in
 >   print for the newsvendor (κ = b), explicitly citing MEK Remark 6.7.
@@ -39,10 +53,33 @@
 > only**, whereas the modulus is maxₚᵢ ‖π‖_∞, which also needs a lower
 > bound over the dual feasible set.
 >
-> What remained after the scoop was a corollary of BFK Thm 3.2 plus a
+> What remained after the scoop was a corollary of BFK Lemma 2.2 plus a
 > one-paragraph LP-duality evaluation — not a paper, and in a line two
 > active groups have a three-year head start on. Files kept as a record of
 > the negative result, not as a plan. See `STATUS.md`.
+>
+> **Framings that would survive, if this is ever revisited** (none pursued):
+> 1. Make the **bounded-support regime the theorem** — quantify the
+>    ε-interval on a box/simplex demand support over which the DR decision
+>    differs from SAA before collapsing to the RO solution, using network
+>    structure to get explicit constants where Byeon has abstract Π.
+>    Agra, *Computers & OR* 183:107142 (2025), DOI
+>    10.1016/j.cor.2025.107142, already gives finite reformulations on
+>    rectangular support plus five decomposition schemes.
+> 2. **Reposition on Sinkhorn / entropic-regularized DRO**, which does not
+>    degenerate — the entropic penalty is not exhausted at finite λ. Anchor:
+>    Wang, Gao & Xie, *Operations Research* (2026), DOI
+>    10.1287/opre.2023.0294.
+> 3. Publish as a **diagnostic inside an applied paper**: "the W-DRO gate
+>    is provably equivalent to the SAA-CVaR gate under these conditions."
+>    Honest, cheap, and reviewer-proof — but a section, not a paper.
+>
+> Note also: the closest applied paper, **Zhang et al., *Production and
+> Operations Management* (2026), DOI 10.1177/10591478261469015** (two-stage
+> newsvendor *network*, Wasserstein, shortage penalties) silently engineers
+> around this degeneracy by using type-∞ Wasserstein with data-estimated
+> bounded supports — evidence the phenomenon is known and routed around in
+> practice.
 
 # Paper 4 — WRNF: when does distributional robustness change a network-flow decision?
 

@@ -8,8 +8,13 @@
   thesis verbatim, and Duque, Mehrotra & Morton (SIOPT 32(3), 2022) do
   the two-stage version including both of this project's "findings",
   with a supply-allocation testbed that is essentially this model.
-  Byeon-Fang-Kim (SIOPT 2025) and Byeon (arXiv:2501.05619) own the
-  dual-vertex modulus mechanism with the corrected constant;
+  **Byeon (arXiv:2501.05619, Jan 2025) Proposition 2 is the sharpest
+  scoop** — the theorem verbatim for two-stage conic LPs with RHS
+  uncertainty on *both* the whole space and the nonnegative orthant,
+  with the epsilon-invariance / SAA-coincidence conclusion stated in
+  the next sentence, which also closes the one technical gap we had
+  found in our own claim. Byeon-Fang-Kim (SIOPT 2025) Lemma 2.2 owns
+  the dual-vertex modulus;
   Lee-Kim-Moon (JORS 2021) already have "modulus = recourse penalty"
   for the newsvendor. Full citation list and the two technical errors
   found in our own claim are recorded at the top of `PROJECT.md`.
@@ -17,6 +22,12 @@
   resume without reading `PROJECT.md`'s abandonment banner first. The
   numerics in `prototype_check.py` are *correct* and reproduce a real
   (published) phenomenon — they are just not novel.
+- **Checked and clear:** BATON already cites Ghosal, Ho & Wiesemann,
+  "A Unifying Framework for the CVRP Under Risk and Ambiguity",
+  *Operations Research* (2024), DOI 10.1287/opre.2021.0669
+  (`ghosal2024unifying`, three citations in `main.tex` including as the
+  M-DRO gate basis). The 2024-2026 survey flagged it as unavoidable for
+  BATON's gate layer; it is already there, so no action needed.
 - **Worth salvaging (the one live thread).** BATON's W-DRO capacity gate
   (`svrpspd_wdro/core/wdro_exact.py`) computes
   `Phi(r) = CVaR_alpha(max(0, f_r(xi) - Q)) + epsilon/(1-alpha)`, whose
