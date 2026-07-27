@@ -36,49 +36,119 @@ it.
 | | |
 |---|---|
 | Target venue | Computational Optimization and Applications (Springer), regular stream |
-| Topic | **undecided** — one candidate direction alive, blocked on two checks |
-| Ideas rejected | 6 |
+| Topic | **undecided** — the 7th candidate was just killed; no direction currently alive |
+| Ideas rejected | **7** |
 | Real data | **solved** — verified sources secured, see below |
-| Blocking | two literature checks killed mid-run by a session limit; must re-run |
+| Blocking | needs a **change of strategy**, not another idea in the same area — see below |
 
-### Live candidate direction
+### No live direction — and a strategy problem worth naming
 
-Two-stage DRO over a **Sinkhorn / entropic-optimal-transport** ball where the
-**reference measure is decision-dependent**: the first-stage decision (dispatch
-/ departure time, and hence prevailing weather) selects *which* empirical
-conditional travel-time distribution the second stage faces.
+All seven rejected ideas sit in **distributionally-robust / robust optimization
+theory**. That area is exceptionally crowded and is being worked systematically
+by identifiable groups (Kuhn–Wiesemann, Xian Yu, Byeon, Bansal, Mehrotra), who
+publish in *Math. Prog.* / *OR* / *SIOPT* faster than a part-time effort can
+track. Five of the seven deaths were "someone published this in the last 12–18
+months"; two were our own faulty reasoning. Continuing to generate candidate
+ambiguity-set variations is a losing game — the eighth will likely die the same
+way.
 
-Why this shape:
-- The entropic term is **load-bearing**, not decorative — the standing referee
-  objection to Sinkhorn-DRO papers is "why not plug a Sinkhorn ball into
-  generic two-stage decomposition?", and decision-dependence of the centre is
-  what makes the log-sum-exp couple to the decision.
-- The decision-dependence is a **finite disjunction** (select one of finitely
-  many pre-estimated (hour, weather) conditionals), not arbitrary smooth
-  dependence — which is the reason to hope it stays tractable, plausibly a MILP
-  over exponential-cone subproblems.
-- Real data supplies the mechanism rather than an assumption (numbers below).
+**What this repo has actually demonstrated it is good at**, from the three
+papers that exist: applied stochastic routing with a real simulator, real
+instances and careful empirical evaluation (BATON, TEMPO), and self-contained
+combinatorial theory with hardness + approximation results (MWHED). Neither
+competes head-to-head with DRO theory groups.
 
-### Two checks that must clear before any building
+**Two assets in hand that are hard to scoop**, because they are data and
+engineering rather than a theorem someone can beat us to:
 
-1. **Tractability.** Decision-dependent ambiguity sets are frequently
-   non-convex. Does a decision-dependent *reference measure* inside a Sinkhorn
-   ball retain a convex reformulation, or does log-sum-exp composed with an
-   x-dependent measure destroy it? Does the finite-disjunction structure rescue
-   it? **If non-convex and unrescuable, the idea dies.**
-2. **TDVRP scooping risk.** "The decision selects which travel-time
-   distribution applies" may simply be the **time-dependent vehicle routing
-   problem** under uncertainty — a large, mature literature where travel times
-   are functions of departure time. If stochastic/robust TDVRP already covers
-   departure-time-dependent travel-time *distributions*, the framing is a
-   relabelling and the paper is dead.
+1. A **verified real traffic + weather data pipeline** — NYC DOT link-level
+   speeds and travel times with polylines map-matchable to our OSM graphs,
+   Open-Meteo hourly weather for all five cities, plus a CC0 HCMC set keyed by
+   real OSM node IDs. See `data_sources/`.
+2. **Empirical findings nobody's theorem gives them**: 1.94× diurnal speed
+   swing; a weather effect that is *masked* by time-of-day and doubles once
+   hour-of-week is removed (−0.079 → −0.195); and weather shifting the **mean
+   without inflating the spread** (residual sd 1.191 wet vs 1.303 dry).
 
-Both agents were terminated by an API session limit before returning anything.
-**No results exist for either.** Re-run before proceeding.
+The third finding is the interesting one and it cuts *against* the robust-
+optimization framing: if real weather does not widen dispersion, an ambiguity
+set is the wrong instrument for it. That is a substantive modelling observation
+and it points toward an applied/computational paper where the contribution is
+the algorithm plus the data-grounded evaluation, rather than a new ambiguity set.
+
+**Recommendation on record:** stop competing in DRO theory. Next candidate
+should either (a) be an applied computational paper built on the real-data
+pipeline, or (b) sit in self-contained combinatorial optimization like MWHED,
+where the repo has already succeeded. Get a novelty check before any building —
+that discipline has now saved seven manuscripts.
 
 ---
 
 ## Ideas evaluated, with verdicts
+
+### 7. Sinkhorn ball with a decision-dependent reference measure — **ABANDONED, scooped (2026-07-27)**
+
+The candidate above. Tractability was **fine**; novelty was fatal.
+
+**The scoop.** **Yu & Basciftci, "Distributionally robust optimization with
+multimodal decision-dependent ambiguity sets," *Mathematical Programming*, DOI
+`10.1007/s10107-026-02337-1`** (published 9 Mar 2026; read in full as
+arXiv:`2404.19185v2`). Their eq. (3),
+`Θ(y) = { Σ_{l=1}^{L} p_l P_l : p ∈ Δ(p̂(y)), P_l ∈ U_l(y) }`, is this idea's
+framework:
+- `L` finitely many **modes** = our (hour-of-day, weather-state) cells;
+- the **reference mode probability `p̂(y)` is decision-dependent** — i.e. the
+  first-stage decision selects which conditional the second stage faces, with
+  their Remark 1 covering exact one-hot selection;
+- two-stage with recourse, **Wasserstein-based** per-mode sets (Thms 6–9), and
+  §3.2.3 makes the reference atoms themselves affine in `y`;
+- **binary decisions ⇒ McCormick envelopes ⇒ exact MILP** — precisely the
+  finite-disjunction rescue we hypothesised;
+- a **separation-based decomposition algorithm with finite convergence** plus
+  facility-location and shipment-planning numerics.
+
+**Second, independent occupant.** Zhu, Yu & Bayraksan, arXiv:`2406.20004v2`
+(preprint, read in full) — residuals-based contextual DRO whose Wasserstein
+nominal is **both decision- and covariate-dependent**, general two-stage with
+recourse, asymptotic optimality and finite-sample guarantees, Benders with
+nonlinear cuts and proven finite convergence, shipment-planning-and-pricing
+numerics. This is the idea's exact architecture, with Wasserstein.
+**Third:** Hu, Tong, Peng & Tan, *J. Global Optimization*, DOI
+`10.1007/s10898-026-01589-7` (abstract only, Springer-gated) — ambiguity sets
+driven by first-stage **integer** decisions, MINLP via Lagrangian duality.
+
+**Note for future searches: Xian Yu is a co-author on both killing papers.**
+One group is systematically working decision-dependent DRO. Treat that whole
+area as contested.
+
+**Two corrections to our own reasoning, recorded because both were wrong:**
+1. **The convexity fear was unfounded.** We worried log-sum-exp composed with an
+   x-dependent measure destroys convexity. It does not:
+   `G(x,λ) = λε·log E_Q[e^{f(x,z)/(λε)}]` is the **perspective** (in `λε`) of the
+   convex log-sum-exp functional, hence **jointly convex in (x, λ)**, and
+   composing with `f` convex in `x` preserves it. Strong duality also survives a
+   decision-dependent reference measure, holding pointwise in `x`. What actually
+   breaks convexity is only the **reweighted outer expectation**
+   `Σᵢ p̂ᵢ(x)·Gᵢ(x,λ)` — the same bilinearity as a decision-dependent *radius*,
+   no worse. The log-sum-exp was never the obstruction.
+2. **"Sinkhorn closed forms don't reach piecewise-linear-convex losses" was
+   true but the inference from it was wrong** — Wang–Gao–Xie solve the
+   piecewise-linear newsvendor numerically in their §5.1.
+Also worth knowing: their "2-SDRO" means *order-2* Sinkhorn, **not** two-stage.
+
+**Residual delta, for the record** (not enough for a paper): the joint-convexity
+observation, since both Sinkhorn papers needlessly scalar-search `λ`; exact
+mixed-integer-*convex* reformulation via perspective functions rather than
+McCormick, since a Sinkhorn ball gives binary × nonlinear log-sum-exp rather
+than binary × linear duals; and SAA consistency for the nested
+log-of-expectation under mixed-integer selection, since the BSMD/MLMC
+guarantees require convexity in the decision and die with binaries.
+
+**The unanswerable referee objection:** *"this is Yu & Basciftci with the ball
+swapped."* True at the level of model, tractability mechanism, algorithm class
+and guarantee. And our own data findings (1.94× diurnal, 1.04 mph wet-hour
+slowdown) motivate **conditioning**, which is the incumbents' contribution —
+they do not discriminate between ambiguity balls.
 
 ### 6. Phase-transition Wasserstein radii on bounded support — **SCOOPED**
 Characterise the ε-interval where the two-stage DR decision differs from both
