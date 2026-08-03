@@ -1,0 +1,22 @@
+============================================================================================
+GO / NO-GO SUMMARY — CERTIFIED MULTIVARIATE SCREENING WITH ORL KERNEL
+============================================================================================
+STATUS: GO
+mode=full  cells=40  failed_cells=0
+identity rate:                  1.000
+median gate speed-up:           2.877x
+minimum gate speed-up:          1.477x
+median solver speed-up:         2.867x
+minimum solver speed-up:        1.474x
+solver win rate:                1.000
+median solver speed-up + prep:  2.864x
+median certification coverage:  0.699
+minimum certification coverage: 0.429
+--------------------------------------------------------------------------------------------
+Reason: decision-exact and clear end-to-end acceleration
+--------------------------------------------------------------------------------------------
+Interpretation:
+  GO            = enough signal for a conference-sized paper and full benchmark.
+  BORDERLINE-GO = keep the direction, but confirm on all instances/profiles.
+  NO-GO         = do not write the paper around computational acceleration.
+============================================================================================

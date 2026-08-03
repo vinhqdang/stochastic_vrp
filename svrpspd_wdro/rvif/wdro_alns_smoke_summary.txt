@@ -1,0 +1,23 @@
+============================================================================================
+GO / NO-GO SUMMARY — CERTIFIED MULTIVARIATE SCREENING WITH ORL KERNEL
+============================================================================================
+STATUS: SMOKE-PASS
+mode=smoke  cells=2  failed_cells=0
+identity rate:                  1.000
+median gate speed-up:           1.932x
+minimum gate speed-up:          1.650x
+median solver speed-up:         1.876x
+minimum solver speed-up:        1.622x
+solver win rate:                1.000
+median solver speed-up + prep:  1.875x
+median certification coverage:  0.702
+minimum certification coverage: 0.639
+--------------------------------------------------------------------------------------------
+Reason: correctness and paired-search identity passed; run quick for the research decision
+NOTE: smoke mode is a correctness/sanity run; use quick before making the research decision.
+--------------------------------------------------------------------------------------------
+Interpretation:
+  GO            = enough signal for a conference-sized paper and full benchmark.
+  BORDERLINE-GO = keep the direction, but confirm on all instances/profiles.
+  NO-GO         = do not write the paper around computational acceleration.
+============================================================================================

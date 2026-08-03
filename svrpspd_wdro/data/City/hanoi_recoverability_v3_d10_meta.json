@@ -1,0 +1,264 @@
+{
+  "instance": "HANOI-100-1.vrpspd",
+  "source_routes": "hanoi_recoverability_v2_routes.json",
+  "capacity": 150.0,
+  "deltas": [
+    0.1
+  ],
+  "repair_class": {
+    "outage_time": "pre-departure",
+    "simultaneous_lost_routes": 2,
+    "survivor_order_fixed": true,
+    "lost_route_orders_fixed": true,
+    "lost_route_contiguous_blocks": true,
+    "max_blocks_per_survivor_total": 1,
+    "emergency_route_capacity_test": "residual total delivery <= Q and residual total pickup <= Q"
+  },
+  "substantive_route": {
+    "min_len": 10,
+    "min_workload": 75.0,
+    "pair_filter": "both lost routes substantive"
+  },
+  "plans": [
+    {
+      "plan_id": 0,
+      "seed": 0,
+      "K": 7,
+      "distance": 1246180.0
+    },
+    {
+      "plan_id": 1,
+      "seed": 0,
+      "K": 8,
+      "distance": 1270239.0
+    },
+    {
+      "plan_id": 2,
+      "seed": 1,
+      "K": 7,
+      "distance": 1235689.0
+    },
+    {
+      "plan_id": 3,
+      "seed": 1,
+      "K": 8,
+      "distance": 1279890.0
+    },
+    {
+      "plan_id": 4,
+      "seed": 2,
+      "K": 7,
+      "distance": 1245950.0
+    },
+    {
+      "plan_id": 5,
+      "seed": 2,
+      "K": 8,
+      "distance": 1261484.0
+    },
+    {
+      "plan_id": 6,
+      "seed": 3,
+      "K": 7,
+      "distance": 1239200.0
+    },
+    {
+      "plan_id": 7,
+      "seed": 3,
+      "K": 8,
+      "distance": 1262365.0
+    },
+    {
+      "plan_id": 8,
+      "seed": 4,
+      "K": 7,
+      "distance": 1229294.0
+    },
+    {
+      "plan_id": 9,
+      "seed": 4,
+      "K": 8,
+      "distance": 1268134.0
+    },
+    {
+      "plan_id": 10,
+      "seed": 5,
+      "K": 7,
+      "distance": 1248490.0
+    },
+    {
+      "plan_id": 11,
+      "seed": 5,
+      "K": 8,
+      "distance": 1264368.0
+    },
+    {
+      "plan_id": 12,
+      "seed": 6,
+      "K": 7,
+      "distance": 1236966.0
+    },
+    {
+      "plan_id": 13,
+      "seed": 6,
+      "K": 8,
+      "distance": 1273615.0
+    },
+    {
+      "plan_id": 14,
+      "seed": 7,
+      "K": 7,
+      "distance": 1254971.0
+    },
+    {
+      "plan_id": 15,
+      "seed": 7,
+      "K": 8,
+      "distance": 1259973.0
+    },
+    {
+      "plan_id": 16,
+      "seed": 8,
+      "K": 7,
+      "distance": 1239020.0
+    },
+    {
+      "plan_id": 17,
+      "seed": 8,
+      "K": 8,
+      "distance": 1248724.0
+    },
+    {
+      "plan_id": 18,
+      "seed": 9,
+      "K": 7,
+      "distance": 1247055.0
+    },
+    {
+      "plan_id": 19,
+      "seed": 9,
+      "K": 8,
+      "distance": 1273033.0
+    },
+    {
+      "plan_id": 20,
+      "seed": 10,
+      "K": 7,
+      "distance": 1249913.0
+    },
+    {
+      "plan_id": 21,
+      "seed": 10,
+      "K": 8,
+      "distance": 1274465.0
+    },
+    {
+      "plan_id": 22,
+      "seed": 11,
+      "K": 7,
+      "distance": 1240913.0
+    },
+    {
+      "plan_id": 23,
+      "seed": 11,
+      "K": 8,
+      "distance": 1271035.0
+    },
+    {
+      "plan_id": 24,
+      "seed": 12,
+      "K": 7,
+      "distance": 1261586.0
+    },
+    {
+      "plan_id": 25,
+      "seed": 12,
+      "K": 8,
+      "distance": 1270292.0
+    },
+    {
+      "plan_id": 26,
+      "seed": 13,
+      "K": 7,
+      "distance": 1251866.0
+    },
+    {
+      "plan_id": 27,
+      "seed": 13,
+      "K": 8,
+      "distance": 1270571.0
+    },
+    {
+      "plan_id": 28,
+      "seed": 14,
+      "K": 7,
+      "distance": 1244175.0
+    },
+    {
+      "plan_id": 29,
+      "seed": 14,
+      "K": 8,
+      "distance": 1263846.0
+    },
+    {
+      "plan_id": 30,
+      "seed": 15,
+      "K": 7,
+      "distance": 1249358.0
+    },
+    {
+      "plan_id": 31,
+      "seed": 15,
+      "K": 8,
+      "distance": 1266770.0
+    },
+    {
+      "plan_id": 32,
+      "seed": 16,
+      "K": 7,
+      "distance": 1244383.0
+    },
+    {
+      "plan_id": 33,
+      "seed": 16,
+      "K": 8,
+      "distance": 1270167.0
+    },
+    {
+      "plan_id": 34,
+      "seed": 17,
+      "K": 7,
+      "distance": 1248876.0
+    },
+    {
+      "plan_id": 35,
+      "seed": 17,
+      "K": 8,
+      "distance": 1266542.0
+    },
+    {
+      "plan_id": 36,
+      "seed": 18,
+      "K": 7,
+      "distance": 1244191.0
+    },
+    {
+      "plan_id": 37,
+      "seed": 18,
+      "K": 8,
+      "distance": 1260993.0
+    },
+    {
+      "plan_id": 38,
+      "seed": 19,
+      "K": 7,
+      "distance": 1244383.0
+    },
+    {
+      "plan_id": 39,
+      "seed": 19,
+      "K": 8,
+      "distance": 1244084.0
+    }
+  ]
+}
