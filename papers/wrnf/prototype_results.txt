@@ -1,0 +1,45 @@
+==========================================================================
+WRNF prototype: numerical falsification of the paper's three claims
+==========================================================================
+cost matrix:
+[[1. 4.]
+ [3. 2.]]
+penalty p = 10.0, install cost f = [0.8 0.8]
+N = 5 demand samples: [[np.float64(3.0), np.float64(2.0)], [np.float64(2.0), np.float64(4.0)], [np.float64(5.0), np.float64(1.0)], [np.float64(1.0), np.float64(3.0)], [np.float64(4.0), np.float64(4.0)]]
+
+--- CLAIM 3: the modulus is combinatorial, in two regimes -------
+  binding regime  x = [3. 3.] (capacity can be exhausted)
+    predicted p                        = 10.0000
+    measured  max |dQ|/||dxi||_1        = 10.0000
+  slack regime    x = [60. 60.] (capacity never binds)
+    predicted max_j min(p, min_i c_ij) = 2.0000
+    measured  max |dQ|/||dxi||_1        = 2.0000
+CLAIM 3: HOLDS in both regimes (binding ok, slack ok)
+
+--- CLAIM 1: unbounded support => worst case = SAA + eps*Lip ----
+   eps    brute force    closed form        SAA          gap
+  0.00      13.200000      13.200000    13.2000     3.55e-15
+  0.25      15.700000      15.700000    13.2000     1.78e-15
+  0.50      18.200000      18.200000    13.2000     3.55e-15
+  1.00      23.200000      23.200000    13.2000     3.55e-15
+  2.00      33.200000      33.200000    13.2000     0.00e+00
+CLAIM 1 (objective identity): HOLDS
+argmin SAA = [4. 4.]  (obj 15.4000)
+argmin DRO = [4. 4.]  (obj 25.4000)   [unbounded support]
+CLAIM 1 (decision irrelevance): HOLDS -- decisions coincide
+
+--- CLAIM 2: bounded support => decisions differ ----------------
+support xi <= 6, eps = 2.0
+argmin SAA = [4. 4.]  (obj 15.4000)
+argmin DRO = [5.5 6.5]  (obj 22.2000)
+CLAIM 2: HOLDS -- decisions DIFFER (robustness is decision-relevant)
+at x=[3. 3.]: bounded-support worst case 32.9600 <= closed form 33.2000  (consistent)
+
+==========================================================================
+SUMMARY
+  Claim 1 objective identity        : HOLDS
+  Claim 1 decision irrelevance      : HOLDS
+  Claim 2 bounded-support relevance : HOLDS
+  Claim 3 combinatorial modulus     : HOLDS
+  ==> paper spine SURVIVES
+==========================================================================

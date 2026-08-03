@@ -1,21 +1,51 @@
-# Stochastic VRPSPD — robust planning + BATON optimal-stopping execution
+# Stochastic routing & combinatorial optimization — research monorepo
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status: Research](https://img.shields.io/badge/Status-Research-green.svg)](https://github.com/vinhqdang/stochastic_vrp)
 
-## Overview
+One repository, several independent papers. Most share a common engine for
+stochastic vehicle routing (`svrpspd_wdro/`); some are deliberately
+self-contained. Every paper has its own directory under `papers/`, its own
+review clock, and its own `STATUS.md`.
 
-Research codebase for the **Vehicle Routing Problem with Simultaneous Pickup
-and Delivery under Stochastic Demand (SVRPSPD)**, covering both decision
-layers of a last-mile operation:
+## Papers
+
+| # | Paper | Contribution | Venue | Status | Code |
+|---|---|---|---|---|---|
+| 1 | **BATON** — [`papers/baton/`](papers/baton/) | Optimal-stopping recourse for SVRPSPD: peak-aware Longstaff–Schwartz labels + a zero-parameter handoff trigger, under six capacity-feasibility gates | Computers & Operations Research | **under review** — frozen | `svrpspd_wdro/core/` |
+| 2 | **TEMPO** — [`papers/tempo/`](papers/tempo/) | *When to replan*: an anytime-valid e-process monitoring a running plan across demand, travel-time, congestion, accident, breakdown and dwell channels, with decision-relevant previsible tilting | Transportation Science (INFORMS) | **under review** — frozen, double-anonymous | `svrpspd_wdro/ev/` |
+| 3 | **MWHED** — [`papers/csonet2026/`](papers/csonet2026/) | Minimum Weighted Hazard-Exposure Dispatch: NP-hardness via knapsack equivalence, an exact pseudo-polynomial DP, an FPTAS, and a matroid-greedy tractable case | J. of Combinatorial Optimization, via CSoNet 2026 Journal Track | **submitted** | self-contained in its own directory |
+| 4 | ~~**WRNF**~~ — [`papers/wrnf/`](papers/wrnf/) | Two-stage Wasserstein-robust network flow. **Abandoned before drafting — scooped:** the thesis is Mohajerin Esfahani & Kuhn (2018) Remark 6.7, and its two-stage form is Duque, Mehrotra & Morton, SIOPT 32(3) 2022 | (was COAP) | **abandoned 2026-07-27** — kept as a documented negative result | n/a |
+
+**Read a paper's own `STATUS.md` before touching it.** "Frozen" is a
+per-paper state, not a repo-wide one, and a paper flips from editable to
+frozen the moment it is submitted. Papers 1–3 are all currently closed to
+edits; only revision work is allowed, and only once a decision arrives.
+
+### Adding paper N+1
+
+1. `papers/<shortname>/` — manuscript, `STATUS.md` (venue, review state,
+   freeze policy), `references.bib`, cover letter, and a `README.md`
+   explaining the file manifest and how every table/figure regenerates.
+2. New shared machinery goes in a **subpackage** of `svrpspd_wdro/`
+   (alongside `core/` and `ev/`) so instances, simulator, cost model and
+   test suite stay common — *unless* the paper must demonstrably share
+   nothing with a paper under review elsewhere, in which case keep its
+   code inside its own directory (see paper 3's README for that argument).
+3. Tests go in `svrpspd_wdro/tests/`, and stay green.
+
+## The shared engine
+
+`svrpspd_wdro/` covers both decision layers of a last-mile operation:
 
 | Layer | What it does | Where |
 |---|---|---|
 | **Planning** | ALNS route construction under six capacity-feasibility gates: deterministic, SAA-CVaR, Wasserstein-DRO, and three published robust baselines (Gounaris quadrant-budget, Bertsimas–Sim budget, Cantelli/moment-DRO) | `svrpspd_wdro/scripts/dethloff_runner.py` |
-| **Execution** | Online mid-route **handoff** policies that watch the live load as the vehicle serves customers and decide when to dispatch a standby vehicle — headlined by **BATON** (Backward-induction AcTion pricing for ONline recourse): a peak-aware optimal-stopping policy over the full recourse action set {continue, hand off, depot-restock}, with *zero tuning parameters* | `svrpspd_wdro/core/otr2.py`, `core/costs.py` |
+| **Execution** | Online mid-route **handoff** policies that watch the live load and decide when to dispatch a standby vehicle — headlined by **BATON** (Backward-induction AcTion pricing for ONline recourse): a peak-aware optimal-stopping policy over the full recourse action set {continue, hand off, depot-restock}, with *zero tuning parameters* | `svrpspd_wdro/core/otr2.py`, `core/costs.py` |
+| **Monitoring** | Multi-factor world simulator plus the e-process machinery that decides *when the plan itself has gone stale* | `svrpspd_wdro/ev/` |
 
-**Headline results** (details in [`RESULTS_OTR2.md`](RESULTS_OTR2.md)):
+**Headline BATON results** (details in [`RESULTS_OTR2.md`](RESULTS_OTR2.md)):
 BATON beats its predecessor, tuned thresholds, published rule-based
 recourse (Salavati-Khoshghalb et al. 2019), and an equal-data dynamic
 program on **all six planning gates** (paired Wilcoxon p ≤ 8×10⁻³, mostly
@@ -24,7 +54,7 @@ the three-class fleet cost model stays firmly positive (+11–13%) where
 threshold policies *destroy* value (−1.4%) on conservative plans. Plans are
 certified within **9.3% of optimal on average** by Gurobi MIP bounds.
 
-## Problem
+## The routing problem the engine solves
 
 Each vehicle departs the depot preloaded with its deliveries and collects
 pickups as it goes. The on-board load after customer $k$ is
@@ -37,7 +67,7 @@ problem is *when to hand the remainder of a route to a standby vehicle*:
 act too early and you pay for handoffs you didn't need; too late and you
 pay surge prices plus SLA compensation.
 
-## BATON in one paragraph
+### BATON in one paragraph
 
 Offline, from historical demand paths (empirical distribution, no
 parametric assumption), backward induction fits per-stop monotone models
@@ -57,9 +87,10 @@ right complexity point.
 
 ```
 stochastic_vrp/
-├── svrpspd_wdro/        # THE maintained pipeline — see svrpspd_wdro/README.md
-│   ├── core/            #   OTR-2.0/2.1, three-class cost model, DP benchmark,
+├── svrpspd_wdro/        # THE shared engine — see svrpspd_wdro/README.md
+│   ├── core/            #   paper 1: BATON, three-class cost model, DP benchmark,
 │   │                    #   published pi-rules, W-DRO planner internals
+│   ├── ev/              #   paper 2: TEMPO e-process, multi-factor world simulator
 │   ├── scripts/         #   evaluations, gates, instance generators, figures,
 │   │                    #   trip animations, MIP certification
 │   ├── data/            #   Dethloff (40x50) · Salhi-Nagy (14x50-199) · City
@@ -67,15 +98,17 @@ stochastic_vrp/
 │   │                    #    HCMC, Hanoi, NYC, Paris, Shanghai)
 │   ├── tests/           #   pytest suite (~185 tests)
 │   └── results/         #   CSVs + figures (paper tables regenerate from these)
-├── papers/
-│   ├── baton/           # paper 1 manuscript — UNDER REVIEW at Computers & OR
-│   └── tempo/           # paper 2 (TEMPO: anytime-valid re-optimization) — active
-├── RESULTS_OTR2.md      # running results summary — eight experiment layers
-├── legacy/              # archived ECHO-era code (not maintained)
+├── papers/              # one directory per paper, one review clock each
+│   ├── baton/           #   paper 1 — UNDER REVIEW at Computers & OR (frozen)
+│   ├── tempo/           #   paper 2 — UNDER REVIEW at Transportation Science (frozen)
+│   ├── csonet2026/      #   paper 3 — SUBMITTED to JOCO; self-contained code
+│   └── wrnf/            #   ABANDONED (scooped) — kept as a negative result
+├── RESULTS_OTR2.md      # BATON results summary — eight experiment layers
+├── legacy/              # archived ECHO-era code (not maintained, do not import)
 └── requirements.txt
 ```
 
-## Evaluation design
+## Evaluation design (papers 1–2)
 
 - **Execution policies compared** (11): reactive, OTR-1.0 endpoint baseline,
   myopic threshold, peak-label tuned threshold, π1/π2/π3 published recourse
@@ -130,14 +163,18 @@ Solved plans are cached in `results/plans/*.json`, so evaluation reruns
 skip the ALNS solving stage. Full module map and per-table reproduction
 commands: [`svrpspd_wdro/README.md`](svrpspd_wdro/README.md).
 
-## Manuscript
+Paper 3 is independent of all of the above — run it from its own directory:
 
-`papers/baton/` holds the Computers & Operations Research manuscript
-(optimal-stopping
-formulation, three propositions with proofs, all tables generated from the
-result CSVs by `papers/baton/make_tables.py`). Citations are tracked with DOIs in
-`papers/baton/references.bib`; unverified entries are flagged in
-`papers/baton/VERIFY_CITATIONS.md`.
+```bash
+cd papers/csonet2026
+python3 experiment.py             # synthetic experiments
+python3 case_study_campfire.py    # real-world case study
+```
+
+## Citations
+
+Real papers with DOIs only. Anything unverified is flagged in the relevant
+paper's `VERIFY_CITATIONS.md` rather than cited silently.
 
 ## License
 

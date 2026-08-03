@@ -207,3 +207,11 @@ marimo/_lsp/
 __marimo__/
 cache/
 svrpspd_wdro/data/City/_cache/
+
+# data probe caches
+/tmp/wrnf_probe/
+data_sources/*.parquet
+data_sources/*.json
+
+# derived bulk rows: NYC DOT states no licence, so do not redistribute
+data_sources/out/*.parquet
