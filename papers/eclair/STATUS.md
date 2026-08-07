@@ -15,10 +15,15 @@
   CP'26/FLoC'26).
 - **State:** ACTIVE — open for edits. **Manuscript drafting started
   2026-08-08**: `main.tex` (Springer sn-jnl, sn-mathphys-num numbered
-  citations per the journal's guidelines) compiles clean at 13 pages
-  with the full experimental record; TODOs remaining in-file: author
-  list, the two unverified verification-framework citations, public
-  repository URL, AI-assistance disclosure decision. Spec:
+  citations per the journal's guidelines) compiles clean at **20
+  pages** with 4 figures (`figures/make_figures.py`, regenerable from
+  committed results), 6 tables, a worked-run walkthrough, a formal
+  probe-library section, and 2 appendices (full MR validity proofs;
+  verbatim NL specs + prompts). Expected to reach ~25 pages once the
+  external-baseline and ambiguous-spec experiments land. TODOs
+  in-file: author list, the two unverified verification-framework
+  citations, public repository URL, AI-assistance disclosure
+  decision. Spec:
   `PROJECT.md`; implementation + results: `code/`. This is the repo's
   only open paper (papers 1–3 frozen under review, paper 4 abandoned
   — see root `CLAUDE.md` and `RESEARCH_LOG.md`).

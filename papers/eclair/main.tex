@@ -206,10 +206,31 @@ wagering machinery \cite{waudbysmith2024estimating}; and the e-BH
 procedure controls FDR under arbitrary dependence \cite{wang2022false}.
 ECLAIR ports this toolkit into constraint-model verification, where,
 to our knowledge, sequential anytime-valid certification has not been
-attempted. Conformal approaches to LLM output control assume
-exchangeability between calibration and test data and are
-fixed-sample; both assumptions fail in a sequential
-generate--test--repair loop.
+attempted.
+
+\paragraph{Why not fixed-sample or conformal tools.}
+It is worth being precise about why the natural statistical
+alternatives do not fit this workflow, since the certification
+problem looks superficially like ordinary hypothesis testing or
+distribution-free calibration. A fixed-sample test requires the
+number and identity of probes to be fixed before any outcome is seen;
+a generate--test--repair loop violates this at every step --- it
+looks at the running evidence to decide whether to continue testing,
+which probe to run next, whether to repair, and when to stop, and
+each of those choices invalidates a fixed-sample p-value in the
+familiar optional-stopping way. Split-conformal calibration instead
+requires exchangeability between the calibration data and the test
+stream; here the ``test stream'' is adaptively generated (repaired
+candidates are chosen \emph{because} of earlier outcomes; probe
+instances are routed by an adaptive policy), so exchangeability fails
+by construction. E-processes are designed for exactly this
+regime: validity is preserved under any data-dependent stopping,
+continuation, and selection rule, because the guarantee is a
+supermartingale property rather than a sampling-distribution
+property \cite{ramdas2023game}. The practical consequence is the one
+that matters operationally: the certifier may spend its budget
+\emph{where the evidence points}, stop the moment a decision is
+supported, and still quote the same $\alpha$.
 
 \section{The certification problem}\label{sec:problem}
 
@@ -382,6 +403,41 @@ Algorithm~\ref{alg:eclair} summarizes the loop.
 \end{algorithmic}
 \end{algorithm}
 
+\subsection{A worked run}\label{sec:worked}
+
+Figure~\ref{fig:trajectories} traces one certified pool --- three
+faithful candidates and three screened mutants of the set-cover
+family --- under Kelly routing at $\alpha = 0.05$ with a $640$\,ms
+budget of measured solver time. Every mechanism of the framework is
+visible in the paths. Two mutants are driven across the rejection
+threshold within $60$\,ms: the router's prior makes every candidate
+equally suspect at the start, tier-A alarms multiply their wealth by
+$p_1/\bar p_0 \approx 31$, and two to three alarms suffice. The third
+mutant survives its first probes by luck, its posterior $q_m$ drops,
+and the router deprioritizes it --- until the pool thins, its
+relative score rises again, and a single tier-B hard certificate
+(the near-vertical jump at ${\sim}290$\,ms) removes it. The faithful
+candidates' paths tell the validity story: early tier-A/C passes
+drive their wealth \emph{down} (a pass multiplies by
+$(1-p_1)/(1-\bar p_0) < 1$), after which the router --- seeing low
+$q_m$ --- feeds them almost exclusively zero-bleed tier-B probes, so
+their wealth flattens far below the threshold and the remaining
+budget is spent where Lemma~\ref{lem:conservative} makes passes free.
+The certified pick is the faithful candidate with the smallest
+terminal wealth; its ledger records every probe shown in the figure.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/Fig1}
+\caption{Wealth trajectories $\log \Eproc_t(m)$ of one certified pool
+(three faithful set-cover candidates, three screened mutants; Kelly
+routing, $\alpha = 0.05$). Mutant paths cross the rejection threshold
+(dashed); the late near-vertical jump is a tier-B hard certificate.
+Faithful paths drift down on early noisy passes, then flatten as the
+router shifts them to zero-bleed tier-B probes}
+\label{fig:trajectories}
+\end{figure}
+
 \section{Guarantees}\label{sec:theory}
 
 \begin{assumption}\label{ass:null}
@@ -491,6 +547,95 @@ is not pedantry --- the conservative margin visibly erodes exactly,
 and only, when tier C is made the sole evidence source.
 \end{remark}
 
+\section{A verified probe library for five problem families}
+\label{sec:library}
+
+The guarantees of Section~\ref{sec:theory} are only as real as
+Assumption~\ref{ass:null}, and tier B's half of that assumption is a
+per-relation \emph{proof obligation}. This section discharges it for
+a concrete library spanning five combinatorial families chosen to
+exercise packing, covering, colouring, assignment, and scheduling
+structure. For each family we implement a reference model, an
+independent executable checker (the tier-A enumeration oracle), and
+the metamorphic relations below; full validity proofs are in
+Appendix~\ref{app:proofs}. Table~\ref{tab:families} summarizes.
+
+\begin{table}[t]
+\caption{The probe library. MRs state a provable relation between the
+specification optima of an instance $I$ and its transform $I'$;
+$\uparrow$ ($\downarrow$) means the optimum cannot decrease
+(increase), $=$ means it is unchanged. Mutation classes are the
+functional corruptions used to create ground-truth unfaithful
+candidates.}\label{tab:families}
+\begin{tabular}{p{2.9cm}p{4.2cm}p{4.2cm}}
+\toprule
+Family (sense) & Metamorphic relations & Mutation classes\\
+\midrule
+Knapsack with conflicts (max) &
+capacity$+\delta$: $\uparrow$; drop conflict: $\uparrow$; permute
+items: $=$ &
+capacity shift; weight/value entry; vector rotation; conflict-row
+drop/half-drop; operator flip\\
+\addlinespace
+Set cover (min) &
+drop element: $\downarrow$; cost entry$+\delta$: $\uparrow$; permute
+sets: $=$ &
+cost entry; coverage-row drop/half-drop; operator flip\\
+\addlinespace
+Graph colouring (min) &
+drop edge: $\downarrow$; add edge: $\uparrow$; relabel vertices: $=$ &
+edge drop/half-drop; adjacency-logic flip\\
+\addlinespace
+Generalized assignment (min) &
+capacity$+\delta$: $\downarrow$; cost entry$+\delta$: $\uparrow$;
+permute tasks: $=$ &
+size/capacity entry; vector rotation; cost-matrix entry; operator
+flip\\
+\addlinespace
+On-time job selection (max) &
+deadline$+\delta$: $\uparrow$; weight$+\delta$: $\uparrow$;
+processing$-\delta$: $\uparrow$; permute jobs: $=$ &
+processing/deadline/weight entry; vector rotation; operator flip\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Three structural remarks.}
+First, the relations fall into three provable classes ---
+\emph{feasible-set monotonicity} (relaxing a resource or deleting a
+structural restriction enlarges the specification's feasible set),
+\emph{objective dominance} (a pointwise-increased cost vector cannot
+lower a minimum), and \emph{symmetry} (consistent relabeling of
+indexed data is a bijection of the feasible set preserving
+objectives). These classes, not the individual relations, are what
+transfers to new families: any specification whose feasible set is
+downward-closed in a resource parameter inherits the first class
+verbatim, which is how the library should be extended toward global
+constraints such as \texttt{alldifferent} (invariant under value
+permutation) and \texttt{cumulative} (monotone in capacity and in
+deadline vectors).
+
+Second, one relation is genuinely delicate and is the reason proofs
+are owed rather than waved at: deadline extension in on-time
+selection changes not only a right-hand side but the \emph{index
+sets} of the earliest-due-date constraints, so monotonicity of the
+constraint system is not syntactically obvious; validity is restored
+by the classical equivalence between the EDD inequalities and true
+single-machine schedulability, which \emph{is} monotone in deadlines
+(Appendix~\ref{app:proofs}). Metamorphic relations must be proved
+against the specification, not read off the formulation --- this is
+precisely the failure mode that turns a would-be hard certificate
+into a silent source of false rejections.
+
+Third, the mutation classes mirror the errors observed from real LLM
+modellers (Section~\ref{sec:llm}) at the semantic rather than
+syntactic level: misread constants, positionally corrupted data,
+misaligned columns (rotation), dropped constraint structure, and
+inverted comparisons. Each corruption is \emph{instance-generic} ---
+applied identically to every instance the candidate ever sees --- so
+a mutant is a wrong \emph{model}, not a wrong instance, exactly like
+a systematic LLM misreading.
+
 \section{Experimental evaluation}\label{sec:experiments}
 
 \paragraph{Implementation.}
@@ -525,12 +670,33 @@ Betting parameters are calibrated on two held-out families (knapsack
 with conflicts, graph colouring) and evaluated on the three
 \emph{disjoint} remaining families --- so every result below also
 tests whether conservative calibration transfers across problem
-families. Calibration measured: tier A, zero false alarms in $240$
-trials ($\bar p_0 = 0.0153$), detection $0.59$, mean cost $5.2$\,ms;
-tier B, zero false alarms in $240$ trials (asserted, per
-Proposition~\ref{prop:mr}), hard-certificate rate
-$\delta_B = 0.042$, cost $6.3$\,ms; tier C, null alarm rate $0.117$
-($\bar p_0 = 0.164$), detection $0.57$, cost $12.4$\,ms.
+families. Table~\ref{tab:calib} reports the measured corpus. Two
+entries deserve comment. Tier B's $0/240$ row is not an estimate but
+a \emph{consistency check} of Proposition~\ref{prop:mr} --- a single
+faithful alarm would indicate an invalid relation and aborts
+calibration. Tier C's null alarm rate of $11.7\%$ is the empirical
+face of pool entanglement: even a faithful candidate is outvoted when
+two of its three sampled partners happen to agree on a wrong value;
+the Clopper--Pearson bound $\bar p_0 = 0.164$ is what the bets then
+use.
+
+\begin{table}[t]
+\caption{Calibration corpus (two held-out families, $240$ trials per
+tier and hypothesis). $\hat p_0$/$\hat p_1$ are observed alarm rates
+on faithful/mutant candidates; $\bar p_0$ is the Clopper--Pearson
+$97.5\%$ upper bound the bets use; cost is measured mean
+solver time per probe.}\label{tab:calib}
+\begin{tabular}{lccccc}
+\toprule
+Tier & $\hat p_0$ (faithful) & $\bar p_0$ & $\hat p_1$ (mutants) &
+mean cost\\
+\midrule
+A (micro-oracle)   & $0/240$   & $0.0153$ & $0.592$ & $5.2$\,ms\\
+B (MRs)            & $0/240$   & ---      & $0.042$ & $6.3$\,ms\\
+C (cross-majority) & $28/240$  & $0.164$  & $0.567$ & $12.4$\,ms\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Mutation testbed: validity, power, and routing}
 \label{sec:testbed}
@@ -574,7 +740,21 @@ Sweeping $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$ ($100$
 replications per level, Kelly routing) yields empirical
 false-rejection $0.0000$ at \emph{every} level
 ($n \approx 290$--$300$ faithful candidates per level), with
-detection stable at $92$--$94\%$. Two remarks. First, the guarantee
+detection stable at $92$--$94\%$; Figure~\ref{fig:alpha} plots both
+curves. Two remarks.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/Fig2}
+\caption{Validity and power across the operating range ($100$
+replications per level, Kelly routing). (a) Empirical false-rejection
+of faithful candidates sits at zero under the nominal-$\alpha$
+diagonal at every level --- the guarantee is an upper bound and holds
+with the conservative margin the composite null demands. (b)
+Detection of mutants is flat in $\alpha$, the empirical face of the
+logarithmic budget bound of Proposition~\ref{prop:budget}}
+\label{fig:alpha}
+\end{figure} First, the guarantee
 of Theorem~\ref{thm:validity} is an upper bound, not a calibration
 claim: ECLAIR promises \emph{at most} $\alpha$, and the observed
 margin is the structural price of a composite null --- tier B cannot
@@ -587,7 +767,18 @@ rejection budgets grow only logarithmically as $\alpha$ tightens.
 \label{sec:ablation}
 
 Table~\ref{tab:ablation} repeats the testbed with restricted probe
-pools.
+pools; Figure~\ref{fig:ablation} visualizes the two headline columns.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/Fig3}
+\caption{Probe-tier ablation ($100$ replications per configuration,
+Kelly, $\alpha=0.05$). (a) Detection by probe pool. (b) The validity
+margin: every pool containing an unentangled tier (blue) records zero
+false rejections; the pool-entangled cross-model tier alone (orange)
+stays within $\alpha$ but consumes the entire conservative margin}
+\label{fig:ablation}
+\end{figure}
 
 \begin{table}[t]
 \caption{Probe-tier ablation ($100$ replications/configuration,
@@ -638,13 +829,39 @@ response cache are included in the supplementary material, and this
 paragraph constitutes the documentation of LLM use in this study's
 methods.
 
-\emph{Generation.} $20/30$ candidates passed intake. All ten failures
-were \emph{loud}: API hallucinations importing conventions from other
-modelling ecosystems --- \texttt{cp.Binary} and
-\texttt{cp.binary\_var} (PuLP/DOcplex idioms), \texttt{cp.Var},
-\texttt{cp.multiply}, \texttt{IntVar(domain=...)} (Choco-style),
+\emph{Generation.} $20/30$ candidates passed intake
+(Table~\ref{tab:llm}). All ten failures were \emph{loud}: API
+hallucinations importing conventions from other modelling ecosystems
+--- \texttt{cp.Binary} and \texttt{cp.binary\_var} (PuLP/DOcplex
+idioms), \texttt{cp.Var}, \texttt{cp.multiply},
+\texttt{IntVar(domain=...)} (Choco-style),
 \texttt{Model().NewBoolVar} (raw CP-SAT API), a bare
 \texttt{import cp} --- each caught by the gate at negligible cost.
+The failure mass is unevenly distributed: the large dedicated model
+produced valid CPMpy for $14/15$ prompts, while the free-tier routed
+model managed $6/15$, failing on entire families (generalized
+assignment $0/3$) --- candidate diversity across model families is
+what keeps such correlated failure from starving a pool.
+
+\begin{table}[t]
+\caption{End-to-end LLM study: intake outcomes per family and model
+family ($3$ prompt styles each). Every intake failure is an API
+hallucination caught by the gate; every intake survivor was
+proxy-faithful.}\label{tab:llm}
+\begin{tabular}{lccl}
+\toprule
+Family & routed free & nemotron-ultra & failure modes (intake)\\
+\midrule
+Knapsack+conflicts & $2/3$ & $3/3$ & \texttt{cp.Binary}\\
+Set cover          & $1/3$ & $3/3$ & \texttt{cp.Binary}, \texttt{cp.multiply}\\
+Graph colouring    & $2/3$ & $3/3$ & \texttt{IntVar(domain=...)}\\
+Gen.\ assignment   & $0/3$ & $3/3$ & \texttt{cp.Var} ($\times 2$), \texttt{cp.binary\_var}\\
+On-time selection  & $1/3$ & $2/3$ & \texttt{import cp}, \texttt{NewBoolVar}, runtime \texttt{None}\\
+\midrule
+Total              & $6/15$ & $14/15$ & \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \emph{Certification.} All $20$ intake survivors were proxy-faithful,
 so the certified pools are all-null: the correct behaviour is to
@@ -677,13 +894,25 @@ simulation reproduces the certification layer with the measured
 alarm-rate structure but a $20{:}1$ probe-cost spread (expensive
 near-exact oracles vs.\ cheap noisy checks --- the regime of
 industrial instances, of costly solver calls, and of LLM-as-judge
-probes priced per token). Over $500$ replications: Kelly routing
-detects $86\%$ of unfaithful candidates at mean cost $12.2$ budget
-units per kill, against $60\%$ at $16.6$ for round-robin and $77\%$
-at $22.6$ for cost-blind selection --- while false rejection stays at
+probes priced per token). Over $500$ replications
+(Figure~\ref{fig:routing}): Kelly routing detects $86\%$ of
+unfaithful candidates at mean cost $12.2$ budget units per kill,
+against $60\%$ at $16.6$ for round-robin and $77\%$ at $22.6$ for
+cost-blind selection --- while false rejection stays at
 $0.000$--$0.003$, below $\alpha$ for every policy. Routing gains
 scale with probe-cost heterogeneity; validity is routing-invariant,
 as Theorem~\ref{thm:validity} requires.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/Fig4}
+\caption{Routing under a $20{:}1$ probe-cost spread ($500$
+replications, $\alpha = 0.05$; measured alarm-rate structure,
+controlled costs). Kelly routing dominates on both detection (a) and
+budget per rejection (b); false-rejection stays below $\alpha$ under
+every policy, as validity is routing-invariant}
+\label{fig:routing}
+\end{figure}
 
 \section{Limitations and outlook}\label{sec:limits}
 
@@ -744,6 +973,176 @@ their use in the experiments (models, prompting, decoding parameters,
 caching) is documented in Section~\ref{sec:llm}.
 %% TODO(authors): decide and add the venue-appropriate statement on
 %% AI-assisted manuscript preparation per Springer policy.
+
+\begin{appendices}
+
+\section{Validity proofs for the probe library}\label{app:proofs}
+
+Throughout, $\mathcal{X}(I)$ denotes the specification's feasible set
+on instance $I$, $f_I$ its objective, and
+$v^\ast(I) = \mathrm{opt}_{x \in \mathcal{X}(I)} f_I(x)$. Because
+tier-B probes solve the \emph{candidate} exactly on both sides, and a
+faithful candidate satisfies $v_m \equiv v^\ast$, it suffices to
+prove each relation for $v^\ast$. Three lemmas cover all but one
+relation.
+
+\begin{lemma}[Relaxation]\label{lem:relax}
+If $\mathcal{X}(I) \subseteq \mathcal{X}(I')$ and $f_{I'} = f_I$,
+then $v^\ast(I') \ge v^\ast(I)$ for maximization and
+$v^\ast(I') \le v^\ast(I)$ for minimization.
+\end{lemma}
+\begin{proof}
+The optimum over a superset is no worse: any $x$ optimal for $I$ is
+feasible for $I'$ with the same objective value.
+\end{proof}
+
+\begin{lemma}[Objective dominance]\label{lem:dom}
+If $\mathcal{X}(I') = \mathcal{X}(I)$ and
+$f_{I'}(x) \ge f_I(x)$ for all $x \in \mathcal{X}(I)$, then
+$v^\ast(I') \ge v^\ast(I)$, for maximization and minimization alike.
+\end{lemma}
+\begin{proof}
+For maximization, dominate the maximizer of $I$; for minimization,
+$\min_x f_{I'}(x) \ge \min_x f_I(x)$ since every point's value rose.
+\end{proof}
+
+\begin{lemma}[Symmetry]\label{lem:sym}
+If $\pi$ is a bijection of the decision index set and $I'$ is $I$
+with all indexed data consistently relabeled by $\pi$, then
+$x \mapsto x \circ \pi^{-1}$ is a bijection
+$\mathcal{X}(I) \to \mathcal{X}(I')$ preserving objective values;
+hence $v^\ast(I') = v^\ast(I)$.
+\end{lemma}
+\begin{proof}
+Every constraint and objective term of the specification refers to
+indices only through the relabeled data, so feasibility and value are
+preserved in both directions.
+\end{proof}
+
+\paragraph{Knapsack with conflicts (max).}
+Capacity increase relaxes the single budget constraint
+(Lemma~\ref{lem:relax}: $\uparrow$). Deleting a conflict pair removes
+a constraint (Lemma~\ref{lem:relax}: $\uparrow$). Item permutation,
+with the conflict list relabeled by the same permutation, is
+Lemma~\ref{lem:sym}.
+
+\paragraph{Set cover (min).}
+Deleting an element removes one covering constraint
+(Lemma~\ref{lem:relax}: $\downarrow$). Raising one set's cost is
+Lemma~\ref{lem:dom} on a minimization ($\uparrow$). Permuting the set
+collection (costs and coverage lists together) is Lemma~\ref{lem:sym}.
+
+\paragraph{Graph colouring (min).}
+The specification minimizes the number of colours; the implemented
+objective, $1 + \max_i c_i$ over proper colourings with colours in
+$\{0, \dots, n-1\}$, agrees with it at the optimum because any proper
+colouring with $k$ distinct colours can be renumbered onto
+$\{0, \dots, k-1\}$ without violating properness. Edge deletion
+removes a disequality constraint (Lemma~\ref{lem:relax}:
+$\downarrow$); edge addition adds one, shrinking the feasible set
+(Lemma~\ref{lem:relax} applied with the roles of $I, I'$ exchanged:
+$\uparrow$); vertex relabeling is Lemma~\ref{lem:sym}.
+
+\paragraph{Generalized assignment (min).}
+Raising one machine's capacity relaxes its load constraint
+(Lemma~\ref{lem:relax}: $\downarrow$). Raising one cost entry is
+Lemma~\ref{lem:dom} ($\uparrow$). Task permutation (sizes and cost
+rows together) is Lemma~\ref{lem:sym}.
+
+\paragraph{On-time job selection (max).}
+This is the delicate family. The specification selects
+$S \subseteq \{1, \dots, n\}$ maximizing $\sum_{j \in S} w_j$ subject
+to \emph{schedulability}: some single-machine order completes every
+job of $S$ by its deadline. The classical characterization states
+that $S$ is schedulable iff processing $S$ in nondecreasing-deadline
+(EDD) order is feasible, iff
+\begin{equation}\label{eq:edd}
+\textstyle\sum_{i \in S:\, d_i \le d_j} p_i \;\le\; d_j
+\qquad \text{for every } j \in S .
+\end{equation}
+\emph{Weight increase} is Lemma~\ref{lem:dom} ($\uparrow$).
+\emph{Processing-time decrease}: in any fixed order every completion
+time weakly decreases, so every schedulable $S$ remains schedulable;
+the feasible set (in the schedulability sense) grows, and
+Lemma~\ref{lem:relax} gives $\uparrow$. \emph{Deadline increase}
+$d_k \mapsto d_k + \delta$: note that the index sets in
+\eqref{eq:edd} change with the deadline order, so monotonicity of the
+inequality system is not syntactic. Argue at the schedulability
+level instead: fix a schedule witnessing feasibility of $S$ under the
+old deadlines; completion times are unchanged and deadlines are
+pointwise no smaller, so the same schedule witnesses feasibility
+under the new deadlines. Hence every schedulable set remains
+schedulable, and Lemma~\ref{lem:relax} gives $\uparrow$; the
+candidate, if faithful, satisfies \eqref{eq:edd} on both sides
+because \eqref{eq:edd} is equivalent to schedulability instance by
+instance. Job permutation (processing times, deadlines, and weights
+together) is Lemma~\ref{lem:sym}. \qed
+
+\section{Natural-language specifications and prompts}
+\label{app:prompts}
+
+For reproducibility, the exact specification texts and the prompt
+template of the end-to-end study (Section~\ref{sec:llm}). Candidates
+were requested as a single Python function
+\texttt{build\_model(params)} returning a CPMpy model with the
+objective set, under three style hints --- \emph{direct} (``Write the
+model directly.'', temperature $0.3$), \emph{stepwise} (``First
+restate the decision variables, constraints and objective in one
+short paragraph each, then write the code.'', $0.7$), and
+\emph{expert} (``You are an expert constraint-programming modeller
+known for scrupulously faithful formalizations. Write the model.'',
+$0.5$).
+
+\paragraph{Template.}
+\begin{quote}\small\ttfamily
+Translate the following optimization problem into a CPMpy model.\\[2pt]
+\{SPECIFICATION\}\\[2pt]
+\{STYLE HINT\}\\[2pt]
+Requirements: provide a single Python function build\_model(params)
+that returns a cpmpy.Model with the objective set (use
+model.maximize(...) or model.minimize(...)); use only the cpmpy
+library (imported as cp) and the Python standard library; the
+function must work for ANY params dict matching the schema; reply
+with ONLY a Python code block.
+\end{quote}
+
+\paragraph{Specification texts (abridged schema lines).}
+Knapsack with conflicts: \emph{``You must select a subset of $n$
+items. Item $i$ has weight $w[i]$ and value $v[i]$. The total weight
+of selected items must not exceed the capacity cap. Some pairs of
+items conflict: for each pair $(i,j)$ in the list conflicts, items
+$i$ and $j$ must not both be selected. Maximize the total value of
+the selected items.''} Set cover: \emph{``There are nelem elements,
+numbered $0..\mathrm{nelem}-1$, and a collection of sets. Set $s$
+covers the elements listed in sets$[s]$ and costs cost$[s]$. Choose a
+sub-collection of sets so that every element is covered by at least
+one chosen set. Minimize the total cost of the chosen sets.''} Graph
+colouring: \emph{``Color the $n$ vertices of an undirected graph,
+using color indices from $0$ to $n-1$, so that the two endpoints of
+every edge receive different colors. Minimize the number of colors
+used. IMPORTANT convention: the objective value must equal $1$ plus
+the maximum color index used.''} Generalized assignment:
+\emph{``Assign each of $T$ tasks to exactly one of $M$ machines. Task
+$t$ has size $p[t]$; machine $m$ has capacity cap$[m]$: the total
+size of tasks assigned to machine $m$ must not exceed cap$[m]$.
+Assigning task $t$ to machine $m$ costs cost$[t][m]$. Minimize the
+total assignment cost.''} On-time job selection: \emph{``A single
+machine processes jobs one at a time. Job $j$ has processing time
+$p[j]$, deadline $d[j]$ and weight $wt[j]$. Select a subset of jobs
+that can ALL be completed by their deadlines when the selected jobs
+are processed in non-decreasing deadline order (equivalently: a
+selected set is feasible if and only if, for every selected job $j$,
+the sum of processing times of selected jobs $i$ with
+$d[i] \le d[j]$ is at most $d[j]$). Maximize the total weight of the
+selected jobs.''}
+
+The colouring convention sentence is deliberate: without it,
+``minimize the number of colors'' admits the objective
+$|\{c_i\}|$ as a faithful reading, and the two readings differ only
+off-optimum --- the template for the planned ambiguous-specification
+study (Section~\ref{sec:limits}).
+
+\end{appendices}
 
 \bibliography{references}
 

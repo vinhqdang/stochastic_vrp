@@ -79,14 +79,18 @@ def _kelly_score(st, tier, bets, log_thresh, use_cost=True):
 
 
 def run_certification(pool, bets, policy, budget, alpha, rng,
-                      prior=0.5, max_probes=4000, tiers=TIERS):
+                      prior=0.5, max_probes=4000, tiers=TIERS,
+                      trace=None):
     """Certify a candidate pool. Returns dict with per-candidate final
     states, the e-BH rejection set, and the certified pick.
-    `tiers` restricts the probe pool (ablations)."""
+    `tiers` restricts the probe pool (ablations). If `trace` is a
+    list, (candidate_index, tier, cumulative_cost, logE) is appended
+    after every probe (figures/diagnostics only)."""
     log_thresh = math.log(1.0 / alpha)
     states = [State(c, prior) for c in pool]
     rr = 0
     n_total = 0
+    spent_total = 0.0
 
     while budget > 0 and n_total < max_probes:
         alive = [s for s in states if not s.rejected]
@@ -120,6 +124,7 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
         st.spent += cost
         st.n_probes += 1
         n_total += 1
+        spent_total += cost
         if tier == "B":
             if alarm:
                 st.logE = HARD_LOG_E
@@ -130,6 +135,9 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
             st.q = bets.bayes(tier, alarm, st.q)
             if st.logE >= log_thresh:
                 st.rejected = True
+        if trace is not None:
+            trace.append((states.index(st), tier, spent_total,
+                          min(st.logE, HARD_LOG_E)))
 
     ebh = e_bh([math.exp(min(s.logE, HARD_LOG_E)) for s in states], alpha)
     survivors = [s for s in states if not s.rejected]
