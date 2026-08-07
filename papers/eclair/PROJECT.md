@@ -276,6 +276,39 @@ cost heterogeneity**, which is exactly the regime of expensive probes
 should emphasize; the stdlib prototype (20:1 cost spread) shows the
 same machinery winning clearly.
 
+**Alpha sweep — the money plot (2026-08-07, `code/run_alpha_sweep.py`,
+100 reps/level, Kelly):** empirical false-rejection of faithful
+candidates is **0.0000 at every nominal level** alpha in {0.01, 0.02,
+0.05, 0.10, 0.20} (n ~ 290-300 faithful per level), detection stable
+at 92-94%. Validity holds with a wide conservative margin across the
+whole operating range — the plot is a flat zero under the diagonal.
+
+**Probe-tier ablation (2026-08-07, `code/run_tier_ablation.py`, 100
+reps/config, Kelly, alpha = 0.05):**
+
+| tiers | false-rej | detect | kill-cost |
+|---|---|---|---|
+| ABC | 0.0000 | 0.926 | 21 ms |
+| AB | 0.0000 | 0.943 | 21 ms |
+| AC | 0.0000 | 0.821 | 17 ms |
+| BC | 0.0000 | 0.709 | 36 ms |
+| A only | 0.0000 | 0.954 | 21 ms |
+| C only | **0.0401** | 0.631 | 71 ms |
+
+Three lessons, all paper-worthy: (i) **pool entanglement consumes the
+entire conservative margin** — C-only stays (barely) inside alpha at
+0.0401 while every configuration containing an unentangled tier sits
+at 0.0000; §5.3's bucket-conditioned calibration is not optional if
+Tier C carries real weight. (ii) Dropping Tier B costs ~10 points of
+detection (ABC -> AC) — rare hard certificates matter. (iii) Tier A
+alone looks strongest here, but that is partly a **testbed artifact
+the paper must disclose**: mutant screening guarantees every
+unfaithful candidate is micro-instance-detectable, which is exactly
+Tier A's regime. Real LLM silent errors (scale-dependent, convention
+mismatches) need not be — the ambiguous-spec experiment is where
+Tiers B/C earn their keep, and the stdlib prototype's 20:1 cost-
+spread regime is where the routing between them does.
+
 **End-to-end LLM experiment (2026-08-07, `code/run_llm_experiment.py`,
 real OpenRouter generation):** 30 candidates = 5 families x 2 model
 families (`openrouter/free`, `nvidia/nemotron-3-ultra-550b-a55b:free`)

@@ -1,0 +1,42 @@
+{
+  "n_reps": 100,
+  "seed": 20260807,
+  "policy": "kelly",
+  "rows": [
+    {
+      "alpha": 0.01,
+      "false_rej": 0.0,
+      "n_faith": 294,
+      "detect": 0.9215686274509803,
+      "n_mut": 306
+    },
+    {
+      "alpha": 0.02,
+      "false_rej": 0.0,
+      "n_faith": 281,
+      "detect": 0.9216300940438872,
+      "n_mut": 319
+    },
+    {
+      "alpha": 0.05,
+      "false_rej": 0.0,
+      "n_faith": 299,
+      "detect": 0.9435215946843853,
+      "n_mut": 301
+    },
+    {
+      "alpha": 0.1,
+      "false_rej": 0.0,
+      "n_faith": 289,
+      "detect": 0.9421221864951769,
+      "n_mut": 311
+    },
+    {
+      "alpha": 0.2,
+      "false_rej": 0.0,
+      "n_faith": 301,
+      "detect": 0.9331103678929766,
+      "n_mut": 299
+    }
+  ]
+}

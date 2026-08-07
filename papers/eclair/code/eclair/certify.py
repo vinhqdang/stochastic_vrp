@@ -79,9 +79,10 @@ def _kelly_score(st, tier, bets, log_thresh, use_cost=True):
 
 
 def run_certification(pool, bets, policy, budget, alpha, rng,
-                      prior=0.5, max_probes=4000):
+                      prior=0.5, max_probes=4000, tiers=TIERS):
     """Certify a candidate pool. Returns dict with per-candidate final
-    states, the e-BH rejection set, and the certified pick."""
+    states, the e-BH rejection set, and the certified pick.
+    `tiers` restricts the probe pool (ablations)."""
     log_thresh = math.log(1.0 / alpha)
     states = [State(c, prior) for c in pool]
     rr = 0
@@ -93,13 +94,13 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
             break
         if policy == "round_robin":
             st = alive[rr % len(alive)]
-            tier = TIERS[(rr // len(alive)) % len(TIERS)]
+            tier = tiers[(rr // len(alive)) % len(tiers)]
             rr += 1
         else:
             use_cost = policy == "kelly"
             st, tier, best = None, None, -math.inf
             for s in alive:
-                for t in TIERS:
+                for t in tiers:
                     sc = _kelly_score(s, t, bets, log_thresh, use_cost)
                     if sc > best:
                         best, st, tier = sc, s, t

@@ -1,0 +1,10 @@
+ECLAIR probe-tier ablation (kelly, alpha=0.05)
+reps/config=100 seed=20260807
+
+ tiers  false-rej  detect  kill-ms
+   ABC     0.0000  0.9264       21
+    AB     0.0000  0.9430       21
+    AC     0.0000  0.8208       17
+    BC     0.0000  0.7093       36
+     A     0.0000  0.9541       21
+     C     0.0401  0.6312       71
