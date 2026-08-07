@@ -148,8 +148,12 @@ arrives; a referee could raise it. BATON is frozen, so do not act now.
 - Python 3.11, no conda needed: `pip install -r requirements.txt`.
 - Run tests from `svrpspd_wdro/`: `python -m pytest tests/ -q`
   (~180+ tests; keep green).
-- Commit author: Vinh <dqvinh87@gmail.com>. Always commit and push to
-  `origin main` after every change. No pull requests unless asked.
+- Git: `git pull origin main` at the start of a session and before
+  pushing. Commit author AND committer: Vinh <dqvinh87@gmail.com>.
+  Always commit and push to `origin main` after every change. No pull
+  requests unless asked. **Never include any AI/Claude identity in
+  commits** — no Co-Authored-By trailers, no "Generated with" lines,
+  nothing of the sort anywhere in the repo.
 - Long evaluations run in background with logs under
   `svrpspd_wdro/results/*.log`; solved plans are cached in
   `results/plans/*.json` (per-instance, gates merged) so eval reruns
