@@ -13,11 +13,15 @@
   Szeider, Dimos Tsouros. Full call recorded verbatim in `CFP.md`
   (received 2026-08-07; companion to the LLM-Solve workshop at
   CP'26/FLoC'26).
-- **State:** ACTIVE — open for edits. Spec (`PROJECT.md`) and
-  statistical-core simulation prototype (`prototype/`) exist; no
-  manuscript yet. This is the repo's only open paper (papers 1–3
-  frozen under review, paper 4 abandoned — see root `CLAUDE.md` and
-  `RESEARCH_LOG.md`).
+- **State:** ACTIVE — open for edits. **Manuscript drafting started
+  2026-08-08**: `main.tex` (Springer sn-jnl, sn-mathphys-num numbered
+  citations per the journal's guidelines) compiles clean at 13 pages
+  with the full experimental record; TODOs remaining in-file: author
+  list, the two unverified verification-framework citations, public
+  repository URL, AI-assistance disclosure decision. Spec:
+  `PROJECT.md`; implementation + results: `code/`. This is the repo's
+  only open paper (papers 1–3 frozen under review, paper 4 abandoned
+  — see root `CLAUDE.md` and `RESEARCH_LOG.md`).
 - **Freeze policy:** none yet. Becomes frozen on submission, same
   convention as the other papers.
 - **Authors:** TBD.

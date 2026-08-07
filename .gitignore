@@ -219,3 +219,9 @@ data_sources/out/*.parquet
 # ECLAIR: LLM API keys stay out of git
 papers/eclair/code/.openrouter_key
 papers/eclair/code/results/*.log
+papers/eclair/main.aux
+papers/eclair/main.bbl
+papers/eclair/main.blg
+papers/eclair/main.log
+papers/eclair/main.out
+papers/eclair/main.spl

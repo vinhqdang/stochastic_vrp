@@ -1,0 +1,750 @@
+%% ECLAIR — Constraints (Springer) submission
+%% Special Issue: Large Language Models for Combinatorial Constraint
+%% Solving (track "SI: Large Language Models for Combinatorial
+%% Constraint Solving"; deadline 2026-10-01 — see CFP.md)
+%% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\theoremstyle{thmstyleone}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{thmstyletwo}
+\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+
+\newcommand{\Eproc}{E}
+\newcommand{\Filt}{\mathcal{F}}
+\newcommand{\HO}{H_0}
+
+\raggedbottom
+
+\begin{document}
+
+\title[Anytime-Valid Certification of LLM-Generated Constraint Models]{ECLAIR:
+Anytime-Valid Certification of LLM-Generated Constraint Models with
+Budget-Aware Probe Routing}
+
+%% TODO(authors): confirm final author list and order before submission.
+\author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+
+\affil*[1]{\orgname{British University Vietnam},
+\orgaddress{\city{Hung Yen}, \country{Vietnam}}}
+
+\abstract{Large language models translate natural-language problem
+descriptions into formal constraint models, but they lack the
+mathematical guarantees required for formal correctness, and no ground
+truth exists against which a generated model can be checked --- the
+oracle problem. Existing verification approaches are heuristic
+detectors: they report empirical detection rates but provide no
+statistical guarantee on the model one ultimately accepts, no
+principled stopping rule, and no way to decide which test to run next
+under a compute budget. We introduce ECLAIR, a sequential,
+anytime-valid, budget-aware certification layer. Each candidate model
+carries an e-process --- a nonnegative supermartingale wealth process
+--- betting against the hypothesis that the candidate is faithful,
+fed by three tiers of imperfect probes: exhaustively enumerated
+micro-instances, provably valid metamorphic relations, and cross-model
+majority checks. Conservative calibration of the probes' null alarm
+rates preserves validity under the composite null, and a Kelly-style
+rule routes solver time to the candidate--probe pair with the highest
+expected evidence growth per second. Ville's inequality bounds the
+probability of ever falsely rejecting a faithful model by $\alpha$
+under optional stopping, and e-BH selection controls the false
+discovery rate over the whole generate--test--repair tournament.
+On a mutation testbed of five problem families with real CP-SAT
+probes, the empirical false-rejection rate is zero at every nominal
+level while $87$--$94\%$ of injected faults are detected; an
+end-to-end experiment with two LLM families reproduces the guarantee
+on real generated models.}
+
+\keywords{constraint modelling, large language models, e-processes,
+anytime-valid inference, solver-in-the-loop verification, false
+discovery rate}
+
+\maketitle
+
+\section{Introduction}\label{sec:intro}
+
+Constraint programming's long-standing adoption bottleneck is the
+expertise barrier: translating a problem description held in natural
+language into a formal model. Large language models (LLMs) now cross
+that barrier routinely --- generating CPMpy, MiniZinc, or MILP models
+from plain-English specifications \cite{michailidis2024icl,
+shi2025constraintllm, szeider2025cpagent} --- but they do so without
+any intrinsic guarantee of correctness. A generated model that
+compiles and solves is not necessarily the model that was asked for:
+a misread coefficient, a dropped constraint family, or a flipped
+inequality produces a plausible artifact that returns confidently
+wrong optima. Because the specification exists only in natural
+language, there is no oracle to compare against; this is the central
+verification difficulty the field currently faces.
+
+The question a practitioner asks of any verification layer is:
+\emph{what guarantee do I get on the model I finally accept?} Existing
+answers are heuristic. Detection frameworks based on metamorphic
+relations or mutation-style testing report empirical detection rates,
+but offer no control over the probability of certifying an unfaithful
+model, no principled rule for when enough testing has been done, and
+no guidance on which of many possible tests --- differing wildly in
+cost and power --- to run next under a finite solver budget.
+Fixed-sample statistical tools do not repair this: a
+generate--test--repair loop inherently peeks at accumulating evidence
+and adapts, which invalidates fixed-sample p-values and
+split-conformal calibration alike.
+
+This paper introduces \textbf{ECLAIR} (E-process Certification of
+LLM-generated constraint models with Adaptive Instance Routing), a
+certification layer built on the game-theoretic statistics of
+e-processes \cite{ramdas2023game, shafer2021testing, grunwald2024safe}.
+The design follows three observations.
+
+First, \emph{optional stopping is the workflow}. E-processes are
+designed for continuous monitoring: rejecting whenever the wealth
+process crosses $1/\alpha$ controls the type-I error at $\alpha$
+uniformly over all stopping times (Ville's inequality
+\cite{ville1939etude}), so the loop may stop the moment evidence
+suffices --- a direct compute saving --- and may resume testing at any
+time without penalty.
+
+Second, \emph{probes are heterogeneous, imperfect, and dependent}.
+A brute-forced micro-instance is a near-perfect oracle but expensive;
+a metamorphic relation is provably false-alarm-free but weak; a
+cross-model agreement check is cheap, noisy, and entangled with the
+candidate pool. E-values multiply across adaptively chosen, dependent
+probes as long as each factor is a valid e-variable conditionally on
+the past, and we show that a conservative upper confidence bound on
+each probe family's null alarm rate --- rather than an unattainable
+exact null distribution --- suffices for validity under the composite
+null ``this candidate is faithful.''
+
+Third, \emph{the budget question is a portfolio question}. Choosing
+which (candidate, probe) pair to run next to maximize expected
+log-evidence growth per solver-second is Kelly-optimal evidence
+acquisition \cite{kelly1956new, grunwald2024safe}; because the routing
+decision is measurable with respect to the past, it affects power
+only, never validity.
+
+\paragraph{Contributions.}
+(i)~A formal certification protocol for LLM-generated constraint
+models: per-candidate e-processes over a three-tier probe pool, with
+hard certificates (probes whose false-alarm probability is exactly
+zero by proof) embedded as infinite e-values
+(Section~\ref{sec:framework}).
+(ii)~Validity theory for the composite null: conservative calibration
+preserves the supermartingale property (Lemma~\ref{lem:conservative}),
+yielding anytime-valid false-rejection control under arbitrary
+predictable routing (Theorem~\ref{thm:validity}), false discovery rate
+control over the full generate--test--repair tournament via e-BH
+\cite{wang2022false} (Proposition~\ref{prop:ebh}), and a budget bound
+on the expected solver time to reject an unfaithful candidate
+(Proposition~\ref{prop:budget}).
+(iii)~A verified probe library for five problem families ---
+knapsack with conflicts, set cover, graph colouring, generalized
+assignment, and on-time job selection --- including per-family
+metamorphic relations proved valid at specification level
+(Proposition~\ref{prop:mr}).
+(iv)~An open implementation on CPMpy~\cite{guns2019cpmpy} and OR-Tools
+CP-SAT~\cite{ortools} and a three-part empirical study
+(Section~\ref{sec:experiments}): a mutation testbed in which validity
+holds exactly at every nominal level while $87$--$94\%$ of injected
+faults are caught; ablations quantifying the contribution of each
+probe tier, including an empirical demonstration that pool-entangled
+probes consume the conservative validity margin; and an end-to-end
+experiment with two LLM families in which every crash-free generated
+model is certified without a single false rejection.
+
+\section{Related work}\label{sec:related}
+
+\paragraph{LLMs for constraint modelling.}
+In-context learning pipelines translate natural-language descriptions
+into CPMpy models with retrieval and self-refinement
+\cite{michailidis2024icl}; benchmark suites evaluate such systems on
+CSPLib-derived corpora \cite{michailidis2025cpbench}. Agentic systems
+iterate modelling with solver feedback: CP-Agent
+\cite{szeider2025cpagent} maintains a persistent Python session around
+CPMpy, and MCP-Solver \cite{szeider2025mcp} exposes constraint solvers
+to LLMs through a model context protocol. ConstraintLLM
+\cite{shi2025constraintllm} targets industrial-level CP with a
+neuro-symbolic architecture. All these systems \emph{generate};
+ECLAIR is complementary --- it decides, with a guarantee, whether to
+\emph{trust} what was generated, and can wrap any of them.
+
+\paragraph{Verifying generated models.}
+Two recent lines attack verification directly: falsification
+frameworks deriving provably valid metamorphic relations from duality
+and monotonicity theory, in which a violated relation certifies
+unfaithfulness, and agent-based frameworks that compose test cases and
+apply optimization-oriented mutation testing.%
+\footnote{%
+%% TODO(citations): the two verification-framework papers from the
+%% CFP-period literature scan are pending verification against live
+%% records (see VERIFY_CITATIONS.md) and must be cited here before
+%% submission.
+Full citations pending verification.} ECLAIR subsumes the binary
+verdicts of such detectors as the special case of an infinite
+e-value, and adds what they lack: a guarantee on the accepted model,
+a stopping rule, FDR control across repairs, and budget-aware test
+selection.
+
+\paragraph{Anytime-valid inference.}
+E-values and e-processes provide measures of evidence valid at
+arbitrary stopping times \cite{ramdas2023game, shafer2021testing,
+vovk2021evalues}; safe tests and the GROW criterion connect optimal
+evidence growth to log-optimal (Kelly) betting \cite{grunwald2024safe,
+kelly1956new}; betting-based confidence sequences supply the adaptive
+wagering machinery \cite{waudbysmith2024estimating}; and the e-BH
+procedure controls FDR under arbitrary dependence \cite{wang2022false}.
+ECLAIR ports this toolkit into constraint-model verification, where,
+to our knowledge, sequential anytime-valid certification has not been
+attempted. Conformal approaches to LLM output control assume
+exchangeability between calibration and test data and are
+fixed-sample; both assumptions fail in a sequential
+generate--test--repair loop.
+
+\section{The certification problem}\label{sec:problem}
+
+A specification $s$ is a natural-language description of a
+parameterized combinatorial optimization problem, together with an
+instance distribution $\mathcal{D}$ over parameter values. A
+\emph{candidate} $m$ is an executable function mapping an instance
+$I \sim \mathcal{D}$ to a formal model $m(I)$ whose exact optimum we
+write $v_m(I) \in \mathbb{Z} \cup \{\mathrm{INFEAS}\}$. The (unknown)
+faithful value $v^\ast(I)$ is the optimum of the problem $s$ actually
+describes. Candidate $m$ is \emph{faithful} if
+$v_m(I) = v^\ast(I)$ for $\mathcal{D}$-almost-every $I$.
+
+Given candidates $m_1, \dots, m_k$ produced by an LLM ensemble, a
+compute budget $B$ (solver-seconds), and a risk level $\alpha$, the
+certifier must decide which candidates to reject, which (if any) to
+certify, or whether to abstain --- without access to $v^\ast$. The
+null hypothesis attached to each candidate is
+\[
+\HO(m):\quad m \text{ is faithful.}
+\]
+$\HO(m)$ is \emph{composite}: faithfulness does not determine the law
+of any probe outcome, which also depends on the instance generator,
+on checker noise, and (for cross-model probes) on the composition of
+the surviving pool. All guarantees below therefore hold uniformly
+over the null class, which we make precise through conditional
+bounds on probe alarm rates.
+
+\section{The ECLAIR framework}\label{sec:framework}
+
+\subsection{Probe tiers}\label{sec:probes}
+
+A \emph{probe} is a randomized procedure that consumes solver time
+and returns a binary alarm $X \in \{0,1\}$ against a designated
+candidate. ECLAIR uses three tiers.
+
+\paragraph{Tier A: micro-instance oracles.}
+Draw an instance small enough for exhaustive enumeration of the
+specification's decision space using an executable feasibility
+checker, and alarm iff the candidate's exact optimum differs from the
+enumerated optimum. With an exact checker the null alarm probability
+is zero; in general the checker itself is imperfect (in a fully
+LLM-generated pipeline it is LLM-compiled and validated by
+cross-agreement), so tier A is treated as a calibrated noisy probe.
+
+\paragraph{Tier B: metamorphic relations (hard certificates).}
+A metamorphic relation (MR) transforms an instance $I$ into $I'$ such
+that the specification provably implies a relation between $v^\ast(I)$
+and $v^\ast(I')$ --- e.g.\ enlarging a knapsack capacity cannot
+decrease the optimum, deleting a graph edge cannot increase the
+chromatic number, consistently permuting item data leaves the optimum
+unchanged. The probe solves the \emph{candidate} on both sides
+exactly and alarms iff the relation is violated. For a faithful
+candidate the alarm probability is exactly zero: both solves return
+true optima of instances of the true specification, and the relation
+holds for the specification by proof. A tier-B alarm is therefore a
+\emph{hard certificate} of unfaithfulness.
+
+\paragraph{Tier C: cross-model majority checks.}
+Solve the designated candidate and up to three surviving partners on
+a fresh mid-size instance (beyond enumeration reach --- this tier's
+purpose); alarm iff at least two partners agree on a value and the
+candidate deviates from that majority. Tier C is cheap and noisy, and
+its null alarm rate depends on the pool: a faithful candidate alarms
+when a wrong majority forms. This entanglement is handled by
+calibration (Section~\ref{sec:calibration}) and is quantified
+empirically in Section~\ref{sec:ablation}.
+
+\subsection{Betting and conservative calibration}\label{sec:calibration}
+
+Let $\Filt_{t-1}$ denote everything observed before the $t$-th probe.
+For a tier-B probe the e-factor is $e_t = 1$ on pass and
+$e_t = \infty$ on alarm. For tiers A and C, ECLAIR bets a Bernoulli
+likelihood ratio
+\begin{equation}\label{eq:bet}
+e_t \;=\;
+\Bigl(\tfrac{p_1}{\bar p_0}\Bigr)^{X_t}
+\Bigl(\tfrac{1-p_1}{1-\bar p_0}\Bigr)^{1-X_t},
+\end{equation}
+where $\bar p_0$ is a \emph{conservative} (upper confidence) bound on
+the tier's null alarm rate and $p_1 \in (\bar p_0, 1)$ a working
+detection rate; both come from a held-out calibration corpus of
+known-faithful models and screened mutants, with $\bar p_0$ the
+Clopper--Pearson upper bound \cite{clopper1934use} at confidence
+$97.5\%$. Only $\bar p_0$ matters for validity; $p_1$ tunes power.
+
+\begin{lemma}[Conservative bets are safe]\label{lem:conservative}
+Let $X \in \{0,1\}$ satisfy
+$\Pr(X = 1 \mid \Filt_{t-1}) \le \bar p_0$ almost surely under
+$\HO$, and let $e$ be given by \eqref{eq:bet} with
+$0 < \bar p_0 < p_1 < 1$. Then
+$\mathbb{E}[\,e \mid \Filt_{t-1}\,] \le 1$ under $\HO$.
+\end{lemma}
+
+\begin{proof}
+With $q = \Pr(X{=}1 \mid \Filt_{t-1})$,
+$\mathbb{E}[e \mid \Filt_{t-1}]
+= q\,\frac{p_1}{\bar p_0} + (1-q)\,\frac{1-p_1}{1-\bar p_0}$,
+which is affine and increasing in $q$ because
+$p_1/\bar p_0 > 1 > (1-p_1)/(1-\bar p_0)$. At $q = \bar p_0$ it equals
+$p_1 + (1-p_1) = 1$; hence for $q \le \bar p_0$ it is at most $1$.
+\end{proof}
+
+The candidate's wealth process is the running product
+$\Eproc_t(m) = \prod_{s \le t,\, s \to m} e_s$ over the probes routed
+to $m$, with $\Eproc_0(m) = 1$.
+
+\subsection{Budget-aware routing}\label{sec:routing}
+
+At each step ECLAIR selects
+\begin{equation}\label{eq:kelly}
+(m, p)^\star \;=\; \arg\max_{(m,p)}\;
+\frac{\mathbb{E}\bigl[\log e \,\bigm|\, q_m\bigr]}{c(p)},
+\end{equation}
+the candidate--probe pair maximizing expected log-wealth growth per
+solver-second: Kelly-optimal evidence acquisition in the sense of the
+GROW criterion \cite{grunwald2024safe, kelly1956new}. Here $q_m$ is a
+running (Bayes) posterior that $m$ is unfaithful, maintained with the
+same calibrated rates and used \emph{only} for routing; $c(p)$ is the
+tier's calibrated mean cost. For tiers A/C the numerator is
+$q_m G_1 + (1-q_m) G_0$ with $G_1, G_0$ the expected log-factors of
+\eqref{eq:bet} under alarm rates $p_1, \bar p_0$; for tier B it is
+$q_m\,\delta_B \bigl(\log(1/\alpha) - \log \Eproc_t(m)\bigr)$, the
+calibrated hard-certificate rate times the remaining log-gap to the
+rejection threshold. Because \eqref{eq:kelly} is
+$\Filt_{t-1}$-measurable, routing affects power only --- validity is
+untouched (Theorem~\ref{thm:validity}).
+
+\subsection{Decisions, repair, and abstention}\label{sec:decisions}
+
+Candidate $m$ is \emph{rejected} the first time
+$\Eproc_t(m) \ge 1/\alpha$ (or on a tier-B alarm). A rejected
+candidate may be \emph{repaired}: the violating probe is fed back to
+the LLM as a counterexample and the repaired candidate enters the
+pool as a fresh e-process. When the budget is exhausted (or one
+candidate's survival dominates), the terminal e-values of \emph{all}
+candidates ever considered enter the e-BH procedure
+\cite{wang2022false} at level $\alpha$; among Ville-survivors the
+candidate with the smallest e-value is the certified output, together
+with its evidence ledger. If no candidate survives, ECLAIR
+\emph{abstains} and returns the ledger --- a structured explanation of
+which probes killed every reading of the specification, which doubles
+as a signal for conversational re-elicitation.
+Algorithm~\ref{alg:eclair} summarizes the loop.
+
+\begin{algorithm}[t]
+\caption{ECLAIR}\label{alg:eclair}
+\begin{algorithmic}[1]
+\Require spec $s$, candidates $m_1{:}k$, budget $B$, level $\alpha$,
+         calibrated $(\bar p_0, p_1, \delta_B, c)$ per tier
+\State $\Eproc(m_i) \gets 1$, $q_{m_i} \gets q_{\mathrm{prior}}$ for all $i$
+\While{$B > 0$ \textbf{and} some candidate alive}
+  \State $(m, p) \gets$ maximizer of \eqref{eq:kelly} over alive
+         candidates and tiers
+  \State run probe $p$ on $m$; observe alarm $X$, measured cost $c$;
+         $B \gets B - c$
+  \If{$p$ is tier B \textbf{and} $X = 1$}
+     reject $m$ \Comment{hard certificate}
+  \Else
+     \State $\Eproc(m) \gets \Eproc(m) \cdot e(X)$ by \eqref{eq:bet};
+            update $q_m$ by Bayes
+     \If{$\Eproc(m) \ge 1/\alpha$} reject $m$ \EndIf
+  \EndIf
+  \State optionally: repair rejected $m$ via counterexample; add as
+         fresh e-process
+\EndWhile
+\State \Return e-BH rejection set at level $\alpha$; certified pick
+       $\arg\min_{\text{survivors}} \Eproc(m)$, or abstain with the
+       evidence ledger
+\end{algorithmic}
+\end{algorithm}
+
+\section{Guarantees}\label{sec:theory}
+
+\begin{assumption}\label{ass:null}
+Under $\HO(m)$: tier-B probes alarm with probability zero, and each
+tier-A/C probe routed to $m$ alarms with conditional probability at
+most its calibrated bound $\bar p_0$, given $\Filt_{t-1}$.
+\end{assumption}
+
+The tier-B half of Assumption~\ref{ass:null} is a theorem for the
+probe library of Section~\ref{sec:experiments}
+(Proposition~\ref{prop:mr}); the tier-A/C half is what conservative
+calibration targets, and its empirical status --- including where it
+becomes delicate --- is examined in Section~\ref{sec:ablation}.
+
+\begin{theorem}[Anytime validity]\label{thm:validity}
+Under Assumption~\ref{ass:null}, for any predictable routing rule,
+any repair policy, and any stopping rule,
+\[
+\Pr_{\HO(m)}\bigl(\exists\, t:\ \Eproc_t(m) \ge 1/\alpha\bigr)
+\;\le\; \alpha .
+\]
+\end{theorem}
+
+\begin{proof}
+Each factor contributed to $\Eproc(m)$ is nonnegative and, by
+Lemma~\ref{lem:conservative} (tiers A/C) or by the zero-alarm
+property (tier B, factor $\equiv 1$ a.s.\ under $\HO$), satisfies
+$\mathbb{E}[e_t \mid \Filt_{t-1}] \le 1$; predictability of the
+routing rule makes ``which probe, on which candidate'' a
+$\Filt_{t-1}$-measurable choice, so the tower property gives
+$\mathbb{E}[\Eproc_t(m)] \le 1$ and $\Eproc_t(m)$ is a nonnegative
+supermartingale. Ville's inequality \cite{ville1939etude} concludes.
+\end{proof}
+
+\begin{proposition}[Tournament FDR control]\label{prop:ebh}
+Let $\{ \Eproc(m) \}$ be the terminal e-values of all candidates
+considered across all generation and repair rounds. Applying e-BH at
+level $\alpha$ controls the false discovery rate of the rejected set
+at $\alpha$, regardless of the dependence induced by shared probes,
+common instances, pool entanglement, or data-driven repairs.
+\end{proposition}
+
+\begin{proof}
+Each $\Eproc(m)$ is a valid e-value for $\HO(m)$ by
+Theorem~\ref{thm:validity} (optional stopping preserves
+$\mathbb{E} \le 1$). The e-BH procedure controls FDR for arbitrarily
+dependent e-values \cite{wang2022false}.
+\end{proof}
+
+\begin{proposition}[Budget to rejection]\label{prop:budget}
+Fix an unfaithful candidate $m$ and a routing rule under which the
+probes applied to $m$ satisfy
+$\mathbb{E}[\log e_t \mid \Filt_{t-1}] \ge \Delta > 0$ and
+$|\log e_t| \le L$. Then the number $\tau$ of probes until rejection
+satisfies
+$\mathbb{E}[\tau] \le \bigl(\log(1/\alpha) + L\bigr)/\Delta$.
+\end{proposition}
+
+\begin{proof}
+$M_t = \log \Eproc_t(m) - t\Delta$ is a submartingale minorant;
+optional stopping for the bounded-increment stopped process at
+$\tau \wedge n$ gives
+$\Delta\,\mathbb{E}[\tau \wedge n] \le
+\mathbb{E}[\log \Eproc_{\tau \wedge n}] \le \log(1/\alpha) + L$,
+and monotone convergence lets $n \to \infty$.
+\end{proof}
+
+Proposition~\ref{prop:budget} is the quantitative content of ``stop
+the moment evidence suffices'': the budget scales as
+$\log(1/\alpha)$, so tightening the guarantee is cheap --- consistent
+with the flat detection curves across $\alpha$ observed in
+Section~\ref{sec:alpha}.
+
+\begin{proposition}[Probe-family validity]\label{prop:mr}
+For the five problem families of Section~\ref{sec:experiments}, the
+implemented metamorphic relations --- capacity/deadline/cost
+monotonicity, structural relaxation (conflict, edge, or coverage-row
+deletion), restriction (edge addition), and consistent data
+permutation --- have null alarm probability exactly zero when both
+sides are solved exactly.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Each relation is proved at specification level; exact solves transfer
+it to any faithful candidate. Monotone relaxations follow from
+feasible-set inclusion (e.g.\ enlarging a knapsack capacity or
+deleting a conflict pair only enlarges the feasible set of the
+specification, so the maximum cannot decrease); objective
+monotonicity follows from pointwise dominance; permutation invariance
+follows from the specification's symmetry under consistent relabeling
+of items, sets, vertices, or jobs. The one delicate case is deadline
+extension in on-time job selection, where the constraint
+\emph{indices} shift with the deadline order: there, validity follows
+because the earliest-due-date feasibility conditions are equivalent
+to true single-machine schedulability of the selected set, and
+schedulability is monotone in deadlines. Full proofs accompany the
+probe library.
+\end{proof}
+
+\begin{remark}
+Assumption~\ref{ass:null} for tier C deserves emphasis: the null
+alarm event ``a wrong majority forms among partners'' depends on the
+surviving pool, so its conditional probability is bounded uniformly
+only if calibration reflects the pool compositions actually
+encountered. Section~\ref{sec:ablation} shows empirically that this
+is not pedantry --- the conservative margin visibly erodes exactly,
+and only, when tier C is made the sole evidence source.
+\end{remark}
+
+\section{Experimental evaluation}\label{sec:experiments}
+
+\paragraph{Implementation.}
+All experiments run on CPMpy \cite{guns2019cpmpy} with the OR-Tools
+CP-SAT solver \cite{ortools}. Five problem families are implemented,
+each with a reference model builder, an \emph{independent}
+pure-Python specification checker (the tier-A enumeration oracle),
+micro/mid instance generators, and the family's metamorphic relations
+of Proposition~\ref{prop:mr}: 0/1 knapsack with pairwise conflicts,
+minimum-cost set cover, graph colouring (minimizing the number of
+colours), generalized assignment, and weighted on-time job selection
+on a single machine. Probe costs are measured wall-clock
+solver-seconds. Code, calibration corpora, all raw results, and the
+cached LLM generations are provided as supplementary material.
+%% TODO(authors): replace with public repository URL + archived DOI
+%% before submission (Data Availability below).
+
+\paragraph{Unfaithful candidates by functional mutation.}
+To measure error rates one needs ground truth, so the first two
+studies replace the LLM with \emph{functional corruptions} of the
+reference builder --- systematic, instance-generic errors of the
+kinds LLM modellers actually make: a bound misread by a constant, one
+vector entry corrupted positionally, a data-wiring misalignment
+(vector rotation), a dropped structural row or half-family, a
+corrupted cost-matrix entry, and a flipped comparison operator in one
+constraint family. Mutants are screened for semantic difference from
+the reference (equivalent mutants are resampled), the standard
+mutation-testing practice.
+
+\paragraph{Calibration.}
+Betting parameters are calibrated on two held-out families (knapsack
+with conflicts, graph colouring) and evaluated on the three
+\emph{disjoint} remaining families --- so every result below also
+tests whether conservative calibration transfers across problem
+families. Calibration measured: tier A, zero false alarms in $240$
+trials ($\bar p_0 = 0.0153$), detection $0.59$, mean cost $5.2$\,ms;
+tier B, zero false alarms in $240$ trials (asserted, per
+Proposition~\ref{prop:mr}), hard-certificate rate
+$\delta_B = 0.042$, cost $6.3$\,ms; tier C, null alarm rate $0.117$
+($\bar p_0 = 0.164$), detection $0.57$, cost $12.4$\,ms.
+
+\subsection{Mutation testbed: validity, power, and routing}
+\label{sec:testbed}
+
+Pools of $k = 6$ candidates (each faithful or a screened mutant with
+probability $1/2$) are certified at $\alpha = 0.05$ under a shared
+budget of $640$\,ms of measured solver time per pool, $100$
+replications per routing policy with identical pools across policies.
+Table~\ref{tab:testbed} reports the results.
+
+\begin{table}[t]
+\caption{Mutation testbed ($100$ replications/policy, $\alpha=0.05$,
+real CP-SAT probes; calibration and evaluation families disjoint).
+False rejection is over faithful candidates ($n \approx 300$ per
+policy); detection over mutants; kill cost is mean solver time spent
+on a rejected mutant; pick accuracy is the probability the certified
+output is faithful.}\label{tab:testbed}
+\begin{tabular}{lccccc}
+\toprule
+Routing & False rej. & Detection & Kill cost & Pick acc. & e-BH FDR\\
+\midrule
+Kelly (ECLAIR) & $0.0000$ & $0.900$ & $20$\,ms & $0.890$ & $0.0$\\
+round-robin    & $0.0000$ & $0.874$ & $29$\,ms & $0.950$ & $0.0$\\
+cost-blind     & $0.0000$ & $0.943$ & $23$\,ms & $0.959$ & $0.0$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Validity holds exactly --- not one of ${\sim}900$ faithful-candidate
+exposures across the three policies was rejected --- despite the bets
+being calibrated on different problem families than those evaluated.
+Detection is $87$--$94\%$ within a sub-second budget. At this
+testbed's probe economics the measured tier costs span only a factor
+$2.4$, so cost-normalization separates the routing policies weakly;
+Section~\ref{sec:heterogeneity} isolates the routing question in a
+controlled cost regime.
+
+\subsection{Validity across the operating range}\label{sec:alpha}
+
+Sweeping $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$ ($100$
+replications per level, Kelly routing) yields empirical
+false-rejection $0.0000$ at \emph{every} level
+($n \approx 290$--$300$ faithful candidates per level), with
+detection stable at $92$--$94\%$. Two remarks. First, the guarantee
+of Theorem~\ref{thm:validity} is an upper bound, not a calibration
+claim: ECLAIR promises \emph{at most} $\alpha$, and the observed
+margin is the structural price of a composite null --- tier B cannot
+false-alarm by proof, and tiers A/C bet against upper-bounded null
+rates because the true rates are unknowable. Second, the flatness of
+the detection curve is Proposition~\ref{prop:budget} in action:
+rejection budgets grow only logarithmically as $\alpha$ tightens.
+
+\subsection{Tier ablation: what each probe class buys}
+\label{sec:ablation}
+
+Table~\ref{tab:ablation} repeats the testbed with restricted probe
+pools.
+
+\begin{table}[t]
+\caption{Probe-tier ablation ($100$ replications/configuration,
+Kelly, $\alpha = 0.05$).}\label{tab:ablation}
+\begin{tabular}{lccc}
+\toprule
+Tiers & False rej. & Detection & Kill cost\\
+\midrule
+A+B+C & $0.0000$ & $0.926$ & $21$\,ms\\
+A+B   & $0.0000$ & $0.943$ & $21$\,ms\\
+A+C   & $0.0000$ & $0.821$ & $17$\,ms\\
+B+C   & $0.0000$ & $0.709$ & $36$\,ms\\
+A     & $0.0000$ & $0.954$ & $21$\,ms\\
+C     & $0.0401$ & $0.631$ & $71$\,ms\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three findings. \emph{(i) Entanglement consumes the conservative
+margin.} Every configuration containing an unentangled tier records
+zero false rejections; tier C alone records $0.0401$ --- still within
+$\alpha = 0.05$, but with the margin that conservative calibration
+provides everywhere else fully spent. This is the empirical face of
+the Remark after Proposition~\ref{prop:mr}: cross-model probes are
+safe as a supplement, and their calibration must be conditioned on
+pool composition before they can carry certification alone.
+\emph{(ii) Hard certificates matter beyond their rate.} Removing tier
+B (A+C vs.\ A+B+C) costs about ten points of detection although
+tier-B alarms occur on only ${\sim}4\%$ of mutant probes.
+\emph{(iii) A caveat on tier A's dominance.} Tier A alone detects
+$95\%$ here, but mutation screening guarantees every mutant is
+micro-instance-detectable --- precisely tier A's regime. Errors of
+LLM origin need not be (conventions that diverge only at scale;
+see below), which is why the tiered design is retained.
+
+\subsection{End-to-end study with real LLMs}\label{sec:llm}
+
+Thirty candidates were generated from natural-language specifications
+of the five families: two model families accessed through OpenRouter
+(a free-tier routed model and \texttt{nvidia/nemotron-3-ultra-550b})
+$\times$ three prompt styles (direct; restate-then-model; expert
+persona) $\times$ per-style temperatures. Generated code is executed
+in a sandboxed namespace; an intake gate requires each candidate to
+build and solve two micro-instances. For scoring only, a proxy
+faithfulness label compares each candidate against the enumeration
+oracle on twelve micro-instances. All prompts, raw responses, and the
+response cache are included in the supplementary material, and this
+paragraph constitutes the documentation of LLM use in this study's
+methods.
+
+\emph{Generation.} $20/30$ candidates passed intake. All ten failures
+were \emph{loud}: API hallucinations importing conventions from other
+modelling ecosystems --- \texttt{cp.Binary} and
+\texttt{cp.binary\_var} (PuLP/DOcplex idioms), \texttt{cp.Var},
+\texttt{cp.multiply}, \texttt{IntVar(domain=...)} (Choco-style),
+\texttt{Model().NewBoolVar} (raw CP-SAT API), a bare
+\texttt{import cp} --- each caught by the gate at negligible cost.
+
+\emph{Certification.} All $20$ intake survivors were proxy-faithful,
+so the certified pools are all-null: the correct behaviour is to
+reject nothing, and that is what happened --- $0/20$ false rejections
+under every routing policy, the certified pick was faithful in all
+five families, no abstentions, and no e-BH false discoveries. The
+guarantee of Theorem~\ref{thm:validity} thus survives contact with
+real generated models, complementing the mutation testbed in which
+the same machinery demonstrably detects $87$--$94\%$ of actual
+faults.
+
+Two honest observations shape the outlook. On well-pinned
+specifications, these two model families fail loudly (crashes) rather
+than silently (wrong models) --- so the certification layer's
+detection power is insurance whose premium, by
+Proposition~\ref{prop:budget}, is logarithmically cheap. And
+provoking the silent-error regime in LLM candidates requires
+deliberately ambiguous, convention-laden specifications (the
+colouring objective convention --- ``number of colours'' vs.\
+``maximum colour index'' --- is the template), which is exactly where
+ECLAIR's abstention-with-evidence output becomes the interesting
+object of study; we return to this in Section~\ref{sec:limits}.
+
+\subsection{Routing under heterogeneous probe costs}
+\label{sec:heterogeneity}
+
+The CP-SAT testbed's probes all cost single-digit milliseconds, which
+compresses the routing question. To isolate it, a controlled
+simulation reproduces the certification layer with the measured
+alarm-rate structure but a $20{:}1$ probe-cost spread (expensive
+near-exact oracles vs.\ cheap noisy checks --- the regime of
+industrial instances, of costly solver calls, and of LLM-as-judge
+probes priced per token). Over $500$ replications: Kelly routing
+detects $86\%$ of unfaithful candidates at mean cost $12.2$ budget
+units per kill, against $60\%$ at $16.6$ for round-robin and $77\%$
+at $22.6$ for cost-blind selection --- while false rejection stays at
+$0.000$--$0.003$, below $\alpha$ for every policy. Routing gains
+scale with probe-cost heterogeneity; validity is routing-invariant,
+as Theorem~\ref{thm:validity} requires.
+
+\section{Limitations and outlook}\label{sec:limits}
+
+\emph{Calibration scope.} Validity rests on
+Assumption~\ref{ass:null}; our evidence that conservative calibration
+transfers across problem families is empirical (zero false rejections
+under family transfer), not a theorem, and tier-C calibration should
+be conditioned on pool composition before cross-model evidence
+carries substantial weight --- the ablation shows the margin, though
+never the bound, giving way. \emph{Screened mutants.} The testbed's
+faults are guaranteed micro-detectable by construction; LLM-native
+silent errors need not be, and eliciting them requires deliberately
+ambiguous specifications --- the planned abstention study, which also
+connects certification to conversational elicitation. \emph{Checker
+provenance.} Our enumeration checkers are hand-written and
+independent; a fully LLM-generated pipeline must calibrate
+checker error as tier-A noise, which the framework accommodates but
+this study does not exercise. \emph{Breadth.} Five families suffice
+to exercise every mechanism; scaling the probe library toward
+CSPLib/NL4Opt breadth, and stating the MR validity results for global
+constraints (\texttt{alldifferent}, \texttt{cumulative}) in the
+generality they deserve, are the natural next steps.
+
+\section{Conclusion}\label{sec:conclusion}
+
+ECLAIR turns the verification of LLM-generated constraint models from
+a heuristic detection exercise into sequential hypothesis testing
+with explicit guarantees: anytime-valid false-rejection control under
+optional stopping and adaptive, budget-aware probe routing; FDR
+control across a generate--test--repair tournament; and an auditable
+evidence ledger for every decision, including abstention. On real
+CP-SAT probes the guarantee held exactly at every operating level
+while nine of ten injected faults were caught within sub-second
+budgets, and the framework certified real LLM-generated models
+without error. The broader claim is methodological: solver-in-the-loop
+verification of generative models is, at bottom, a sequential
+inference problem, and the e-process toolkit fits it exactly.
+
+\backmatter
+
+\section*{Statements and Declarations}
+
+\textbf{Funding.} %% TODO(authors): confirm.
+The authors did not receive support from any organization for the
+submitted work.
+
+\textbf{Competing interests.} %% TODO(authors): confirm.
+The authors have no competing interests to declare that are relevant
+to the content of this article.
+
+\textbf{Data availability.} All code, calibration data, experimental
+results, and cached LLM generations are available in the
+supplementary material.
+%% TODO(authors): public repository URL / archived DOI.
+
+\textbf{Use of large language models.} LLMs are the object of study;
+their use in the experiments (models, prompting, decoding parameters,
+caching) is documented in Section~\ref{sec:llm}.
+%% TODO(authors): decide and add the venue-appropriate statement on
+%% AI-assisted manuscript preparation per Springer policy.
+
+\bibliography{references}
+
+\end{document}
