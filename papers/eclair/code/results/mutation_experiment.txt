@@ -1,0 +1,10 @@
+ECLAIR mutation-testbed experiment (real CP-SAT probes)
+alpha=0.05 pool_k=6 reps/policy=100 budget=640ms/rep seed=20260807
+calibration families: knapsack_conflicts, coloring | eval families: set_cover, gen_assignment, ontime_selection
+
+policy       false-rej  detect  kill-ms pick-acc  eBH-FDR  abstain
+kelly           0.0000  0.9000       20    0.890   0.0000    0.000
+round_robin     0.0000  0.8742       29    0.950   0.0000    0.000
+cost_blind      0.0000  0.9427       23    0.959   0.0000    0.020
+
+total wall time: 225s

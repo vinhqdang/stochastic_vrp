@@ -215,3 +215,7 @@ data_sources/*.json
 
 # derived bulk rows: NYC DOT states no licence, so do not redistribute
 data_sources/out/*.parquet
+
+# ECLAIR: LLM API keys stay out of git
+papers/eclair/code/.openrouter_key
+papers/eclair/code/results/*.log

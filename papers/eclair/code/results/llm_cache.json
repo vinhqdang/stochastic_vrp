@@ -1,0 +1,152 @@
+{
+ "85e811525202c920b05c542f": {
+  "model": "openrouter/free",
+  "temperature": 0.3,
+  "response": "\n\n```python\ndef build_model(params):\n    n = params['n']\n    w = params['w']\n    v = params['v']\n    cap = params['cap']\n    conflicts = params['conflicts']\n    model = cp.Model()\n    x = [cp.Binary(f'x_{i}') for i in range(n)]\n    model.maximize(sum(v[i] * x[i] for i in range(n)))\n    model.add(sum(w[i] * x[i] for i in range(n)) <= cap)\n    for i, j in conflicts:\n        model.add(x[i] + x[j] <= 1)\n    return model\n```\n"
+ },
+ "adddc3c102298a0be182cdcb": {
+  "model": "openrouter/free",
+  "temperature": 0.7,
+  "response": "```python\ndef build_model(params):\n    n = params['n']\n    w = params['w']\n    v = params['v']\n    cap = params['cap']\n    conflicts = params['conflicts']\n    \n    # Binary decision variables\n    x = cp.intvar(0, 1, shape=n)\n    \n    # Weight capacity constraint\n    weight_constraint = cp.sum(w[i] * x[i] for i in range(n)) <= cap\n    \n    # Conflict constraints\n    conflict_constraints = [x[i] + x[j] <= 1 for (i, j) in conflicts]\n    \n    # Objective: maximize total value\n    objective = cp.sum(v[i] * x[i] for i in range(n))\n    \n    # Build and return the model\n    model = cp.Model()\n    model += weight_constraint\n    for c in conflict_constraints:\n        model += c\n    model.maximize(objective)\n    return model\n```"
+ },
+ "e0fedeb226a73a1ff0b35317": {
+  "model": "openrouter/free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    w = params[\"w\"]\n    v = params[\"v\"]\n    cap = params[\"cap\"]\n    conflicts = params[\"conflicts\"]\n\n    # Decision variables: x[i] = 1 if item i is selected, else 0\n    x = cp.boolvar(shape=n)\n\n    model = cp.Model()\n\n    # Capacity constraint\n    model += (sum(w[i] * x[i] for i in range(n)) <= cap)\n\n    # Conflict constraints: for each (i, j), at most one can be selected\n    for i, j in conflicts:\n        model += (x[i] + x[j] <= 1)\n\n    # Objective: maximize total value\n    model.maximize(sum(v[i] * x[i] for i in range(n)))\n\n    return model\n```"
+ },
+ "0945a1978ea80125653cc58a": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.3,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    w = params[\"w\"]\n    v = params[\"v\"]\n    cap = params[\"cap\"]\n    conflicts = params[\"conflicts\"]\n\n    # Decision variables: x[i] = 1 if item i is selected, else 0\n    x = cp.boolvar(shape=n)\n\n    model = cp.Model()\n\n    # Weight capacity constraint\n    model += (cp.sum(w[i] * x[i] for i in range(n)) <= cap)\n\n    # Conflict constraints: for each (i, j), cannot select both\n    for i, j in conflicts:\n        model += (x[i] + x[j] <= 1)\n\n    # Objective: maximize total value\n    model.maximize(cp.sum(v[i] * x[i] for i in range(n)))\n\n    return model\n```"
+ },
+ "46dd25069b1ef27a96f7b031": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.7,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    w = params[\"w\"]\n    v = params[\"v\"]\n    cap = params[\"cap\"]\n    conflicts = params[\"conflicts\"]\n\n    # Decision variables: x[i] = 1 if item i is selected, else 0\n    x = cp.boolvar(shape=n, name=\"x\")\n\n    model = cp.Model()\n\n    # Weight capacity constraint\n    model += (cp.sum(w[i] * x[i] for i in range(n)) <= cap)\n\n    # Conflict constraints: for each (i, j) in conflicts, not both selected\n    for i, j in conflicts:\n        model += (x[i] + x[j] <= 1)\n\n    # Objective: maximize total value\n    model.maximize(cp.sum(v[i] * x[i] for i in range(n)))\n\n    return model\n```"
+ },
+ "cd155223cc268b3f0f14a635": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params['n']\n    w = params['w']\n    v = params['v']\n    cap = params['cap']\n    conflicts = params['conflicts']\n\n    # Decision variables: x[i] = 1 if item i is selected, 0 otherwise\n    x = cp.boolvar(shape=n)\n\n    model = cp.Model()\n\n    # Weight capacity constraint\n    model += (sum(w[i] * x[i] for i in range(n)) <= cap)\n\n    # Conflict constraints: for each (i, j), not both selected\n    for i, j in conflicts:\n        model += (x[i] + x[j] <= 1)\n\n    # Objective: maximize total value\n    model.maximize(sum(v[i] * x[i] for i in range(n)))\n\n    return model\n```"
+ },
+ "7eac3a1c562004528d00b9b9": {
+  "model": "openrouter/free",
+  "temperature": 0.3,
+  "response": "\n\n```python\nimport cpmpy as cp\n\ndef build_model(params):\n    nelem = params['nelem']\n    sets = params['sets']\n    cost = params['cost']\n    model = cp.Model()\n    x = [cp.Binary(f'x_{s}') for s in range(len(sets))]\n    for e in range(nelem):\n        covering_sets = [s for s in range(len(sets)) if e in sets[s]]\n        model.add(cp.sum([x[s] for s in covering_sets]) >= 1)\n    model.minimize(sum(cost[s] * x[s] for s in range(len(sets))))\n    return model\n```\n"
+ },
+ "80b77545cff9480ca5e9c49d": {
+  "model": "openrouter/free",
+  "temperature": 0.7,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    \"\"\"\n    Decision variables:\n        choose[s]  \u2208 {0,1}  for every set s (whether the set is selected).\n\n    Constraints:\n        For each element e, the sum of choose[s] over all sets s that contain e\n        must be at least 1 (every element must be covered by at least one\n        selected set).\n\n    Objective:\n        Minimize the total cost of the selected sets:\n            minimize  \u03a3 cost[s] * choose[s].\n    \"\"\"\n    nelem = params[\"nelem\"]\n    sets  = params[\"sets\"]       # list of lists of element ids\n    cost  = params[\"cost\"]       # list of costs, one per set\n    num_sets = len(sets)\n\n    # Boolean variable for selecting each set\n    choose = [cp.boolvar(name=f'set_{i}') for i in range(num_sets)]\n\n    # Build a mapping from element to the sets that cover it\n    element_to_sets = {e: [] for e in range(nelem)}\n    for s, elems in enumerate(sets):\n        for e in elems:\n            element_to_sets[e].append(s)\n\n    # Create the model\n    model = cp.Model()\n\n    # Add covering constraints\n    for e, covering_sets in element_to_sets.items():\n        if covering_sets:  # skip elements that are not covered by any set\n            model += cp.sum([choose[s] for s in covering_sets]) >= 1\n\n    # Add objective\n    model.minimize(cp.sum([cost[s] * choose[s] for s in range(num_sets)]))\n\n    return model\n```"
+ },
+ "802385049b3884ba7611a02a": {
+  "model": "openrouter/free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    \"\"\"\n    Builds a CPMpy model for the set\u2011cover problem.\n\n    Parameters\n    ----------\n    params : dict\n        Dictionary with keys:\n            - \"nelem\" : int, number of elements (0 .. nelem-1)\n            - \"sets\"  : list[list[int]], each sub\u2011list contains the element ids\n                        covered by that set\n            - \"cost\"  : list[int], cost of each set (same length as `sets`)\n\n    Returns\n    -------\n    cp.Model\n        The CPMpy model with a minimisation objective.\n    \"\"\"\n    nelem = params[\"nelem\"]\n    sets = params[\"sets\"]\n    cost = params[\"cost\"]\n    nsets = len(sets)\n\n    # Decision variables: x[s] = 1 if set s is chosen, otherwise 0\n    x = cp.intvar(0, 1, shape=nsets, name=\"x\")\n\n    # Objective: minimise total cost\n    obj = cp.sum(cp.multiply(cost, x))\n    model = cp.Model(obj)\n\n    # Constraints: each element must be covered by at least one chosen set\n    for e in range(nelem):\n        covering = [x[s] for s in range(nsets) if e in sets[s]]\n        if covering:\n            model += cp.sum(covering) >= 1\n        else:\n            # If an element is not in any set, the problem is infeasible\n            model += 0 >= 1\n\n    return model\n```"
+ },
+ "0c948789eafb6b37559d6ab7": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.3,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    nelem = params[\"nelem\"]\n    sets = params[\"sets\"]\n    cost = params[\"cost\"]\n    nsets = len(sets)\n\n    # Decision variables: x[s] = 1 if set s is chosen\n    x = cp.boolvar(shape=nsets, name=\"x\")\n\n    model = cp.Model()\n\n    # Coverage constraints: each element must be covered by at least one chosen set\n    for e in range(nelem):\n        # Find sets that cover element e\n        covering_sets = [s for s in range(nsets) if e in sets[s]]\n        if covering_sets:\n            model += cp.sum(x[covering_sets]) >= 1\n        else:\n            # If an element is not covered by any set, the problem is infeasible.\n            # We can add a constraint that is always false to make the model infeasible.\n            model += 1 == 0\n\n    # Objective: minimize total cost\n    model.minimize(cp.sum(cost[s] * x[s] for s in range(nsets)))\n\n    return model\n```"
+ },
+ "d1ac0c6092e88655265bfb87": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.7,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    nelem = params[\"nelem\"]\n    sets = params[\"sets\"]\n    cost = params[\"cost\"]\n    nsets = len(sets)\n    \n    # Decision variables: binary variable for each set\n    x = cp.boolvar(shape=nsets, name=\"x\")\n    \n    model = cp.Model()\n    \n    # Constraints: each element must be covered by at least one chosen set\n    for e in range(nelem):\n        # Find sets that cover element e\n        covering_sets = [s for s in range(nsets) if e in sets[s]]\n        if covering_sets:\n            model += cp.sum(x[covering_sets]) >= 1\n        else:\n            # If an element is not covered by any set, problem is infeasible\n            # We can add a constraint that is always false to make model infeasible\n            model += 1 == 0\n    \n    # Objective: minimize total cost\n    model.minimize(cp.sum(cost[s] * x[s] for s in range(nsets)))\n    \n    return model\n```"
+ },
+ "6da8d510b0d6b42d588f518e": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    nelem = params[\"nelem\"]\n    sets = params[\"sets\"]\n    cost = params[\"cost\"]\n    \n    nsets = len(sets)\n    x = cp.boolvar(shape=nsets)\n    \n    model = cp.Model()\n    \n    # For each element, ensure it is covered by at least one chosen set\n    # Precompute covering sets for each element\n    covering = [[] for _ in range(nelem)]\n    for s_idx, s_elems in enumerate(sets):\n        for e in s_elems:\n            covering[e].append(s_idx)\n    \n    for e in range(nelem):\n        if covering[e]:  # if there are sets covering this element\n            model += cp.sum(x[i] for i in covering[e]) >= 1\n        else:\n            # If an element has no covering sets, the problem is infeasible.\n            # We can add a constraint that is always false to make the model infeasible.\n            model += cp.boolvar() == 0  # or simply model += False, but cp.boolvar()==0 is a constraint\n            # Alternatively, we could raise an error, but the requirement is to return a model.\n            # Adding an unsatisfiable constraint is a standard way.\n    \n    # Objective: minimize total cost\n    model.minimize(cp.sum(cost[i] * x[i] for i in range(nsets)))\n    \n    return model\n```"
+ },
+ "9b2ed474ec3eca6cd98d812a": {
+  "model": "openrouter/free",
+  "temperature": 0.3,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    \"\"\"\n    Build a CPMpy model for the graph coloring problem.\n\n    Parameters\n    ----------\n    params : dict\n        Dictionary with keys:\n            - \"n\" : int, number of vertices\n            - \"edges\" : list of tuple(int, int), each tuple is an undirected edge\n\n    Returns\n    -------\n    cp.Model\n        The CPMpy model with the objective set to minimize\n        1 + the maximum color index used.\n    \"\"\"\n    n = params[\"n\"]\n    edges = params[\"edges\"]\n\n    # Decision variables: color of each vertex, 0..n-1\n    colors = [cp.intvar(0, n - 1, name=f\"c{i}\") for i in range(n)]\n\n    # Create the model\n    model = cp.Model()\n\n    # Edge constraints: adjacent vertices must have different colors\n    for u, v in edges:\n        model += colors[u] != colors[v]\n\n    # Objective: minimize 1 + max(color_i)\n    model.minimize(1 + cp.max(colors))\n\n    return model\n```"
+ },
+ "cee2912c448151f43bd254b1": {
+  "model": "openrouter/free",
+  "temperature": 0.7,
+  "response": "```python\n# Decision variables: For each vertex i (0 <= i < n), an integer variable color[i] with domain 0..n-1 representing its assigned color index.\n# Constraints: For each edge (u, v) in the graph, color[u] != color[v] ensuring adjacent vertices have different colors.\n# Objective: Minimize (1 + max(color[i] for i in range(n))), which equals the number of distinct colors used (since colors are indexed from 0).\n\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    edges = params[\"edges\"]\n    \n    # color variables\n    colors = [cp.intvar(0, n-1, name=f\"color_{i}\") for i in range(n)]\n    \n    model = cp.Model()\n    \n    # edge constraints\n    for u, v in edges:\n        model += (colors[u] != colors[v])\n    \n    # objective: minimize 1 + max color index\n    max_color = cp.max(colors)\n    model.minimize(max_color + 1)\n    \n    return model\n```"
+ },
+ "6fa96a3c6624a928322bdc48": {
+  "model": "openrouter/free",
+  "temperature": 0.5,
+  "response": "\n\n```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params['n']\n    edges = params['edges']\n    model = cp.Model()\n    colors = [cp.IntVar(domain=range(n)) for _ in range(n)]\n    for u, v in edges:\n        model.add(colors[u] != colors[v])\n    max_color = cp.Max(colors)\n    model.minimize(max_color + 1)\n    return model\n```\n"
+ },
+ "ef547357e6fc8cdd85ce201f": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.3,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params['n']\n    edges = params['edges']\n    \n    # Decision variables: color of each vertex (0 .. n-1)\n    color = cp.intvar(0, n-1, shape=n)\n    \n    model = cp.Model()\n    \n    # Adjacent vertices must have different colors\n    for u, v in edges:\n        model += (color[u] != color[v])\n    \n    # Auxiliary variable for the maximum color index used\n    max_color = cp.intvar(0, n-1)\n    model += (max_color == cp.max(color))\n    \n    # Objective: minimize number of colors = 1 + max color index\n    model.minimize(max_color + 1)\n    \n    return model\n```"
+ },
+ "cc48844689aee0a06557f224": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.7,
+  "response": "```python\n# Decision variables: For each vertex i (0..n-1), an integer variable color[i] with domain 0..n-1 representing its assigned color index.\n# Constraints: For each edge (u, v) in the graph, color[u] != color[v] (adjacent vertices must have different colors).\n# Objective: Minimize the number of colors used, which equals 1 + max(color[i]) over all vertices.\n\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    edges = params[\"edges\"]\n    \n    # Color variables for each vertex\n    colors = cp.intvar(0, n-1, shape=n)\n    \n    model = cp.Model()\n    \n    # Adjacency constraints\n    for u, v in edges:\n        model += (colors[u] != colors[v])\n    \n    # Objective: minimize (max color index + 1)\n    model.minimize(cp.max(colors) + 1)\n    \n    return model\n```"
+ },
+ "e99344f39752e6e7cb5e5e72": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    edges = params[\"edges\"]\n    \n    # Color variable for each vertex, domain 0..n-1\n    colors = [cp.intvar(0, n-1, name=f\"c_{i}\") for i in range(n)]\n    \n    model = cp.Model()\n    \n    # Edge constraints: endpoints must have different colors\n    for u, v in edges:\n        model += (colors[u] != colors[v])\n    \n    # Variable representing the maximum color index used\n    max_color = cp.intvar(0, n-1, name=\"max_color\")\n    for i in range(n):\n        model += (max_color >= colors[i])\n    \n    # Objective: minimize (max_color + 1) which equals number of colors used\n    model.minimize(max_color + 1)\n    \n    return model\n```"
+ },
+ "6bfe85fa5090716a44c3de91": {
+  "model": "openrouter/free",
+  "temperature": 0.3,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    T = params[\"T\"]\n    M = params[\"M\"]\n    p = params[\"p\"]\n    cap = params[\"cap\"]\n    cost = params[\"cost\"]\n\n    # x[t][m] is 1 if task t is assigned to machine m, 0 otherwise\n    x = cp.Var(T, M, vtype=\"B\")\n\n    constraints = []\n\n    # Each task t must be assigned to exactly one machine m\n    for t in range(T):\n        constraints.append(cp.sum(x[t, :]) == 1)\n\n    # Total size of tasks on machine m must not exceed cap[m]\n    for m in range(M):\n        constraints.append(cp.sum([p[t] * x[t, m] for t in range(T)]) <= cap[m])\n\n    model = cp.Model(constraints)\n\n    # Minimize the total assignment cost\n    total_cost = cp.sum([cost[t][m] * x[t, m] for t in range(T) for m in range(M)])\n    model.minimize(total_cost)\n\n    return model\n```"
+ },
+ "201a3c8599a2ddb66ca9b320": {
+  "model": "openrouter/free",
+  "temperature": 0.7,
+  "response": "The decision variables consist of a set of binary variables $x_{t,m}$ for each task $t \\in \\{0, \\dots, T-1\\}$ and machine $m \\in \\{0, \\dots, M-1\\}$, where $x_{t,m} = 1$ if task $t$ is assigned to machine $m$, and $0$ otherwise.\n\nThe constraints require that each task is assigned to exactly one machine, expressed as $\\sum_{m=0}^{M-1} x_{t,m} = 1$ for each task $t$. Additionally, the total size of tasks assigned to any machine $m$ must not exceed its capacity: $\\sum_{t=0}^{T-1} p_t \\cdot x_{t,m} \\leq \\text{cap}_m$ for each machine $m$.\n\nThe objective is to minimize the total assignment cost, calculated as the sum of the costs of all chosen assignments: $\\sum_{t=0}^{T-1} \\sum_{m=0}^{M-1} \\text{cost}_{t,m} \\cdot x_{t,m}$.\n\n```python\nimport cpmpy as cp\n\ndef build_model(params):\n    T = params[\"T\"]\n    M = params[\"M\"]\n    p = params[\"p\"]\n    cap = params[\"cap\"]\n    cost = params[\"cost\"]\n\n    # Decision variables: x[t][m] is 1 if task t is assigned to machine m\n    x = cp.Var(T, M, dtype=int, name=\"x\")\n\n    model = cp.Model()\n\n    # Constraint 1: Each task must be assigned to exactly one machine\n    model.add(cp.sum(x, axis=1) == 1)\n\n    # Constraint 2: Total size of tasks on machine m must not exceed cap[m]\n    for m in range(M):\n        model.add(cp.sum(x[:, m] * p) <= cap[m])\n\n    # Objective: Minimize total assignment cost\n    # We construct the cost matrix as a list of lists or a 2D structure for the sum\n    total_cost = cp.sum(x * cost)\n    model.minimize(total_cost)\n\n    return model\n```"
+ },
+ "f08719e7dd86f1f8175388a6": {
+  "model": "openrouter/free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    T = params['T']\n    M = params['M']\n    p = params['p']\n    cap = params['cap']\n    cost = params['cost']\n    \n    x = cp.binary_var(shape=(T, M), name='x')\n    \n    constraints = []\n    \n    # Each task must be assigned to exactly one machine\n    for t in range(T):\n        constraints.append(cp.sum(x[t, m] for m in range(M)) == 1)\n    \n    # Machine capacity constraints\n    for m in range(M):\n        constraints.append(cp.sum(p[t] * x[t, m] for t in range(T)) <= cap[m])\n    \n    # Objective: minimize total cost\n    obj = cp.sum(cost[t][m] * x[t, m] for t in range(T) for m in range(M))\n    \n    model = cp.Model(constraints)\n    model.minimize(obj)\n    \n    return model\n```"
+ },
+ "92a6f48c473abf394f306c95": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.3,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    T = params['T']\n    M = params['M']\n    p = params['p']\n    cap = params['cap']\n    cost = params['cost']\n    \n    # Decision variables: y[t][m] = 1 if task t assigned to machine m\n    y = cp.boolvar(shape=(T, M))\n    \n    model = cp.Model()\n    \n    # Each task assigned to exactly one machine\n    for t in range(T):\n        model += cp.sum(y[t, :]) == 1\n    \n    # Machine capacity constraints\n    for m in range(M):\n        model += cp.sum(p[t] * y[t, m] for t in range(T)) <= cap[m]\n    \n    # Minimize total assignment cost\n    obj = cp.sum(cost[t][m] * y[t, m] for t in range(T) for m in range(M))\n    model.minimize(obj)\n    \n    return model\n```"
+ },
+ "2d50bacc5f7bda77880dd062": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.7,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    T = params[\"T\"]\n    M = params[\"M\"]\n    p = params[\"p\"]\n    cap = params[\"cap\"]\n    cost = params[\"cost\"]\n\n    # Decision variables: x[t][m] = 1 if task t assigned to machine m\n    x = cp.boolvar(shape=(T, M), name=\"x\")\n\n    model = cp.Model()\n\n    # Each task assigned to exactly one machine\n    for t in range(T):\n        model += (cp.sum(x[t, :]) == 1)\n\n    # Machine capacity constraints\n    for m in range(M):\n        model += (cp.sum(p[t] * x[t, m] for t in range(T)) <= cap[m])\n\n    # Objective: minimize total assignment cost\n    total_cost = cp.sum(cost[t][m] * x[t, m] for t in range(T) for m in range(M))\n    model.minimize(total_cost)\n\n    return model\n```"
+ },
+ "b37bfdb6c1a4768d25ebfe8d": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    T = params[\"T\"]\n    M = params[\"M\"]\n    p = params[\"p\"]\n    cap = params[\"cap\"]\n    cost = params[\"cost\"]\n\n    # Binary assignment variables: assign[t][m] == 1 iff task t assigned to machine m\n    assign = cp.boolvar(shape=(T, M))\n\n    model = cp.Model()\n\n    # Each task assigned to exactly one machine\n    for t in range(T):\n        model += cp.sum(assign[t, :]) == 1\n\n    # Machine capacity constraints\n    for m in range(M):\n        model += cp.sum(p[t] * assign[t, m] for t in range(T)) <= cap[m]\n\n    # Objective: minimize total assignment cost\n    total_cost = cp.sum(cost[t][m] * assign[t, m] for t in range(T) for m in range(M))\n    model.minimize(total_cost)\n\n    return model\n```"
+ },
+ "541c3f3164c6942fc637a6f7": {
+  "model": "openrouter/free",
+  "temperature": 0.3,
+  "response": "```python\nimport cp\n\ndef build_model(params):\n    n = params['n']\n    p = params['p']\n    d = params['d']\n    wt = params['wt']\n    M = sum(p)                     # big\u2011M (total processing time)\n\n    model = cp.Model()\n    x = [model.new_bool_var(f\"x{j}\") for j in range(n)]\n\n    # For each job j, collect indices of jobs whose deadline is <= d[j]\n    le_indices = []\n    for j in range(n):\n        le = [i for i in range(n) if d[i] <= d[j]]\n        le_indices.append(le)\n\n    # Feasibility: for every selected job j,\n    #   sum_{i: d[i] <= d[j]} p[i] * x[i]  <=  d[j]\n    # Using big\u2011M to make the constraint active only when x[j] = 1:\n    for j in range(n):\n        S = sum(p[i] * x[i] for i in le_indices[j])\n        model.add_constraint(S + M * x[j] <= d[j] + M)\n\n    # Objective: maximize total weight of selected jobs\n    model.maximize(sum(wt[j] * x[j] for j in range(n)))\n\n    return model\n```"
+ },
+ "d13567c389d1cc1498dc4c6a": {
+  "model": "openrouter/free",
+  "temperature": 0.7,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    p = params[\"p\"]\n    d = params[\"d\"]\n    wt = params[\"wt\"]\n    model = cp.Model()\n    # binary selection variables\n    x = [model.NewBoolVar(f\"x{i}\") for i in range(n)]\n    # sort jobs by non\u2011decreasing deadline\n    order = sorted(range(n), key=lambda i: d[i])\n    d_sorted = [d[i] for i in order]\n    # enforce cumulative processing time \u2264 deadline for each prefix\n    cum = 0\n    for k, idx in enumerate(order):\n        cum += p[idx] * x[idx]\n        model.Add(cum <= d_sorted[k])\n    # maximize total weight of selected jobs\n    model.Maximize(cp.scalar_product(wt, x))\n    return model\n```"
+ },
+ "6a5e96aa8c76acb1ba026c13": {
+  "model": "openrouter/free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params['n']\n    p = params['p']\n    d = params['d']\n    wt = params['wt']\n    \n    # Decision variables: x[j] = 1 if job j is selected\n    x = cp.boolvar(shape=n)\n    \n    model = cp.Model()\n    \n    # Feasibility constraints: for each job j, the total processing time of\n    # selected jobs with deadline <= d[j] must not exceed d[j].\n    for j in range(n):\n        model += (sum(p[i] * x[i] for i in range(n) if d[i] <= d[j]) <= d[j])\n    \n    # Objective: maximize total weight of selected jobs\n    model.maximize(sum(wt[i] * x[i] for i in range(n)))\n    \n    return model\n```"
+ },
+ "c45ebf1b6e5b372b0ad9b71a": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.3,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params['n']\n    p = params['p']\n    d = params['d']\n    wt = params['wt']\n    \n    x = cp.boolvar(shape=n)\n    model = cp.Model()\n    \n    # Maximize total weight of selected jobs\n    model.maximize(sum(wt[j] * x[j] for j in range(n)))\n    \n    # Feasibility: if job j is selected, the sum of processing times of all selected\n    # jobs with deadline <= d[j] must not exceed d[j]\n    for j in range(n):\n        indices = [i for i in range(n) if d[i] <= d[j]]\n        total_p = sum(p[i] * x[i] for i in indices)\n        model += x[j].implies(total_p <= d[j])\n    \n    return model\n```"
+ },
+ "9e4112f28e027d283b579227": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.7,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params['n']\n    p = params['p']\n    d = params['d']\n    wt = params['wt']\n    \n    # Sort jobs by deadline (non-decreasing)\n    jobs = list(zip(d, p, wt))\n    jobs.sort(key=lambda x: x[0])\n    d_sorted = [j[0] for j in jobs]\n    p_sorted = [j[1] for j in jobs]\n    wt_sorted = [j[2] for j in jobs]\n    \n    # Binary decision variables: x[i] = 1 if job i is selected\n    x = cp.boolvar(n)\n    \n    model = cp.Model()\n    \n    # Cumulative deadline constraints:\n    # For each job j (in deadline order), sum of processing times of selected jobs\n    # with deadline <= d_sorted[j] must not exceed d_sorted[j].\n    for j in range(n):\n        model += (sum(p_sorted[i] * x[i] for i in range(j + 1)) <= d_sorted[j])\n    \n    # Maximize total weight of selected jobs\n    model.maximize(sum(wt_sorted[i] * x[i] for i in range(n)))\n    \n    return model\n```"
+ },
+ "a8dddf0c11ea79666ef6c8fc": {
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "temperature": 0.5,
+  "response": "```python\nimport cpmpy as cp\n\ndef build_model(params):\n    n = params[\"n\"]\n    p = params[\"p\"]\n    d = params[\"d\"]\n    wt = params[\"wt\"]\n    \n    x = cp.boolvar(shape=n)\n    model = cp.Model()\n    \n    # Feasibility: for each job j, the total processing time of selected"
+ }
+}

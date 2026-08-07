@@ -1,0 +1,50 @@
+{
+  "alpha": 0.05,
+  "pool_k": 6,
+  "n_reps": 100,
+  "budget_s": 0.6397066666666666,
+  "seed": 20260807,
+  "eval_families": [
+    "set_cover",
+    "gen_assignment",
+    "ontime_selection"
+  ],
+  "results": {
+    "kelly": {
+      "false_rej": 0.0,
+      "n_faith": 300,
+      "detect": 0.9,
+      "n_mut": 300,
+      "mean_kill_cost_ms": 19.991053355556136,
+      "pick_accuracy": 0.89,
+      "n_picks": 100,
+      "abstain_rate": 0.0,
+      "ebh_fdr": 0.0,
+      "ebh_rejections": 166
+    },
+    "round_robin": {
+      "false_rej": 0.0,
+      "n_faith": 298,
+      "detect": 0.8741721854304636,
+      "n_mut": 302,
+      "mean_kill_cost_ms": 29.2562553598484,
+      "pick_accuracy": 0.95,
+      "n_picks": 100,
+      "abstain_rate": 0.0,
+      "ebh_fdr": 0.0,
+      "ebh_rejections": 128
+    },
+    "cost_blind": {
+      "false_rej": 0.0,
+      "n_faith": 286,
+      "detect": 0.9426751592356688,
+      "n_mut": 314,
+      "mean_kill_cost_ms": 22.56908838175535,
+      "pick_accuracy": 0.9587628865979382,
+      "n_picks": 97,
+      "abstain_rate": 0.02,
+      "ebh_fdr": 0.0,
+      "ebh_rejections": 185
+    }
+  }
+}

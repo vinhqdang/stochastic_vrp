@@ -31,6 +31,15 @@ October 1, 2026. Full spec: `PROJECT.md`. Review-state tracker:
   Both checks PASS — headline numbers in PROJECT.md §7. Regenerate
   `prototype/prototype_results.txt` with
   `python3 prototype/eclair_prototype.py`.
+- `code/` — **phase 2: the real pipeline** (CPMpy + OR-Tools CP-SAT).
+  Five problem families with independent spec checkers and provably
+  valid MRs; mutation-injected unfaithful candidates; the three probe
+  tiers as real solver calls with measured solver-seconds; calibrated
+  conservative bets (Clopper–Pearson upper bounds, held-out families);
+  Kelly routing + ablations; e-BH selection; and an end-to-end LLM
+  front-end (OpenRouter). Results in `code/results/`, summarized in
+  PROJECT.md §7. Setup + reproduction: `code/README.md`. 7 pytest
+  tests in `code/tests/`.
 
 ## Self-containment (read before adding code)
 

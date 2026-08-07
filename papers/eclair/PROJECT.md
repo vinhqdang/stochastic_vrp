@@ -243,11 +243,58 @@ mean solver-cost per kill 12.2 vs 16.6 vs 22.6. The e-process
 separates cleanly at realistic probe powers and the routing layer is
 worth its section.
 
-Next engineering step (not yet built): CPMpy + OR-Tools CP-SAT
-pipeline on ~10 CSPLib problems with mutation-injected unfaithful
-candidates (no LLM needed for the first real experiment — mutations
-play the role of LLM errors, which also builds the calibration
-corpus), then LLM generation on NL4Opt.
+**Phase 2 (2026-08-07, `code/`): the real pipeline exists and runs.**
+CPMpy + OR-Tools CP-SAT, five problem families (knapsack+conflicts,
+set cover, coloring, generalized assignment, on-time job selection),
+each with an independent spec checker, provably valid MRs, and
+instance-generic mutation operators; calibration on two held-out
+families (Clopper–Pearson upper bounds), evaluation on the three
+DISJOINT others; plus an end-to-end LLM front-end (OpenRouter,
+`openrouter/free` + `nvidia/nemotron-3-ultra-550b-a55b:free`,
+`qwen/qwen3.7-flash` fallback) generating candidates from NL specs.
+See `code/README.md`; 7 pytest tests.
+
+Mutation-testbed results (100 reps/policy, pools of 6, alpha = 0.05,
+640 ms solver-budget/rep, real measured solver-seconds):
+
+| policy | false-rej | detect | kill-cost | pick-acc | e-BH FDR |
+|---|---|---|---|---|---|
+| kelly | 0.0000 | 0.900 | 20 ms | 0.890 | 0.0 |
+| round-robin | 0.0000 | 0.874 | 29 ms | 0.950 | 0.0 |
+| cost-blind | 0.0000 | 0.943 | 23 ms | 0.959 | 0.0 |
+
+Three findings worth the paper's ink: (i) validity holds exactly and
+TRANSFERS across problem families (0 false rejections of 300 faithful
+per policy, with bets calibrated on different families); (ii) Tier B's
+zero-false-alarm property held empirically (0/240) and Tier C's
+pool-entanglement null rate (11.7%, bounded 0.164) confirms §5.3;
+(iii) with real CP-SAT probes all tiers cost single-digit
+milliseconds (spread only 2.4x), so cost-normalization barely
+separates Kelly from cost-blind — **routing gains scale with probe-
+cost heterogeneity**, which is exactly the regime of expensive probes
+(large instances, industrial solvers, LLM-judge probes) the paper
+should emphasize; the stdlib prototype (20:1 cost spread) shows the
+same machinery winning clearly.
+
+**End-to-end LLM experiment (2026-08-07, `code/run_llm_experiment.py`,
+real OpenRouter generation):** 30 candidates = 5 families x 2 model
+families (`openrouter/free`, `nvidia/nemotron-3-ultra-550b-a55b:free`)
+x 3 prompt styles. Generation yield 20/30; the 10 failures were ALL
+loud API hallucinations caught by the intake gate, a taxonomy worth a
+table in the paper: `cp.Binary`/`cp.binary_var` (PuLP/docplex-isms),
+`cp.Var`, `cp.multiply`, `IntVar(domain=...)` (Choco-style),
+`Model().NewBoolVar` (raw OR-Tools CP-SAT API), `import cp`. All 20
+intake-surviving candidates were proxy-faithful, and certification
+behaved exactly as the theory says on an all-null pool: 0/20 false
+rejections under every routing policy, correct final pick in 5/5
+families, 0 e-BH false discoveries. Two implications: (a) on
+well-pinned specs these models' errors are crashes, not silent wrong
+models — the certification layer's detection power (shown in the
+mutation testbed) is insurance for the silent-error regime; (b) to
+exhibit LLM-native silent errors the paper needs deliberately
+ambiguous / convention-laden specs (the coloring objective convention
+is the template) — planned as the abstention experiment (§6
+"abstention behaviour on deliberately ambiguous specs").
 
 ## 8. Why this wins at this venue
 

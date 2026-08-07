@@ -1,0 +1,387 @@
+{
+  "alpha": 0.05,
+  "budget_s": 0.6367733333333334,
+  "seed": 20260807,
+  "models": [
+    "openrouter/free",
+    "nvidia/nemotron-3-ultra-550b-a55b:free"
+  ],
+  "generation": [
+    {
+      "family": "knapsack_conflicts",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'Binary'"
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "set_cover",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'Binary'"
+    },
+    {
+      "family": "set_cover",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "set_cover",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'multiply'"
+    },
+    {
+      "family": "set_cover",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "set_cover",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "set_cover",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "coloring",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "coloring",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "coloring",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "runtime_error: TypeError: IntVar() got an unexpected keyword argument 'domain'"
+    },
+    {
+      "family": "coloring",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "coloring",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "coloring",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "gen_assignment",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'Var'"
+    },
+    {
+      "family": "gen_assignment",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'Var'"
+    },
+    {
+      "family": "gen_assignment",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'binary_var'"
+    },
+    {
+      "family": "gen_assignment",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "gen_assignment",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "gen_assignment",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "exec_error: ModuleNotFoundError: No module named 'cp'"
+    },
+    {
+      "family": "ontime_selection",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "runtime_error: AttributeError: 'Model' object has no attribute 'NewBoolVar'"
+    },
+    {
+      "family": "ontime_selection",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "runtime_error: AttributeError: 'NoneType' object has no attribute 'solve'"
+    }
+  ],
+  "results": {
+    "kelly": {
+      "n_faith": 20,
+      "faith_rej": 0,
+      "n_unf": 0,
+      "unf_rej": 0,
+      "picks": 5,
+      "pick_ok": 5,
+      "abstain": 0,
+      "ebh_false": 0,
+      "ebh_total": 0,
+      "families": {
+        "knapsack_conflicts": {
+          "rejected": [],
+          "survived": [
+            "free/stepwise*",
+            "free/expert*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "set_cover": {
+          "rejected": [],
+          "survived": [
+            "free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "coloring": {
+          "rejected": [],
+          "survived": [
+            "free/direct*",
+            "free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "gen_assignment": {
+          "rejected": [],
+          "survived": [
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "ontime_selection": {
+          "rejected": [],
+          "survived": [
+            "free/expert*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*"
+          ]
+        }
+      }
+    },
+    "round_robin": {
+      "n_faith": 20,
+      "faith_rej": 0,
+      "n_unf": 0,
+      "unf_rej": 0,
+      "picks": 5,
+      "pick_ok": 5,
+      "abstain": 0,
+      "ebh_false": 0,
+      "ebh_total": 0,
+      "families": {
+        "knapsack_conflicts": {
+          "rejected": [],
+          "survived": [
+            "free/stepwise*",
+            "free/expert*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "set_cover": {
+          "rejected": [],
+          "survived": [
+            "free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "coloring": {
+          "rejected": [],
+          "survived": [
+            "free/direct*",
+            "free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "gen_assignment": {
+          "rejected": [],
+          "survived": [
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "ontime_selection": {
+          "rejected": [],
+          "survived": [
+            "free/expert*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*"
+          ]
+        }
+      }
+    },
+    "cost_blind": {
+      "n_faith": 20,
+      "faith_rej": 0,
+      "n_unf": 0,
+      "unf_rej": 0,
+      "picks": 5,
+      "pick_ok": 5,
+      "abstain": 0,
+      "ebh_false": 0,
+      "ebh_total": 0,
+      "families": {
+        "knapsack_conflicts": {
+          "rejected": [],
+          "survived": [
+            "free/stepwise*",
+            "free/expert*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "set_cover": {
+          "rejected": [],
+          "survived": [
+            "free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "coloring": {
+          "rejected": [],
+          "survived": [
+            "free/direct*",
+            "free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "gen_assignment": {
+          "rejected": [],
+          "survived": [
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*",
+            "nemotron-3-ultra-550b-a55b:free/expert*"
+          ]
+        },
+        "ontime_selection": {
+          "rejected": [],
+          "survived": [
+            "free/expert*",
+            "nemotron-3-ultra-550b-a55b:free/direct*",
+            "nemotron-3-ultra-550b-a55b:free/stepwise*"
+          ]
+        }
+      }
+    }
+  }
+}
