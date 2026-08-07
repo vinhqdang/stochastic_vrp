@@ -31,6 +31,7 @@ def main():
     for alpha in ALPHAS:
         prng = random.Random(SEED + 1)          # identical pools per alpha
         n_f = f_rej = n_m = m_rej = 0
+        kill = []
         for rep in range(n_reps):
             spec = EVAL_SPECS[rep % len(EVAL_SPECS)]
             pool, labels = build_pool(spec, prng)
@@ -41,9 +42,13 @@ def main():
                     f_rej += st.rejected
                 else:
                     n_m += 1
-                    m_rej += st.rejected
+                    if st.rejected:
+                        m_rej += 1
+                        kill.append(st.spent)
+        import statistics as _st
         rows.append(dict(alpha=alpha, false_rej=f_rej / n_f, n_faith=n_f,
-                         detect=m_rej / n_m, n_mut=n_m))
+                         detect=m_rej / n_m, n_mut=n_m,
+                         kill_ms=1000 * _st.fmean(kill) if kill else None))
         print(f"alpha={alpha:<5} false-rej={rows[-1]['false_rej']:.4f} "
               f"(n={n_f})  detect={rows[-1]['detect']:.4f} (n={n_m})",
               flush=True)

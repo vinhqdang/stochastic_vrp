@@ -109,10 +109,10 @@ PROMPT_STYLES = [
 ]
 
 
-def _prompt(spec_name, style_hint):
+def _prompt(spec_name, style_hint, spec_text=None):
     return f"""Translate the following optimization problem into a CPMpy model.
 
-{NL_SPECS[spec_name]}
+{spec_text if spec_text is not None else NL_SPECS[spec_name]}
 
 {style_hint}
 
@@ -142,7 +142,10 @@ def _call(model, prompt, temperature, max_retries=5):
         try:
             with urllib.request.urlopen(req, timeout=180) as resp:
                 data = json.loads(resp.read())
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"]["content"]
+            if not content:                 # some models return None
+                raise RuntimeError("empty completion content")
+            return content
         except Exception as e:                      # 429s, transient 5xx
             if attempt == max_retries - 1:
                 raise
@@ -156,7 +159,7 @@ def _cached_call(model, prompt, temperature):
     cache = {}
     if CACHE_PATH.exists():
         cache = json.loads(CACHE_PATH.read_text())
-    if key not in cache:
+    if key not in cache or not cache[key].get("response"):
         cache[key] = {"model": model, "temperature": temperature,
                       "response": _call(model, prompt, temperature)}
         CACHE_PATH.parent.mkdir(exist_ok=True)
@@ -165,6 +168,8 @@ def _cached_call(model, prompt, temperature):
 
 
 def _extract_code(text):
+    if not text:
+        return None
     if "```" not in text:
         return text if "def build_model" in text else None
     parts = text.split("```")
@@ -195,16 +200,18 @@ class LLMCandidate:
         return self.fn(copy.deepcopy(params))
 
 
-def make_llm_candidate(spec, model, style, temperature):
-    """Generate one candidate; returns (candidate|None, status)."""
+def make_llm_candidate(spec, model, style, temperature, spec_text=None):
+    """Generate one candidate; returns (candidate|None, status).
+    `spec_text` overrides the default NL specification (ambiguity
+    studies)."""
     style_name, hint = style
     meta = {"model": model, "style": style_name, "temperature": temperature}
+    prompt = _prompt(spec.name, hint, spec_text)
     try:
-        text = _cached_call(model, _prompt(spec.name, hint), temperature)
+        text = _cached_call(model, prompt, temperature)
     except Exception as e:
         try:                    # free-tier quota exhausted -> fallback model
-            text = _cached_call(FALLBACK_MODEL, _prompt(spec.name, hint),
-                                temperature)
+            text = _cached_call(FALLBACK_MODEL, prompt, temperature)
             meta["model"] = f"{FALLBACK_MODEL} (fallback)"
         except Exception:
             return None, f"api_error: {e}"

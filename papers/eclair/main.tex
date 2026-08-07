@@ -11,6 +11,8 @@
 \usepackage{graphicx}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit}
 
 \theoremstyle{thmstyleone}
 \newtheorem{theorem}{Theorem}
@@ -101,6 +103,21 @@ Fixed-sample statistical tools do not repair this: a
 generate--test--repair loop inherently peeks at accumulating evidence
 and adapts, which invalidates fixed-sample p-values and
 split-conformal calibration alike.
+
+A concrete miniature fixes ideas. A dispatcher asks for ``a knapsack
+model: pick items within the truck's 120\,kg limit, maximizing value;
+items 3 and 7 cannot travel together.'' A language model returns
+clean CPMpy code --- but read \texttt{120} as the \emph{count} bound
+of a different template, wired the weight vector where values belong,
+or emitted \texttt{sum(w*x) >= cap} after seeing a covering example
+in its context. Each of these artifacts compiles, solves in
+milliseconds, and returns a confident number. Asking a second model
+and comparing helps only if their errors differ; testing on a
+hand-checkable toy instance helps only if the error manifests there;
+and the practitioner who keeps testing ``until it looks fine'' has
+silently destroyed the error control of whatever test they were
+using. What is missing is an accounting system for the accumulated
+evidence --- one that survives the practitioner's own adaptivity.
 
 This paper introduces \textbf{ECLAIR} (E-process Certification of
 LLM-generated constraint models with Adaptive Instance Routing), a
@@ -261,6 +278,55 @@ bounds on probe alarm rates.
 
 \section{The ECLAIR framework}\label{sec:framework}
 
+Figure~\ref{fig:arch} shows the architecture. An LLM ensemble
+proposes candidates; a cheap intake gate discards code that cannot
+build and solve a toy instance; every surviving candidate carries its
+own e-process; a router spends the solver budget one probe at a time;
+and three exits are possible --- rejection (with a counterexample
+that can seed a repaired candidate), certification of a survivor by
+e-BH selection, or abstention with the full evidence ledger. The
+subsections follow the data flow.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw, rounded corners=2pt, align=center,
+              inner sep=4pt, minimum height=7mm},
+  lab/.style={font=\footnotesize, align=center},
+  arr/.style={-{Stealth[length=2.2mm]}, thick}]
+\node[box] (spec) {NL spec $s$};
+\node[box, right=8mm of spec] (gen)
+  {LLM ensemble\\[-1pt]{\footnotesize models $\times$ prompts $\times$ temp.}};
+\node[box, right=8mm of gen] (gate) {intake\\gate};
+\node[box, right=8mm of gate] (pool)
+  {candidate pool\\[-1pt]{\footnotesize e-process $\Eproc(m_i)$ each}};
+\node[box, below=7mm of pool] (router)
+  {Kelly router \eqref{eq:kelly}\\[-1pt]{\footnotesize budget $B$}};
+\node[box, left=8mm of router] (probes)
+  {probes\\[-1pt]{\footnotesize A: oracle\; B: MR\; C: cross}};
+\node[box, right=8mm of pool] (ebh)
+  {e-BH +\\certified pick};
+\node[box, below=2.5mm of ebh] (abstain) {abstain +\\ledger};
+\node[box, above=7mm of pool] (repair) {repair\\{\footnotesize (counterexample)}};
+\draw[arr] (spec) -- (gen);
+\draw[arr] (gen) -- (gate);
+\draw[arr] (gate) -- (pool);
+\draw[arr] (pool) -- (router);
+\draw[arr] (router) -- (probes);
+\draw[arr] (probes) |- ([yshift=-1.5mm]pool.west);
+\draw[arr] (pool) -- node[lab, above]{survivors} (ebh);
+\draw[arr] ([xshift=6mm]pool.south east) |- (abstain.west);
+\draw[arr] ([xshift=-4mm]pool.north) -- node[lab, left]{rejected} ([xshift=-4mm]repair.south);
+\draw[arr] ([xshift=4mm]repair.south) -- node[lab, right]{fresh $\Eproc$} ([xshift=4mm]pool.north);
+\end{tikzpicture}
+\caption{ECLAIR's architecture. Every candidate carries its own
+wealth process; the router spends the shared budget one probe at a
+time; rejection feeds repair; terminal e-values enter e-BH; if
+nothing survives, the evidence ledger explains why}
+\label{fig:arch}
+\end{figure}
+
 \subsection{Probe tiers}\label{sec:probes}
 
 A \emph{probe} is a randomized procedure that consumes solver time
@@ -337,6 +403,26 @@ $p_1 + (1-p_1) = 1$; hence for $q \le \bar p_0$ it is at most $1$.
 The candidate's wealth process is the running product
 $\Eproc_t(m) = \prod_{s \le t,\, s \to m} e_s$ over the probes routed
 to $m$, with $\Eproc_0(m) = 1$.
+
+\paragraph{The betting arithmetic, numerically.}
+With the calibrated values of Section~\ref{sec:experiments}
+(Table~\ref{tab:calib}), the multipliers of \eqref{eq:bet} are
+concrete: a tier-A alarm multiplies wealth by
+$p_1/\bar p_0 = 0.473/0.0153 \approx 31$, a pass by
+$(1{-}p_1)/(1{-}\bar p_0) \approx 0.53$; a tier-C alarm multiplies by
+${\approx}3.0$, a pass by ${\approx}0.61$; tier B multiplies by $1$
+on pass and rejects outright on alarm. Against the rejection
+threshold $1/\alpha = 20$ this means: a single tier-A alarm brings a
+fresh candidate to within one small step of rejection
+($\log 31 > \log 20$ already, from wealth $1$); two early tier-A
+passes push a candidate's wealth down to ${\approx}0.28$, after which
+the Kelly numerator of \eqref{eq:kelly} for noisy tiers turns
+negative and the router parks the candidate on zero-bleed tier-B
+probes --- exactly the flattening visible in
+Figure~\ref{fig:trajectories}. The asymmetry (alarm evidence
+${\sim}31\times$, pass evidence ${\sim}0.53\times$) is not a tuning
+choice but the likelihood-ratio geometry of a rare-under-null,
+common-under-alternative event.
 
 \subsection{Budget-aware routing}\label{sec:routing}
 
@@ -510,6 +596,37 @@ the moment evidence suffices'': the budget scales as
 $\log(1/\alpha)$, so tightening the guarantee is cheap --- consistent
 with the flat detection curves across $\alpha$ observed in
 Section~\ref{sec:alpha}.
+
+Finally, the tier-selection layer of the router admits a no-regret
+guarantee. The deployed router uses the plug-in posterior form
+\eqref{eq:kelly}; the following analyzes its online-learning
+relative, in which the tier weights are maintained by the
+exponentially weighted average (Hedge) forecaster
+\cite{freund1997decision, cesabianchi2006prediction} over the
+realized growth-per-cost rewards.
+
+\begin{proposition}[No-regret tier selection]\label{prop:regret}
+Fix a candidate and let $r_t(p) = \log e_t(p)/c(p) \in [-L, L]$
+denote the (bounded) realized log-growth per unit cost had tier
+$p \in \{A, B, C\}$ been probed at step $t$. Selecting tiers by Hedge
+with learning rate $\eta = \sqrt{8 \ln 3 / T}$ guarantees
+\[
+\max_{p}\sum_{t=1}^{T} r_t(p) \;-\;
+\mathbb{E}\Bigl[\sum_{t=1}^{T} r_t(p_t)\Bigr]
+\;\le\; L\,\sqrt{(T/2)\ln 3},
+\]
+i.e.\ the realized evidence growth per unit cost is within
+$O(\sqrt{T})$ of the best fixed tier in hindsight; since tier
+selection remains $\Filt_{t-1}$-measurable, Theorem~\ref{thm:validity}
+is unaffected.
+\end{proposition}
+
+\begin{proof}
+Immediate from the standard Hedge regret bound for bounded rewards
+over $3$ experts \cite[Thm.~2.2]{cesabianchi2006prediction}, after
+rescaling $r_t$ to $[0,1]$; predictability holds because the Hedge
+weights at step $t$ depend only on rewards observed before $t$.
+\end{proof}
 
 \begin{proposition}[Probe-family validity]\label{prop:mr}
 For the five problem families of Section~\ref{sec:experiments}, the
@@ -814,6 +931,69 @@ micro-instance-detectable --- precisely tier A's regime. Errors of
 LLM origin need not be (conventions that diverge only at scale;
 see below), which is why the tiered design is retained.
 
+\subsection{External baselines at matched budget}\label{sec:baselines}
+
+The routing policies of Table~\ref{tab:testbed} are internal
+ablations; this section compares against the strategies a
+practitioner would actually reach for, all given the \emph{same}
+solver budget per pool and, where applicable, the same calibrated
+null-rate bound $\bar p_0$. \emph{Single-shot} accepts the first
+candidate unexamined. \emph{Self-consistency majority} solves all
+candidates on eight shared instances and accepts the one agreeing
+most often with the per-instance modal value --- the standard
+LLM-ensemble heuristic; it has no rejection concept.
+\emph{Fixed-sample} runs $n = 8$ cross-model probes per candidate and
+rejects when the alarm count reaches the exact binomial critical
+value at level $\alpha$ under $\bar p_0$ --- a textbook-valid test if
+its assumptions hold. \emph{Peeking} applies that same binomial test
+after every probe at nominal $\alpha$, stopping at the first crossing
+--- the uncorrected sequential usage that testing loops drift into in
+practice. \emph{Split conformal} rejects when the candidate's alarm
+count is extreme against a $200$-run faithful calibration sample
+($p_{\mathrm{conf}} \le \alpha$). Table~\ref{tab:baselines} reports
+$100$ replications.
+
+\begin{table}[t]
+\caption{External baselines at matched budget ($100$ replications,
+$\alpha = 0.05$). Only the e-process framework combines validity with
+high power; the two fixed-sample-style tests break their nominal
+level under family transfer and peeking respectively, and the
+vote-based strategies cannot reject at all.}\label{tab:baselines}
+\begin{tabular}{lccc}
+\toprule
+Method & False rej. & Detection & Pick acc.\\
+\midrule
+ECLAIR (Kelly, all tiers) & $\mathbf{0.0000}$ & $\mathbf{0.905}$ & $\mathbf{0.970}$\\
+single-shot        & $0.0000$ & $0.000$ & $0.535$\\
+self-consistency majority & $0.0000$ & $0.000$ & $0.879$\\
+fixed-sample (tier C, $n{=}8$) & $0.0612$ & $0.578$ & $0.714$\\
+peeking (tier C, uncorrected)  & $0.0748$ & $0.601$ & ---\\
+split conformal (tier C)       & $0.0238$ & $0.480$ & ---\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three comparisons carry the argument. \emph{Against vote-based
+acceptance}: majority voting picks a faithful model $88\%$ of the
+time but certifies unfaithful ones the remaining $12\%$ with no
+warning, rejects nothing, and offers no level to quote; single-shot
+is the coin flip its $0.535$ suggests. \emph{Against fixed-sample
+testing}: the binomial test is nominally valid under its assumptions,
+yet realizes $0.0612 > \alpha$ here --- the same cross-family
+transfer and pool entanglement that the e-process absorbs
+(Section~\ref{sec:ablation}: even tier-C-only stayed at $0.0401$)
+push a hard accept/reject threshold over its level, because a
+fixed-sample test has no supermartingale slack to spend. Its peeking
+variant, the de-facto practice in iterative loops, inflates further
+to $0.0748$ --- the canonical optional-stopping failure, here
+measured rather than merely invoked. \emph{Against conformal}: with
+an honest faithful-only calibration sample the conformal test keeps
+its level ($0.0238$) but detects barely half of what ECLAIR does at
+the same budget ($0.480$ vs.\ $0.905$), because a fixed probe count
+cannot concentrate effort where evidence is accumulating. Matched
+budget, same probes, same calibration information --- the difference
+is purely the accounting.
+
 \subsection{End-to-end study with real LLMs}\label{sec:llm}
 
 Thirty candidates were generated from natural-language specifications
@@ -913,6 +1093,77 @@ budget per rejection (b); false-rejection stays below $\alpha$ under
 every policy, as validity is routing-invariant}
 \label{fig:routing}
 \end{figure}
+
+\section{Deployment guidance}\label{sec:deploy}
+
+Because every quantity in the framework is operational, the knobs a
+deploying team must set reduce to four, each with a concrete rule.
+
+\paragraph{The level $\alpha$.} By Proposition~\ref{prop:budget} and
+Figure~\ref{fig:alpha}, tightening $\alpha$ costs only logarithmic
+budget and essentially no detection --- so $\alpha$ should be chosen
+by the downstream stakes (what fraction of wrongly discarded faithful
+models, and wrongly certified survivors under e-BH, the application
+tolerates), not by compute anxiety. We used $0.05$ throughout; $0.01$
+behaved identically.
+
+\paragraph{The calibration corpus.} Validity consumes exactly one
+number per noisy tier: an upper confidence bound $\bar p_0$ on the
+null alarm rate. With zero observed false alarms in $n$ calibration
+trials, the Clopper--Pearson bound scales as
+$\bar p_0 \approx 3.7/n$ ($n{=}100$: $0.036$; $n{=}240$: $0.015$;
+$n{=}1000$: $0.0037$), and a smaller $\bar p_0$ buys a larger alarm
+multiplier $p_1/\bar p_0$ --- calibration effort converts directly
+into per-alarm evidence. Known-faithful models for the corpus are the
+cheap part: hand-written reference models on any families adjacent to
+the deployment domain suffice, and our results show the bounds
+transfer across families when used conservatively.
+
+\paragraph{The budget.} The testbed's operating point --- ${\sim}80$
+mean-cost probes per pool of six --- put the marginal probe well past
+the detection plateau. The budget-to-rejection bound gives the
+back-of-envelope sizing rule: expect
+${\sim}\log(1/\alpha)/\Delta$ probes per unfaithful candidate, with
+$\Delta$ the per-probe expected log-evidence (${\approx}1.5$ for our
+calibrated tier A under $\hat p_1 \approx 0.6$), so single-digit
+probes per rejection --- consistent with the measured $20$\,ms kill
+costs against $5$\,ms probes.
+
+\paragraph{What to log.} The evidence ledger --- every probe, its
+tier, instance seed, outcome, and e-factor --- is the audit object:
+it makes each rejection reproducible (replay the counterexample),
+each certification quantifiable (survived evidence at level
+$\alpha$), and each abstention actionable (which readings died on
+which probes). Teams wrapping an existing agentic modelling loop
+\cite{szeider2025cpagent, szeider2025mcp} need to intercept only two
+things: candidate model source and solver calls.
+
+\section{Threats to validity}\label{sec:threats}
+
+\emph{Internal.} The statistical guarantee rests on
+Assumption~\ref{ass:null}; the ablation localizes exactly where its
+tier-A/C half is fragile (pool-entangled probes carrying sole
+weight) and the baselines show the failure is not hypothetical ---
+the same miscalibration that leaves the e-process at $0.040$ pushes a
+fixed-sample threshold to $0.061$. Tier-B validity is by proof, but
+only for relations proved against the \emph{specification}; a
+relation read off a formulation can be invalid
+(Section~\ref{sec:library}).
+
+\emph{Construct.} Mutation screening makes every testbed fault
+micro-detectable, biasing tier importance toward A
+(Section~\ref{sec:ablation}); proxy faithfulness labels in the LLM
+studies are themselves enumeration-based and share this bias. The
+ambiguity study is the counterweight, since other-reading models
+differ precisely where enumeration on canonical micro-instances says
+they do.
+
+\emph{External.} Two model families, five problem families, one
+modelling language: claims about ``LLM modellers'' beyond these are
+extrapolation. The error taxonomy (Table~\ref{tab:llm}) will age as
+models improve; the framework's premise --- that whatever errors
+remain be caught with a guarantee --- does not depend on the
+taxonomy's contents.
 
 \section{Limitations and outlook}\label{sec:limits}
 
@@ -1141,6 +1392,82 @@ The colouring convention sentence is deliberate: without it,
 $|\{c_i\}|$ as a faithful reading, and the two readings differ only
 off-optimum --- the template for the planned ambiguous-specification
 study (Section~\ref{sec:limits}).
+
+\section{The mutation operator catalogue}\label{app:mutations}
+
+Each operator is a deterministic function of instance parameters,
+drawn once per candidate and applied identically to every instance
+the candidate ever sees (a wrong \emph{model}, not a wrong instance).
+Descriptors are sampled uniformly over the applicable
+(operator, target) pairs of Table~\ref{tab:families}; positional
+indices are drawn once and taken modulo the current instance's
+dimension, which is what makes them instance-generic.
+
+\begin{description}
+\item[scalar shift] a named scalar bound $b \mapsto \max(1, b+\delta)$,
+  $\delta \in \{\pm 1, \pm 2, \pm 3\}$ (misread constant).
+\item[vector entry] one positionally selected entry of a named
+  numeric vector shifted by $\delta$ as above (misread datum).
+\item[vector rotation] a named vector rotated by one position ---
+  the data-wiring misalignment in which item $i$ receives item
+  $(i{+}1)$'s datum; the mutation class that only the permutation MR
+  and value-level oracles can see.
+\item[row drop] one positionally selected structural row (conflict
+  pair, edge, coverage list) deleted (missed constraint).
+\item[family half-drop] the second half of a structural family
+  deleted (systematically missed constraint class).
+\item[matrix entry] one positionally selected entry of a cost matrix
+  shifted by $\delta$.
+\item[operator flip] one constraint family's comparison direction
+  inverted at the builder level ($\le \leftrightarrow \ge$; for
+  colouring, disequality to equality) --- the class that breaks
+  monotone MRs and is otherwise invisible to agreement checks when
+  the flipped model is infeasible-prone.
+\end{description}
+
+\emph{Screening.} A drawn mutant is kept only if its exact optimum
+differs from the specification's brute-forced optimum on at least one
+of six random micro-instances (up to $40$ redraws); this discards
+semantically equivalent mutants, the standard practice in mutation
+testing, and guarantees ground-truth labels for every experiment in
+Section~\ref{sec:experiments}.
+
+\section{Extended numerical tables}\label{app:tables}
+
+For re-derivation without running code, the full operating-range
+table behind Figure~\ref{fig:alpha} ($100$ replications per level,
+Kelly routing; kill cost is mean measured solver time to reject a
+mutant):
+
+\begin{table}[h]
+\caption{Full $\alpha$-sweep.}\label{tab:alphafull}
+\begin{tabular}{lccccc}
+\toprule
+$\alpha$ & false rej. & $n$ faithful & detection & $n$ mutants & kill cost\\
+\midrule
+$0.01$ & $0.0000$ & $300$ & $0.923$ & $300$ & $30.5$\,ms\\
+$0.02$ & $0.0000$ & $285$ & $0.937$ & $315$ & $30.0$\,ms\\
+$0.05$ & $0.0000$ & $297$ & $0.924$ & $303$ & $22.8$\,ms\\
+$0.10$ & $0.0000$ & $301$ & $0.930$ & $299$ & $19.4$\,ms\\
+$0.20$ & $0.0000$ & $293$ & $0.964$ & $307$ & $20.7$\,ms\\
+\bottomrule
+\end{tabular}
+
+The kill-cost column is Proposition~\ref{prop:budget} measured:
+tightening the guarantee from $\alpha = 0.20$ to $\alpha = 0.01$ ---
+a $20\times$ stronger error bound --- raises the mean solver cost of
+a rejection from ${\sim}21$\,ms to ${\sim}30$\,ms, a factor of
+${\sim}1.5$, in line with the predicted
+$\log(1/0.01)/\log(1/0.20) \approx 2.9$ ratio of log-thresholds
+attenuated by hard-certificate rejections whose cost is
+$\alpha$-independent.
+\end{table}
+
+Calibrated betting multipliers implied by Table~\ref{tab:calib}
+(equation~\eqref{eq:bet}): tier A alarm $\times 30.9$, pass
+$\times 0.535$; tier C alarm $\times 3.00$, pass $\times 0.607$;
+tier B pass $\times 1$, alarm $= \infty$. Rejection threshold at
+$\alpha = 0.05$: wealth $20$, i.e.\ $\log$-threshold $3.00$.
 
 \end{appendices}
 

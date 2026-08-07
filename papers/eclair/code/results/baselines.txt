@@ -1,0 +1,9 @@
+ECLAIR vs external baselines (matched budget, alpha=0.05, 100 reps; tier-C fixed-sample n=8, k_crit=4)
+
+method        false-rej  detect  pick-acc
+eclair           0.0000  0.9052     0.970
+single_shot      0.0000  0.0000     0.535
+majority         0.0000  0.0000     0.879
+fixed_C          0.0612  0.5784     0.714
+peek_C           0.0748  0.6013         -
+conformal_C      0.0238  0.4804         -
