@@ -2,8 +2,10 @@
 
 Sequential, anytime-valid, budget-aware certification of LLM-generated
 constraint models via e-processes with Kelly-style probe routing.
-Target: *Constraints* (Springer), LLM+CP special issue. Full spec:
-`PROJECT.md`. Review-state tracker: `STATUS.md`.
+Target: *Constraints* (Springer), Special Issue on Large Language
+Models for Combinatorial Constraint Solving (LLM-Solve), deadline
+October 1, 2026. Full spec: `PROJECT.md`. Review-state tracker:
+`STATUS.md`. The call itself: `CFP.md`.
 
 ## Files
 
@@ -12,6 +14,11 @@ Target: *Constraints* (Springer), LLM+CP special issue. Full spec:
   reject/e-BH/abstain), the four theory targets, known technical
   subtleties, experiment plan, and open actions.
 - `STATUS.md` — venue and review state (ACTIVE, not submitted).
+- `CFP.md` — the call for papers, verbatim (Special Issue on Large
+  Language Models for Combinatorial Constraint Solving, **deadline
+  October 1, 2026**), plus ECLAIR's bullet-level mapping onto its
+  four topics. The call is not yet on Springer's public collections
+  page, so this file is the authoritative local record.
 - `VERIFY_CITATIONS.md` — every citation this paper intends to lean
   on, ALL currently unverified; nothing moves to `references.bib`
   until checked against live publisher/DOI/arXiv records (repo rule).

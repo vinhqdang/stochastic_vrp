@@ -8,12 +8,16 @@ a stream of cheap imperfect probes and betting against the null "this
 model is faithful" with an e-process.
 
 Status: ACTIVE — spec + simulation prototype. Target venue:
-**Constraints (Springer)**, special-issue CFP on LLMs and constraint
-programming (Topic 2, "solver-in-the-loop reasoning to control,
-correct, or bound LLM outputs"; also touches Topics 1 and the
-evaluation-methodology topic). CFP details (deadline, guest editors)
-are recorded from the author's reading of the call and must be pinned
-to the published CFP before submission — see `VERIFY_CITATIONS.md`.
+**Constraints (Springer), Special Issue on Large Language Models for
+Combinatorial Constraint Solving (LLM-Solve)** — submission track
+"SI: Large Language Models for Combinatorial Constraint Solving",
+**deadline October 1, 2026**, two-phase review (editorial desk review,
+then full peer review). Guest editors: Serdar Kadıoğlu (lead, Brown &
+Fidelity), Tias Guns (KU Leuven), Louis-Martin Rousseau (Polytechnique
+Montréal), Stefan Szeider (TU Wien), Dimos Tsouros (UWM Greece). The
+full call is recorded verbatim in `CFP.md`, including ECLAIR's mapping
+onto its four topics (core: Topic 2 solver-in-the-loop + multi-model
+judging; plus Topic 4 evaluation methodology and Topic 1 elicitation).
 
 Naming: follows the repo convention (evocative word backfit to an
 initialism, like BATON and TEMPO). **Collision check required before
@@ -247,13 +251,18 @@ corpus), then LLM generation on NL4Opt.
 
 ## 8. Why this wins at this venue
 
-It hits three of the four CFP topics simultaneously (solver-in-the-
-loop verification; multi-model generate/judge separation; systematic
-evaluation methodology focused on correctness), and it answers the
-question CP-community guest editors actually care about: *what
-guarantee do I get?* A certification layer is complementary to the
-guest editors' own agendas (modelling pipelines, constraint
-acquisition) rather than competing — favourable for desk review. For
+It hits three of the four CFP topics simultaneously (Topic 2's
+solver-in-the-loop verification AND multi-model generate/judge
+separation; Topic 4's systematic evaluation methodology focused on
+correctness; Topic 1's elicitation via the abstention ledger — exact
+bullet-level mapping in `CFP.md`), and it answers the question the
+guest editors actually care about: *what guarantee do I get?* The
+CFP's own overview names the gap — LLMs "lack the intrinsic
+mathematical guarantees required for formal correctness" — and ECLAIR
+is a direct answer to that sentence. A certification layer is
+complementary to the guest editors' own agendas (Kadıoğlu: modelling
+pipelines; Tsouros & Guns: constraint acquisition) rather than
+competing — favourable for the Phase-1 editorial desk review. For
 this repo it is low-risk: the e-process core, the EG routing analysis,
 and the empirical discipline (calibration corpora, replication
 scripts) all exist in other papers here, recombined into an unclaimed
@@ -287,8 +296,11 @@ public; until then, cite only the underlying e-process literature.
 
 ## 10. Open actions
 
-- [ ] Pin the CFP: URL, deadline, guest editors, topic list →
-      `VERIFY_CITATIONS.md`, then `STATUS.md`.
+- [x] Pin the CFP — done 2026-08-07, verbatim in `CFP.md`: deadline
+      **October 1, 2026** (55 days out at recording), five guest
+      editors, track name, two-phase review. Plan backwards from it:
+      manuscript + experiments need ~6 weeks, so the CPMpy/CP-SAT
+      phase-2 prototype must start immediately.
 - [ ] Name collision check (BUGSENG ECLAIR) — keep or rename.
 - [ ] Verify the prior-art citations (CP-Agent, ConstraintLLM, CPEVAL,
       both verification frameworks) and the e-process/stats canon —

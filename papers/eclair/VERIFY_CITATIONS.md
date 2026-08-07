@@ -10,12 +10,15 @@ off here.
 
 ## The CFP itself
 
-- [ ] *Constraints* (Springer) special-issue CFP on LLMs and
-      constraint programming — URL, topic list (the proposal cites
-      "Topic 1" conversational elicitation and "Topic 2"
-      solver-in-the-loop verification), submission deadline (believed
-      October 2026), guest editors (believed to include Kadıoğlu and
-      Tsouros/Guns — verify).
+- [x] **VERIFIED 2026-08-07** — full text supplied by the author,
+      recorded verbatim in `CFP.md`: *Constraints* Special Issue on
+      Large Language Models for Combinatorial Constraint Solving
+      (LLM-Solve); deadline October 1, 2026; guest editors Kadıoğlu
+      (lead), Guns, Rousseau, Szeider, Tsouros; two-phase review.
+      Cross-checked against the LLM-Solve workshop at CP'26/FLoC'26
+      (https://sites.google.com/view/llm-solve-2026 — same organizer
+      group). Note: not yet indexed on Springer's public collections
+      page as of 2026-08-07.
 
 ## Prior art the gap analysis leans on (all recent, all unverified)
 
