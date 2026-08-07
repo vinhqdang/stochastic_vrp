@@ -23,6 +23,12 @@ new instances unchanged.
 Usage:
     python scripts/make_city_instances.py [sizes=100,200,400] [seeds=1]
                                           [cities=hcmc,hanoi] [out=data/City]
+                                          [radius=<metres>]
+
+`radius=` overrides every city's default 6 km disc. To keep the plan
+cache and result CSVs unambiguous (both are keyed by instance NAME),
+a non-default radius suffixes the names (HCMC50K-100-1) and the
+default output directory (data/City50K).
 
 Requires network access to OpenStreetMap (osmnx). The downloaded graphs
 are cached in data/City/_cache via osmnx's own cache.
@@ -62,6 +68,9 @@ def _load_graph(city: str):
     lat, lon, radius = CITIES[city]
     ox.settings.use_cache = True
     ox.settings.cache_folder = str(_WDRO / "data" / "City" / "_cache")
+    # metro-scale discs (radius >> 6 km) need more than the default 180 s
+    # per Overpass sub-query — dense delta road networks time out otherwise
+    ox.settings.requests_timeout = 600
     G = ox.graph_from_point((lat, lon), dist=radius, network_type="drive")
     G = ox.truncate.largest_component(G, strongly=True)
     return G, (lat, lon)
@@ -194,6 +203,7 @@ def main():
     cities = list(CITIES)
     mode   = "shops"        # shops = real OSM retail; uniform = synthetic
     out    = None
+    radius = None           # metres; None = per-city defaults (6 km)
 
     for arg in sys.argv[1:]:
         if   arg.startswith("sizes="):  sizes  = [int(x) for x in arg[6:].split(",")]
@@ -201,8 +211,16 @@ def main():
         elif arg.startswith("cities="): cities = arg[7:].split(",")
         elif arg.startswith("mode="):   mode   = arg[5:]
         elif arg.startswith("out="):    out    = Path(arg[4:])
+        elif arg.startswith("radius="): radius = int(arg[7:])
+    tag = ""
+    if radius is not None:
+        tag = f"{int(round(radius / 1000))}K"
+        for c in list(CITIES):
+            lat, lon, _ = CITIES[c]
+            CITIES[c] = (lat, lon, radius)
     if out is None:
-        out = _WDRO / "data" / ("City" if mode == "shops" else "CityUniform")
+        out = _WDRO / "data" / (("City" if mode == "shops" else "CityUniform")
+                                + tag)
 
     out.mkdir(parents=True, exist_ok=True)
     for city in cities:
@@ -224,10 +242,12 @@ def main():
                 t0 = time.time()
                 D = _distance_matrix(G, node_ids)
                 dem = _demands(n_cust, rng)
-                name = f"{city.upper()}-{n_cust}-{seed}"
+                name = f"{city.upper()}{tag}-{n_cust}-{seed}"
                 write_vrpspd(out / f"{name}.vrpspd", name, D, dem, Q_VEHICLE,
-                             f"OSM drive network, customers at real shops "
-                             f"(shop=* POIs), depot {centre}, seed {seed}")
+                             f"OSM drive network (radius "
+                             f"{CITIES[city][2]/1000:.0f} km), customers at "
+                             f"real shops (shop=* POIs), depot {centre}, "
+                             f"seed {seed}")
                 # coordinates sidecar for map visualization: OSM node ids,
                 # lat/lon and the real shop name, in instance node order
                 import json
