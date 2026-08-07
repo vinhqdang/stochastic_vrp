@@ -1,0 +1,12 @@
+ECLAIR statistical-core prototype
+alpha=0.05  K=8 candidates/rep  P(unfaithful)=0.5  budget=200 solver-sec/rep  reps=500  seed=20260807
+
+policy        false-rej (faithful)  detect (unfaithful)  mean cost/kill  surv logE
+kelly               0.0000 (n=1990)       0.8637 (n=2010)            12.2       0.00
+round_robin         0.0031 (n=1947)       0.5957 (n=2053)            16.6      -1.32
+cost_blind          0.0005 (n=1935)       0.7661 (n=2065)            22.6      -0.34
+
+Validity target: false-rej <= alpha = 0.05 for EVERY policy
+(conservative calibration should land it well below).
+Routing target: kelly >= round_robin and cost_blind on detect,
+at lower mean cost per kill.

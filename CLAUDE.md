@@ -83,7 +83,23 @@ in our own claim; `STATUS.md` records the decision. Kept as a
 documented negative result. The prototype numerics are correct, just
 not novel.
 
-One live thread from it: BATON's W-DRO gate in
+### Paper 5 — ECLAIR (papers/eclair/, ACTIVE — the one open paper)
+
+*E-process Certification of LLM-generated Constraint Models with
+Adaptive Instance Routing.* Target: **Constraints (Springer)**, LLM+CP
+special-issue CFP. An LLM generates k candidate constraint models from
+a natural-language spec; ECLAIR runs a stream of imperfect probes
+(exact micro-instance oracles, provably valid metamorphic relations,
+cross-model feasibility checks), bets against each candidate's
+faithfulness with an e-process (anytime-valid via Ville; e-BH across
+the repair tournament), and routes solver-seconds Kelly-style to the
+(candidate, probe) pair with the best expected log-evidence per
+second. Ports TEMPO's e-process *technique* but deliberately shares
+NO code, instances, or results with papers 1–3 (same separation
+argument as paper 3) — all ECLAIR code stays inside `papers/eclair/`.
+Spec: `papers/eclair/PROJECT.md`; adoption record: `RESEARCH_LOG.md`.
+
+One live thread from paper 4: BATON's W-DRO gate in
 `svrpspd_wdro/core/wdro_exact.py` adds a **route-independent** constant
 `epsilon/(1-alpha)` to a CVaR gate. As a feasibility constraint that
 tightens the threshold rather than cancelling, so not vacuous — but it
@@ -105,12 +121,14 @@ arrives; a referee could raise it. BATON is frozen, so do not act now.
   Manager; treat as frozen except for editor-requested fixes.
 - `papers/wrnf/` — paper 4, **ABANDONED (scooped)**; kept as a
   documented negative result. Do not resume — see its PROJECT.md banner.
+- `papers/eclair/` — paper 5 (ECLAIR), **ACTIVE and open for edits**;
+  self-contained (no `svrpspd_wdro/` imports — see its README.md).
 - **Parallel papers, independent review clocks** — always check each
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1–3 are closed to edits and paper 4 is abandoned, so there is
-  **no open paper** — a new one needs a fresh directory.
+  papers 1–3 are closed to edits, paper 4 is abandoned, and paper 5
+  (ECLAIR, `papers/eclair/`) is the **one open paper**.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
   manuscript, a `STATUS.md` (venue, review state, freeze policy), a
   `README.md` with the file manifest and how each table/figure

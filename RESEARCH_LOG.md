@@ -10,6 +10,58 @@ Without this note that history is invisible and repeatable.
 Keep appending. Newest findings at the top of each section. Every citation here
 was retrieved and checked, not recalled; anything unverified is labelled so.
 
+**The search concluded on 2026-08-07: candidate #8, ECLAIR, was adopted** —
+see the section immediately below. The log stays as the citation ledger and
+as the record of the parked radius-breakpoints thread.
+
+---
+
+## ADOPTED: **ECLAIR** — paper 5 (2026-08-07)
+
+*E-process Certification of LLM-generated Constraint Models with Adaptive
+Instance Routing.* Full spec: `papers/eclair/PROJECT.md`. Target:
+**Constraints (Springer)**, LLM+CP special-issue CFP (details unverified —
+see the paper's `VERIFY_CITATIONS.md`).
+
+This is the **change of strategy** the 2026-07-27 entry called for, taken
+literally: it leaves DRO theory entirely. An LLM generates k candidate
+constraint models from a natural-language spec; ECLAIR certifies one with a
+sequential anytime-valid guarantee by betting against each candidate's
+faithfulness with an e-process fed by three tiers of imperfect probes
+(exact micro-instance oracles / provably-valid metamorphic relations /
+cross-model feasibility checks), and routes solver-seconds to the
+(candidate, probe) pair maximizing expected log-evidence per second
+(Kelly/GROW). Generation is crowded (CP-Agent, ConstraintLLM, CPEVAL —
+unverified, from the adoption proposal's scan); the existing verification
+work is heuristic detectors with no guarantee, no stopping rule, no budget
+awareness. The niche "sequential + anytime-valid + budget-aware
+certification" appears unclaimed — **novelty check against live records
+still owed before drafting**, per this log's own discipline.
+
+Why it fits the strategy note: it reuses what the repo is demonstrably good
+at (TEMPO's e-process machinery — mixture bets, predictable adaptive tilts,
+Ville thresholds — plus careful empirical evaluation), in a domain where the
+competition is not the Kuhn–Wiesemann axis. Code is self-contained in
+`papers/eclair/` (TEMPO is under review at TrSci; same artifact-separation
+argument as `papers/csonet2026/`).
+
+**Precondition checked before adoption-in-earnest (2026-08-07):**
+`papers/eclair/prototype/eclair_prototype.py` (stdlib-only Monte-Carlo of
+the statistical core) confirms empirical false-rejection of faithful
+candidates ≤ 0.003 at alpha = 0.05 under adaptive routing and a shared
+budget, with Kelly routing detecting 86% of unfaithful candidates vs 60%
+round-robin at ~25% lower solver-cost per kill. The core separates; the
+routing layer earns its keep.
+
+Naming note: ECLAIR fits the BATON/TEMPO convention, but a collision with
+BUGSENG's ECLAIR static-analysis tool (MISRA compliance) is suspected and
+unverified — check before the name goes on a manuscript (cf. the SIDRA
+rejection below).
+
+The radius-breakpoints / lower-envelope thread (section further down) stays
+**parked, not dead** — it remains the strongest DRO-adjacent result of the
+search and could be a later paper if the combinatorial case yields.
+
 ---
 
 ## Working name: **KAIROS** *(on hold — the direction it named is dead)*
