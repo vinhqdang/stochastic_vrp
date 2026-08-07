@@ -51,6 +51,30 @@ different operational regime (closer to regional distribution than
 last-mile). The instances are kept as a stress test of the policies'
 scale behaviour, not as a realistic single-depot last-mile scenario.
 
-Hanoi 50 km instances: generation in progress (the Overpass download
-is the bottleneck); rerun the two commands above to extend the table
-when they land.
+## Update: Hanoi landed (same day)
+
+Hanoi 50 km drive graph: 408,169 nodes / 1,007,112 edges (the 600 s
+Overpass timeout was required). Full 6-instance summary (Det gate,
+means): v1 8.4 / fb 9.2 / **BATON-HO 10.1** / DP-equal 6.9 /
+DP-50k 11.3 / oracle 38.8 — same ranking, same conclusions as the
+HCMC-only table above.
+
+## Clock-leverage probe (feeds RESEARCH_LOG candidate #9)
+
+`probes/clock_leverage_50k.py`, using the MEASURED NYC diurnal
+multiplier shape (median by hour, dry; min 1.00 at 04:00, max 1.49 at
+16:00) on the solve_fast Det plans:
+
+| instance | dur_h @08:00 | dispatch leverage | regime crossing | clock-blind cont. error |
+|---|---|---|---|---|
+| HCMC-100 (6 km) | 2.0 h | 11.6% | 0% | 0.4% |
+| HCMC-400 (6 km) | 1.7 h | 10.0% | 0% | 0.3% |
+| HCMC50K-100 | 8.1 h | 13.3% | **40%** | **2.5%** |
+| HCMC50K-400 | 5.0 h | 12.7% | **19%** | 1.7% |
+| HANOI50K-400 | 4.0 h | 12.9% | 9% | 1.3% |
+
+At 6 km no route ever crosses a congestion regime mid-execution and a
+clock-blind continuation estimate is off by <0.5%; at 50 km routes run
+4–8 h, up to 40% of them cross regimes, and the clock-blind error
+grows 5–6x. Dispatch-timing leverage (~10–13%) exists at BOTH scales.
+Interpretation and next steps: RESEARCH_LOG.md, candidate #9.

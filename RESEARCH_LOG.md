@@ -16,6 +16,65 @@ as the record of the parked radius-breakpoints thread.
 
 ---
 
+## Candidate #9: **KAIROS revived** — clock-conditioned execution for
+## metro-scale routing (2026-08-07, PROBED — not yet adopted)
+
+The author's directive, recorded verbatim in spirit: *the experimental
+result is important, but more than that it must be a NEW algorithm.*
+Re-running BATON on bigger maps is evidence, not a contribution. The
+candidate below is the algorithm that the 50 km experiment argues for.
+
+**The idea.** BATON's backward induction conditions continuation
+values on (stop, load) only — it is CLOCK-BLIND, and its travel times
+are deterministic. Extend the state to (stop, load, **clock**,
+**weather**), make travel times stochastic via the measured
+congestion-multiplier distributions (per road class x hour x weather —
+`data_sources/`, the pipeline built for exactly this), and add
+**dispatch timing** to the action set (choosing WHEN each route
+departs — the reserved meaning of the parked name KAIROS). LSM
+regression gains one state variable; the recourse comparison prices
+handoffs against clock-aware continuation costs; SLA lateness is
+threshold-like, so time errors amplify into cost errors.
+
+**Precondition probe** (`probes/clock_leverage_50k.py`, measured NYC
+median diurnal shape, solve_fast Det plans, results also in
+`svrpspd_wdro/results/CITY50K_NOTES.md`):
+
+- 6 km instances: routes ~2 h, **0%** cross a congestion regime
+  mid-execution, clock-blind continuation error 0.3–0.4%. Clock-blind
+  BATON is the RIGHT algorithm at last-mile scale — explains why the
+  frozen papers never needed the clock.
+- 50 km instances: routes 4–8 h, **9–40%** cross regimes, clock-blind
+  continuation error 1.3–2.5% (5–6x). Dispatch-timing leverage is
+  10–13% of route duration at BOTH scales.
+
+**Verdict: qualitative precondition MET, magnitude caveat recorded.**
+The raw time-error is single-digit percent on the MEDIAN diurnal curve
+(1.49x swing; the TLC trip-level swing is 1.94x, and wet/dry shifts
+add more). Adoption requires one more probe: a COST-level comparison
+(clock-aware vs clock-blind execution under `core/costs.py` SLA
+economics on the City50K instances) showing the gap survives pricing.
+If that lands, this becomes paper 6; if it is <1% of TBC, park it.
+
+**Prior-art ledger (one search done 2026-08-07, ALL unverified —
+retrieve and check before any drafting, per this log's discipline):**
+planning-side TD-stochastic VRP is dense — Lecluyse, Van Woensel &
+Peremans (4OR 2009, DOI 10.1007/s10288-009-0097-9); Laporte, Louveaux
+& Mercure (TrSci 26(3):161, stochastic travel times); a 4OR 2021
+paper on TW + correlated + time-dependent travel times (DOI
+10.1007/s10288-021-00476-z); an EJOR TD-SVRP with random requests
+(Brussels police patrols, DOI 10.1016/j.ejor.2020.09.something —
+verify); and arXiv 2604.02496 "scenario-optimal recourse policies"
+MUST be read first. Nothing found yet coupling execution-stage
+optimal-stopping/LSM recourse pricing with clock state and measured
+diurnal/weather multipliers — but one search is not a verdict.
+
+Relation to open work: ECLAIR (paper 5, deadline 2026-10-01) remains
+the only ADOPTED paper. KAIROS is a probed candidate awaiting the
+cost-level probe and the novelty check.
+
+---
+
 ## ADOPTED: **ECLAIR** — paper 5 (2026-08-07)
 
 *E-process Certification of LLM-generated Constraint Models with Adaptive
