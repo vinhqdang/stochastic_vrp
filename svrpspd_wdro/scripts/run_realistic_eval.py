@@ -77,7 +77,7 @@ RESULTS_DIR = _WDRO / "results"
 # plan cache. NOTE: keyed by instance NAME — datasets whose instances share
 # names (e.g. City vs CityUniform twins) must use separate cache dirs, set
 # via set_plans_dir() from the data directory in main().
-PLANS_DIR   = RESULTS_DIR / "plans"
+PLANS_DIR   = RESULTS_DIR / os.environ.get("SVRPSPD_PLANS_SUBDIR", "plans")
 
 
 def set_plans_dir(data_dir: str) -> None:
@@ -86,6 +86,10 @@ def set_plans_dir(data_dir: str) -> None:
     # Dethloff and the (shops) City set keep the historical shared cache
     if base not in ("Dethloff", "City"):
         PLANS_DIR = RESULTS_DIR / f"plans_{base}"
+        # ProcessPoolExecutor workers re-import this module (spawn on
+        # macOS), losing the global — the env var survives the fork/spawn
+        # and is read back at import time above.
+        os.environ["SVRPSPD_PLANS_SUBDIR"] = f"plans_{base}"
 
 POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau",
                  "pi1", "pi2", "pi3", "rollout", "restock",
