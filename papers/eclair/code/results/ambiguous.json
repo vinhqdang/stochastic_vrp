@@ -1,0 +1,154 @@
+{
+  "alpha": 0.05,
+  "seed": 20260808,
+  "budget_s": 0.6397066666666666,
+  "generation": [
+    {
+      "family": "coloring",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "exec_error: SyntaxError: unexpected EOF while parsing (<string>, line 6)"
+    },
+    {
+      "family": "coloring",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "runtime_error: ModuleNotFoundError: No module named 'cp'"
+    },
+    {
+      "family": "coloring",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'If'"
+    },
+    {
+      "family": "coloring",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "coloring",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'Max'"
+    },
+    {
+      "family": "coloring",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "no_code"
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'binary'"
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "no_code"
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "knapsack_conflicts",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "openrouter/free",
+      "style": "direct",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "openrouter/free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "openrouter/free",
+      "style": "expert",
+      "status": "runtime_error: AttributeError: module 'cpmpy' has no attribute 'Var'"
+    },
+    {
+      "family": "ontime_selection",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "direct",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "stepwise",
+      "status": "ok",
+      "faithful_canonical": true
+    },
+    {
+      "family": "ontime_selection",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "style": "expert",
+      "status": "ok",
+      "faithful_canonical": true
+    }
+  ],
+  "results": {
+    "coloring": {
+      "n": 2,
+      "canonical": 2,
+      "rejected_canonical": 0,
+      "rejected_other": 0,
+      "survived_other": 0,
+      "abstained": false,
+      "pick_canonical": true
+    },
+    "knapsack_conflicts": {
+      "n": 3,
+      "canonical": 3,
+      "rejected_canonical": 0,
+      "rejected_other": 0,
+      "survived_other": 0,
+      "abstained": false,
+      "pick_canonical": true
+    },
+    "ontime_selection": {
+      "n": 5,
+      "canonical": 5,
+      "rejected_canonical": 0,
+      "rejected_other": 0,
+      "survived_other": 0,
+      "abstained": false,
+      "pick_canonical": true
+    }
+  }
+}

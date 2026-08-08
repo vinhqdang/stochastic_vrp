@@ -171,14 +171,22 @@ assignment, and on-time job selection --- including per-family
 metamorphic relations proved valid at specification level
 (Proposition~\ref{prop:mr}).
 (iv)~An open implementation on CPMpy~\cite{guns2019cpmpy} and OR-Tools
-CP-SAT~\cite{ortools} and a three-part empirical study
+CP-SAT~\cite{ortools} and a five-part empirical study
 (Section~\ref{sec:experiments}): a mutation testbed in which validity
 holds exactly at every nominal level while $87$--$94\%$ of injected
 faults are caught; ablations quantifying the contribution of each
 probe tier, including an empirical demonstration that pool-entangled
-probes consume the conservative validity margin; and an end-to-end
-experiment with two LLM families in which every crash-free generated
-model is certified without a single false rejection.
+probes consume the conservative validity margin; a matched-budget
+comparison in which the practitioner's alternatives either cannot
+reject at all (single-shot, self-consistency voting) or break their
+nominal level (a fixed-sample test at $0.061$, its uncorrected
+peeking variant at $0.075$) while ECLAIR detects $0.905$ at exactly
+zero false rejections; an end-to-end experiment with two LLM
+families in which every crash-free generated model is certified
+without a single false rejection; and an ambiguity study whose
+honest negative result --- current models normalize boundary-language
+ambiguity to the conventional reading --- sharpens where the
+silent-error regime actually lives.
 
 \section{Related work}\label{sec:related}
 
@@ -195,6 +203,24 @@ to LLMs through a model context protocol. ConstraintLLM
 neuro-symbolic architecture. All these systems \emph{generate};
 ECLAIR is complementary --- it decides, with a guarantee, whether to
 \emph{trust} what was generated, and can wrap any of them.
+
+\paragraph{Testing lineage.}
+Two software-testing traditions supply ECLAIR's probe vocabulary.
+Metamorphic testing \cite{chen2018metamorphic} addresses the oracle
+problem by checking necessary relations between outputs on related
+inputs --- exactly our tier B, with the strengthening that relations
+proved against the \emph{specification} of an optimization problem
+have null alarm probability zero, turning a testing heuristic into a
+hard certificate inside a statistical process. Mutation testing
+\cite{demillo1978hints, jia2011mutation} contributes the evaluation
+methodology: systematically injected faults with screened
+non-equivalence are the standard way to measure a test suite's power
+when real faults are scarce, and our functional-corruption testbed
+(Section~\ref{sec:experiments}) is its adaptation to model
+faithfulness --- with the twist that here the ``test suite'' carries
+a statistical guarantee, so the mutation score is a \emph{power}
+estimate under a controlled \emph{level}, not a standalone adequacy
+number.
 
 \paragraph{Verifying generated models.}
 Two recent lines attack verification directly: falsification
@@ -511,6 +537,34 @@ their wealth flattens far below the threshold and the remaining
 budget is spent where Lemma~\ref{lem:conservative} makes passes free.
 The certified pick is the faithful candidate with the smallest
 terminal wealth; its ledger records every probe shown in the figure.
+Table~\ref{tab:trace} lists the first fourteen ledger entries
+verbatim: the entire decision logic of the framework --- likelihood
+ratios, threshold crossings, router hand-offs to the zero-bleed tier
+--- is legible in fourteen rows of arithmetic.
+
+\begin{table}[t]
+\caption{The first fourteen ledger entries of the run in
+Figure~\ref{fig:trajectories} ($m_1$--$m_3$ faithful, $m_4$--$m_6$
+mutants; $\alpha = 0.05$, rejection at
+$\log \Eproc \ge \log 20 \approx 3.00$). Steps 4--5: one tier-A alarm
+each rejects $m_4, m_5$ outright ($\log 31.0 = 3.43$). The lucky
+mutant $m_6$ passes its first probes and is parked, with the
+faithful, on zero-bleed tier-B probes (steps 11--14) --- it is
+rejected much later by a hard certificate (Fig.~\ref{fig:trajectories}).}
+\label{tab:trace}
+\begin{tabular}{cclcc}
+\toprule
+Step & Candidate & Tier & $e$-factor & $\log \Eproc$ after\\
+\midrule
+1--3 & $m_1, m_2, m_3$ & A (pass) & $0.535$ & $-0.626$\\
+4 & $m_4$ & A (\textbf{alarm}) & $31.0$ & $3.435$ $\to$ \textbf{reject}\\
+5 & $m_5$ & A (\textbf{alarm}) & $31.0$ & $3.435$ $\to$ \textbf{reject}\\
+6 & $m_6$ & A (pass) & $0.535$ & $-0.626$\\
+7--10 & $m_1, m_2, m_3, m_6$ & A (pass) & $0.535$ & $-1.252$\\
+11--14 & $m_1, m_2, m_3, m_6$ & B (pass) & $1.000$ & $-1.252$\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[t]
 \centering
@@ -1065,6 +1119,86 @@ colouring objective convention --- ``number of colours'' vs.\
 ECLAIR's abstention-with-evidence output becomes the interesting
 object of study; we return to this in Section~\ref{sec:limits}.
 
+\subsection{Robustness: families, transfer direction, pool
+composition}\label{sec:robustness}
+
+Three sweeps probe whether the headline numbers are artifacts of a
+particular experimental slice ($100$ replications each, Kelly,
+$\alpha = 0.05$; Table~\ref{tab:robust}). \emph{Per family}: validity
+is exact in every evaluation family separately; detection varies with
+family difficulty ($0.99$ for set cover and $0.97$ for on-time
+selection against $0.74$ for generalized assignment, whose
+cost-matrix mutations produce the subtlest optimum shifts) --- power
+is problem-dependent, the guarantee is not. \emph{Reversed
+calibration split}: recalibrating on the three former evaluation
+families and evaluating on knapsack$+$colouring yields false
+rejection $0.0000$ with detection $0.804$ ($n = 309$ faithful) ---
+cross-family transfer of the conservative bounds is bidirectional,
+not an artifact of which families happened to calibrate.
+\emph{Pool size and routing prior}: across $k \in \{4, 6, 10\}$ and
+routing priors $q_{\mathrm{prior}} \in \{0.3, 0.5, 0.7\}$, false
+rejection stays at $0.0000$ while detection moves only through the
+router's aggressiveness (a pessimistic prior under-probes, $0.74$; a
+suspicious one probes harder, $0.92$) --- the router's belief state
+touches power alone, never the level, exactly as
+Theorem~\ref{thm:validity} promises for any predictable routing.
+
+\begin{table}[t]
+\caption{Robustness sweeps ($100$ replications per row, Kelly,
+$\alpha = 0.05$).}\label{tab:robust}
+\begin{tabular}{llcc}
+\toprule
+Sweep & Configuration & False rej. & Detection\\
+\midrule
+family & set cover & $0.0000$ & $0.990$\\
+family & generalized assignment & $0.0000$ & $0.743$\\
+family & on-time selection & $0.0000$ & $0.971$\\
+transfer & reversed calibration split & $0.0000$ & $0.804$\\
+pool & $k = 4$ & $0.0000$ & $0.934$\\
+pool & $k = 10$ & $0.0000$ & $0.893$\\
+prior & $q_{\mathrm{prior}} = 0.3$ & $0.0000$ & $0.741$\\
+prior & $q_{\mathrm{prior}} = 0.7$ & $0.0000$ & $0.920$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Probing the silent-error regime: ambiguous
+specifications}\label{sec:ambiguity}
+
+The main LLM study's lesson --- loud failures, faithful survivors ---
+raises the question of whether \emph{silent} misreadings can be
+elicited at all. We rephrased three specifications to plant boundary
+ambiguities, fixed one canonical reading in the reference checker,
+and regenerated candidate pools (both model families, three prompt
+styles each): colouring with the objective convention sentence
+\emph{removed} (``minimize the number of colors used''), knapsack
+with ``the selected items together must be lighter than the
+capacity'' (strict vs.\ non-strict), and on-time selection with
+``every selected job is finished before its deadline'' (strict vs.\
+non-strict completion).
+
+The outcome is a negative result we report with its explanation:
+$10/18$ generations passed intake, and \emph{all ten} implemented the
+canonical reading --- no silent other-reading model appeared.
+Certification behaved correctly throughout ($0/10$ false rejections,
+canonical pick in $3/3$ families, no abstention). Two mechanisms
+account for the miss. First, one planted ambiguity is
+value-equivalent at the optimum: a model minimizing the \emph{count}
+of distinct colours and one minimizing $1 + \max$ index return the
+same optimal value on every instance, by precisely the renumbering
+argument of Appendix~\ref{app:proofs} --- the readings differ only
+off-optimum, where no value-level probe looks. Second, for the strict
+/ non-strict boundary pairs, current models normalize aggressively to
+the conventional reading ($\le$): the training distribution of
+textbook formulations evidently dominates the literal text. The
+constructive lesson for the elicitation agenda
+(Section~\ref{sec:limits}) is that silent LLM errors are unlikely to
+hide in boundary conventions; structural underspecification ---
+omitted side constraints, ambiguous aggregation, units --- is the
+more promising hunting ground, and value-equivalent ambiguities
+require solution-level (not optimum-level) probes, which the
+framework accommodates as additional tier-A checkers.
+
 \subsection{Routing under heterogeneous probe costs}
 \label{sec:heterogeneity}
 
@@ -1186,6 +1320,22 @@ to exercise every mechanism; scaling the probe library toward
 CSPLib/NL4Opt breadth, and stating the MR validity results for global
 constraints (\texttt{alldifferent}, \texttt{cumulative}) in the
 generality they deserve, are the natural next steps.
+\emph{Beyond one modelling language.} Nothing in the framework is
+CPMpy-specific: candidates are opaque functions from instances to
+optima, so MiniZinc, MILP, or SMT candidates certify identically ---
+indeed a heterogeneous pool (the same specification modelled in CP
+\emph{and} MILP) strengthens tier C precisely because formalism
+diversity decorrelates errors. What each new language requires is an
+exact solve at micro/mid scale and, for tier B, relations proved
+against the specification; the three relation classes of
+Section~\ref{sec:library} are formalism-independent.
+\emph{Eliciting silent errors.} The ambiguity study
+(Section~\ref{sec:ambiguity}) shows boundary conventions are
+normalized away by current models and value-equivalent readings are
+invisible to optimum-level probes; the elicitation agenda should
+target structural underspecification, and the probe pool should grow
+solution-level checkers where readings coincide in value but not in
+argmax.
 
 \section{Conclusion}\label{sec:conclusion}
 
@@ -1468,6 +1618,77 @@ Calibrated betting multipliers implied by Table~\ref{tab:calib}
 $\times 0.535$; tier C alarm $\times 3.00$, pass $\times 0.607$;
 tier B pass $\times 1$, alarm $= \infty$. Rejection threshold at
 $\alpha = 0.05$: wealth $20$, i.e.\ $\log$-threshold $3.00$.
+
+\section{Complete generation record}\label{app:genrecord}
+
+Every LLM generation across both studies (main: Section~\ref{sec:llm};
+ambig: Section~\ref{sec:ambiguity}), in request order. ``free'' is
+the free-tier routed model; ``nemotron'' is
+\texttt{nvidia/nemotron-3-ultra-550b}; error classes abbreviate the
+exception type raised at the intake gate (AttrErr:
+\texttt{AttributeError}, ModErr: \texttt{ModuleNotFoundError},
+TypeErr: \texttt{TypeError}, SynErr: \texttt{SyntaxError}); the raw
+responses ship in the supplementary cache.
+
+\begin{table}[h]
+\caption{All 48 generations.}\label{tab:genrecord}
+\footnotesize
+\begin{tabular}{llllll}
+\toprule
+Study & Family & Model & Style & Intake & Outcome / error\\
+\midrule
+main & knapsack\_conflicts & free & direct & fail & \texttt{AttrErr}\\
+main & knapsack\_conflicts & free & stepwise & ok & faithful\\
+main & knapsack\_conflicts & free & expert & ok & faithful\\
+main & knapsack\_conflicts & nemotron & direct & ok & faithful\\
+main & knapsack\_conflicts & nemotron & stepwise & ok & faithful\\
+main & knapsack\_conflicts & nemotron & expert & ok & faithful\\
+main & set\_cover & free & direct & fail & \texttt{AttrErr}\\
+main & set\_cover & free & stepwise & ok & faithful\\
+main & set\_cover & free & expert & fail & \texttt{AttrErr}\\
+main & set\_cover & nemotron & direct & ok & faithful\\
+main & set\_cover & nemotron & stepwise & ok & faithful\\
+main & set\_cover & nemotron & expert & ok & faithful\\
+main & coloring & free & direct & ok & faithful\\
+main & coloring & free & stepwise & ok & faithful\\
+main & coloring & free & expert & fail & \texttt{TypeErr}\\
+main & coloring & nemotron & direct & ok & faithful\\
+main & coloring & nemotron & stepwise & ok & faithful\\
+main & coloring & nemotron & expert & ok & faithful\\
+main & gen\_assignment & free & direct & fail & \texttt{AttrErr}\\
+main & gen\_assignment & free & stepwise & fail & \texttt{AttrErr}\\
+main & gen\_assignment & free & expert & fail & \texttt{AttrErr}\\
+main & gen\_assignment & nemotron & direct & ok & faithful\\
+main & gen\_assignment & nemotron & stepwise & ok & faithful\\
+main & gen\_assignment & nemotron & expert & ok & faithful\\
+main & ontime\_selection & free & direct & fail & \texttt{ModErr}\\
+main & ontime\_selection & free & stepwise & fail & \texttt{AttrErr}\\
+main & ontime\_selection & free & expert & ok & faithful\\
+main & ontime\_selection & nemotron & direct & ok & faithful\\
+main & ontime\_selection & nemotron & stepwise & ok & faithful\\
+main & ontime\_selection & nemotron & expert & fail & \texttt{AttrErr}\\
+\midrule
+ambig & coloring & free & direct & fail & \texttt{SynErr}\\
+ambig & coloring & free & stepwise & fail & \texttt{ModErr}\\
+ambig & coloring & free & expert & fail & \texttt{AttrErr}\\
+ambig & coloring & nemotron & direct & ok & canonical\\
+ambig & coloring & nemotron & stepwise & fail & \texttt{AttrErr}\\
+ambig & coloring & nemotron & expert & ok & canonical\\
+ambig & knapsack\_conflicts & free & direct & fail & no code block\\
+ambig & knapsack\_conflicts & free & stepwise & fail & \texttt{AttrErr}\\
+ambig & knapsack\_conflicts & free & expert & fail & no code block\\
+ambig & knapsack\_conflicts & nemotron & direct & ok & canonical\\
+ambig & knapsack\_conflicts & nemotron & stepwise & ok & canonical\\
+ambig & knapsack\_conflicts & nemotron & expert & ok & canonical\\
+ambig & ontime\_selection & free & direct & ok & canonical\\
+ambig & ontime\_selection & free & stepwise & ok & canonical\\
+ambig & ontime\_selection & free & expert & fail & \texttt{AttrErr}\\
+ambig & ontime\_selection & nemotron & direct & ok & canonical\\
+ambig & ontime\_selection & nemotron & stepwise & ok & canonical\\
+ambig & ontime\_selection & nemotron & expert & ok & canonical\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{appendices}
 

@@ -1,0 +1,84 @@
+{
+  "alpha": 0.05,
+  "n_reps": 100,
+  "seed": 20260807,
+  "results": {
+    "per_family": {
+      "set_cover": {
+        "false_rej": 0.0,
+        "detect": 0.9896907216494846,
+        "n_f": 107,
+        "n_m": 97
+      },
+      "gen_assignment": {
+        "false_rej": 0.0,
+        "detect": 0.7428571428571429,
+        "n_f": 93,
+        "n_m": 105
+      },
+      "ontime_selection": {
+        "false_rej": 0.0,
+        "detect": 0.9711538461538461,
+        "n_f": 94,
+        "n_m": 104
+      }
+    },
+    "reversed_split": {
+      "false_rej": 0.0,
+      "detect": 0.8041237113402062,
+      "n_f": 309,
+      "n_m": 291,
+      "calib": {
+        "A": {
+          "p0_hat": 0.0,
+          "p0_bar": 0.010195,
+          "p1_hat": 0.722222
+        },
+        "B": {
+          "p0_hat": 0.0,
+          "p0_bar": 0.010195,
+          "p1_hat": 0.086111
+        },
+        "C": {
+          "p0_hat": 0.125,
+          "p0_bar": 0.163665,
+          "p1_hat": 0.627778
+        }
+      }
+    },
+    "sensitivity": [
+      {
+        "pool_k": 4,
+        "prior": 0.5,
+        "false_rej": 0.0,
+        "detect": 0.934010152284264,
+        "n_f": 203,
+        "n_m": 197
+      },
+      {
+        "pool_k": 10,
+        "prior": 0.5,
+        "false_rej": 0.0,
+        "detect": 0.8930817610062893,
+        "n_f": 523,
+        "n_m": 477
+      },
+      {
+        "pool_k": 6,
+        "prior": 0.3,
+        "false_rej": 0.0,
+        "detect": 0.7407407407407407,
+        "n_f": 303,
+        "n_m": 297
+      },
+      {
+        "pool_k": 6,
+        "prior": 0.7,
+        "false_rej": 0.0,
+        "detect": 0.9198606271777003,
+        "n_f": 313,
+        "n_m": 287
+      }
+    ]
+  }
+}

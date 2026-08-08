@@ -13,17 +13,20 @@
   Szeider, Dimos Tsouros. Full call recorded verbatim in `CFP.md`
   (received 2026-08-07; companion to the LLM-Solve workshop at
   CP'26/FLoC'26).
-- **State:** ACTIVE — open for edits. **Manuscript drafting started
-  2026-08-08**: `main.tex` (Springer sn-jnl, sn-mathphys-num numbered
-  citations per the journal's guidelines) compiles clean at **20
-  pages** with 4 figures (`figures/make_figures.py`, regenerable from
-  committed results), 6 tables, a worked-run walkthrough, a formal
-  probe-library section, and 2 appendices (full MR validity proofs;
-  verbatim NL specs + prompts). Expected to reach ~25 pages once the
-  external-baseline and ambiguous-spec experiments land. TODOs
-  in-file: author list, the two unverified verification-framework
-  citations, public repository URL, AI-assistance disclosure
-  decision. Spec:
+- **State:** ACTIVE — open for edits. **Manuscript at 28 pages**
+  (2026-08-08): Springer sn-jnl, numbered citations, 5 figures (incl.
+  TikZ architecture), 12 tables, 4 theorems/propositions + no-regret
+  routing result, and 5 appendices-grade back-matter sections (MR
+  proofs, NL specs/prompts, mutation catalogue, extended tables,
+  complete 48-row generation record). Experimental record now
+  includes: mutation testbed, alpha sweep with kill costs, tier
+  ablation, external baselines (fixed-sample breaks alpha at 0.061,
+  peeking at 0.075; ECLAIR 0.905 detection at 0.0000), end-to-end LLM
+  study, ambiguity study (honest negative: models normalize boundary
+  conventions), robustness sweeps (per-family, reversed calibration
+  split, pool/prior sensitivity — validity 0.0000 everywhere). TODOs
+  in-file: author list, two verification-framework citations, repo
+  URL, AI-disclosure statement. Spec:
   `PROJECT.md`; implementation + results: `code/`. This is the repo's
   only open paper (papers 1–3 frozen under review, paper 4 abandoned
   — see root `CLAUDE.md` and `RESEARCH_LOG.md`).
