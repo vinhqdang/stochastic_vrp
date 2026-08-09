@@ -329,6 +329,39 @@ ambiguous / convention-laden specs (the coloring objective convention
 is the template) — planned as the abstention experiment (§6
 "abstention behaviour on deliberately ambiguous specs").
 
+**External baselines (2026-08-08, `code/run_baselines.py`, 100 reps,
+matched budget):** ECLAIR 0.0000 false-rej / 0.905 detect / 0.970
+pick-acc. Single-shot and self-consistency majority cannot reject at
+all (pick-acc 0.535 / 0.879, no guarantee). The fixed-sample binomial
+test **breaks its nominal level** (0.0612 > alpha) under the same
+family transfer the e-process absorbs; its uncorrected-peeking
+variant inflates to 0.0748 — the optional-stopping failure measured,
+not merely invoked. Split conformal stays valid (0.0238) but detects
+half as much (0.480). Same probes, same calibration, same budget —
+the difference is the accounting.
+
+**Ambiguity study (2026-08-08, `code/run_ambiguous.py`): honest
+negative.** Three planted boundary ambiguities, 18 generations:
+10/10 valid candidates implemented the canonical reading — zero
+silent other-reading models. Two mechanisms: the coloring ambiguity
+is provably value-equivalent at the optimum (the manuscript's own
+renumbering lemma), and models normalize strict/non-strict boundary
+language to convention. Lesson recorded in the paper: silent errors
+live in structural underspecification; value-equivalent readings need
+solution-level probes.
+
+**Robustness sweeps (2026-08-08, `code/run_robustness.py`, 100
+reps/row):** false-rej 0.0000 in every family separately (detect
+0.99/0.74/0.97 — gen-assignment is the hard family), under the
+REVERSED calibration split (0.804 detect — transfer is
+bidirectional), and across pool sizes k∈{4,6,10} and routing priors
+{0.3,0.5,0.7} (priors move power 0.74–0.93, never the level).
+
+**Manuscript:** `main.tex` at 28 pages (see STATUS.md). Remaining
+substance-backed growth toward ~35–38 pp: benchmark breadth (more
+CSPLib families), a repair-loop experiment, and formal
+global-constraint MR theorems.
+
 ## 8. Why this wins at this venue
 
 It hits three of the four CFP topics simultaneously (Topic 2's
