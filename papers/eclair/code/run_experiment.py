@@ -46,6 +46,55 @@ def wilson(k, n, z=1.96):
     return (max(0.0, c - h), min(1.0, c + h))
 
 
+def capture_provenance():
+    """Environment + source provenance, captured BEFORE the run starts.
+
+    Dirty-tree detection deliberately ignores the run's own untracked
+    outputs (results/, staging): what matters is the state of the code
+    the interpreter loaded, not artifacts the run is in the middle of
+    producing."""
+    import hashlib
+    import os
+    import platform
+    import subprocess
+    here = pathlib.Path(__file__).parent
+
+    def _git(*a):
+        try:
+            return subprocess.run(["git", *a], capture_output=True,
+                                  text=True, cwd=str(here)).stdout.strip()
+        except Exception:
+            return ""
+
+    def _ver(mod):
+        try:
+            return __import__(mod).__version__
+        except Exception:
+            return "unknown"
+
+    dirty = [l for l in _git("status", "--porcelain", ".").splitlines()
+             if l.strip() and "/results/" not in l and "/.staging" not in l]
+    src_hashes = {}
+    for p in sorted(list(here.glob("eclair/*.py"))
+                    + [here / "run_experiment.py"]):
+        src_hashes[str(p.relative_to(here))] = hashlib.sha256(
+            p.read_bytes()).hexdigest()[:16]
+    return {
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "cpu_count": os.cpu_count(),
+        "cpmpy": _ver("cpmpy"), "ortools": _ver("ortools"),
+        "git_commit": _git("rev-parse", "HEAD") or "unknown",
+        "git_dirty": bool(dirty), "git_dirty_files": dirty,
+        "source_sha256_16": src_hashes,
+        "solver_params": dict(SOLVER_PARAMS),
+        "audit_z": ERR_EVAL_Z, "audit_n": ERR_EVAL_N,
+        "audit_conf": "97.5% two-sided (all audits)",
+        "budget_semantics": "launch threshold; may overshoot by one probe",
+    }
+
+
 def build_pool(spec, rng):
     pool, labels = [], []
     n_faithful = 0
@@ -117,6 +166,10 @@ def main():
               f"results/mutation_experiment{tag}.* and leaving the "
               f"canonical artifacts untouched.", flush=True)
 
+    provenance = capture_provenance()          # BEFORE any output exists
+    if provenance["git_dirty"]:
+        print(f"WARNING: dirty tree ({len(provenance['git_dirty_files'])} "
+              f"modified code paths); provenance records this.", flush=True)
     rng = random.Random(SEED)
     t0 = time.perf_counter()
     print("calibrating on held-out families ...", flush=True)
@@ -250,46 +303,6 @@ def main():
               f"cert-rate={r['cert_rate']:.3f} cert-acc={r['cert_pick_acc']:.3f}",
               flush=True)
 
-    import platform, subprocess
-    def _ver(mod):
-        try:
-            return __import__(mod).__version__
-        except Exception:
-            return "unknown"
-    import hashlib
-    here = pathlib.Path(__file__).parent
-    def _git(*a):
-        try:
-            return subprocess.run(["git", *a], capture_output=True,
-                                  text=True, cwd=str(here)).stdout.strip()
-        except Exception:
-            return ""
-    commit = _git("rev-parse", "HEAD") or "unknown"
-    dirty_files = [l for l in _git("status", "--porcelain", ".").splitlines()
-                   if l.strip()]
-    # content hash of every source file that can change the trajectory
-    src_hashes = {}
-    for p in sorted(list(here.glob("eclair/*.py")) + [here / "run_experiment.py"]):
-        src_hashes[str(p.relative_to(here))] = hashlib.sha256(
-            p.read_bytes()).hexdigest()[:16]
-    provenance = {
-        "python": platform.python_version(),
-        "platform": platform.platform(),
-        "machine": platform.machine(),
-        "cpu_count": __import__("os").cpu_count(),
-        "cpmpy": _ver("cpmpy"), "ortools": _ver("ortools"),
-        "git_commit": commit,
-        "git_dirty": bool(dirty_files),
-        "git_dirty_files": dirty_files,
-        "source_sha256_16": src_hashes,
-        "solver_params": dict(SOLVER_PARAMS),
-        "audit_z": ERR_EVAL_Z, "audit_n": ERR_EVAL_N,
-        "audit_conf": "97.5% two-sided (all audits)",
-        "budget_semantics": "launch threshold; may overshoot by one probe",
-    }
-    if dirty_files:
-        print(f"WARNING: running from a DIRTY tree ({len(dirty_files)} "
-              f"modified paths); provenance records this.", flush=True)
     payload = {"provenance": provenance,
                "alpha": ALPHA, "pool_k": POOL_K, "n_reps": n_reps,
                "budget_s": budget, "seed": SEED,

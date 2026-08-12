@@ -158,9 +158,12 @@ def main() -> int:
               if not c["label_faithful"]]
     quoted = re.findall(r"CI\s*\$\[\s*([\d.]+)\s*,\s*([\d.]+)\s*\]\$",
                         src, re.S)
-    check(len(quoted) == len(logged) and len(quoted) > 0,
-          f"manuscript quotes all {len(logged)} certified-mutant intervals "
-          f"(found {len(quoted)})")
+    check(len(quoted) == len(logged),
+          f"manuscript quotes exactly the {len(logged)} certified-mutant "
+          f"interval(s) this run produced (found {len(quoted)})")
+    if not logged:
+        notes.append("this run certified no mutants, so no per-mutant "
+                     "interval is quoted (checked)")
     for lo, hi in quoted:
         lo, hi = float(lo), float(hi)
         hit = None
