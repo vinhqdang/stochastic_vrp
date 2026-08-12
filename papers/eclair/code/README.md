@@ -20,7 +20,11 @@ OR-Tools CP-SAT models, in two experiments —
 
 ```
 python3 -m venv ../../../.venv          # or any venv
-.venv/bin/pip install cpmpy pytest     # cpmpy pulls OR-Tools
+.venv/bin/pip install -r requirements.txt   # PINNED versions;
+                                           # measured probe costs
+                                           # feed the budget and
+                                           # routing, so versions
+                                           # are methodological
 ```
 
 LLM experiment additionally needs an OpenRouter key in
@@ -55,9 +59,13 @@ API calls and are deterministic.
   p0_true <= p0_bar). Calibration families (knapsack, coloring) are
   DISJOINT from evaluation families (set cover, assignment,
   scheduling), so results also test cross-family transfer.
+- `check_artifacts.py` — submission-package consistency
+  checker (PDF freshness, publication-run provenance, clean
+  tree, manifest, Table-4/JSON agreement, quoted intervals
+  recomputed from the audit log). Run before committing.
 - `eclair/llm.py` — OpenRouter generation, prompt styles, code
   extraction/exec, intake gate, proxy faithfulness labels.
-- `tests/` — 14 pytest tests (oracle agreement, MR validity, mutant
+- `tests/` — 20 pytest tests (oracle agreement, MR validity, mutant
   non-equivalence, supermartingale property of conservative bets,
   Clopper–Pearson correctness, e-BH, end-to-end separation).
   Run: `../../../.venv/bin/python -m pytest tests -q`

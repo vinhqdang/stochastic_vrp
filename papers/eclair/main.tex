@@ -1060,8 +1060,15 @@ $3.9.6$, CPMpy $0.9.29$, OR-Tools $9.14.6206$ on arm64 macOS, and the
 result files record that provenance together with the git commit),
 and \texttt{check\_artifacts.py}, which fails loudly if the compiled
 PDF is older than its sources, if the shipped results are a smoke run
-rather than a publication run, or if the counts and intervals quoted
-here disagree with the results file. One reproducibility caveat:
+rather than a publication run, if the run came from a dirty working
+tree, if Table~\ref{tab:testbed}'s per-policy figures disagree with
+the results file, or if a quoted interval fails to recompute from the
+audit log's counts at the recorded $z$. Each check asserts a minimum
+number of matches, so a check that finds nothing fails rather than
+passing silently. Runs are published transactionally: all outputs are
+written to a staging directory, checked for completeness, hashed into
+a manifest, and only then promoted, so the canonical package can
+never mix calibration from one run with results from another. One reproducibility caveat:
 the per-pool budget is set to $80$ times the \emph{measured} mean
 probe cost, so it drifts by a few percent between machines and runs
 ($622$--$649$\,ms across our reruns) and downstream counts move by a candidate
@@ -1189,8 +1196,13 @@ $\mathrm{err}(m) \ge \varepsilon$ is exactly the type-I event
 Theorem~\ref{thm:cert} bounds by $\alpha$. We therefore \emph{measure}
 rather than infer. Every issued certificate triggers an independent
 audit --- $400$ fresh micro instances from $\mathcal{D}_{\mu}$,
-scored against the enumeration oracle, with a Wilson $95\%$ interval
+scored against the enumeration oracle, with a Wilson interval
 (Section~\ref{sec:experiments}, \texttt{estimate\_error\_rate}).
+\emph{All} audits use the two-sided $97.5\%$ level ($z = 2.2414$),
+not only the two highlighted below: the wider interval is the
+conservative choice for the classification that matters here, since
+declaring an interval to lie entirely below $\varepsilon$ becomes
+harder, never easier.
 Across the $300$ runs, $291$ ended in a certificate and $9$ abstained.
 Of the $291$ audited certificates, $290$ have an interval lying
 \emph{entirely below} $\varepsilon = 0.10$, none lies entirely above,
@@ -1198,9 +1210,10 @@ and one is inconclusive at this sample size. Two of the certified
 models are mutants by construction; because they are the only audits
 whose outcome is in question (reference-faithful builders reproduce
 the specification exactly, so their measured error is $0$ by
-construction), we report their intervals at the two-sided $97.5\%$
-level ($z = 2.2414$), so that both statements hold \emph{jointly} at
-$95\%$ by Bonferroni:
+construction), their intervals --- at the same
+two-sided $97.5\%$ level used throughout --- carry the additional
+property that the two statements hold \emph{jointly} at $95\%$ by
+Bonferroni:
 \begin{itemize}
 \item \texttt{gen\_assignment}, capacity entry shifted by $-1$:
   $\widehat{\mathrm{err}} = 16/400 = 0.040$, CI
@@ -1225,8 +1238,8 @@ Section~\ref{sec:validation}.
 \paragraph{Cost of the acceptance stage.} Certification is
 deterministic in length: a successful attempt consumes exactly
 $\lceil \log(1/\alpha)/\log\frac{1}{1-\varepsilon} \rceil = 29$ fresh
-tier-A probes, i.e.\ ${\approx}148$\,ms at the measured mean tier-A
-cost of $5.1$\,ms, about a quarter of the $632$\,ms screening allowance
+tier-A probes, i.e.\ ${\approx}150$\,ms at this run's measured mean
+tier-A cost of $5.16$\,ms, about a quarter of the $632$\,ms screening allowance
 on top of it; a failed attempt costs less, stopping at the first
 alarm. Certification probes barely move the kill-cost column because
 few mutants reach the acceptance stage at all.

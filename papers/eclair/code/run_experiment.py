@@ -21,7 +21,7 @@ from eclair.calibrate import calibrate
 from eclair.certify import Bets, run_certification
 from eclair.mutations import make_faithful, make_mutant
 from eclair.problems import EVAL_SPECS
-from eclair.probes import estimate_error_rate
+from eclair.probes import SOLVER_PARAMS, estimate_error_rate
 
 ALPHA = 0.05
 POOL_K = 6
@@ -78,6 +78,28 @@ def write_atomic(path, text):
     tmp.replace(path)
 
 
+def promote_run(stage_dir, out_dir, files):
+    """Publish a whole run at once (review R7.6). Individual atomic
+    writes do not give MULTI-FILE consistency: a crash between
+    calibration and the mutation results used to leave the canonical
+    package mixing two runs. Everything is written to a staging
+    directory first, checked for completeness, given a manifest with a
+    SHA-256 per file, and only then moved into place."""
+    import hashlib
+    manifest = {}
+    for name in files:
+        src = stage_dir / name
+        if not src.exists():
+            raise RuntimeError(f"run incomplete: {name} missing; "
+                               f"canonical artifacts left untouched")
+        manifest[name] = hashlib.sha256(src.read_bytes()).hexdigest()
+    (stage_dir / "MANIFEST.json").write_text(json.dumps(
+        {"files": manifest}, indent=2))
+    for name in list(files) + ["MANIFEST.json"]:
+        (stage_dir / name).replace(out_dir / name)
+    return manifest
+
+
 def main():
     n_reps = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     out_dir = pathlib.Path(__file__).parent / "results"
@@ -85,6 +107,11 @@ def main():
     # Smaller-than-publication runs write to a tagged filename and
     # leave the canonical artifacts untouched.
     tag = "" if n_reps >= PUBLICATION_REPS else f"_smoke{n_reps}"
+    stage = out_dir / f".staging{tag}"
+    if stage.exists():
+        for f in stage.iterdir():
+            f.unlink()
+    stage.mkdir(parents=True, exist_ok=True)
     if tag:
         print(f"NOTE: n_reps={n_reps} < {PUBLICATION_REPS}; writing "
               f"results/mutation_experiment{tag}.* and leaving the "
@@ -94,7 +121,7 @@ def main():
     t0 = time.perf_counter()
     print("calibrating on held-out families ...", flush=True)
     calib = calibrate(rng)
-    write_atomic(out_dir / f"calibration{tag}.json",
+    write_atomic(stage / f"calibration{tag}.json",
                  json.dumps(calib, indent=2))
     for t in ("A", "B", "C"):
         c = calib[t]
@@ -207,6 +234,8 @@ def main():
             "ebh_rejections": ebh_total,
             "mean_screen_spend_ms": 1000 * statistics.fmean(screen_spend),
             "max_screen_spend_ms": 1000 * max(screen_spend),
+            "screen_spend_ms_per_run": [round(1000 * x, 3)
+                                        for x in screen_spend],
             "certified_log": certified_log,
             "n_cert_err_below_eps": sum(c["err_below_eps"]
                                         for c in certified_log),
@@ -227,13 +256,22 @@ def main():
             return __import__(mod).__version__
         except Exception:
             return "unknown"
-    try:
-        commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
-                                capture_output=True, text=True,
-                                cwd=str(pathlib.Path(__file__).parent)
-                                ).stdout.strip() or "unknown"
-    except Exception:
-        commit = "unknown"
+    import hashlib
+    here = pathlib.Path(__file__).parent
+    def _git(*a):
+        try:
+            return subprocess.run(["git", *a], capture_output=True,
+                                  text=True, cwd=str(here)).stdout.strip()
+        except Exception:
+            return ""
+    commit = _git("rev-parse", "HEAD") or "unknown"
+    dirty_files = [l for l in _git("status", "--porcelain", ".").splitlines()
+                   if l.strip()]
+    # content hash of every source file that can change the trajectory
+    src_hashes = {}
+    for p in sorted(list(here.glob("eclair/*.py")) + [here / "run_experiment.py"]):
+        src_hashes[str(p.relative_to(here))] = hashlib.sha256(
+            p.read_bytes()).hexdigest()[:16]
     provenance = {
         "python": platform.python_version(),
         "platform": platform.platform(),
@@ -241,14 +279,23 @@ def main():
         "cpu_count": __import__("os").cpu_count(),
         "cpmpy": _ver("cpmpy"), "ortools": _ver("ortools"),
         "git_commit": commit,
+        "git_dirty": bool(dirty_files),
+        "git_dirty_files": dirty_files,
+        "source_sha256_16": src_hashes,
+        "solver_params": dict(SOLVER_PARAMS),
+        "audit_z": ERR_EVAL_Z, "audit_n": ERR_EVAL_N,
+        "audit_conf": "97.5% two-sided (all audits)",
         "budget_semantics": "launch threshold; may overshoot by one probe",
     }
+    if dirty_files:
+        print(f"WARNING: running from a DIRTY tree ({len(dirty_files)} "
+              f"modified paths); provenance records this.", flush=True)
     payload = {"provenance": provenance,
                "alpha": ALPHA, "pool_k": POOL_K, "n_reps": n_reps,
                "budget_s": budget, "seed": SEED,
                "eval_families": [s.name for s in EVAL_SPECS],
                "results": results}
-    write_atomic(out_dir / f"mutation_experiment{tag}.json",
+    write_atomic(stage / f"mutation_experiment{tag}.json",
                  json.dumps(payload, indent=2))
 
     lines = [
@@ -268,8 +315,16 @@ def main():
                      f"{r['abstain_rate']:>9.3f}")
     lines.append("")
     lines.append(f"total wall time: {time.perf_counter()-t0:.0f}s")
-    write_atomic(out_dir / f"mutation_experiment{tag}.txt",
+    write_atomic(stage / f"mutation_experiment{tag}.txt",
                  "\n".join(lines) + "\n")
+    # promote the COMPLETE run in one step (calibration + results
+    # together), so the canonical package can never mix two runs
+    manifest = promote_run(stage, out_dir,
+                           [f"calibration{tag}.json",
+                            f"mutation_experiment{tag}.json",
+                            f"mutation_experiment{tag}.txt"])
+    stage.rmdir()
+    print(f"promoted run: {len(manifest)} files + MANIFEST.json")
     print("\n".join(lines[-3:]))
 
 

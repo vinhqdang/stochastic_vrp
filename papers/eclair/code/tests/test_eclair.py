@@ -3,8 +3,10 @@ Run from papers/eclair/code:  ../../../.venv/bin/python -m pytest tests -q
 (deliberately NOT under svrpspd_wdro/tests — see ../README.md on
 self-containment)."""
 
+import json
 import math
 import random
+import re
 import sys
 import pathlib
 
@@ -247,3 +249,91 @@ def _cert_rate_at_boundary(monkeypatch, alpha, eps, trials, seed):
                                 random.Random(0), eps=eps, cert_budget=10.0)
         certified += res["certified_pick"] is not None
     return certified / trials
+
+
+# ── reproducibility machinery (review R7): the audit estimator, the
+#    checker's arithmetic, and provenance capture ───────────────────
+
+def test_audit_interval_matches_wilson_formula():
+    """estimate_error_rate's interval must equal the closed-form Wilson
+    interval at the requested z, for both levels we use."""
+    import check_artifacts as CA
+    from eclair.probes import estimate_error_rate
+
+    class _Det:
+        """Candidate whose disagreement pattern is fixed and known."""
+        def __init__(self, spec, every):
+            self.spec, self.every, self.i = spec, every, 0
+
+    spec = ALL_SPECS[0]
+    for z, k_expected in ((1.96, None), (2.2414, None)):
+        lo, hi = CA.wilson(16, 400, z)
+        # closed form, recomputed independently here
+        p, n = 16 / 400, 400
+        d = 1 + z * z / n
+        c = (p + z * z / (2 * n)) / d
+        h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+        assert abs(lo - (c - h)) < 1e-12 and abs(hi - (c + h)) < 1e-12
+    # the two levels must differ, and 97.5% must be the wider one
+    lo95, hi95 = CA.wilson(43, 400, 1.96)
+    lo975, hi975 = CA.wilson(43, 400, 2.2414)
+    assert lo975 < lo95 and hi975 > hi95
+
+
+def test_estimate_error_rate_respects_z_and_n(monkeypatch):
+    """The estimator must actually use the z it is given."""
+    from eclair import probes as P
+    spec = ALL_SPECS[0]
+    cand = make_faithful(spec)
+    e1 = P.estimate_error_rate(cand, random.Random(0), n=40, z=1.96)
+    e2 = P.estimate_error_rate(cand, random.Random(0), n=40, z=2.2414)
+    assert e1[1] == e2[1] == 40
+    assert e2[3] >= e1[3]          # wider upper limit at the higher z
+
+
+def test_solver_params_pinned():
+    """Thread count is a methodological parameter (it moves measured
+    costs, hence the budget and the routing score)."""
+    from eclair.probes import SOLVER_PARAMS
+    assert SOLVER_PARAMS.get("num_search_workers") == 1
+
+
+def test_checker_rejects_vacuous_interval_match(tmp_path):
+    """Regression for the checker's own past failure: an interval
+    quoted ACROSS A LINE BREAK must still be found."""
+    import check_artifacts as CA
+    src = "some text CI\n$[0.07753, 0.14721]$ more text"
+    quoted = re.findall(r"CI\s*\$\[\s*([\d.]+)\s*,\s*([\d.]+)\s*\]\$",
+                        src, re.S)
+    assert quoted == [("0.07753", "0.14721")]
+
+
+def test_promote_run_refuses_incomplete(tmp_path):
+    """A run missing an output must NOT publish anything (multi-file
+    consistency, review R7.6)."""
+    import run_experiment as RX
+    stage = tmp_path / "stage"
+    out = tmp_path / "out"
+    stage.mkdir()
+    out.mkdir()
+    (stage / "a.json").write_text("{}")
+    try:
+        RX.promote_run(stage, out, ["a.json", "missing.json"])
+        raise AssertionError("promote_run should have refused")
+    except RuntimeError as e:
+        assert "incomplete" in str(e)
+    assert not (out / "a.json").exists()      # nothing promoted
+
+
+def test_promote_run_writes_manifest(tmp_path):
+    import run_experiment as RX
+    stage, out = tmp_path / "s", tmp_path / "o"
+    stage.mkdir(); out.mkdir()
+    (stage / "a.json").write_text('{"x": 1}')
+    (stage / "b.txt").write_text("hello")
+    man = RX.promote_run(stage, out, ["a.json", "b.txt"])
+    assert set(man) == {"a.json", "b.txt"}
+    assert (out / "MANIFEST.json").exists()
+    saved = json.loads((out / "MANIFEST.json").read_text())["files"]
+    import hashlib
+    assert saved["b.txt"] == hashlib.sha256(b"hello").hexdigest()

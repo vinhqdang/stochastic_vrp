@@ -24,9 +24,18 @@ from __future__ import annotations
 import time
 
 
+SOLVER_PARAMS = {"num_search_workers": 1}   # single-threaded: measured
+                                            # costs feed the budget and
+                                            # the routing score, so the
+                                            # thread count is a
+                                            # methodological parameter
+
+
 def solve_value(model):
-    """Exact CP-SAT solve; optimal objective as int, or None if infeasible."""
-    ok = model.solve(solver="ortools")
+    """Exact CP-SAT solve; optimal objective as int, or None if infeasible.
+    Always single-threaded (SOLVER_PARAMS) so that measured probe costs
+    are comparable across runs and machines."""
+    ok = model.solve(solver="ortools", **SOLVER_PARAMS)
     if not ok:
         return None
     return int(round(float(model.objective_value())))
