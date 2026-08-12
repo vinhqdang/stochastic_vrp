@@ -189,10 +189,40 @@ mentioned once, explicitly attributed, and kept out of the tables.
 Losing the concrete example costs expositional value; mixing runs cost
 this artifact two rejections.
 
-**Also reran under the pinned configuration:** the alpha sweep, tier
-ablation, robustness sweeps and baselines were all produced
-multi-threaded, so the package would otherwise mix configurations.
-Those reruns are in progress; their numbers replace the current ones
-before submission.
+**Also reran under the pinned configuration** (self-caught, not
+raised by the review): the alpha sweep, tier ablation, robustness
+sweeps and baselines were all produced multi-threaded, so the package
+would otherwise mix configurations. All four are rerun and the
+manuscript's tables rewritten. Two findings CHANGED materially and are
+now reported differently:
 
-Package state: `check_artifacts.py` reports **29 passed / 0 failed**.
+1. **The tier-ablation ordering flipped.** A+B (0.904) now slightly
+   exceeds the full pool (0.884) and tier A alone (0.876) is within a
+   point of it, where previously A alone looked dominant at 0.954 and
+   removing tier B cost ~10 detection points (now ~3). The finding is
+   rewritten: the exact oracle is the workhorse, rare hard
+   certificates are worth more than their rate, and cheap cross-model
+   probes can cost POWER as well as validity margin - so use them
+   where no exact oracle exists, not as a supplement where one does.
+   The paper notes the ordering is sensitive to relative probe costs,
+   which is why the thread count is pinned and reported.
+2. **The fixed-sample tier-C level violation is now statistically
+   supported.** At 300 replications the binomial test realizes 0.078
+   with CI [.062, .098] and its peeking variant 0.087 [.070, .108],
+   both entirely above alpha = 0.05, while the e-process on the same
+   tier sits at 0.049 [.037, .066]. Review 4 was right that the
+   earlier 0.0612 was not significant; this one is, so the claim is
+   restored - but stated with its mechanism, that all four methods bet
+   against the same cross-family bound and a hard threshold spends its
+   margin the moment that bound is optimistic, whereas a
+   supermartingale degrades gracefully. Explicitly NOT a claim that
+   the e-process is valid where its assumption fails.
+
+The checker was also extended to guard the secondary tables (ablation
+and baseline rows spot-checked against their JSONs, secondary results
+required not to predate the shipped calibration) - and immediately
+caught two false negatives in its own row regexes, which matched "C"
+inside "A+B+C"; anchored to line start.
+
+Package state: `check_artifacts.py` reports **42 passed / 0 failed**;
+20 unit tests pass.

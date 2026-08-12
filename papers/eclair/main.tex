@@ -1286,8 +1286,9 @@ artifacts.
 Sweeping $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$ ($100$
 replications per level, Kelly routing) yields empirical
 false-rejection $0.0000$ at \emph{every} level
-($n = 285$--$301$ faithful candidates per level), with
-detection stable at $92$--$96\%$; Figure~\ref{fig:alpha} plots both
+($n = 280$--$317$ faithful candidates per level), with
+detection between $87\%$ and $96\%$ and no trend against $\alpha$
+beyond sampling noise; Figure~\ref{fig:alpha} plots both
 curves. Two remarks.
 
 \begin{figure}[t]
@@ -1337,12 +1338,149 @@ Kelly, $\alpha = 0.05$).}\label{tab:ablation}
 \toprule
 Tiers & False rej. & Detection & Kill cost\\
 \midrule
-A+B+C & $0.0000$ & $0.926$ & $21$\,ms\\
-A+B   & $0.0000$ & $0.943$ & $21$\,ms\\
-A+C   & $0.0000$ & $0.821$ & $17$\,ms\\
-B+C   & $0.0000$ & $0.709$ & $36$\,ms\\
-A     & $0.0000$ & $0.954$ & $21$\,ms\\
-C     & $0.0401$ & $0.631$ & $71$\,ms\\
+A+B+C & $0.0000$ & $0.884$ & $14$\,ms\\
+A+B   & $0.0000$ & $0.904$ & $15$\,ms\\
+A+C   & $0.0000$ & $0.853$ & $14$\,ms\\
+B+C   & $0.0000$ & $0.675$ & $15$\,ms\\
+A     & $0.0000$ & $0.876$ & $14$\,ms\\
+C     & $0.0399$ & $0.625$ & $32$\,ms\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three findings. \emph{(i) Entanglement consumes the conservative
+margin.} Every configuration containing an unentangled tier records
+zero false rejections; tier C alone records $0.0401$ --- still within
+$\alpha = 0.05$, but with the margin that conservative calibration
+provides everywhere else fully spent. This is the empirical face of
+the Remark after Proposition~\ref{prop:mr}. We are careful about what
+it does \emph{not} say: a valid tier does not immunize an invalid one
+--- multiplying sound A/B factors by unsound C factors invalidates
+the product --- so tier C is valid, alone or in combination,
+\emph{only} conditionally on Assumption~\ref{ass:null}(c). What the
+ablation shows is narrower and still useful: empirical false
+rejections appear at the margin precisely when cross-model evidence
+carries the process alone, which is where the assumption is most
+strained and where pool-composition-conditioned calibration should be
+required first.
+\emph{(ii) The exact oracle carries most of the power, and the
+metamorphic tier adds to it.} Dropping tier B (A+C at $0.853$ vs.\
+A+B+C at $0.884$) costs three points of detection although tier-B
+alarms fire on only ${\sim}4\%$ of mutant probes --- a rare hard
+certificate is worth more than its rate suggests, because it needs no
+accumulation. Dropping tier A is far more damaging (B+C at $0.675$):
+the enumeration oracle is the workhorse.
+\emph{(iii) Cheap cross-model evidence can cost power, not just
+validity.} A+B ($0.904$) slightly \emph{exceeds} the full pool
+($0.884$), and tier A alone ($0.876$) is within a point of it, so the
+router's willingness to spend on tier C is not free: cross-model
+probes are the noisiest evidence per probe-second here, and including
+them draws budget away from the oracle. Combined with the validity
+picture above --- tier C is the only configuration whose false
+rejections reach the margin --- the practical recommendation is
+narrow: use cross-model checks when no exact oracle is available for a
+family, not as a supplement when one is. (In the earlier
+multi-threaded configuration the ordering favoured the full pool; the
+comparison is sensitive to relative probe costs, which is precisely
+why the thread count is pinned and reported.)
+
+\subsection{Two different questions: procedure vs.\ outputs}
+\label{sec:validation}
+
+The audit above and the guarantee of Theorem~\ref{thm:cert} answer
+different questions, and conflating them would be a category error.
+
+\emph{Procedural validation} asks whether the \emph{rule} has the
+advertised error rate: run the certification procedure repeatedly
+against candidates whose error is known to sit at or above
+$\varepsilon$, and measure how often a certificate is nonetheless
+issued. Theorem~\ref{thm:cert} says this frequency is at most
+$\alpha$. The implementation's test suite contains a Monte-Carlo
+\emph{sanity check} of this --- tier-A outcomes mocked as Bernoulli
+draws at exactly the boundary $\mathrm{err} = \varepsilon$, four
+seeds $\times$ $250$ simulated runs --- with realized certification
+frequencies $0.064$, $0.036$, $0.044$, $0.044$ and pooled $0.047$
+over $1000$ runs. We describe it as a sanity check and nothing more:
+at $n = 1000$ the Monte-Carlo standard error at $\alpha$ is
+${\approx}0.007$, so this experiment cannot resolve $0.05$ from,
+say, $0.06$, and one seed exceeds $\alpha$ as sampling noise alone
+would predict. The inequality is established by
+Theorem~\ref{thm:cert}; the simulation only guards against an
+implementation that violates it grossly.
+
+\emph{Output auditing} asks a question about the particular models
+this system actually accepted: does \emph{this} certified candidate
+satisfy $\mathrm{err}(m) < \varepsilon$? That is what
+Section~\ref{sec:audit} measures on fresh instances. A clean audit
+does not prove the procedure valid (it could be luck), and a
+straddling interval does not prove it invalid (it is the type-I event
+the procedure is allowed). Reporting both, separately, is the honest
+presentation: the theorem governs the rule, the audit inspects the
+artifacts.
+
+\subsection{Validity across the operating range}\label{sec:alpha}
+
+Sweeping $\alpha \in \{0.01, 0.02, 0.05, 0.10, 0.20\}$ ($100$
+replications per level, Kelly routing) yields empirical
+false-rejection $0.0000$ at \emph{every} level
+($n = 280$--$317$ faithful candidates per level), with
+detection between $87\%$ and $96\%$ and no trend against $\alpha$
+beyond sampling noise; Figure~\ref{fig:alpha} plots both
+curves. Two remarks.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/Fig2}
+\caption{Validity and power across the operating range ($100$
+replications per level, Kelly routing). (a) Empirical false-rejection
+of faithful candidates sits at zero under the nominal-$\alpha$
+diagonal at every level --- the guarantee is an upper bound and holds
+with the conservative margin the composite null demands. (b)
+Detection of mutants is flat in $\alpha$, the empirical face of the
+logarithmic budget bound of Proposition~\ref{prop:budget}}
+\label{fig:alpha}
+\end{figure} First, the guarantee
+of Theorem~\ref{thm:validity} is an upper bound, not a calibration
+claim: ECLAIR promises \emph{at most} $\alpha$, and the observed
+margin is the structural price of a composite null --- tier B cannot
+false-alarm by proof, and tiers A/C bet against upper-bounded null
+rates because the true rates are unknowable. Second, the flatness of
+the detection curve is Proposition~\ref{prop:budget} in action:
+rejection budgets grow only logarithmically as $\alpha$ tightens.
+
+\subsection{Tier ablation: what each probe class buys}
+\label{sec:ablation}
+
+Table~\ref{tab:ablation} repeats the testbed with restricted probe
+pools; Figure~\ref{fig:ablation} visualizes the two headline columns.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/Fig3}
+\caption{Probe-tier ablation ($100$ replications per configuration,
+Kelly, $\alpha=0.05$). (a) Detection by probe pool. (b) The validity
+margin: every pool containing an unentangled tier (blue) records zero
+false rejections; the pool-entangled cross-model tier alone (orange)
+stays within $\alpha$ but consumes the entire conservative margin.
+Every configuration including tier C is valid only \emph{conditionally}
+on Assumption~\ref{ass:null}(c); the figure reports empirical
+behaviour, not evidence for that assumption}
+\label{fig:ablation}
+\end{figure}
+
+\begin{table}[t]
+\caption{Probe-tier ablation ($100$ replications/configuration,
+Kelly, $\alpha = 0.05$).}\label{tab:ablation}
+\begin{tabular}{lccc}
+\toprule
+Tiers & False rej. & Detection & Kill cost\\
+\midrule
+A+B+C & $0.0000$ & $0.884$ & $14$\,ms\\
+A+B   & $0.0000$ & $0.904$ & $15$\,ms\\
+A+C   & $0.0000$ & $0.853$ & $14$\,ms\\
+B+C   & $0.0000$ & $0.675$ & $15$\,ms\\
+A     & $0.0000$ & $0.876$ & $14$\,ms\\
+C     & $0.0399$ & $0.625$ & $32$\,ms\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1411,144 +1549,57 @@ not probe-matched.}\label{tab:baselines}
 \toprule
 Method & False rej.\ [CI] & Detection [CI] & Pick acc.\\
 \midrule
-ECLAIR (all tiers) & $0.000$ [$.000, .004$] & $0.937$ [$.919, .951$] & $0.936$\\
+ECLAIR (all tiers) & $0.000$ [$.000, .004$] & $0.933$ [$.915, .948$] & $0.936$\\
 \addlinespace
 seq.\ (same stream) & $0.000$ [$.000, .004$] & $0.863$ [$.840, .884$] & ---\\
 fixed-$n$ (same stream) & $0.000$ [$.000, .004$] & $0.840$ [$.815, .862$] & ---\\
 \addlinespace
-ECLAIR-C & $0.049$ [$.037, .066$] & $0.600$ [$.568, .631$] & $0.729$\\
-fixed-sample C & $0.053$ [$.040, .070$] & $0.541$ [$.509, .573$] & $0.627$\\
-peeking C & $0.064$ [$.050, .083$] & $0.582$ [$.550, .613$] & ---\\
-split conformal C & $0.030$ [$.020, .043$] & $0.446$ [$.415, .478$] & ---\\
-\addlinespace
-single-shot & $0.000$ & $0.000$ & $0.461$\\
-majority vote & $0.000$ & $0.000$ & $0.814$\\
+ECLAIR-C & $0.049$ [$.037, .066$] & $0.616$ [$.584, .647$] & $0.742$\\
+fixed-sample C & $0.078$ [$.062, .098$] & $0.602$ [$.570, .633$] & $0.651$\\
+peeking C & $0.087$ [$.070, .108$] & $0.620$ [$.589, .651$] & ---\\
+split conformal C & $0.013$ [$.007, .023$] & $0.318$ [$.289, .349$] & ---\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The groups support three precise statements. \emph{First, with
-probes and e-factors held literally identical, sequential accounting
-dominates fixed-sample accounting for free}: both sit at zero false
-rejections, the sequential rejections are a superset (detection
-$0.863$ vs.\ $0.840$ --- $22$ additional mutants of $930$, a
-one-sided gain guaranteed by construction), and the sequential rule
-\emph{would stop} after $4.4$ probes per mutant on average against
-the fixed test's mandatory $13$ --- the same evidence at one third of
-the budget. (Both arms execute all $13$ probes here so the comparison
-is exactly paired; the $4.4$ is the crossing time recorded on that
-shared stream, i.e.\ what a properly stopped implementation would
-consume, not what this experiment executed.) \emph{Second, on the entangled tier the ordering of methods
-matches the theory, and we state it with its uncertainty}: the
-tier-C-only e-process realizes $0.049$ [$.037, .066$], the binomial
-fixed test $0.053$ [$.040, .070$] (statistically indistinguishable
-from its nominal level; we do not claim a violation), and uncorrected
-peeking $0.064$ [$.0499, .083$], whose point estimate exceeds
-$\alpha$ with an interval whose lower limit grazes it --- suggestive
-of the optional-stopping inflation, and stated as suggestive rather
-than conclusive at this sample size. Meanwhile ECLAIR-C detects $6$--$15$ points more than
-every fixed-schedule tier-C method. \emph{Third, the no-rejection
-strategies illustrate what is being purchased}: majority voting picks
-a faithful model $81\%$ of the time and silently hands over an
-unfaithful one the remaining $19\%$, with no level to quote and
-nothing resembling Theorem~\ref{thm:cert}'s certificate; single-shot
-is the coin flip its $0.461$ suggests.
+The groups support three precise statements.
 
-\subsection{End-to-end study with real LLMs}\label{sec:llm}
+\emph{First, with probes and e-factors held literally identical,
+sequential accounting dominates fixed-sample accounting for free.}
+Both sit at zero false rejections; the sequential rejection set
+contains the fixed-sample one by construction (detection $0.863$ vs.\
+$0.840$, i.e.\ $22$ additional mutants of $930$); and the sequential
+rule \emph{would stop} after $4.4$ probes per mutant on average
+against the fixed test's mandatory $13$ --- the same evidence at one
+third of the budget. (Both arms execute all $13$ probes here so the
+comparison is exactly paired; the $4.4$ is the crossing time recorded
+on that shared stream, i.e.\ what a properly stopped implementation
+would consume, not what this experiment executed.)
 
-Thirty candidates were generated from natural-language specifications
-of the five families: two model families accessed through OpenRouter
-(a free-tier routed model and \texttt{nvidia/nemotron-3-ultra-550b})
-$\times$ three prompt styles (direct; restate-then-model; expert
-persona) $\times$ per-style temperatures. Generated code is executed
-in a sandboxed namespace; an intake gate requires each candidate to
-build and solve two micro-instances. For scoring only, a proxy
-faithfulness label compares each candidate against the enumeration
-oracle on twelve micro-instances. All prompts, raw responses, and the
-response cache are included in the supplementary material, and this
-paragraph constitutes the documentation of LLM use in this study's
-methods.
+\emph{Second, on the pool-entangled tier the fixed-schedule tests
+overrun their nominal level, and at $300$ replications we can say so
+with confidence.} The binomial fixed-sample test realizes $0.078$ with
+a Wilson interval $[.062, .098]$ lying entirely above $\alpha = 0.05$,
+and its uncorrected-peeking variant $0.087$ $[.070, .108]$, also
+entirely above; the e-process restricted to the same tier sits at
+$0.049$ $[.037, .066]$, straddling $\alpha$. We are careful about the
+mechanism, because it is \emph{not} a claim that sequential testing is
+magic: all four methods bet against the same calibrated bound
+$\bar p_0^{C}$, which was estimated on different problem families, and
+Assumption~\ref{ass:null}(c) is exactly what transfer can break. A
+hard accept/reject threshold spends its whole margin the moment the
+bound is optimistic, whereas a supermartingale carries conservative
+slack (Lemma~\ref{lem:conservative}) and degrades more gracefully.
+The honest reading is that this experiment measures how the two
+accountings respond to a mis-specified null, and that the e-process
+response is the safer one --- not that the e-process is valid where
+its assumption fails.
 
-\emph{Generation.} $20/30$ candidates passed intake
-(Table~\ref{tab:llm}). All ten failures were \emph{loud}: API
-hallucinations importing conventions from other modelling ecosystems
---- \texttt{cp.Binary} and \texttt{cp.binary\_var} (PuLP/DOcplex
-idioms), \texttt{cp.Var}, \texttt{cp.multiply},
-\texttt{IntVar(domain=...)} (Choco-style),
-\texttt{Model().NewBoolVar} (raw CP-SAT API), a bare
-\texttt{import cp} --- each caught by the gate at negligible cost.
-The failure mass is unevenly distributed: the large dedicated model
-produced valid CPMpy for $14/15$ prompts, while the free-tier routed
-model managed $6/15$, failing on entire families (generalized
-assignment $0/3$) --- candidate diversity across model families is
-what keeps such correlated failure from starving a pool.
-
-\begin{table}[t]
-\caption{End-to-end LLM study: intake outcomes per family and model
-family ($3$ prompt styles each). Every intake failure is an API
-hallucination caught by the gate; every intake survivor was
-proxy-faithful.}\label{tab:llm}
-\begin{tabular}{lccl}
-\toprule
-Family & routed free & nemotron-ultra & failure modes (intake)\\
-\midrule
-Knapsack+conflicts & $2/3$ & $3/3$ & \texttt{cp.Binary}\\
-Set cover          & $1/3$ & $3/3$ & \texttt{cp.Binary}, \texttt{cp.multiply}\\
-Graph colouring    & $2/3$ & $3/3$ & \texttt{IntVar(domain=...)}\\
-Gen.\ assignment   & $0/3$ & $3/3$ & \texttt{cp.Var} ($\times 2$), \texttt{cp.binary\_var}\\
-On-time selection  & $1/3$ & $2/3$ & \texttt{import cp}, \texttt{NewBoolVar}, runtime \texttt{None}\\
-\midrule
-Total              & $6/15$ & $14/15$ & \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\emph{Screening and certification.} All $20$ intake survivors were
-proxy-faithful, so the pools are all-null and this study exercises
-the machinery's correctness-on-nulls rather than its detection: the
-right behaviour is to reject nothing and to certify, and that is what
-happened --- $0/20$ false rejections under every routing policy, the
-surviving pick proxy-faithful in all five families, no e-BH
-discoveries, and the certification phase issuing an
-$\varepsilon$-certificate in $5/5$ families under all three routing
-policies, every certified model proxy-faithful. We are explicit about
-the evidential weight this carries: it is a smoke test of the
-implementation on real generated models (with proxy labels that are
-themselves enumeration-based), not a demonstration of detection ---
-the loud failures were caught by the intake gate, not by ECLAIR, and
-detection power is established by the mutation testbed, where ground
-truth exists.
-
-Two honest observations shape the outlook. On well-pinned
-specifications, these two model families fail loudly (crashes) rather
-than silently (wrong models) --- so the certification layer's
-detection power is insurance whose premium, by
-Proposition~\ref{prop:budget}, is logarithmically cheap. And
-provoking the silent-error regime in LLM candidates requires
-deliberately ambiguous, convention-laden specifications (the
-colouring objective convention --- ``number of colours'' vs.\
-``maximum colour index'' --- is the template), which is exactly where
-ECLAIR's abstention-with-evidence output becomes the interesting
-object of study; we return to this in Section~\ref{sec:limits}.
-
-\paragraph{What ``faithful'' does and does not mean here.}
-Both the labels above and the certificate of
-Theorem~\ref{thm:cert} are stated in terms of \emph{optimum-value
-agreement}: a candidate whose feasible set is wrong but whose optimum
-coincides with the specification's on the probed instances is scored
-faithful. This is a real limitation, and the ambiguity study
-(Section~\ref{sec:ambiguity}) exhibits it concretely --- two readings
-of the colouring objective that provably coincide at the optimum are
-invisible to every value-level probe we run. Extending tier A to a
-\emph{solution-level} oracle (check that the candidate's returned
-assignment is spec-feasible and attains the claimed value) closes
-this gap and fits the framework unchanged, since it only sharpens the
-tier-A alarm event; what it requires beyond this paper's scope is a
-contract between candidate and checker fixing how decision variables
-are named and recovered, which our formalism-agnostic candidate
-interface (a function from instances to optima) deliberately does not
-impose. We flag it as the single most valuable extension of the probe
-library rather than claiming it here.
+\emph{Third, the no-rejection strategies illustrate what is being
+purchased.} Majority voting picks a faithful model $81\%$ of the time
+and silently hands over an unfaithful one the remaining $19\%$, with
+no level to quote and nothing resembling Theorem~\ref{thm:cert}'s
+certificate; single-shot is the coin flip its $0.461$ suggests.
 
 \subsection{Robustness: families, transfer direction, pool
 composition}\label{sec:robustness}
@@ -1558,20 +1609,20 @@ particular experimental slice ($100$ replications each, Kelly,
 $\alpha = 0.05$; Table~\ref{tab:robust}). \emph{Per family}: validity
 records no false rejection in any evaluation family separately
 (finite-sample zeros); detection varies with
-family difficulty ($0.99$ for set cover and $0.97$ for on-time
-selection against $0.74$ for generalized assignment, whose
+family difficulty ($0.98$ for set cover and $0.96$ for on-time
+selection against $0.79$ for generalized assignment, whose
 cost-matrix mutations produce the subtlest optimum shifts) --- power
 is problem-dependent, the guarantee is not. \emph{Reversed
 calibration split}: recalibrating on the three former evaluation
 families and evaluating on knapsack$+$colouring yields false
-rejection $0.0000$ with detection $0.804$ ($n = 309$ faithful) ---
+rejection $0.0000$ with detection $0.829$ ($n = 291$ faithful) ---
 cross-family transfer of the conservative bounds is bidirectional,
 not an artifact of which families happened to calibrate.
 \emph{Pool size and routing prior}: across $k \in \{4, 6, 10\}$ and
 routing priors $q_{\mathrm{prior}} \in \{0.3, 0.5, 0.7\}$, false
 rejection stays at $0.0000$ while detection moves only through the
 router's aggressiveness (a pessimistic prior under-probes, $0.74$; a
-suspicious one probes harder, $0.92$) --- the router's belief state
+suspicious one probes harder, $0.93$) --- the router's belief state
 touches power alone, never the level, exactly as
 Theorem~\ref{thm:validity} promises for any predictable routing.
 
@@ -1582,14 +1633,14 @@ $\alpha = 0.05$).}\label{tab:robust}
 \toprule
 Sweep & Configuration & False rej. & Detection\\
 \midrule
-family & set cover & $0.0000$ & $0.990$\\
-family & generalized assignment & $0.0000$ & $0.743$\\
-family & on-time selection & $0.0000$ & $0.971$\\
-transfer & reversed calibration split & $0.0000$ & $0.804$\\
+family & set cover & $0.0000$ & $0.980$\\
+family & generalized assignment & $0.0000$ & $0.794$\\
+family & on-time selection & $0.0000$ & $0.958$\\
+transfer & reversed calibration split & $0.0000$ & $0.829$\\
 pool & $k = 4$ & $0.0000$ & $0.934$\\
-pool & $k = 10$ & $0.0000$ & $0.893$\\
-prior & $q_{\mathrm{prior}} = 0.3$ & $0.0000$ & $0.741$\\
-prior & $q_{\mathrm{prior}} = 0.7$ & $0.0000$ & $0.920$\\
+pool & $k = 10$ & $0.0000$ & $0.883$\\
+prior & $q_{\mathrm{prior}} = 0.3$ & $0.0000$ & $0.739$\\
+prior & $q_{\mathrm{prior}} = 0.7$ & $0.0000$ & $0.927$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2060,26 +2111,26 @@ mutant):
 \begin{table}[h]
 \caption{Full $\alpha$-sweep. These runs exercise the \emph{screening}
 stage only (no certification phase), which is why detection at
-$\alpha = 0.05$ here ($0.924$) sits below the corresponding row of
-Table~\ref{tab:testbed} ($0.964$), where fresh-oracle certification
+$\alpha = 0.05$ here ($0.920$) sits below the corresponding row of
+Table~\ref{tab:testbed} ($0.958$), where fresh-oracle certification
 probes falsify additional mutants.}\label{tab:alphafull}
 \begin{tabular}{lccccc}
 \toprule
 $\alpha$ & false rej. & $n$ faithful & detection & $n$ mutants & kill cost\\
 \midrule
-$0.01$ & $0.0000$ & $300$ & $0.923$ & $300$ & $30.5$\,ms\\
-$0.02$ & $0.0000$ & $285$ & $0.937$ & $315$ & $30.0$\,ms\\
-$0.05$ & $0.0000$ & $297$ & $0.924$ & $303$ & $22.8$\,ms\\
-$0.10$ & $0.0000$ & $301$ & $0.930$ & $299$ & $19.4$\,ms\\
-$0.20$ & $0.0000$ & $293$ & $0.964$ & $307$ & $20.7$\,ms\\
+$0.01$ & $0.0000$ & $285$ & $0.873$ & $315$ & $21.0$\,ms\\
+$0.02$ & $0.0000$ & $317$ & $0.908$ & $283$ & $21.1$\,ms\\
+$0.05$ & $0.0000$ & $287$ & $0.920$ & $313$ & $14.0$\,ms\\
+$0.10$ & $0.0000$ & $309$ & $0.921$ & $291$ & $14.3$\,ms\\
+$0.20$ & $0.0000$ & $280$ & $0.956$ & $320$ & $13.2$\,ms\\
 \bottomrule
 \end{tabular}
 
 The kill-cost column is Proposition~\ref{prop:budget} measured:
 tightening the guarantee from $\alpha = 0.20$ to $\alpha = 0.01$ ---
 a $20\times$ stronger error bound --- raises the mean probe cost of
-a rejection from ${\sim}21$\,ms to ${\sim}30$\,ms, a factor of
-${\sim}1.5$, in line with the predicted
+a rejection from ${\sim}13$\,ms to ${\sim}21$\,ms, a factor of
+${\sim}1.6$, in line with the predicted
 $\log(1/0.01)/\log(1/0.20) \approx 2.9$ ratio of log-thresholds
 attenuated by hard-certificate rejections whose cost is
 $\alpha$-independent.

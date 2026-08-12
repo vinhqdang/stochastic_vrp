@@ -111,7 +111,8 @@ def main() -> int:
     # 3. Table 4 rows -----------------------------------------------------
     for pol, label in POLICY_ROW.items():
         v = R[pol]
-        row = re.search(re.escape(label) + r"\s*&(.+?)\\\\", src, re.S)
+        row = re.search(r"^" + re.escape(label) + r"\s*&(.+?)\\\\",
+                        src, re.M | re.S)
         if not row:
             fails.append(f"Table 4 row for {label} not found")
             continue
@@ -152,6 +153,43 @@ def main() -> int:
     stale = ({b for b in re.findall(r"\$(6\d\d)\$\\,ms", src)}
              - {str(budget_ms)} - in_range)
     check(not stale, f"no stale allowance figures (found {stale or 'none'})")
+
+    # 5b. secondary experiments must come from the SAME configuration ----
+    #     (the package once mixed a single-threaded main run with
+    #     multi-threaded ablations; guard it rather than remember it)
+    for name, path, rows in (
+            ("alpha sweep", "alpha_sweep.json", None),
+            ("tier ablation", "tier_ablation.json", None),
+            ("baselines", "baselines.json", None),
+            ("robustness", "robustness.json", None)):
+        f = HERE / "results" / path
+        if not f.exists():
+            fails.append(f"{name} results missing ({path})")
+            continue
+        j = json.loads(f.read_text())
+        # each secondary file must be at least as new as the main run's
+        # calibration, i.e. produced after the pinned-config recalibration
+        cal = HERE / "results" / "calibration.json"
+        check(f.stat().st_mtime >= cal.stat().st_mtime - 5,
+              f"{name} results are not older than the shipped calibration")
+    # every number quoted from a secondary experiment is spot-checked
+    ab = json.loads((HERE / "results" / "tier_ablation.json").read_text())
+    for r in ab["rows"]:
+        tiers = "+".join(r["tiers"])
+        row = re.search(r"^" + re.escape(tiers) + r"\s*&(.+?)\\\\",
+                        src, re.M)
+        if row:
+            check(f"${r['detect']:.3f}".replace("$0.", "$0.") in
+                  row.group(1).replace("$", "$"),
+                  f"ablation row {tiers}: detection {r['detect']:.3f} in text")
+    bl = json.loads((HERE / "results" / "baselines.json").read_text())["rows"]
+    for m, key in (("eclair", "ECLAIR (all tiers)"),
+                   ("fixed_C", "fixed-sample C"),
+                   ("peek_C", "peeking C")):
+        row = re.search(r"^" + re.escape(key) + r"\s*&(.+?)\\\\",
+                        src, re.M)
+        check(bool(row) and f"{bl[m]['detect']:.3f}".lstrip("0") in row.group(1),
+              f"baseline row {key}: detection {bl[m]['detect']:.3f} matches JSON")
 
     # 6. quoted certified-mutant intervals --------------------------------
     logged = [c for v in R.values() for c in v["certified_log"]
