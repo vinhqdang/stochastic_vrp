@@ -38,3 +38,27 @@ pools implemented, finite-sample-zero language, CIs added, worked-run
 arithmetic fixed, probe-seconds naming, footnote citations resolved
 (Li & Hai arXiv:2607.16646; Zadorojniy et al. arXiv:2511.16383),
 bib "???" fixed.
+
+
+---
+
+## Review 2 (2026-08-12, adversarial re-review of the revision)
+
+Verified the revision finding-by-finding against manuscript AND code.
+Verdict: R1.2/R1.3/R1.5/R1.7 FIXED; R1.1/R1.4/R1.6/R1.8 PARTIAL, with
+two substantive defects and a numbers-hygiene list.
+
+| Finding | Issue raised | Disposition (2026-08-12) |
+|---|---|---|
+| **R2.1** | Theorem 3's multi-attempt union bound is wrong: k attempts at threshold 1/alpha give level k*alpha, and the selection-robustness argument fails for attempts after the first (the 2nd candidate is chosen *because* the 1st attempt's fresh probes alarmed). Code attempted every survivor. | **FIXED.** Single-attempt rule enforced in `certify.py` (`ranked[:1]`); Theorem 3 restated for one attempt; new Remark 2 explains why, and gives the k/alpha multi-attempt variant. Rerun: certification accuracy 287/287 (was 294/295 under multi-attempt), 10 runs abstain instead of retrying. |
+| **R2.2** | Headline "298 of 299 certified outputs faithful" contradicted by shipped JSON (actual 294/295). | **FIXED.** All three occurrences (abstract, S7.1, conclusion) now quote the recomputed post-fix totals: **287 of 287**, with the abstention count stated. |
+| **R2.3** | "peeking ... whose interval sits above alpha" — false, lower limit 0.0499 < 0.05. | **FIXED.** Restated as point estimate above alpha with an interval grazing it; called suggestive, not conclusive. |
+| **R2.4** | Baseline exposure counts wrong (880/920 vs actual 870/930). | **FIXED** both places. |
+| **R2.5** | Stale detection ranges (87-94% in contributions, 92-94% in S7.2 vs 96.4% in the appendix). | **FIXED** to 89-96% / 92-96%. |
+| **R2.6** | tab:calib costs (5.2/6.3/12.4 ms) off vs shipped calibration.json. | **FIXED** to 5.1/6.2/12.3 ms. |
+| **R2.7** | p1 = 0.473 not derivable from the paper (shrinkage rule undocumented). | **FIXED.** tab:calib gains a p1 (bet) column and the caption states the shrinkage formula and that misspecifying p1 costs power only. |
+| **R2.8** | Residual "exactly"-language; "mean solver cost"; code docstrings still "solver-seconds"; worked-run 640 ms vs 633; n approx 290-300 vs 285-301. | **FIXED** (all; docstrings in probes.py/certify.py too). |
+| **R2.9** | Abstract quotes bare alpha though tier-C runs carry alpha+delta. | **FIXED.** Abstract carries the delta caveat; a new paragraph in S7 states alpha=0.05 nominal vs 0.075 unconditional for tier-C runs, alpha exactly for the tier-A certification. |
+| **R2.10** | R1.6's promised solution-level oracle check was silently dropped. | **FIXED as an explicit narrowing**, not a silent one: a new paragraph states that faithfulness here means optimum-value agreement, that the ambiguity study exhibits the blindness, that solution-level probes fit the framework unchanged, and that they need a candidate/checker variable-mapping contract our formalism-agnostic interface does not impose. Flagged as the most valuable extension. |
+| **R2.11** | Arch figure still drew repair as a live component. | **FIXED.** Repair box/arrows dashed and captioned as deliberately-not-claimed future work. |
+| **R2.12** | (new, self-caught) alpha-sweep appendix detection at alpha=0.05 (0.924) vs Table 4 (0.964) look contradictory. | **FIXED.** Appendix caption explains those runs are screening-only (no certification phase). |

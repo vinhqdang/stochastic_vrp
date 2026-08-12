@@ -2,7 +2,7 @@
 
 Every probe returns (alarm: bool, cost: float) where cost is the
 measured wall-clock seconds of ALL compute the probe consumed (brute
-force + CP-SAT solves) — the "solver-seconds" currency of the paper.
+force + CP-SAT solves) — the "probe-seconds" currency of the paper.
 
 Tier A  micro-oracle: brute-force the SPEC (independent checker) on an
         exhaustively enumerable instance; alarm iff the candidate's

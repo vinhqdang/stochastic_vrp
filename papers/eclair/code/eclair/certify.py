@@ -1,6 +1,6 @@
 """The certification layer: per-candidate e-processes with calibrated
 conservative Bernoulli bets (Tiers A/C), hard certificates (Tier B),
-Kelly/GROW routing of solver-seconds, Ville-threshold rejection, and
+Kelly-style routing of probe-seconds, Ville-threshold rejection, and
 e-BH selection over the final pool (PROJECT.md §3 Steps 3–5).
 
 Validity note (PROJECT.md §5.2): Tier A/C e-factors use a calibrated
@@ -162,12 +162,18 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
         # crossing 1/alpha certifies err < eps at anytime level alpha.
         # Selection of WHICH candidate to certify is independent of
         # the fresh probes, so the guarantee survives selection.
+        # SINGLE-ATTEMPT rule: exactly one candidate (the best
+        # survivor) is ever attempted per run. Attempting k > 1
+        # candidates at the shared threshold 1/alpha would only give
+        # level k*alpha by union bound; one attempt keeps the level
+        # at alpha exactly, and the selection provably uses only
+        # screening-phase information.
         out.update(certified_pick=None, cert_spent=0.0, cert_probes=0)
         ranked = sorted(survivors, key=lambda s: s.logE)
         need = math.ceil(math.log(1.0 / alpha) / -math.log(1.0 - eps))
         spent = 0.0
         n_pr = 0
-        for s in ranked:
+        for s in ranked[:1]:
             passes = 0
             fell = False
             while passes < need and spent < cert_budget:
@@ -186,9 +192,6 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
                 passes += 1
             if not fell and passes >= need:
                 out["certified_pick"] = s
-                break
-            if spent >= cert_budget:
-                break
         out["cert_spent"] = spent
         out["cert_probes"] = n_pr
         # the falsification-side pick may have been rejected above
