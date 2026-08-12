@@ -104,7 +104,7 @@ def tier_c(cand, alive_pool, rng, max_partners=3):
 TIER_FNS = {"A": tier_a, "B": tier_b, "C": tier_c}
 
 
-def estimate_error_rate(cand, rng, n=400):
+def estimate_error_rate(cand, rng, n=400, z=1.96):
     """Independent Monte-Carlo estimate of
 
         err(m) = P_{I ~ D_mu}( v_m(I) != v*(I) )
@@ -128,7 +128,6 @@ def estimate_error_rate(cand, rng, n=400):
         if got != brute_optimum(cand.spec, params):
             bad += 1
     p = bad / n
-    z = 1.96
     d = 1 + z * z / n
     c = (p + z * z / (2 * n)) / d
     h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d

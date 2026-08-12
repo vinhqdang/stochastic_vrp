@@ -1,8 +1,18 @@
 {
+  "provenance": {
+    "python": "3.9.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "cpmpy": "0.9.29",
+    "ortools": "9.14.6206",
+    "git_commit": "8948cb3",
+    "budget_semantics": "launch threshold; may overshoot by one probe"
+  },
   "alpha": 0.05,
   "pool_k": 6,
   "n_reps": 100,
-  "budget_s": 0.6223466666666667,
+  "budget_s": 0.63192,
   "seed": 20260807,
   "eval_families": [
     "set_cover",
@@ -33,24 +43,29 @@
       "n_certified": 98,
       "n_certified_faithful": 96,
       "n_abstained": 2,
-      "mean_kill_cost_screen_ms": 22.00884921088429,
-      "mean_kill_cost_ms": 22.0896345,
+      "mean_kill_cost_screen_ms": 21.77409277210855,
+      "mean_kill_cost_ms": 21.859471595237707,
       "pick_accuracy": 0.9797979797979798,
       "n_picks": 99,
       "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
       "ebh_rejections": 205,
+      "mean_screen_spend_ms": 629.9866846899871,
+      "max_screen_spend_ms": 639.9669209999956,
       "certified_log": [
         {
           "rep": 0,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -58,13 +73,16 @@
         {
           "rep": 1,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -72,13 +90,16 @@
         {
           "rep": 2,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -86,13 +107,16 @@
         {
           "rep": 3,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -100,13 +124,16 @@
         {
           "rep": 4,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -114,13 +141,16 @@
         {
           "rep": 5,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -128,13 +158,16 @@
         {
           "rep": 6,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -142,13 +175,16 @@
         {
           "rep": 7,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -156,13 +192,16 @@
         {
           "rep": 8,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -170,13 +209,16 @@
         {
           "rep": 9,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -184,13 +226,16 @@
         {
           "rep": 10,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -198,13 +243,16 @@
         {
           "rep": 11,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -212,13 +260,16 @@
         {
           "rep": 12,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -226,13 +277,16 @@
         {
           "rep": 13,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -240,13 +294,16 @@
         {
           "rep": 14,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -254,13 +311,16 @@
         {
           "rep": 15,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -268,13 +328,16 @@
         {
           "rep": 16,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -282,13 +345,16 @@
         {
           "rep": 17,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -296,13 +362,16 @@
         {
           "rep": 18,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -310,13 +379,16 @@
         {
           "rep": 19,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -324,13 +396,16 @@
         {
           "rep": 20,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -338,13 +413,16 @@
         {
           "rep": 21,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -352,13 +430,16 @@
         {
           "rep": 22,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -366,13 +447,16 @@
         {
           "rep": 23,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -380,13 +464,16 @@
         {
           "rep": 24,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -394,13 +481,16 @@
         {
           "rep": 25,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -408,13 +498,16 @@
         {
           "rep": 26,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -422,13 +515,16 @@
         {
           "rep": 27,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -436,13 +532,16 @@
         {
           "rep": 28,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -450,13 +549,16 @@
         {
           "rep": 29,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -464,13 +566,16 @@
         {
           "rep": 31,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -478,13 +583,16 @@
         {
           "rep": 32,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -492,13 +600,16 @@
         {
           "rep": 33,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -506,13 +617,16 @@
         {
           "rep": 34,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -520,13 +634,16 @@
         {
           "rep": 35,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -534,13 +651,16 @@
         {
           "rep": 36,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -548,13 +668,16 @@
         {
           "rep": 37,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -562,13 +685,16 @@
         {
           "rep": 38,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -576,13 +702,16 @@
         {
           "rep": 39,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -590,13 +719,16 @@
         {
           "rep": 40,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -604,13 +736,16 @@
         {
           "rep": 41,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -618,13 +753,16 @@
         {
           "rep": 42,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -632,13 +770,16 @@
         {
           "rep": 43,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -646,13 +787,16 @@
         {
           "rep": 44,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -660,13 +804,16 @@
         {
           "rep": 45,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -674,6 +821,9 @@
         {
           "rep": 46,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": false,
           "descriptor": [
             "vec_entry",
@@ -684,8 +834,8 @@
           "err_hat": 0.1075,
           "err_n": 400,
           "err_ci": [
-            0.08079329401678037,
-            0.14167412885396896
+            0.07752919990594825,
+            0.14720785835691721
           ],
           "err_below_eps": false,
           "err_above_eps": false
@@ -693,13 +843,16 @@
         {
           "rep": 47,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -707,13 +860,16 @@
         {
           "rep": 48,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -721,13 +877,16 @@
         {
           "rep": 49,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -735,13 +894,16 @@
         {
           "rep": 50,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -749,13 +911,16 @@
         {
           "rep": 51,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -763,13 +928,16 @@
         {
           "rep": 52,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -777,13 +945,16 @@
         {
           "rep": 53,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -791,13 +962,16 @@
         {
           "rep": 54,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -805,13 +979,16 @@
         {
           "rep": 55,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -819,13 +996,16 @@
         {
           "rep": 56,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -833,13 +1013,16 @@
         {
           "rep": 57,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -847,13 +1030,16 @@
         {
           "rep": 58,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -861,13 +1047,16 @@
         {
           "rep": 59,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -875,13 +1064,16 @@
         {
           "rep": 60,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -889,13 +1081,16 @@
         {
           "rep": 61,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -903,13 +1098,16 @@
         {
           "rep": 62,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -917,13 +1115,16 @@
         {
           "rep": 63,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -931,13 +1132,16 @@
         {
           "rep": 64,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -945,13 +1149,16 @@
         {
           "rep": 65,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -959,13 +1166,16 @@
         {
           "rep": 66,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -973,13 +1183,16 @@
         {
           "rep": 67,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -987,13 +1200,16 @@
         {
           "rep": 68,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1001,13 +1217,16 @@
         {
           "rep": 69,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1015,13 +1234,16 @@
         {
           "rep": 71,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1029,13 +1251,16 @@
         {
           "rep": 72,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1043,13 +1268,16 @@
         {
           "rep": 73,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1057,13 +1285,16 @@
         {
           "rep": 74,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1071,13 +1302,16 @@
         {
           "rep": 75,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1085,13 +1319,16 @@
         {
           "rep": 76,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1099,13 +1336,16 @@
         {
           "rep": 77,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1113,13 +1353,16 @@
         {
           "rep": 78,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1127,13 +1370,16 @@
         {
           "rep": 79,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1141,13 +1387,16 @@
         {
           "rep": 80,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1155,13 +1404,16 @@
         {
           "rep": 81,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1169,13 +1421,16 @@
         {
           "rep": 82,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1183,13 +1438,16 @@
         {
           "rep": 83,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1197,13 +1455,16 @@
         {
           "rep": 84,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1211,6 +1472,9 @@
         {
           "rep": 85,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": false,
           "descriptor": [
             "vec_entry",
@@ -1221,8 +1485,8 @@
           "err_hat": 0.04,
           "err_n": 400,
           "err_ci": [
-            0.024768847722620668,
-            0.06398278162908555
+            0.023147741097463242,
+            0.06826384310869757
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1230,13 +1494,16 @@
         {
           "rep": 86,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1244,13 +1511,16 @@
         {
           "rep": 87,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1258,13 +1528,16 @@
         {
           "rep": 88,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1272,13 +1545,16 @@
         {
           "rep": 89,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1286,13 +1562,16 @@
         {
           "rep": 90,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1300,13 +1579,16 @@
         {
           "rep": 91,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1314,13 +1596,16 @@
         {
           "rep": 92,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1328,13 +1613,16 @@
         {
           "rep": 93,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1342,13 +1630,16 @@
         {
           "rep": 94,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1356,13 +1647,16 @@
         {
           "rep": 95,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1370,13 +1664,16 @@
         {
           "rep": 96,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1384,13 +1681,16 @@
         {
           "rep": 97,
           "family": "gen_assignment",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1398,13 +1698,16 @@
         {
           "rep": 98,
           "family": "ontime_selection",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1412,13 +1715,16 @@
         {
           "rep": 99,
           "family": "set_cover",
+          "policy": "kelly",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1434,11 +1740,11 @@
         0.0,
         0.012941582311913155
       ],
-      "detect": 0.8859934853420195,
+      "detect": 0.8892508143322475,
       "n_mut": 307,
       "detect_ci": [
-        0.8455706517896932,
-        0.9168755587561283
+        0.8492226451340755,
+        0.9196577106484195
       ],
       "cert_rate": 1.0,
       "cert_pick_acc": 1.0,
@@ -1450,24 +1756,29 @@
       "n_certified": 99,
       "n_certified_faithful": 99,
       "n_abstained": 1,
-      "mean_kill_cost_screen_ms": 28.424868128677616,
-      "mean_kill_cost_ms": 28.424868128677616,
+      "mean_kill_cost_screen_ms": 28.442583952378783,
+      "mean_kill_cost_ms": 28.442583952378783,
       "pick_accuracy": 1.0,
       "n_picks": 99,
       "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
       "ebh_rejections": 164,
+      "mean_screen_spend_ms": 631.4174695599729,
+      "max_screen_spend_ms": 700.2090439996209,
       "certified_log": [
         {
           "rep": 0,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1475,13 +1786,16 @@
         {
           "rep": 1,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1489,13 +1803,16 @@
         {
           "rep": 2,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1503,13 +1820,16 @@
         {
           "rep": 3,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1517,13 +1837,16 @@
         {
           "rep": 4,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1531,13 +1854,16 @@
         {
           "rep": 5,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1545,13 +1871,16 @@
         {
           "rep": 6,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1559,13 +1888,16 @@
         {
           "rep": 7,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1573,13 +1905,16 @@
         {
           "rep": 8,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1587,13 +1922,16 @@
         {
           "rep": 9,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1601,13 +1939,16 @@
         {
           "rep": 10,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1615,13 +1956,16 @@
         {
           "rep": 11,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1629,13 +1973,16 @@
         {
           "rep": 12,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1643,13 +1990,16 @@
         {
           "rep": 13,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1657,13 +2007,16 @@
         {
           "rep": 14,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1671,13 +2024,16 @@
         {
           "rep": 15,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1685,13 +2041,16 @@
         {
           "rep": 16,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1699,13 +2058,16 @@
         {
           "rep": 17,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1713,13 +2075,16 @@
         {
           "rep": 18,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1727,13 +2092,16 @@
         {
           "rep": 19,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1741,13 +2109,16 @@
         {
           "rep": 20,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1755,13 +2126,16 @@
         {
           "rep": 21,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1769,13 +2143,16 @@
         {
           "rep": 22,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1783,13 +2160,16 @@
         {
           "rep": 23,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1797,13 +2177,16 @@
         {
           "rep": 24,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1811,13 +2194,16 @@
         {
           "rep": 25,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1825,13 +2211,16 @@
         {
           "rep": 26,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1839,13 +2228,16 @@
         {
           "rep": 27,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1853,13 +2245,16 @@
         {
           "rep": 28,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1867,13 +2262,16 @@
         {
           "rep": 29,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1881,13 +2279,16 @@
         {
           "rep": 31,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1895,13 +2296,16 @@
         {
           "rep": 32,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1909,13 +2313,16 @@
         {
           "rep": 33,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1923,13 +2330,16 @@
         {
           "rep": 34,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1937,13 +2347,16 @@
         {
           "rep": 35,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1951,13 +2364,16 @@
         {
           "rep": 36,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1965,13 +2381,16 @@
         {
           "rep": 37,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1979,13 +2398,16 @@
         {
           "rep": 38,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -1993,13 +2415,16 @@
         {
           "rep": 39,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2007,13 +2432,16 @@
         {
           "rep": 40,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2021,13 +2449,16 @@
         {
           "rep": 41,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2035,13 +2466,16 @@
         {
           "rep": 42,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2049,13 +2483,16 @@
         {
           "rep": 43,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2063,13 +2500,16 @@
         {
           "rep": 44,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2077,13 +2517,16 @@
         {
           "rep": 45,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2091,13 +2534,16 @@
         {
           "rep": 46,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2105,13 +2551,16 @@
         {
           "rep": 47,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2119,13 +2568,16 @@
         {
           "rep": 48,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2133,13 +2585,16 @@
         {
           "rep": 49,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2147,13 +2602,16 @@
         {
           "rep": 50,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2161,13 +2619,16 @@
         {
           "rep": 51,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2175,13 +2636,16 @@
         {
           "rep": 52,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2189,13 +2653,16 @@
         {
           "rep": 53,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2203,13 +2670,16 @@
         {
           "rep": 54,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2217,13 +2687,16 @@
         {
           "rep": 55,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2231,13 +2704,16 @@
         {
           "rep": 56,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2245,13 +2721,16 @@
         {
           "rep": 57,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2259,13 +2738,16 @@
         {
           "rep": 58,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2273,13 +2755,16 @@
         {
           "rep": 59,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2287,13 +2772,16 @@
         {
           "rep": 60,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2301,13 +2789,16 @@
         {
           "rep": 61,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2315,13 +2806,16 @@
         {
           "rep": 62,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2329,13 +2823,16 @@
         {
           "rep": 63,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2343,13 +2840,16 @@
         {
           "rep": 64,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2357,13 +2857,16 @@
         {
           "rep": 65,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2371,13 +2874,16 @@
         {
           "rep": 66,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2385,13 +2891,16 @@
         {
           "rep": 67,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2399,13 +2908,16 @@
         {
           "rep": 68,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2413,13 +2925,16 @@
         {
           "rep": 69,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2427,13 +2942,16 @@
         {
           "rep": 70,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2441,13 +2959,16 @@
         {
           "rep": 71,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2455,13 +2976,16 @@
         {
           "rep": 72,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2469,13 +2993,16 @@
         {
           "rep": 73,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2483,13 +3010,16 @@
         {
           "rep": 74,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2497,13 +3027,16 @@
         {
           "rep": 75,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2511,13 +3044,16 @@
         {
           "rep": 76,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2525,13 +3061,16 @@
         {
           "rep": 77,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2539,13 +3078,16 @@
         {
           "rep": 78,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2553,13 +3095,16 @@
         {
           "rep": 79,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2567,13 +3112,16 @@
         {
           "rep": 80,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2581,13 +3129,16 @@
         {
           "rep": 81,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2595,13 +3146,16 @@
         {
           "rep": 82,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2609,13 +3163,16 @@
         {
           "rep": 83,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2623,13 +3180,16 @@
         {
           "rep": 84,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2637,13 +3197,16 @@
         {
           "rep": 85,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2651,13 +3214,16 @@
         {
           "rep": 86,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2665,13 +3231,16 @@
         {
           "rep": 87,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2679,13 +3248,16 @@
         {
           "rep": 88,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2693,13 +3265,16 @@
         {
           "rep": 89,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2707,13 +3282,16 @@
         {
           "rep": 90,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2721,13 +3299,16 @@
         {
           "rep": 91,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2735,13 +3316,16 @@
         {
           "rep": 92,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2749,13 +3333,16 @@
         {
           "rep": 93,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2763,13 +3350,16 @@
         {
           "rep": 94,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2777,13 +3367,16 @@
         {
           "rep": 95,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2791,13 +3384,16 @@
         {
           "rep": 96,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2805,13 +3401,16 @@
         {
           "rep": 97,
           "family": "gen_assignment",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2819,13 +3418,16 @@
         {
           "rep": 98,
           "family": "ontime_selection",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2833,13 +3435,16 @@
         {
           "rep": 99,
           "family": "set_cover",
+          "policy": "round_robin",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2855,11 +3460,11 @@
         0.0,
         0.012941582311913155
       ],
-      "detect": 0.9543973941368078,
+      "detect": 0.9576547231270358,
       "n_mut": 307,
       "detect_ci": [
-        0.924919005214456,
-        0.9726442553015109
+        0.9289083861637882,
+        0.9750890195888523
       ],
       "cert_rate": 0.9494949494949495,
       "cert_pick_acc": 1.0,
@@ -2871,24 +3476,29 @@
       "n_certified": 94,
       "n_certified_faithful": 94,
       "n_abstained": 6,
-      "mean_kill_cost_screen_ms": 24.41488510579757,
-      "mean_kill_cost_ms": 25.12597184641439,
-      "pick_accuracy": 0.9797979797979798,
+      "mean_kill_cost_screen_ms": 23.725550676860177,
+      "mean_kill_cost_ms": 24.409903993184923,
+      "pick_accuracy": 0.98989898989899,
       "n_picks": 99,
       "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
-      "ebh_rejections": 201,
+      "ebh_rejections": 202,
+      "mean_screen_spend_ms": 630.6546480800694,
+      "max_screen_spend_ms": 711.363301001029,
       "certified_log": [
         {
           "rep": 0,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2896,13 +3506,16 @@
         {
           "rep": 1,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2910,13 +3523,16 @@
         {
           "rep": 2,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2924,13 +3540,16 @@
         {
           "rep": 3,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2938,13 +3557,16 @@
         {
           "rep": 4,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2952,13 +3574,16 @@
         {
           "rep": 5,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2966,13 +3591,16 @@
         {
           "rep": 6,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2980,13 +3608,16 @@
         {
           "rep": 7,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -2994,13 +3625,16 @@
         {
           "rep": 8,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3008,13 +3642,16 @@
         {
           "rep": 9,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3022,13 +3659,16 @@
         {
           "rep": 10,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3036,13 +3676,16 @@
         {
           "rep": 11,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3050,13 +3693,16 @@
         {
           "rep": 12,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3064,13 +3710,16 @@
         {
           "rep": 13,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3078,13 +3727,16 @@
         {
           "rep": 14,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3092,13 +3744,16 @@
         {
           "rep": 15,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3106,13 +3761,16 @@
         {
           "rep": 16,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3120,13 +3778,16 @@
         {
           "rep": 17,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3134,13 +3795,16 @@
         {
           "rep": 18,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3148,13 +3812,16 @@
         {
           "rep": 19,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3162,13 +3829,16 @@
         {
           "rep": 20,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3176,13 +3846,16 @@
         {
           "rep": 21,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3190,13 +3863,16 @@
         {
           "rep": 22,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3204,13 +3880,16 @@
         {
           "rep": 23,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3218,13 +3897,16 @@
         {
           "rep": 24,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3232,13 +3914,16 @@
         {
           "rep": 25,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3246,13 +3931,16 @@
         {
           "rep": 26,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3260,13 +3948,16 @@
         {
           "rep": 27,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3274,13 +3965,16 @@
         {
           "rep": 28,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3288,13 +3982,16 @@
         {
           "rep": 29,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3302,13 +3999,16 @@
         {
           "rep": 31,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3316,13 +4016,16 @@
         {
           "rep": 32,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3330,13 +4033,16 @@
         {
           "rep": 33,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3344,13 +4050,16 @@
         {
           "rep": 34,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3358,13 +4067,16 @@
         {
           "rep": 35,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3372,13 +4084,16 @@
         {
           "rep": 36,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3386,13 +4101,16 @@
         {
           "rep": 37,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3400,13 +4118,16 @@
         {
           "rep": 38,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3414,13 +4135,16 @@
         {
           "rep": 39,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3428,13 +4152,16 @@
         {
           "rep": 40,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3442,13 +4169,16 @@
         {
           "rep": 41,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3456,13 +4186,16 @@
         {
           "rep": 42,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3470,13 +4203,16 @@
         {
           "rep": 43,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3484,13 +4220,16 @@
         {
           "rep": 44,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3498,13 +4237,16 @@
         {
           "rep": 45,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3512,13 +4254,16 @@
         {
           "rep": 47,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3526,13 +4271,16 @@
         {
           "rep": 48,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3540,13 +4288,16 @@
         {
           "rep": 49,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3554,13 +4305,16 @@
         {
           "rep": 50,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3568,13 +4322,16 @@
         {
           "rep": 51,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3582,13 +4339,16 @@
         {
           "rep": 52,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3596,13 +4356,16 @@
         {
           "rep": 53,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3610,13 +4373,16 @@
         {
           "rep": 54,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3624,13 +4390,16 @@
         {
           "rep": 55,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3638,13 +4407,16 @@
         {
           "rep": 56,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3652,13 +4424,16 @@
         {
           "rep": 57,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3666,13 +4441,16 @@
         {
           "rep": 58,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3680,13 +4458,16 @@
         {
           "rep": 59,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3694,13 +4475,16 @@
         {
           "rep": 60,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3708,13 +4492,16 @@
         {
           "rep": 61,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3722,13 +4509,16 @@
         {
           "rep": 62,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3736,13 +4526,16 @@
         {
           "rep": 63,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3750,13 +4543,16 @@
         {
           "rep": 64,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3764,13 +4560,16 @@
         {
           "rep": 65,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3778,13 +4577,16 @@
         {
           "rep": 66,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3792,13 +4594,16 @@
         {
           "rep": 67,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3806,13 +4611,16 @@
         {
           "rep": 68,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3820,13 +4628,16 @@
         {
           "rep": 69,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3834,13 +4645,16 @@
         {
           "rep": 71,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3848,13 +4662,16 @@
         {
           "rep": 72,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3862,13 +4679,16 @@
         {
           "rep": 73,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3876,13 +4696,16 @@
         {
           "rep": 74,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3890,13 +4713,16 @@
         {
           "rep": 75,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3904,13 +4730,16 @@
         {
           "rep": 77,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3918,13 +4747,16 @@
         {
           "rep": 78,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3932,13 +4764,16 @@
         {
           "rep": 79,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3946,13 +4781,16 @@
         {
           "rep": 80,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3960,13 +4798,16 @@
         {
           "rep": 81,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3974,13 +4815,16 @@
         {
           "rep": 82,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -3988,13 +4832,16 @@
         {
           "rep": 83,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4002,13 +4849,16 @@
         {
           "rep": 84,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4016,13 +4866,16 @@
         {
           "rep": 86,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4030,13 +4883,16 @@
         {
           "rep": 87,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4044,13 +4900,16 @@
         {
           "rep": 88,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4058,13 +4917,16 @@
         {
           "rep": 89,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4072,13 +4934,16 @@
         {
           "rep": 90,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4086,13 +4951,16 @@
         {
           "rep": 91,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4100,13 +4968,16 @@
         {
           "rep": 92,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4114,13 +4985,16 @@
         {
           "rep": 93,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4128,13 +5002,16 @@
         {
           "rep": 95,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4142,13 +5019,16 @@
         {
           "rep": 96,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4156,13 +5036,16 @@
         {
           "rep": 97,
           "family": "gen_assignment",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4170,13 +5053,16 @@
         {
           "rep": 98,
           "family": "ontime_selection",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false
@@ -4184,13 +5070,16 @@
         {
           "rep": 99,
           "family": "set_cover",
+          "policy": "cost_blind",
+          "z": 2.2414,
+          "conf": "97.5% two-sided",
           "label_faithful": true,
           "descriptor": null,
           "err_hat": 0.0,
           "err_n": 400,
           "err_ci": [
-            0.0,
-            0.009512640599680667
+            8.673617379884035e-19,
+            0.012403895876261742
           ],
           "err_below_eps": true,
           "err_above_eps": false

@@ -1,0 +1,9 @@
+# ECLAIR (papers/eclair) — pinned environment for the reported runs.
+# The measured probe costs feed the calibrated mean cost, the shared
+# screening budget and the Kelly routing score, so solver/library
+# versions can change the statistical trajectory, not merely runtime.
+# Reference environment for every number in the manuscript:
+#   Python 3.9.6, macOS 26.5.2 (arm64, Apple silicon), 1 solver thread
+cpmpy==0.9.29
+ortools==9.14.6206
+pytest==8.4.2

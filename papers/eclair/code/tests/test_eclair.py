@@ -160,7 +160,6 @@ def test_cert_succeeds_after_exactly_need_passes(monkeypatch):
     res, pool = _run_cert(monkeypatch, [False] * need)
     assert res["certified_pick"] is not None
     assert res["certification_abstained"] is False
-    assert res["certification_abstained"] is False
     assert res["cert_probes"] == need          # not one probe more
     assert res["certified_pick"].cert_spent > 0
 

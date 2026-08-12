@@ -136,3 +136,26 @@ CI [0.081, 0.142]) — the audit cannot say whether it is a near miss
 or a genuine false certification, and the paper does not claim
 either. At most one possible false certification in 291, against an
 alpha = 0.05 budget that would tolerate roughly 15.
+
+
+---
+
+## Review 6 (2026-08-12, fourth re-review; major revision)
+
+Two of these were outright errors in the paper, not presentation
+issues. All six plus the smaller items are fixed.
+
+| # | Finding | Disposition |
+|---|---------|-------------|
+| **R6.1** | The advertised Bonferroni-adjusted 97.5% intervals were never computed: `estimate_error_rate` hard-coded z = 1.96, so the shipped JSON held ordinary 95% intervals. | **FIXED.** `estimate_error_rate` takes `z`; the experiment audits at z = 2.2414 and records the level in every log entry. Recomputed intervals match the reviewer's arithmetic exactly: 16/400 -> [0.02315, 0.06826]; 43/400 -> [0.07753, 0.14721]. The manuscript now states the level, says the pair holds JOINTLY at 95% by Bonferroni, and presents the "at most one false certification" line as a simultaneous-confidence statement rather than a fact. |
+| **R6.2** | Proposition 6's Hedge bound is wrong by a factor of two: rewards in [-L,L] rescaled to [0,1] must be scaled back by the range 2L. | **FIXED.** Bound corrected to L*sqrt(2T ln 3); the proof now shows the rescaling step (2L * sqrt((T/2)ln3) = L*sqrt(2T ln3)) so the constant is checkable. |
+| **R6.3** | Table 4's budget (649 ms) was not the shipped run's (622 ms); and screening tests `while budget > 0` then charges afterwards, so it can overshoot. | **FIXED.** All budget figures now track the reported run (632 ms). The allowance is described as a LAUNCH THRESHOLD, not a cap, and realized expenditure is recorded and reported: mean 630-631 ms, max 711 ms across 300 runs - the overshoot is one probe, but one probe can be expensive, and the paper says so. |
+| **R6.4** | The claimed pre-commit artifact-consistency check did not exist in the repository. | **FIXED by shipping it.** `code/check_artifacts.py` is tracked and verifies: PDF newer than sources+figures; results are a publication run; provenance present; manuscript counts (runs / certificates / audited-below / above) match the JSON; the quoted screening budget equals the run's and no stale budget figures remain; every quoted certified-mutant interval appears in the audit log. Currently 11/11 pass. |
+| **R6.5** | Environment not reproducible; wall-clock costs feed calibration, budget and routing, so versions can change the statistical trajectory. | **FIXED.** `code/requirements.txt` pins cpmpy 0.9.29 / ortools 9.14.6206 / pytest 8.4.2 with the reference platform recorded; every results file now carries a provenance block (python, platform, machine, cpu_count, cpmpy, ortools, git commit, budget semantics). |
+| **R6.6** | "Stays below alpha, as it must" overstates the Monte-Carlo test (it accepts alpha+0.02 pooled, 2*alpha per seed; one seed was 0.064). | **FIXED.** Now described as a sanity check, with the actual per-seed rates (0.064, 0.036, 0.044, 0.044; pooled 0.047 over 1000 runs) and the note that the MC standard error (~0.007) cannot resolve 0.05 from 0.06, so one seed above alpha is expected noise. The theorem establishes validity; the simulation only guards against gross implementation error. |
+| smaller | Audit seeds not policy-dependent; duplicated assertion; provenance absent from JSON. | **ALL FIXED** (audit seed now includes the policy index; duplicate removed; provenance block added). |
+
+Open editorial question (not a defect): at 36 pages the routing and
+baseline material competes with the central line - falsification
+followed by a fresh zero-failure acceptance test. Worth an author
+decision before submission.

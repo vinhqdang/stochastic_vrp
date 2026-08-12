@@ -103,6 +103,11 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
     n_total = 0
     spent_total = 0.0
 
+    # NOTE (review R6.3): `budget` is a LAUNCH THRESHOLD, not a hard
+    # cap - a probe is started while budget remains and its measured
+    # cost is subtracted afterwards, so the stage may overshoot by at
+    # most one probe. The realized expenditure is returned as
+    # `screen_spent` and is what the paper reports.
     while budget > 0 and n_total < max_probes:
         alive = [s for s in states if not s.rejected]
         if not alive:
@@ -161,6 +166,7 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
     # which stage they mean. The protocol's terminal accepted output is
     # `certified_pick`; `screening_survivor` is NOT an accepted model.
     out = {"states": states, "ebh_rejected": ebh,
+           "screen_spent": spent_total, "screen_probes": n_total,
            "screening_survivor": pick,
            "screening_abstained": pick is None,
            "certification_abstained": None,      # set iff eps is given

@@ -31,6 +31,8 @@ CERT_EPS = 0.10                  # eps-certification of the final pick
 CERT_PROBE_EQUIV = 70            # cert budget, in mean tier-A costs
 ERR_EVAL_N = 400                 # independent err(m) estimate per
                                  # certified candidate (R4.1)
+ERR_EVAL_Z = 2.2414              # 97.5% two-sided: two mutant
+                                 # statements hold jointly at 95%
 
 
 def wilson(k, n, z=1.96):
@@ -116,6 +118,7 @@ def main():
         cert_all = cert_ok_all = cert_abstain_all = cert_issued = 0
         kill_costs_screen = []
         certified_log = []
+        screen_spend = []
         for rep in range(n_reps):
             spec = EVAL_SPECS[rep % len(EVAL_SPECS)]
             # pools depend ONLY on rep -> truly identical across
@@ -127,6 +130,7 @@ def main():
                                     prng, eps=CERT_EPS,
                                     cert_budget=CERT_PROBE_EQUIV
                                     * bets.cost["A"])
+            screen_spend.append(res["screen_spent"])
             cp = res.get("certified_pick")
             cert_all += 1                       # unconditional denominator
             if cp is None:
@@ -139,10 +143,12 @@ def main():
                 # null is about, on fresh micro instances (R4.1): a
                 # certificate does not prove err < eps, so we measure.
                 err, n_e, lo, hi = estimate_error_rate(
-                    cp.cand, random.Random(SEED + 77_000 + rep),
-                    n=ERR_EVAL_N)
+                    cp.cand,
+                    random.Random(SEED + 77_000 + 1000 * pol_i + rep),
+                    n=ERR_EVAL_N, z=ERR_EVAL_Z)
                 certified_log.append({
-                    "rep": rep, "family": spec.name,
+                    "rep": rep, "family": spec.name, "policy": policy,
+                    "z": ERR_EVAL_Z, "conf": "97.5% two-sided",
                     "label_faithful": bool(labels[idx_c]),
                     "descriptor": (list(cp.cand.descriptor)
                                    if cp.cand.descriptor else None),
@@ -199,6 +205,8 @@ def main():
             "abstain_rate": abstain / n_reps,
             "ebh_fdr": ebh_false / max(ebh_total, 1),
             "ebh_rejections": ebh_total,
+            "mean_screen_spend_ms": 1000 * statistics.fmean(screen_spend),
+            "max_screen_spend_ms": 1000 * max(screen_spend),
             "certified_log": certified_log,
             "n_cert_err_below_eps": sum(c["err_below_eps"]
                                         for c in certified_log),
@@ -213,7 +221,30 @@ def main():
               f"cert-rate={r['cert_rate']:.3f} cert-acc={r['cert_pick_acc']:.3f}",
               flush=True)
 
-    payload = {"alpha": ALPHA, "pool_k": POOL_K, "n_reps": n_reps,
+    import platform, subprocess
+    def _ver(mod):
+        try:
+            return __import__(mod).__version__
+        except Exception:
+            return "unknown"
+    try:
+        commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                                capture_output=True, text=True,
+                                cwd=str(pathlib.Path(__file__).parent)
+                                ).stdout.strip() or "unknown"
+    except Exception:
+        commit = "unknown"
+    provenance = {
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "cpu_count": __import__("os").cpu_count(),
+        "cpmpy": _ver("cpmpy"), "ortools": _ver("ortools"),
+        "git_commit": commit,
+        "budget_semantics": "launch threshold; may overshoot by one probe",
+    }
+    payload = {"provenance": provenance,
+               "alpha": ALPHA, "pool_k": POOL_K, "n_reps": n_reps,
                "budget_s": budget, "seed": SEED,
                "eval_families": [s.name for s in EVAL_SPECS],
                "results": results}
