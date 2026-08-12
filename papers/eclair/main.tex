@@ -69,8 +69,8 @@ equivalence nor behaviour at deployment scale. On a mutation testbed
 of five problem families with real CP-SAT probes, no faithful
 candidate was ever falsely rejected, $89$--$96\%$ of injected faults
 were detected, and an independent audit of every issued certificate --- $400$ fresh
-instances per certified model --- places $290$ of $291$ error
-intervals entirely below $\varepsilon$, none above, and one
+instances per certified model --- places all $289$ error intervals
+entirely below $\varepsilon$, with none above and none
 inconclusive.
 }
 
@@ -581,7 +581,7 @@ Proposition~\ref{prop:ebh}. Algorithm~\ref{alg:eclair} summarizes.
 
 Figure~\ref{fig:trajectories} traces one screened pool --- three
 faithful candidates and three screened mutants of the set-cover
-family --- under Kelly routing at $\alpha = 0.05$ with a $632$\,ms
+family --- under Kelly routing at $\alpha = 0.05$ with a $286$\,ms
 screening budget of measured probe time. Every mechanism of the framework is
 visible in the paths. Two mutants are driven across the rejection
 threshold within $60$\,ms: the router's prior makes every candidate
@@ -1071,7 +1071,7 @@ a manifest, and only then promoted, so the canonical package can
 never mix calibration from one run with results from another. One reproducibility caveat:
 the per-pool budget is set to $80$ times the \emph{measured} mean
 probe cost, so it drifts by a few percent between machines and runs
-($622$--$649$\,ms across our reruns) and downstream counts move by a candidate
+($263$--$286$\,ms across our single-threaded reruns; it was larger before the solver thread count was pinned) and downstream counts move by a candidate
 or two; the qualitative findings and every interval reported here are
 stable across our reruns, and a fixed probe-count budget removes the
 drift for anyone needing bit-exact replication.
@@ -1126,9 +1126,9 @@ misspecifying $p_1$ affects power only, never validity
 Tier & $\hat p_0$ (faithful) & $\bar p_0$ & $\hat p_1$ (mutants) &
 $p_1$ (bet) & mean cost\\
 \midrule
-A (micro-oracle)   & $0/240$   & $0.0153$ & $0.592$ & $0.473$ & $5.1$\,ms\\
-B (MRs)            & $0/240$   & ---      & $0.042$ & ---     & $6.2$\,ms\\
-C (cross-majority) & $28/240$  & $0.164$  & $0.567$ & $0.493$ & $12.3$\,ms\\
+A (micro-oracle)   & $0/240$   & $0.0153$ & $0.592$ & $0.473$ & $3.1$\,ms\\
+B (MRs)            & $0/240$   & ---      & $0.042$ & ---     & $2.6$\,ms\\
+C (cross-majority) & $28/240$  & $0.164$  & $0.567$ & $0.493$ & $5.0$\,ms\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1138,7 +1138,7 @@ C (cross-majority) & $28/240$  & $0.164$  & $0.567$ & $0.493$ & $12.3$\,ms\\
 
 Pools of $k = 6$ candidates (each faithful or a screened mutant with
 probability $1/2$) are screened at $\alpha = 0.05$ under a shared
-screening allowance of $632$\,ms of measured probe time per pool, then the best
+screening allowance of $286$\,ms of measured probe time per pool, then the best
 survivor --- and only that one candidate, per
 Remark~\ref{rem:oneattempt} --- enters $\varepsilon$-certification
 ($\varepsilon = 0.10$, up to $70$ tier-A-cost units). The allowance is a \emph{launch threshold} rather than a hard cap:
@@ -1146,8 +1146,8 @@ a probe is started while allowance remains and its measured cost is
 charged afterwards, so a run may overshoot by at most one probe ---
 and since a single tier-A or tier-B probe can be expensive, that one
 probe matters. The result files record realized expenditure: mean
-$630$--$631$\,ms against the $632$\,ms allowance, with a maximum of
-$711$\,ms over the $300$ runs.  We report the allowance and the
+$286$--$287$\,ms against the $286$\,ms allowance, with a maximum of
+$423$\,ms over the $300$ runs.  We report the allowance and the
 realized spend rather than pretending the former bounds the latter. Pools are
 generated from a per-replication seed and are therefore
 \emph{identical} across policies; probe randomness is per
@@ -1173,11 +1173,11 @@ Routing & False rej.\ [CI] & Detection [CI] & \multicolumn{2}{c}{Kill cost}
 & Certif. & \multicolumn{3}{c}{audit vs.\ $\varepsilon$}\\
  & & & screen & +cert & /100 & below & above & inconcl.\\
 \midrule
-Kelly       & $0.000$ [$0, .013$] & $0.958$ [$.929, .975$] & $22$ & $22$\,ms
-& $98$ & $97$ & $0$ & $1$\\
-round-robin & $0.000$ [$0, .013$] & $0.889$ [$.849, .920$] & $28$ & $28$\,ms
+Kelly       & $0.000$ [$0, .013$] & $0.958$ [$.929, .975$] & $15$ & $15$\,ms
+& $96$ & $96$ & $0$ & $0$\\
+round-robin & $0.000$ [$0, .013$] & $0.870$ [$.827, .903$] & $16$ & $16$\,ms
 & $99$ & $99$ & $0$ & $0$\\
-cost-blind  & $0.000$ [$0, .013$] & $0.958$ [$.929, .975$] & $24$ & $24$\,ms
+cost-blind  & $0.000$ [$0, .013$] & $0.954$ [$.925, .973$] & $14$ & $15$\,ms
 & $94$ & $94$ & $0$ & $0$\\
 \bottomrule
 \end{tabular}
@@ -1203,44 +1203,39 @@ not only the two highlighted below: the wider interval is the
 conservative choice for the classification that matters here, since
 declaring an interval to lie entirely below $\varepsilon$ becomes
 harder, never easier.
-Across the $300$ runs, $291$ ended in a certificate and $9$ abstained.
-Of the $291$ audited certificates, $290$ have an interval lying
-\emph{entirely below} $\varepsilon = 0.10$, none lies entirely above,
-and one is inconclusive at this sample size. Two of the certified
-models are mutants by construction; because they are the only audits
-whose outcome is in question (reference-faithful builders reproduce
-the specification exactly, so their measured error is $0$ by
-construction), their intervals --- at the same
-two-sided $97.5\%$ level used throughout --- carry the additional
-property that the two statements hold \emph{jointly} at $95\%$ by
-Bonferroni:
-\begin{itemize}
-\item \texttt{gen\_assignment}, capacity entry shifted by $-1$:
-  $\widehat{\mathrm{err}} = 16/400 = 0.040$, CI
-  $[0.02315, 0.06826]$ --- a legitimate near miss, comfortably inside
-  the tolerance the certificate claims;
-\item \texttt{gen\_assignment}, size entry shifted by $-3$:
-  $\widehat{\mathrm{err}} = 43/400 = 0.108$, CI
-  $[0.07753, 0.14721]$ --- an interval \emph{straddling}
-  $\varepsilon$. The audit cannot say whether this is a near miss or
-  a genuine false certification, and we do not claim it is either.
-\end{itemize}
-The honest summary is therefore a simultaneous-confidence statement,
-not a fact: at the joint $95\%$ level, these audits are consistent
-with at most one of the $291$ certificates having been a false
-certification, against a per-run budget of $\alpha = 0.05$ that would
-tolerate roughly $15$. That is
-consistent with the guarantee and reassuring about its
-conservativeness, but it is an audit of realized outputs, not a
-verification of the theorem --- the distinction we draw explicitly in
-Section~\ref{sec:validation}.
+Across the $300$ runs, $289$ ended in a certificate and $11$
+abstained. Every one of those $289$ audits places its interval
+\emph{entirely below} $\varepsilon = 0.10$: none lies above, and none
+is inconclusive at this sample size. In this run no certified model
+was a mutant --- the acceptance stage's fresh oracle probes either
+falsified the attempted survivor or the survivor was faithful --- so
+there is no near-miss case to display, and we quote no per-candidate
+interval the audit log does not contain.
+
+That outcome is cleaner than the guarantee requires, and it would be a
+mistake to read it as the guarantee's content.
+Theorem~\ref{thm:cert} promises a \emph{tolerance}, not identity: a
+candidate disagreeing with the specification on fewer than an
+$\varepsilon$-fraction of micro instances may certify legitimately,
+and a candidate with $\mathrm{err}(m) \ge \varepsilon$ may certify
+with probability at most $\alpha$ per run. Both are events this
+testbed can produce: an earlier run of the same code under a different
+solver configuration (multi-threaded, hence a larger derived
+allowance) certified two near-miss mutants, audited at
+$\widehat{\mathrm{err}} = 0.040$ and $0.108$. We mention that to
+characterize the tolerance and deliberately do not import its numbers
+into the tables, which report one configuration end to end. Readers
+who want a tighter promise buy it with probes:
+$\lceil\log(1/\alpha)/\log\frac{1}{1-\varepsilon}\rceil$ passes per
+attempt, i.e.\ $59$ at $\varepsilon = 0.05$ and $299$ at
+$\varepsilon = 0.01$.
 
 \paragraph{Cost of the acceptance stage.} Certification is
 deterministic in length: a successful attempt consumes exactly
 $\lceil \log(1/\alpha)/\log\frac{1}{1-\varepsilon} \rceil = 29$ fresh
-tier-A probes, i.e.\ ${\approx}150$\,ms at this run's measured mean
-tier-A cost of $5.16$\,ms, about a quarter of the $632$\,ms screening allowance
-on top of it; a failed attempt costs less, stopping at the first
+tier-A probes, i.e.\ ${\approx}91$\,ms at this run's measured mean
+tier-A cost of $3.15$\,ms, about a third of the $286$\,ms screening
+allowance on top of it; a failed attempt costs less, stopping at the first
 alarm. Certification probes barely move the kill-cost column because
 few mutants reach the acceptance stage at all.
 
@@ -1817,10 +1812,9 @@ with the specification on at least an $\varepsilon$-fraction of
 enumerable instances. On real CP-SAT probes no faithful candidate was
 falsified across every operating level tested, nine of ten injected
 faults were caught within sub-second budgets, and independently auditing every
-issued certificate placed $290$ of $291$ error intervals entirely
-below $\varepsilon$, none above, and one inconclusive --- consistent,
-at joint $95\%$ confidence, with at most one false certification
-against a budget that would tolerate roughly fifteen. The broader claim is methodological:
+issued certificate placed all $289$ error intervals entirely
+below $\varepsilon$, with none above and none inconclusive --- a
+cleaner outcome than the $\alpha = 0.05$ per-run budget requires. The broader claim is methodological:
 solver-in-the-loop verification of generative models is, at bottom, a
 sequential inference problem --- and once it is treated as one, the
 difference between ``we found no bugs'' and ``we certify at level

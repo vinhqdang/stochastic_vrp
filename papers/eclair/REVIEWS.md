@@ -159,3 +159,40 @@ Open editorial question (not a defect): at 36 pages the routing and
 baseline material competes with the central line - falsification
 followed by a fresh zero-failure acceptance test. Worth an author
 decision before submission.
+
+
+---
+
+## Review 7 (2026-08-12, fifth re-review; major revision / weak reject)
+
+Seven majors, all correct, all fixed. Two were failures of my own
+verification machinery rather than of the paper.
+
+| # | Finding | Disposition |
+|---|---------|-------------|
+| **R7.1** | The manuscript said audits used "a Wilson 95% interval", but all 291 used z = 2.2414 (97.5%). | **FIXED.** The manuscript states that ALL audits use the two-sided 97.5% level, with the reason: the wider interval is conservative for the classification that matters, since "entirely below eps" becomes harder to claim. Bonferroni is restated as an extra property of any highlighted pair, not a different level. |
+| **R7.2** | **The checker's interval test was vacuous** - its regex could not span the manuscript's line break, so `quoted` was always empty, the loop ran zero times, and it still printed "11 checks passed". | **FIXED, and the class of error closed.** Every check now asserts a minimum match count, so a check that finds nothing FAILS. Added a regression test reproducing the exact line-break case. The rewritten checker immediately proved its worth: it caught a stale audit paragraph still quoting two intervals for a run that certified none. |
+| **R7.3** | The checker did not implement its documented checks (no per-policy Table 4 check; count checks were unrestricted substring searches over 111 KB). | **FIXED.** Table 4 is parsed row by row (detection, certificates, audited-below per policy); audit totals are checked inside the located audit paragraph; quoted intervals are matched to log entries AND recomputed from err_hat*err_n at the recorded z with the confidence label verified. |
+| **R7.4** | Provenance recorded commit 8948cb3 while running modified code; neither mismatch nor dirty-tree execution was detected. | **FIXED in two steps.** Provenance now records the full commit, dirty status with modified paths, per-source SHA-256 hashes, solver params and audit z/n. First attempt still reported dirty=True for a bad reason - provenance was captured at the END of the run, when the run's own untracked staging dir made the tree look dirty - so capture moved to BEFORE any output exists and ignores the run's own results/staging paths. The shipped run is clean-tree at 3fc67a4, and the checker fails the package if it is not. |
+| **R7.5** | requirements.txt claimed one solver thread; probes.py never set it. | **FIXED** (num_search_workers=1 in code, recorded in provenance). **This mattered exactly as predicted**: pinning the thread count moved the mean tier-A cost from 5.16 to 3.15 ms, the derived allowance from 632 to 286 ms, detection from 0.958/0.889/0.958 to 0.958/0.870/0.954, certificates from 291 to 289 - and from two certified near-miss mutants to none. The configuration was a scientific parameter, not a runtime detail. |
+| **R7.6** | Publication was not transactionally atomic (calibration published ~20 min before results). | **FIXED.** All outputs go to a staging directory, are checked for completeness, hashed into MANIFEST.json, and promoted together; the checker verifies the manifest against the shipped files. Tests cover refusal-on-incomplete and manifest correctness. |
+| **R7.7** | README installed unpinned packages. | **FIXED** (installs -r requirements.txt, with why). |
+| smaller | cert cost stale; per-run expenditure; no tests for the new machinery; short commit hash. | **ALL FIXED** (cost recomputed to ~91 ms at the run's 3.15 ms mean; per-run expenditure recorded; 6 new tests -> 20 total; full-length hash + content hashes). |
+
+**Consequence for the exposition, stated plainly:** the single-threaded
+configuration certified no mutants, so the two-interval near-miss
+illustration has no instance in the shipped run. The interval bullets
+are deleted rather than carried over from another configuration; the
+paragraph explaining what the eps-tolerance permits is kept, and the
+earlier configuration's two audited near-misses (0.040, 0.108) are
+mentioned once, explicitly attributed, and kept out of the tables.
+Losing the concrete example costs expositional value; mixing runs cost
+this artifact two rejections.
+
+**Also reran under the pinned configuration:** the alpha sweep, tier
+ablation, robustness sweeps and baselines were all produced
+multi-threaded, so the package would otherwise mix configurations.
+Those reruns are in progress; their numbers replace the current ones
+before submission.
+
+Package state: `check_artifacts.py` reports **29 passed / 0 failed**.
