@@ -1,7 +1,7 @@
 {
   "alpha": 0.05,
   "seed": 20260808,
-  "budget_s": 0.6397066666666666,
+  "budget_s": 0.6489866666666667,
   "generation": [
     {
       "family": "coloring",
@@ -130,7 +130,10 @@
       "rejected_other": 0,
       "survived_other": 0,
       "abstained": false,
-      "pick_canonical": true
+      "pick_canonical": true,
+      "certified": true,
+      "certified_canonical": true,
+      "certification_abstained": false
     },
     "knapsack_conflicts": {
       "n": 3,
@@ -139,7 +142,10 @@
       "rejected_other": 0,
       "survived_other": 0,
       "abstained": false,
-      "pick_canonical": true
+      "pick_canonical": true,
+      "certified": true,
+      "certified_canonical": true,
+      "certification_abstained": false
     },
     "ontime_selection": {
       "n": 5,
@@ -148,7 +154,10 @@
       "rejected_other": 0,
       "survived_other": 0,
       "abstained": false,
-      "pick_canonical": true
+      "pick_canonical": true,
+      "certified": true,
+      "certified_canonical": true,
+      "certification_abstained": false
     }
   }
 }

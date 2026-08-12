@@ -1,6 +1,6 @@
 {
   "alpha": 0.05,
-  "budget_s": 0.6367733333333334,
+  "budget_s": 0.6489866666666667,
   "seed": 20260807,
   "models": [
     "openrouter/free",
@@ -265,7 +265,11 @@
             "nemotron-3-ultra-550b-a55b:free/stepwise*"
           ]
         }
-      }
+      },
+      "cert_runs": 5,
+      "cert_issued": 5,
+      "cert_ok": 5,
+      "cert_abstain": 0
     },
     "round_robin": {
       "n_faith": 20,
@@ -323,7 +327,11 @@
             "nemotron-3-ultra-550b-a55b:free/stepwise*"
           ]
         }
-      }
+      },
+      "cert_runs": 5,
+      "cert_issued": 5,
+      "cert_ok": 5,
+      "cert_abstain": 0
     },
     "cost_blind": {
       "n_faith": 20,
@@ -381,7 +389,11 @@
             "nemotron-3-ultra-550b-a55b:free/stepwise*"
           ]
         }
-      }
+      },
+      "cert_runs": 5,
+      "cert_issued": 5,
+      "cert_ok": 5,
+      "cert_abstain": 0
     }
   }
 }

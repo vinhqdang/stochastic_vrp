@@ -57,14 +57,16 @@ class Bets:
 
 class State:
     __slots__ = ("cand", "logE", "q", "spent", "rejected", "n_probes",
-                 "error")
+                 "error", "cert_spent", "rejected_in_cert")
 
     def __init__(self, cand, prior):
         self.cand = cand
         self.logE = 0.0
         self.q = prior
-        self.spent = 0.0
+        self.spent = 0.0            # ALL probe time on this candidate
+        self.cert_spent = 0.0       # ... of which, certification phase
         self.rejected = False
+        self.rejected_in_cert = False
         self.n_probes = 0
         self.error = None
 
@@ -149,7 +151,14 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
                  if not s.rejected and i not in ebh]
     pick = min(survivors, key=lambda s: s.logE) if survivors else None
 
-    out = {"states": states, "ebh_rejected": ebh, "pick": pick,
+    # Unambiguous two-stage outputs (R3.4). `pick` is retained as a
+    # backwards-compatible alias of the SCREENING survivor; the
+    # protocol's terminal accepted output is `certified_pick`.
+    out = {"states": states, "ebh_rejected": ebh,
+           "screening_survivor": pick, "pick": pick,
+           "screening_abstained": pick is None,
+           "certification_abstained": None,      # set iff eps is given
+           "certified_pick": None,
            "abstained": pick is None}
 
     if eps is not None and cert_budget > 0:
@@ -183,10 +192,14 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
                     s.error = f"{type(e).__name__}: {e}"
                     alarm, cost = True, 0.0
                 spent += cost
+                s.spent += cost         # attribute cert cost to the
+                s.n_probes += 1         # candidate it was spent on (R3.5)
+                s.cert_spent += cost
                 n_pr += 1
                 if alarm:               # exact checker: also a hard
                     s.logE = HARD_LOG_E  # falsification of s
                     s.rejected = True
+                    s.rejected_in_cert = True
                     fell = True
                     break
                 passes += 1
@@ -194,12 +207,20 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
                 out["certified_pick"] = s
         out["cert_spent"] = spent
         out["cert_probes"] = n_pr
-        # the falsification-side pick may have been rejected above
+        out["certification_abstained"] = out["certified_pick"] is None
+        # A certification alarm may have falsified the attempted
+        # survivor; the screening-stage survivor set is reported after
+        # that update, but note the e-BH set is the SCREENING-stage
+        # one by construction (it is what the certification attempt
+        # was selected from) and is not recomputed.
         alive = [s for i, s in enumerate(states)
                  if not s.rejected and i not in ebh]
-        out["pick"] = (min(alive, key=lambda s: s.logE)
-                       if alive else None)
-        out["abstained"] = out["pick"] is None
+        out["screening_survivor"] = (min(alive, key=lambda s: s.logE)
+                                     if alive else None)
+        out["pick"] = out["screening_survivor"]
+        out["screening_abstained"] = out["screening_survivor"] is None
+        # the protocol's terminal accepted output is the certified one
+        out["abstained"] = out["certified_pick"] is None
     return out
 
 

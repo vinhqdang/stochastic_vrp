@@ -102,3 +102,136 @@ def test_certification_separates():
     assert any(rejected[2:])
     if res["pick"] is not None:
         assert labels[res["states"].index(res["pick"])]
+
+
+# ── certification phase (Theorem 3) — deterministic tests with a
+#    mocked Tier-A oracle, so behaviour does not depend on CP-SAT
+#    randomness (review R3.3) ───────────────────────────────────────
+
+import eclair.certify as C
+
+
+class _FakeCand:
+    """Minimal stand-in for a candidate; identity is all we need."""
+    _n = 0
+
+    def __init__(self):
+        _FakeCand._n += 1
+        self.cid = _FakeCand._n
+        self.spec = None
+
+    def build(self, params):            # pragma: no cover
+        raise AssertionError("mocked candidates are never solved")
+
+
+def _bets():
+    calib = {"A": {"p0_bar": 0.02, "p1_bet": 0.4, "mean_cost": 0.001},
+             "B": {"delta": 0.05, "mean_cost": 0.001},
+             "C": {"p0_bar": 0.10, "p1_bet": 0.4, "mean_cost": 0.001}}
+    return Bets(calib)
+
+
+def _run_cert(monkeypatch, alarms, eps=0.10, alpha=0.05, k=3,
+              cert_budget=10.0, screen_budget=0.0):
+    """Screening is skipped (zero budget); tier A returns `alarms` in
+    order during the certification phase."""
+    seq = list(alarms)
+
+    def fake_tier_a(cand, rng):
+        return (seq.pop(0) if seq else False), 0.001
+
+    monkeypatch.setitem(C.TIER_FNS, "A", fake_tier_a)
+    pool = [_FakeCand() for _ in range(k)]
+    return run_certification(pool, _bets(), "kelly", screen_budget, alpha,
+                             random.Random(0), eps=eps,
+                             cert_budget=cert_budget), pool
+
+
+def test_cert_threshold_arithmetic():
+    """need = ceil(log(1/alpha)/log(1/(1-eps))) — the paper's formula."""
+    for alpha, eps, want in [(0.05, 0.10, 29), (0.05, 0.05, 59),
+                             (0.05, 0.01, 299), (0.01, 0.10, 44)]:
+        need = math.ceil(math.log(1 / alpha) / -math.log(1 - eps))
+        assert need == want, (alpha, eps, need)
+
+
+def test_cert_succeeds_after_exactly_need_passes(monkeypatch):
+    need = math.ceil(math.log(1 / 0.05) / -math.log(1 - 0.10))   # 29
+    res, pool = _run_cert(monkeypatch, [False] * need)
+    assert res["certified_pick"] is not None
+    assert res["certification_abstained"] is False
+    assert res["abstained"] is False
+    assert res["cert_probes"] == need          # not one probe more
+    assert res["certified_pick"].cert_spent > 0
+
+
+def test_cert_alarm_blocks_certification_and_falsifies(monkeypatch):
+    """An alarm on probe 3 must prevent certification, hard-falsify the
+    attempted candidate, and NOT silently promote another survivor."""
+    res, pool = _run_cert(monkeypatch, [False, False, True])
+    assert res["certified_pick"] is None
+    assert res["certification_abstained"] is True
+    assert res["abstained"] is True            # terminal output is None
+    attempted = [s for s in res["states"] if s.rejected_in_cert]
+    assert len(attempted) == 1 and attempted[0].rejected
+    # a screening survivor may still exist, but it is NOT certified
+    assert res["screening_survivor"] is not None
+    assert res["screening_survivor"] is not res["certified_pick"]
+
+
+def test_cert_insufficient_budget_abstains(monkeypatch):
+    """Budget for ~5 probes < need: abstain, do not certify."""
+    res, _ = _run_cert(monkeypatch, [False] * 100, cert_budget=0.0055)
+    assert res["certified_pick"] is None
+    assert res["certification_abstained"] is True
+    assert res["cert_probes"] <= 6             # budget-bounded
+
+
+def test_only_one_candidate_is_attempted(monkeypatch):
+    """Single-attempt rule (Remark 2): an alarm on the first attempt
+    must not start a second candidate's attempt."""
+    need = math.ceil(math.log(1 / 0.05) / -math.log(1 - 0.10))
+    res, _ = _run_cert(monkeypatch, [True] + [False] * (3 * need))
+    assert res["cert_probes"] == 1             # stopped after the alarm
+    assert sum(s.rejected_in_cert for s in res["states"]) == 1
+    assert res["certified_pick"] is None
+
+
+def test_ebh_rejected_cannot_be_certified(monkeypatch):
+    """A candidate in the e-BH rejection set is not a survivor and so
+    can never be the attempted (or certified) candidate."""
+    seq = [False] * 200
+
+    def fake_tier_a(cand, rng):
+        return (seq.pop(0) if seq else False), 0.001
+
+    monkeypatch.setitem(C.TIER_FNS, "A", fake_tier_a)
+    pool = [_FakeCand() for _ in range(4)]
+    res = run_certification(pool, _bets(), "kelly", 0.0, 0.05,
+                            random.Random(0), eps=0.10, cert_budget=10.0)
+    cp = res["certified_pick"]
+    if cp is not None:
+        idx = res["states"].index(cp)
+        assert idx not in res["ebh_rejected"]
+        assert not cp.rejected
+
+
+def test_cert_false_certification_rate_respects_alpha(monkeypatch):
+    """Empirical check of Theorem 3: candidates whose true error rate
+    is exactly eps must be certified at most ~alpha of the time."""
+    alpha, eps, trials = 0.05, 0.10, 400
+    rng = random.Random(20260812)
+    certified = 0
+    for _ in range(trials):
+        draws = [rng.random() < eps for _ in range(400)]
+
+        def fake_tier_a(cand, r, _d=draws):
+            return (_d.pop(0) if _d else True), 0.0001
+
+        monkeypatch.setitem(C.TIER_FNS, "A", fake_tier_a)
+        pool = [_FakeCand() for _ in range(2)]
+        res = run_certification(pool, _bets(), "kelly", 0.0, alpha,
+                                random.Random(0), eps=eps, cert_budget=10.0)
+        certified += res["certified_pick"] is not None
+    rate = certified / trials
+    assert rate <= alpha + 0.02, rate      # Ville bound + MC slack

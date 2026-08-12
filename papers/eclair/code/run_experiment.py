@@ -90,6 +90,8 @@ def main():
         kill_costs, pick_ok, pick_n, abstain = [], 0, 0, 0
         ebh_false = ebh_total = 0
         cert_n = cert_ok = cert_abstain = 0
+        cert_all = cert_ok_all = cert_abstain_all = cert_issued = 0
+        kill_costs_screen = []
         for rep in range(n_reps):
             spec = EVAL_SPECS[rep % len(EVAL_SPECS)]
             # pools depend ONLY on rep -> truly identical across
@@ -102,7 +104,13 @@ def main():
                                     cert_budget=CERT_PROBE_EQUIV
                                     * bets.cost["A"])
             cp = res.get("certified_pick")
-            if any(labels):
+            cert_all += 1                       # unconditional denominator
+            if cp is None:
+                cert_abstain_all += 1
+            else:
+                cert_issued += 1
+                cert_ok_all += labels[res["states"].index(cp)]
+            if any(labels):                     # conditional (availability)
                 cert_n += 1
                 if cp is None:
                     cert_abstain += 1
@@ -116,7 +124,8 @@ def main():
                     n_mut += 1
                     if st.rejected:
                         n_mut_rej += 1
-                        kill_costs.append(st.spent)
+                        kill_costs.append(st.spent)          # incl. cert
+                        kill_costs_screen.append(st.spent - st.cert_spent)
             for i in res["ebh_rejected"]:
                 ebh_total += 1
                 ebh_false += labels[i]
@@ -131,10 +140,19 @@ def main():
             "false_rej_ci": wilson(n_faith_rej, n_faith),
             "detect": n_mut_rej / max(n_mut, 1), "n_mut": n_mut,
             "detect_ci": wilson(n_mut_rej, n_mut),
+            # conditional on the pool containing a faithful candidate
             "cert_rate": (cert_n - cert_abstain) / max(cert_n, 1),
             "cert_pick_acc": cert_ok / max(cert_n - cert_abstain, 1),
             "cert_abstain": cert_abstain / max(cert_n, 1),
             "n_cert": cert_n,
+            # unconditional: every run, including all-mutant pools
+            "cert_rate_uncond": cert_issued / max(cert_all, 1),
+            "cert_acc_uncond": cert_ok_all / max(cert_issued, 1),
+            "n_runs": cert_all, "n_certified": cert_issued,
+            "n_certified_faithful": cert_ok_all,
+            "n_abstained": cert_abstain_all,
+            "mean_kill_cost_screen_ms": 1000 * statistics.fmean(
+                kill_costs_screen) if kill_costs_screen else None,
             "mean_kill_cost_ms": 1000 * statistics.fmean(kill_costs)
             if kill_costs else None,
             "pick_accuracy": pick_ok / max(pick_n, 1), "n_picks": pick_n,

@@ -31,6 +31,7 @@ import time
 from eclair.certify import Bets, run_certification
 from eclair.llm import MODELS, PROMPT_STYLES, make_llm_candidate, proxy_label
 from eclair.problems import COLORING, KNAPSACK, SCHED
+from run_experiment import CERT_EPS, CERT_PROBE_EQUIV
 
 ALPHA = 0.05
 SEED = 20260808
@@ -103,7 +104,10 @@ def main():
         if len(pool) < 2:
             continue
         res = run_certification(pool, bets, "kelly", budget, ALPHA,
-                                random.Random(SEED + 1))
+                                random.Random(SEED + 1),
+                                eps=CERT_EPS,
+                                cert_budget=CERT_PROBE_EQUIV
+                                * bets.cost["A"])
         fam = {"n": len(pool),
                "canonical": sum(labels),
                "rejected_canonical": 0, "rejected_other": 0,
@@ -115,14 +119,23 @@ def main():
                 fam["rejected_other"] += 1
             elif not canonical:
                 fam["survived_other"] += 1
-        if res["pick"] is not None:
-            fam["pick_canonical"] = labels[res["states"].index(res["pick"])]
+        if res["screening_survivor"] is not None:
+            fam["pick_canonical"] = labels[
+                res["states"].index(res["screening_survivor"])]
+        cp = res.get("certified_pick")
+        fam["certified"] = cp is not None
+        fam["certified_canonical"] = (
+            labels[res["states"].index(cp)] if cp is not None else None)
+        fam["certification_abstained"] = res["certification_abstained"]
         results[name] = fam
         print(f"{name:<20} pool={fam['n']} canonical={fam['canonical']} "
               f"rej-other={fam['rejected_other']} "
               f"rej-canonical={fam['rejected_canonical']} "
               f"surv-other={fam['survived_other']} "
-              f"abstain={fam['abstained']}", flush=True)
+              f"abstain={fam['abstained']} "
+              f"certified={fam['certified']}"
+              f"{'(canonical)' if fam['certified_canonical'] else ''}",
+              flush=True)
 
     payload = {"alpha": ALPHA, "seed": SEED, "budget_s": budget,
                "generation": gen_log, "results": results}

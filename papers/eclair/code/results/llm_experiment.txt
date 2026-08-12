@@ -1,6 +1,6 @@
 ECLAIR end-to-end LLM experiment (OpenRouter generation + CP-SAT probes)
 models: openrouter/free, nvidia/nemotron-3-ultra-550b-a55b:free
-alpha=0.05  budget=637ms/pool  pools: one per family, candidates = 2 models x 3 prompt styles
+alpha=0.05  budget=649ms/pool  pools: one per family, candidates = 2 models x 3 prompt styles
 generation: 20/30 valid code, 20/20 proxy-faithful
 
 kelly        false-rej=0/20  detect=0/0  pick-ok=5/5  abstain=0  eBH-FDR=0/1
@@ -14,4 +14,4 @@ per-family outcomes under kelly (* = proxy-faithful candidate):
   gen_assignment: rejected=[] survived=['nemotron-3-ultra-550b-a55b:free/direct*', 'nemotron-3-ultra-550b-a55b:free/stepwise*', 'nemotron-3-ultra-550b-a55b:free/expert*']
   ontime_selection: rejected=[] survived=['free/expert*', 'nemotron-3-ultra-550b-a55b:free/direct*', 'nemotron-3-ultra-550b-a55b:free/stepwise*']
 
-total wall time: 1804s
+total wall time: 15s

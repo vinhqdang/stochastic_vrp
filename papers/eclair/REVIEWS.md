@@ -62,3 +62,39 @@ two substantive defects and a numbers-hygiene list.
 | **R2.10** | R1.6's promised solution-level oracle check was silently dropped. | **FIXED as an explicit narrowing**, not a silent one: a new paragraph states that faithfulness here means optimum-value agreement, that the ambiguity study exhibits the blindness, that solution-level probes fit the framework unchanged, and that they need a candidate/checker variable-mapping contract our formalism-agnostic interface does not impose. Flagged as the most valuable extension. |
 | **R2.11** | Arch figure still drew repair as a live component. | **FIXED.** Repair box/arrows dashed and captioned as deliberately-not-claimed future work. |
 | **R2.12** | (new, self-caught) alpha-sweep appendix detection at alpha=0.05 (0.924) vs Table 4 (0.964) look contradictory. | **FIXED.** Appendix caption explains those runs are screening-only (no certification phase). |
+
+
+---
+
+## Review 3 (2026-08-12, second adversarial re-review; 5/10, major revision)
+
+Accepted the falsification-vs-certification split as resolving the
+original defect, but raised nine majors. All are correct; all are
+addressed.
+
+| # | Finding | Disposition |
+|---|---------|-------------|
+| **R3.1** | The alpha+delta screening guarantee does not follow: Clopper-Pearson covers ONE binomial parameter under the calibration design; it cannot establish the history-uniform conditional bound of Assumption 1(c). Propagates to e-BH. | **FIXED — claim withdrawn entirely.** Theorem 2 and Proposition 4 are now stated strictly conditionally on Assumption 1, with the caveat propagated verbatim into the e-BH proof. The assumption discussion states that calibration + transfer tests are empirical stress tests, NOT proofs, and names uniform-conditional calibration (stratified worst-case / online recalibration with a risk budget) as the framework's most important open problem. Tier-A/B-only configurations are exempt and remain unconditional. |
+| **R3.2** | Title/abstract too broad for a certificate covering optimum-value agreement on the micro distribution. | **FIXED.** Retitled "Anytime-Valid Screening of LLM-Generated Constraint Models, with eps-Certification of Optimum-Value Agreement"; the abstract now names the scope and explicitly excludes feasible-set equivalence, returned solutions, and deployment-scale behaviour. |
+| **R3.3** | The new certification path had no direct tests (7 tests; `test_certification_separates` never enabled it). | **FIXED.** Seven new deterministic tests with a mocked Tier-A oracle (14 total, all passing): threshold arithmetic at four (alpha,eps) pairs; certification after exactly `need` passes; alarm blocks certification and hard-falsifies; insufficient-budget abstention; single-attempt rule; e-BH-rejected candidates cannot be certified; and a 400-trial Monte-Carlo check that candidates with true error exactly eps certify at most ~alpha of the time. |
+| **R3.4** | Abstention semantics did not match Algorithm 1 (`abstained` keyed to the screening pick). | **FIXED.** Two-stage outputs: `screening_survivor`, `certified_pick`, `screening_abstained`, `certification_abstained`; `abstained` now keyed to the terminal certified output. |
+| **R3.5** | Certification probe costs omitted from kill cost. | **FIXED.** Certification probes update `State.spent` (with `cert_spent` recorded separately); Table 4 reports kill cost twice, screening-only and including certification. |
+| **R3.6** | Certification denominator selectively conditional; stale "single certified-mutant case" sentence contradicting S7.1. | **FIXED.** Both denominators reported (285/300 unconditional; 0.99/0.99/0.90 conditional availability). The stale sentence is replaced by a statement of what the tolerance permits in general. |
+| **R3.7** | LLM and ambiguity studies never ran the certification phase; README stale. | **FIXED.** Both runners now pass eps/cert_budget and were rerun: certificates issued in 5/5 LLM families under all three policies and in 3/3 ambiguity families, every certified model proxy-faithful/canonical. Section text updated; README corrected. |
+| **R3.8** | Same-stream "consumes 4.4 probes" is counterfactual (all 13 execute). | **FIXED.** Restated as "would stop after 4.4 probes," with an explicit parenthetical that both arms execute all 13 so the comparison is exactly paired. |
+| **R3.9** | Four inferentially incorrect remnants; Figure 1 lacked the certification node. | **FIXED.** All four rewritten; the architecture figure gains an eps-certify node fed from the survivor pick, with alarm/budget routing to abstention, and a caption naming it the only path to an accepted model. |
+
+Smaller items: code README de-staled ("probe-seconds", "Kelly-style",
+14 tests); e-BH set documented as the screening-stage set that the
+certification attempt was selected from; a reproducibility caveat added
+for the timing-derived budget (623-649 ms across runs).
+
+**Rerun outcome under the corrected code (300 runs):** 285 certified,
+283 faithful, 15 abstentions --- and the two certified mutants are
+near-misses inside the eps = 0.10 tolerance, which the paper now uses
+as the concrete illustration of what Theorem 3 does and does not
+promise (previously a clean 287/287 run made this point abstractly).
+
+Still open (declared as such in the paper, not claimed):
+uniform-conditional calibration for Tier C; solution-level oracle
+probes; repair-tournament FDR; deployment-scale certification.

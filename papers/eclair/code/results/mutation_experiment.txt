@@ -1,10 +1,10 @@
 ECLAIR mutation-testbed experiment (real CP-SAT probes)
-alpha=0.05 pool_k=6 reps/policy=100 budget=633ms/rep seed=20260807
+alpha=0.05 pool_k=6 reps/policy=100 budget=649ms/rep seed=20260807
 calibration families: knapsack_conflicts, coloring | eval families: set_cover, gen_assignment, ontime_selection
 
 policy       false-rej  detect  kill-ms pick-acc  eBH-FDR  abstain
-kelly           0.0000  0.9642       23    1.000   0.0000    0.010
-round_robin     0.0000  0.8925       29    1.000   0.0000    0.010
-cost_blind      0.0000  0.9577       24    0.990   0.0000    0.010
+kelly           0.0000  0.9609       23    0.980   0.0000    0.020
+round_robin     0.0000  0.8893       29    1.000   0.0000    0.020
+cost_blind      0.0000  0.9577       26    1.000   0.0000    0.110
 
-total wall time: 297s
+total wall time: 306s

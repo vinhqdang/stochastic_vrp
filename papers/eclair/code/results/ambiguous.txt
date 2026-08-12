@@ -1,8 +1,8 @@
 ECLAIR ambiguous-specification study
 10/18 valid, 10 canonical, 0 silent other-reading models
 
-coloring: {'n': 2, 'canonical': 2, 'rejected_canonical': 0, 'rejected_other': 0, 'survived_other': 0, 'abstained': False, 'pick_canonical': True}
-knapsack_conflicts: {'n': 3, 'canonical': 3, 'rejected_canonical': 0, 'rejected_other': 0, 'survived_other': 0, 'abstained': False, 'pick_canonical': True}
-ontime_selection: {'n': 5, 'canonical': 5, 'rejected_canonical': 0, 'rejected_other': 0, 'survived_other': 0, 'abstained': False, 'pick_canonical': True}
+coloring: {'n': 2, 'canonical': 2, 'rejected_canonical': 0, 'rejected_other': 0, 'survived_other': 0, 'abstained': False, 'pick_canonical': True, 'certified': True, 'certified_canonical': True, 'certification_abstained': False}
+knapsack_conflicts: {'n': 3, 'canonical': 3, 'rejected_canonical': 0, 'rejected_other': 0, 'survived_other': 0, 'abstained': False, 'pick_canonical': True, 'certified': True, 'certified_canonical': True, 'certification_abstained': False}
+ontime_selection: {'n': 5, 'canonical': 5, 'rejected_canonical': 0, 'rejected_other': 0, 'survived_other': 0, 'abstained': False, 'pick_canonical': True, 'certified': True, 'certified_canonical': True, 'certification_abstained': False}
 
-wall time 943s
+wall time 3s
