@@ -26,6 +26,19 @@ ALPHA = 0.05
 POOL_K = 6
 SEED = 20260807
 BUDGET_PROBE_EQUIV = 80          # budget = this many mean-cost probes
+CERT_EPS = 0.10                  # eps-certification of the final pick
+CERT_PROBE_EQUIV = 70            # cert budget, in mean tier-A costs
+
+
+def wilson(k, n, z=1.96):
+    """Wilson 95% interval for a binomial rate."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return (max(0.0, c - h), min(1.0, c + h))
 
 
 def build_pool(spec, rng):
@@ -72,15 +85,29 @@ def main():
           f"per-rep budget = {budget*1000:.0f}ms solver time", flush=True)
 
     results = {}
-    for policy in ("kelly", "round_robin", "cost_blind"):
-        prng = random.Random(SEED + 1)          # same pools across policies
+    for pol_i, policy in enumerate(("kelly", "round_robin", "cost_blind")):
         n_faith = n_faith_rej = n_mut = n_mut_rej = 0
         kill_costs, pick_ok, pick_n, abstain = [], 0, 0, 0
         ebh_false = ebh_total = 0
+        cert_n = cert_ok = cert_abstain = 0
         for rep in range(n_reps):
             spec = EVAL_SPECS[rep % len(EVAL_SPECS)]
-            pool, labels = build_pool(spec, prng)
-            res = run_certification(pool, bets, policy, budget, ALPHA, prng)
+            # pools depend ONLY on rep -> truly identical across
+            # policies (R1.8); probe randomness is per (policy, rep)
+            pool, labels = build_pool(
+                spec, random.Random(SEED * 100_000 + rep))
+            prng = random.Random(SEED + 1000 * (pol_i + 1) + rep)
+            res = run_certification(pool, bets, policy, budget, ALPHA,
+                                    prng, eps=CERT_EPS,
+                                    cert_budget=CERT_PROBE_EQUIV
+                                    * bets.cost["A"])
+            cp = res.get("certified_pick")
+            if any(labels):
+                cert_n += 1
+                if cp is None:
+                    cert_abstain += 1
+                else:
+                    cert_ok += labels[res["states"].index(cp)]
             for st, faithful in zip(res["states"], labels):
                 if faithful:
                     n_faith += 1
@@ -101,7 +128,13 @@ def main():
                 pick_ok += labels[idx]
         results[policy] = {
             "false_rej": n_faith_rej / max(n_faith, 1), "n_faith": n_faith,
+            "false_rej_ci": wilson(n_faith_rej, n_faith),
             "detect": n_mut_rej / max(n_mut, 1), "n_mut": n_mut,
+            "detect_ci": wilson(n_mut_rej, n_mut),
+            "cert_rate": (cert_n - cert_abstain) / max(cert_n, 1),
+            "cert_pick_acc": cert_ok / max(cert_n - cert_abstain, 1),
+            "cert_abstain": cert_abstain / max(cert_n, 1),
+            "n_cert": cert_n,
             "mean_kill_cost_ms": 1000 * statistics.fmean(kill_costs)
             if kill_costs else None,
             "pick_accuracy": pick_ok / max(pick_n, 1), "n_picks": pick_n,
@@ -113,7 +146,8 @@ def main():
         print(f"{policy:<12} false-rej={r['false_rej']:.4f} (n={n_faith})  "
               f"detect={r['detect']:.4f} (n={n_mut})  "
               f"kill-cost={r['mean_kill_cost_ms'] and round(r['mean_kill_cost_ms'])}ms  "
-              f"pick-acc={r['pick_accuracy']:.3f}  eBH-FDR={r['ebh_fdr']:.4f}",
+              f"pick-acc={r['pick_accuracy']:.3f}  eBH-FDR={r['ebh_fdr']:.4f}  "
+              f"cert-rate={r['cert_rate']:.3f} cert-acc={r['cert_pick_acc']:.3f}",
               flush=True)
 
     payload = {"alpha": ALPHA, "pool_k": POOL_K, "n_reps": n_reps,

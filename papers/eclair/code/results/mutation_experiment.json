@@ -2,7 +2,7 @@
   "alpha": 0.05,
   "pool_k": 6,
   "n_reps": 100,
-  "budget_s": 0.6397066666666666,
+  "budget_s": 0.6228,
   "seed": 20260807,
   "eval_families": [
     "set_cover",
@@ -12,39 +12,75 @@
   "results": {
     "kelly": {
       "false_rej": 0.0,
-      "n_faith": 300,
-      "detect": 0.9,
-      "n_mut": 300,
-      "mean_kill_cost_ms": 19.991053355556136,
-      "pick_accuracy": 0.89,
-      "n_picks": 100,
-      "abstain_rate": 0.0,
+      "n_faith": 293,
+      "false_rej_ci": [
+        0.0,
+        0.012941582311913155
+      ],
+      "detect": 0.9609120521172638,
+      "n_mut": 307,
+      "detect_ci": [
+        0.9329303191955673,
+        0.9775012317937468
+      ],
+      "cert_rate": 0.98989898989899,
+      "cert_pick_acc": 0.9897959183673469,
+      "cert_abstain": 0.010101010101010102,
+      "n_cert": 99,
+      "mean_kill_cost_ms": 21.93416609830515,
+      "pick_accuracy": 0.98989898989899,
+      "n_picks": 99,
+      "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
-      "ebh_rejections": 166
+      "ebh_rejections": 205
     },
     "round_robin": {
       "false_rej": 0.0,
-      "n_faith": 298,
-      "detect": 0.8741721854304636,
-      "n_mut": 302,
-      "mean_kill_cost_ms": 29.2562553598484,
-      "pick_accuracy": 0.95,
-      "n_picks": 100,
-      "abstain_rate": 0.0,
+      "n_faith": 293,
+      "false_rej_ci": [
+        0.0,
+        0.012941582311913155
+      ],
+      "detect": 0.8925081433224755,
+      "n_mut": 307,
+      "detect_ci": [
+        0.8528838012661093,
+        0.9224306997530594
+      ],
+      "cert_rate": 1.0,
+      "cert_pick_acc": 1.0,
+      "cert_abstain": 0.0,
+      "n_cert": 99,
+      "mean_kill_cost_ms": 27.933878040146237,
+      "pick_accuracy": 1.0,
+      "n_picks": 99,
+      "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
-      "ebh_rejections": 128
+      "ebh_rejections": 167
     },
     "cost_blind": {
       "false_rej": 0.0,
-      "n_faith": 286,
-      "detect": 0.9426751592356688,
-      "n_mut": 314,
-      "mean_kill_cost_ms": 22.56908838175535,
-      "pick_accuracy": 0.9587628865979382,
-      "n_picks": 97,
-      "abstain_rate": 0.02,
+      "n_faith": 293,
+      "false_rej_ci": [
+        0.0,
+        0.012941582311913155
+      ],
+      "detect": 0.9609120521172638,
+      "n_mut": 307,
+      "detect_ci": [
+        0.9329303191955673,
+        0.9775012317937468
+      ],
+      "cert_rate": 0.98989898989899,
+      "cert_pick_acc": 1.0,
+      "cert_abstain": 0.010101010101010102,
+      "n_cert": 99,
+      "mean_kill_cost_ms": 23.89632046440617,
+      "pick_accuracy": 1.0,
+      "n_picks": 99,
+      "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
-      "ebh_rejections": 185
+      "ebh_rejections": 202
     }
   }
 }

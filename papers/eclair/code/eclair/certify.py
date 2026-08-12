@@ -80,9 +80,12 @@ def _kelly_score(st, tier, bets, log_thresh, use_cost=True):
 
 def run_certification(pool, bets, policy, budget, alpha, rng,
                       prior=0.5, max_probes=4000, tiers=TIERS,
-                      trace=None):
-    """Certify a candidate pool. Returns dict with per-candidate final
-    states, the e-BH rejection set, and the certified pick.
+                      trace=None, eps=None, cert_budget=0.0):
+    """Screen a candidate pool (falsification e-processes), then
+    optionally CERTIFY the best survivor with an opposite-direction
+    e-process (eps-certification; see below). Returns dict with
+    per-candidate final states, the e-BH rejection set, the surviving
+    pick, and (if eps is set) the certified pick.
     `tiers` restricts the probe pool (ablations). If `trace` is a
     list, (candidate_index, tier, cumulative_cost, logE) is appended
     after every probe (figures/diagnostics only)."""
@@ -140,10 +143,61 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
                           min(st.logE, HARD_LOG_E)))
 
     ebh = e_bh([math.exp(min(s.logE, HARD_LOG_E)) for s in states], alpha)
-    survivors = [s for s in states if not s.rejected]
+    # survivors: neither Ville-rejected nor in the e-BH rejection set
+    # (the pick must be consistent with BOTH procedures; R1.3)
+    survivors = [s for i, s in enumerate(states)
+                 if not s.rejected and i not in ebh]
     pick = min(survivors, key=lambda s: s.logE) if survivors else None
-    return {"states": states, "ebh_rejected": ebh, "pick": pick,
-            "abstained": pick is None}
+
+    out = {"states": states, "ebh_rejected": ebh, "pick": pick,
+           "abstained": pick is None}
+
+    if eps is not None and cert_budget > 0:
+        # CERTIFICATION phase (R1.1): a second, opposite-direction
+        # e-process on the surviving pick(s), testing
+        #   H0'(m): err(m) := P_I(v_m(I) != v*(I)) >= eps
+        # with FRESH tier-A oracle probes. Under H0' each fresh
+        # i.i.d. probe alarms w.p. >= eps (exact checker), so
+        # e = 1{pass}/(1-eps) has conditional mean <= 1 under H0';
+        # crossing 1/alpha certifies err < eps at anytime level alpha.
+        # Selection of WHICH candidate to certify is independent of
+        # the fresh probes, so the guarantee survives selection.
+        out.update(certified_pick=None, cert_spent=0.0, cert_probes=0)
+        ranked = sorted(survivors, key=lambda s: s.logE)
+        need = math.ceil(math.log(1.0 / alpha) / -math.log(1.0 - eps))
+        spent = 0.0
+        n_pr = 0
+        for s in ranked:
+            passes = 0
+            fell = False
+            while passes < need and spent < cert_budget:
+                try:
+                    alarm, cost = TIER_FNS["A"](s.cand, rng)
+                except Exception as e:
+                    s.error = f"{type(e).__name__}: {e}"
+                    alarm, cost = True, 0.0
+                spent += cost
+                n_pr += 1
+                if alarm:               # exact checker: also a hard
+                    s.logE = HARD_LOG_E  # falsification of s
+                    s.rejected = True
+                    fell = True
+                    break
+                passes += 1
+            if not fell and passes >= need:
+                out["certified_pick"] = s
+                break
+            if spent >= cert_budget:
+                break
+        out["cert_spent"] = spent
+        out["cert_probes"] = n_pr
+        # the falsification-side pick may have been rejected above
+        alive = [s for i, s in enumerate(states)
+                 if not s.rejected and i not in ebh]
+        out["pick"] = (min(alive, key=lambda s: s.logE)
+                       if alive else None)
+        out["abstained"] = out["pick"] is None
+    return out
 
 
 def e_bh(e_values, alpha):

@@ -1,9 +1,12 @@
-ECLAIR vs external baselines (matched budget, alpha=0.05, 100 reps; tier-C fixed-sample n=8, k_crit=4)
+ECLAIR vs baselines, fair design (alpha=0.05, 300 reps, identical pools; same-stream n=13; tier-C n=8, k_crit=4)
 
-method        false-rej  detect  pick-acc
-eclair           0.0000  0.9052     0.970
-single_shot      0.0000  0.0000     0.535
-majority         0.0000  0.0000     0.879
-fixed_C          0.0612  0.5784     0.714
-peek_C           0.0748  0.6013         -
-conformal_C      0.0238  0.4804         -
+method       false-rej          95% CI  detect          95% CI   pick
+eclair          0.0000  [0.000,0.004]  0.9366  [0.919,0.951]  0.936
+eclair_C        0.0494  [0.037,0.066]  0.6000  [0.568,0.631]  0.729
+seq_same        0.0000  [0.000,0.004]  0.8634  [0.840,0.884]      -
+fixed_same      0.0000  [0.000,0.004]  0.8398  [0.815,0.862]      -
+single_shot     0.0000  [0.000,0.004]  0.0000  [0.000,0.004]  0.461
+majority        0.0000  [0.000,0.004]  0.0000  [0.000,0.004]  0.814
+fixed_C         0.0529  [0.040,0.070]  0.5409  [0.509,0.573]  0.627
+peek_C          0.0644  [0.050,0.083]  0.5817  [0.550,0.613]      -
+conformal_C     0.0299  [0.020,0.043]  0.4462  [0.415,0.478]      -
