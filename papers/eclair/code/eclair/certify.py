@@ -82,7 +82,13 @@ def _kelly_score(st, tier, bets, log_thresh, use_cost=True):
 
 def run_certification(pool, bets, policy, budget, alpha, rng,
                       prior=0.5, max_probes=4000, tiers=TIERS,
-                      trace=None, eps=None, cert_budget=0.0):
+                      trace=None, eps=None, cert_budget=0.0,
+                      cert_max_probes=None):
+    # NOTE on cert_budget semantics (review R5): it is a probe-time
+    # ALLOWANCE that is converted once, up front, into a probe-COUNT
+    # cap using the calibrated mean tier-A cost; the phase then counts
+    # probes, so it cannot overshoot the cap. Pass cert_max_probes to
+    # set the cap directly and bypass the conversion.
     """Screen a candidate pool (falsification e-processes), then
     optionally CERTIFY the best survivor with an opposite-direction
     e-process (eps-certification; see below). Returns dict with
@@ -151,15 +157,14 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
                  if not s.rejected and i not in ebh]
     pick = min(survivors, key=lambda s: s.logE) if survivors else None
 
-    # Unambiguous two-stage outputs (R3.4). `pick` is retained as a
-    # backwards-compatible alias of the SCREENING survivor; the
-    # protocol's terminal accepted output is `certified_pick`.
+    # Unambiguous two-stage outputs only (R3.4/R4): callers must say
+    # which stage they mean. The protocol's terminal accepted output is
+    # `certified_pick`; `screening_survivor` is NOT an accepted model.
     out = {"states": states, "ebh_rejected": ebh,
-           "screening_survivor": pick, "pick": pick,
+           "screening_survivor": pick,
            "screening_abstained": pick is None,
            "certification_abstained": None,      # set iff eps is given
-           "certified_pick": None,
-           "abstained": pick is None}
+           "certified_pick": None}
 
     if eps is not None and cert_budget > 0:
         # CERTIFICATION phase (R1.1): a second, opposite-direction
@@ -182,10 +187,19 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
         need = math.ceil(math.log(1.0 / alpha) / -math.log(1.0 - eps))
         spent = 0.0
         n_pr = 0
+        # A probe-COUNT cap makes the phase deterministic: the loop can
+        # no longer overshoot a wall-clock budget by one probe.
+        if cert_max_probes is not None:
+            if not isinstance(cert_max_probes, int) or cert_max_probes < 0:
+                raise ValueError("cert_max_probes must be a "
+                                 "non-negative int")
+            cap = cert_max_probes
+        else:
+            cap = max(1, int(cert_budget / max(bets.cost["A"], 1e-12)))
         for s in ranked[:1]:
             passes = 0
             fell = False
-            while passes < need and spent < cert_budget:
+            while passes < need and n_pr < cap:
                 try:
                     alarm, cost = TIER_FNS["A"](s.cand, rng)
                 except Exception as e:
@@ -217,10 +231,7 @@ def run_certification(pool, bets, policy, budget, alpha, rng,
                  if not s.rejected and i not in ebh]
         out["screening_survivor"] = (min(alive, key=lambda s: s.logE)
                                      if alive else None)
-        out["pick"] = out["screening_survivor"]
         out["screening_abstained"] = out["screening_survivor"] is None
-        # the protocol's terminal accepted output is the certified one
-        out["abstained"] = out["certified_pick"] is None
     return out
 
 

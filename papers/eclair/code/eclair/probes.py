@@ -102,3 +102,34 @@ def tier_c(cand, alive_pool, rng, max_partners=3):
 
 
 TIER_FNS = {"A": tier_a, "B": tier_b, "C": tier_c}
+
+
+def estimate_error_rate(cand, rng, n=400):
+    """Independent Monte-Carlo estimate of
+
+        err(m) = P_{I ~ D_mu}( v_m(I) != v*(I) )
+
+    the quantity Theorem 3's null is stated in terms of, on FRESH
+    micro instances drawn from the same distribution the tier-A oracle
+    uses. Returns (err_hat, n, wilson_lo, wilson_hi).
+
+    This is an evaluation instrument, not part of the protocol: it is
+    what lets us report whether a CERTIFIED candidate actually
+    satisfies err < eps, instead of inferring it from a construction
+    label (review R4.1)."""
+    bad = 0
+    for _ in range(n):
+        params = cand.spec.gen(rng, "micro")
+        try:
+            got = solve_value(cand.build(params))
+        except Exception:
+            bad += 1
+            continue
+        if got != brute_optimum(cand.spec, params):
+            bad += 1
+    p = bad / n
+    z = 1.96
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return p, n, max(0.0, c - h), min(1.0, c + h)

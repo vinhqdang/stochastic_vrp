@@ -2,7 +2,7 @@
   "alpha": 0.05,
   "pool_k": 6,
   "n_reps": 100,
-  "budget_s": 0.6489866666666667,
+  "budget_s": 0.6223466666666667,
   "seed": 20260807,
   "eval_families": [
     "set_cover",
@@ -17,11 +17,11 @@
         0.0,
         0.012941582311913155
       ],
-      "detect": 0.9609120521172638,
+      "detect": 0.9576547231270358,
       "n_mut": 307,
       "detect_ci": [
-        0.9329303191955673,
-        0.9775012317937468
+        0.9289083861637882,
+        0.9750890195888523
       ],
       "cert_rate": 0.98989898989899,
       "cert_pick_acc": 0.9795918367346939,
@@ -33,13 +33,1399 @@
       "n_certified": 98,
       "n_certified_faithful": 96,
       "n_abstained": 2,
-      "mean_kill_cost_screen_ms": 22.838262600000302,
-      "mean_kill_cost_ms": 23.102337884746213,
-      "pick_accuracy": 0.9795918367346939,
-      "n_picks": 98,
-      "abstain_rate": 0.02,
+      "mean_kill_cost_screen_ms": 22.00884921088429,
+      "mean_kill_cost_ms": 22.0896345,
+      "pick_accuracy": 0.9797979797979798,
+      "n_picks": 99,
+      "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
-      "ebh_rejections": 206
+      "ebh_rejections": 205,
+      "certified_log": [
+        {
+          "rep": 0,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 1,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 2,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 3,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 4,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 5,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 6,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 7,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 8,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 9,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 10,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 11,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 12,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 13,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 14,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 15,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 16,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 17,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 18,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 19,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 20,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 21,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 22,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 23,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 24,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 25,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 26,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 27,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 28,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 29,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 31,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 32,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 33,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 34,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 35,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 36,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 37,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 38,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 39,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 40,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 41,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 42,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 43,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 44,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 45,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 46,
+          "family": "gen_assignment",
+          "label_faithful": false,
+          "descriptor": [
+            "vec_entry",
+            "p",
+            21,
+            -3
+          ],
+          "err_hat": 0.1075,
+          "err_n": 400,
+          "err_ci": [
+            0.08079329401678037,
+            0.14167412885396896
+          ],
+          "err_below_eps": false,
+          "err_above_eps": false
+        },
+        {
+          "rep": 47,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 48,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 49,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 50,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 51,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 52,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 53,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 54,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 55,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 56,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 57,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 58,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 59,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 60,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 61,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 62,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 63,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 64,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 65,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 66,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 67,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 68,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 69,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 71,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 72,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 73,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 74,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 75,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 76,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 77,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 78,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 79,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 80,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 81,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 82,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 83,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 84,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 85,
+          "family": "gen_assignment",
+          "label_faithful": false,
+          "descriptor": [
+            "vec_entry",
+            "cap",
+            18,
+            -1
+          ],
+          "err_hat": 0.04,
+          "err_n": 400,
+          "err_ci": [
+            0.024768847722620668,
+            0.06398278162908555
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 86,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 87,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 88,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 89,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 90,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 91,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 92,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 93,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 94,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 95,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 96,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 97,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 98,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 99,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        }
+      ],
+      "n_cert_err_below_eps": 97,
+      "n_cert_err_above_eps": 0
     },
     "round_robin": {
       "false_rej": 0.0,
@@ -48,29 +1434,1419 @@
         0.0,
         0.012941582311913155
       ],
-      "detect": 0.8892508143322475,
+      "detect": 0.8859934853420195,
       "n_mut": 307,
       "detect_ci": [
-        0.8492226451340755,
-        0.9196577106484195
+        0.8455706517896932,
+        0.9168755587561283
       ],
-      "cert_rate": 0.98989898989899,
+      "cert_rate": 1.0,
       "cert_pick_acc": 1.0,
-      "cert_abstain": 0.010101010101010102,
+      "cert_abstain": 0.0,
       "n_cert": 99,
-      "cert_rate_uncond": 0.98,
+      "cert_rate_uncond": 0.99,
       "cert_acc_uncond": 1.0,
       "n_runs": 100,
-      "n_certified": 98,
-      "n_certified_faithful": 98,
-      "n_abstained": 2,
-      "mean_kill_cost_screen_ms": 29.341977864467477,
-      "mean_kill_cost_ms": 29.341977864467477,
+      "n_certified": 99,
+      "n_certified_faithful": 99,
+      "n_abstained": 1,
+      "mean_kill_cost_screen_ms": 28.424868128677616,
+      "mean_kill_cost_ms": 28.424868128677616,
       "pick_accuracy": 1.0,
-      "n_picks": 98,
-      "abstain_rate": 0.02,
+      "n_picks": 99,
+      "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
-      "ebh_rejections": 166
+      "ebh_rejections": 164,
+      "certified_log": [
+        {
+          "rep": 0,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 1,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 2,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 3,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 4,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 5,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 6,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 7,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 8,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 9,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 10,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 11,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 12,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 13,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 14,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 15,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 16,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 17,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 18,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 19,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 20,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 21,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 22,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 23,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 24,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 25,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 26,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 27,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 28,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 29,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 31,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 32,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 33,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 34,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 35,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 36,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 37,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 38,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 39,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 40,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 41,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 42,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 43,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 44,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 45,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 46,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 47,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 48,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 49,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 50,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 51,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 52,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 53,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 54,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 55,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 56,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 57,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 58,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 59,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 60,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 61,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 62,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 63,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 64,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 65,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 66,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 67,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 68,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 69,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 70,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 71,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 72,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 73,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 74,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 75,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 76,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 77,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 78,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 79,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 80,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 81,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 82,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 83,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 84,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 85,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 86,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 87,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 88,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 89,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 90,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 91,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 92,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 93,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 94,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 95,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 96,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 97,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 98,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 99,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        }
+      ],
+      "n_cert_err_below_eps": 99,
+      "n_cert_err_above_eps": 0
     },
     "cost_blind": {
       "false_rej": 0.0,
@@ -79,29 +2855,1349 @@
         0.0,
         0.012941582311913155
       ],
-      "detect": 0.9576547231270358,
+      "detect": 0.9543973941368078,
       "n_mut": 307,
       "detect_ci": [
-        0.9289083861637882,
-        0.9750890195888523
+        0.924919005214456,
+        0.9726442553015109
       ],
-      "cert_rate": 0.898989898989899,
+      "cert_rate": 0.9494949494949495,
       "cert_pick_acc": 1.0,
-      "cert_abstain": 0.10101010101010101,
+      "cert_abstain": 0.050505050505050504,
       "n_cert": 99,
-      "cert_rate_uncond": 0.89,
+      "cert_rate_uncond": 0.94,
       "cert_acc_uncond": 1.0,
       "n_runs": 100,
-      "n_certified": 89,
-      "n_certified_faithful": 89,
-      "n_abstained": 11,
-      "mean_kill_cost_screen_ms": 25.285150125850116,
-      "mean_kill_cost_ms": 26.31855445238108,
-      "pick_accuracy": 1.0,
-      "n_picks": 89,
-      "abstain_rate": 0.11,
+      "n_certified": 94,
+      "n_certified_faithful": 94,
+      "n_abstained": 6,
+      "mean_kill_cost_screen_ms": 24.41488510579757,
+      "mean_kill_cost_ms": 25.12597184641439,
+      "pick_accuracy": 0.9797979797979798,
+      "n_picks": 99,
+      "abstain_rate": 0.01,
       "ebh_fdr": 0.0,
-      "ebh_rejections": 202
+      "ebh_rejections": 201,
+      "certified_log": [
+        {
+          "rep": 0,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 1,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 2,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 3,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 4,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 5,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 6,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 7,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 8,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 9,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 10,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 11,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 12,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 13,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 14,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 15,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 16,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 17,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 18,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 19,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 20,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 21,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 22,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 23,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 24,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 25,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 26,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 27,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 28,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 29,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 31,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 32,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 33,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 34,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 35,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 36,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 37,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 38,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 39,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 40,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 41,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 42,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 43,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 44,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 45,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 47,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 48,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 49,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 50,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 51,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 52,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 53,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 54,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 55,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 56,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 57,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 58,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 59,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 60,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 61,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 62,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 63,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 64,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 65,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 66,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 67,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 68,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 69,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 71,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 72,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 73,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 74,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 75,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 77,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 78,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 79,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 80,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 81,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 82,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 83,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 84,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 86,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 87,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 88,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 89,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 90,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 91,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 92,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 93,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 95,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 96,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 97,
+          "family": "gen_assignment",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 98,
+          "family": "ontime_selection",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        },
+        {
+          "rep": 99,
+          "family": "set_cover",
+          "label_faithful": true,
+          "descriptor": null,
+          "err_hat": 0.0,
+          "err_n": 400,
+          "err_ci": [
+            0.0,
+            0.009512640599680667
+          ],
+          "err_below_eps": true,
+          "err_above_eps": false
+        }
+      ],
+      "n_cert_err_below_eps": 94,
+      "n_cert_err_above_eps": 0
     }
   }
 }

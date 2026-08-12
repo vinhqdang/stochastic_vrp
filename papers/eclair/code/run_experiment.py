@@ -21,6 +21,7 @@ from eclair.calibrate import calibrate
 from eclair.certify import Bets, run_certification
 from eclair.mutations import make_faithful, make_mutant
 from eclair.problems import EVAL_SPECS
+from eclair.probes import estimate_error_rate
 
 ALPHA = 0.05
 POOL_K = 6
@@ -28,6 +29,8 @@ SEED = 20260807
 BUDGET_PROBE_EQUIV = 80          # budget = this many mean-cost probes
 CERT_EPS = 0.10                  # eps-certification of the final pick
 CERT_PROBE_EQUIV = 70            # cert budget, in mean tier-A costs
+ERR_EVAL_N = 400                 # independent err(m) estimate per
+                                 # certified candidate (R4.1)
 
 
 def wilson(k, n, z=1.96):
@@ -61,16 +64,36 @@ def build_pool(spec, rng):
     return pool, labels
 
 
+PUBLICATION_REPS = 100      # runs at/above this size may claim the
+                            # canonical filenames (review R5.2)
+
+
+def write_atomic(path, text):
+    """Write via a temporary file + rename so a crashed or killed run
+    cannot leave a half-written artifact behind."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text)
+    tmp.replace(path)
+
+
 def main():
     n_reps = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     out_dir = pathlib.Path(__file__).parent / "results"
     out_dir.mkdir(exist_ok=True)
+    # Smaller-than-publication runs write to a tagged filename and
+    # leave the canonical artifacts untouched.
+    tag = "" if n_reps >= PUBLICATION_REPS else f"_smoke{n_reps}"
+    if tag:
+        print(f"NOTE: n_reps={n_reps} < {PUBLICATION_REPS}; writing "
+              f"results/mutation_experiment{tag}.* and leaving the "
+              f"canonical artifacts untouched.", flush=True)
 
     rng = random.Random(SEED)
     t0 = time.perf_counter()
     print("calibrating on held-out families ...", flush=True)
     calib = calibrate(rng)
-    (out_dir / "calibration.json").write_text(json.dumps(calib, indent=2))
+    write_atomic(out_dir / f"calibration{tag}.json",
+                 json.dumps(calib, indent=2))
     for t in ("A", "B", "C"):
         c = calib[t]
         print(f"  tier {t}: p0_hat={c['p0_hat']:.4f} p0_bar={c['p0_bar']:.4f} "
@@ -82,7 +105,7 @@ def main():
     mean_cost = statistics.fmean(bets.cost.values())
     budget = BUDGET_PROBE_EQUIV * mean_cost
     print(f"calibration took {time.perf_counter()-t0:.0f}s; "
-          f"per-rep budget = {budget*1000:.0f}ms solver time", flush=True)
+          f"per-rep budget = {budget*1000:.0f}ms probe time", flush=True)
 
     results = {}
     for pol_i, policy in enumerate(("kelly", "round_robin", "cost_blind")):
@@ -92,6 +115,7 @@ def main():
         cert_n = cert_ok = cert_abstain = 0
         cert_all = cert_ok_all = cert_abstain_all = cert_issued = 0
         kill_costs_screen = []
+        certified_log = []
         for rep in range(n_reps):
             spec = EVAL_SPECS[rep % len(EVAL_SPECS)]
             # pools depend ONLY on rep -> truly identical across
@@ -109,7 +133,23 @@ def main():
                 cert_abstain_all += 1
             else:
                 cert_issued += 1
-                cert_ok_all += labels[res["states"].index(cp)]
+                idx_c = res["states"].index(cp)
+                cert_ok_all += labels[idx_c]
+                # INDEPENDENT measurement of the quantity Theorem 3's
+                # null is about, on fresh micro instances (R4.1): a
+                # certificate does not prove err < eps, so we measure.
+                err, n_e, lo, hi = estimate_error_rate(
+                    cp.cand, random.Random(SEED + 77_000 + rep),
+                    n=ERR_EVAL_N)
+                certified_log.append({
+                    "rep": rep, "family": spec.name,
+                    "label_faithful": bool(labels[idx_c]),
+                    "descriptor": (list(cp.cand.descriptor)
+                                   if cp.cand.descriptor else None),
+                    "err_hat": err, "err_n": n_e,
+                    "err_ci": [lo, hi],
+                    "err_below_eps": hi < CERT_EPS,
+                    "err_above_eps": lo >= CERT_EPS})
             if any(labels):                     # conditional (availability)
                 cert_n += 1
                 if cp is None:
@@ -129,11 +169,11 @@ def main():
             for i in res["ebh_rejected"]:
                 ebh_total += 1
                 ebh_false += labels[i]
-            if res["abstained"]:
+            if res["screening_abstained"]:
                 abstain += 1
             elif any(labels):
                 pick_n += 1
-                idx = res["states"].index(res["pick"])
+                idx = res["states"].index(res["screening_survivor"])
                 pick_ok += labels[idx]
         results[policy] = {
             "false_rej": n_faith_rej / max(n_faith, 1), "n_faith": n_faith,
@@ -159,6 +199,11 @@ def main():
             "abstain_rate": abstain / n_reps,
             "ebh_fdr": ebh_false / max(ebh_total, 1),
             "ebh_rejections": ebh_total,
+            "certified_log": certified_log,
+            "n_cert_err_below_eps": sum(c["err_below_eps"]
+                                        for c in certified_log),
+            "n_cert_err_above_eps": sum(c["err_above_eps"]
+                                        for c in certified_log),
         }
         r = results[policy]
         print(f"{policy:<12} false-rej={r['false_rej']:.4f} (n={n_faith})  "
@@ -172,8 +217,8 @@ def main():
                "budget_s": budget, "seed": SEED,
                "eval_families": [s.name for s in EVAL_SPECS],
                "results": results}
-    (out_dir / "mutation_experiment.json").write_text(
-        json.dumps(payload, indent=2))
+    write_atomic(out_dir / f"mutation_experiment{tag}.json",
+                 json.dumps(payload, indent=2))
 
     lines = [
         "ECLAIR mutation-testbed experiment (real CP-SAT probes)",
@@ -192,7 +237,8 @@ def main():
                      f"{r['abstain_rate']:>9.3f}")
     lines.append("")
     lines.append(f"total wall time: {time.perf_counter()-t0:.0f}s")
-    (out_dir / "mutation_experiment.txt").write_text("\n".join(lines) + "\n")
+    write_atomic(out_dir / f"mutation_experiment{tag}.txt",
+                 "\n".join(lines) + "\n")
     print("\n".join(lines[-3:]))
 
 

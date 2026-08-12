@@ -44,42 +44,35 @@ $\varepsilon$-Certification of Optimum-Value Agreement}
 
 \abstract{Large language models translate natural-language problem
 descriptions into formal constraint models, but they lack the
-mathematical guarantees required for formal correctness, and no ground
-truth exists against which a generated model can be checked --- the
-oracle problem. Existing verification approaches are detectors: they
-report violations and empirical detection rates, but provide no
-statistical error control, no principled stopping rule, and no way to
-decide which test to run next under a compute budget. We introduce
-ECLAIR, a sequential, anytime-valid, budget-aware screen-then-certify
-layer with two guarantees pointing in opposite directions. For
-\emph{screening}, each candidate carries an e-process betting against
-the hypothesis that the candidate is faithful, fed by three tiers of
+mathematical guarantees required for formal correctness, and no
+ground truth exists against which a generated model can be checked
+--- the oracle problem. Existing verification approaches are
+detectors: they report violations and empirical detection rates, but
+give no statistical error control, no principled stopping rule, and
+no way to choose the next test under a compute budget. We introduce
+ECLAIR, a screen-then-certify layer with two guarantees pointing in
+opposite directions. For \emph{screening}, each candidate carries an
+e-process betting against its faithfulness, fed by three tiers of
 imperfect probes (exhaustively enumerated micro-instance oracles,
 provably valid metamorphic relations, cross-model majority checks);
-Ville's inequality bounds the probability of ever falsely rejecting a
-faithful candidate by $\alpha$ under optional stopping and adaptive,
+Ville's inequality bounds by $\alpha$ the probability of ever falsely
+rejecting a faithful candidate, under optional stopping and adaptive
 Kelly-style budget routing, and e-BH controls the false discovery
-rate of the rejected set (both conditionally on a stated deployment
-assumption when the pool-entangled probe tier is active, and
-unconditionally when it is not). For \emph{acceptance}, a second,
+rate of the rejected set. For \emph{acceptance}, a second,
 opposite-direction e-process on fresh oracle instances
 $\varepsilon$-certifies the surviving candidate: the probability of
-ever certifying a model whose \emph{optimum-value} disagreement rate
-with the specification, on a declared exhaustively enumerable
-micro-instance distribution, is at least $\varepsilon$ is at most
-$\alpha$, robustly to how the candidate was selected --- a scope we
-state plainly, since the certificate covers optimum-value agreement
-on small instances, not feasible-set equivalence, returned solutions,
-or behaviour at deployment scale. On a mutation testbed of
-five problem families with real CP-SAT probes, the empirical
-false-rejection rate is zero at every nominal level, $89$--$96\%$ of
-injected faults are detected, and of the $285$ $\varepsilon$-certified
-outputs across $300$ runs, $283$ were faithful --- the two exceptions
-being near-miss mutants inside the certificate's stated
-$\varepsilon$-tolerance;
-matched-probe comparisons show the same evidence stream yielding
-decisions in roughly one third of the probes that fixed-sample
-accounting requires.}
+ever certifying a model whose optimum-value disagreement rate with
+the specification exceeds $\varepsilon$, on a declared exhaustively
+enumerable micro-instance distribution, is at most $\alpha$ --- and
+that scope is the certificate's limit, covering neither feasible-set
+equivalence nor behaviour at deployment scale. On a mutation testbed
+of five problem families with real CP-SAT probes, no faithful
+candidate was ever falsely rejected, $89$--$96\%$ of injected faults
+were detected, and an independent audit of every issued certificate --- $400$ fresh
+instances per certified model --- places $290$ of $291$ error
+intervals entirely below $\varepsilon$, with none above and one
+inconclusive.
+}
 
 \keywords{constraint modelling, large language models, e-processes,
 anytime-valid inference, solver-in-the-loop verification, false
@@ -151,17 +144,25 @@ a metamorphic relation is provably false-alarm-free but weak; a
 cross-model agreement check is cheap, noisy, and entangled with the
 candidate pool. E-values multiply across adaptively chosen, dependent
 probes as long as each factor is a valid e-variable conditionally on
-the past, and we show that a conservative upper confidence bound on
-each probe family's null alarm rate --- rather than an unattainable
-exact null distribution --- suffices for validity under the composite
-null ``this candidate is faithful.''
+the past, and validity under the composite null ``this candidate is faithful''
+needs only an upper \emph{bound} on each probe family's null alarm
+rate rather than its exact null distribution --- provided that bound
+holds for every conditional alarm probability the deployed system
+encounters. For our exact micro-instance oracle and proved
+metamorphic relations that requirement is discharged by proof; for
+the pool-entangled cross-model tier it is a deployment assumption we
+state, stress-test, and do not claim to have established
+(Section~\ref{sec:theory}).
 
 Third, \emph{the budget question is a portfolio question}. Choosing
 which (candidate, probe) pair to run next to maximize expected
-log-evidence growth per probe-second is Kelly-optimal evidence
-acquisition \cite{kelly1956new, grunwald2024safe}; because the routing
-decision is measurable with respect to the past, it affects power
-only, never validity.
+log-evidence growth per probe-second is Kelly-\emph{style} evidence
+acquisition in the spirit of the GROW criterion
+\cite{kelly1956new, grunwald2024safe} --- a plug-in heuristic, not a
+policy we prove growth-optimal for the deployed environment
+(Section~\ref{sec:theory}); because the routing decision is
+measurable with respect to the past, it affects power only, never
+validity.
 
 \paragraph{Contributions.}
 (i)~A formal screen-then-certify protocol for LLM-generated
@@ -173,8 +174,9 @@ infinite e-values (Section~\ref{sec:framework}).
 false-rejection control for the screening side under arbitrary
 predictable routing (Theorem~\ref{thm:validity}, with conservative
 calibration preserving the supermartingale property,
-Lemma~\ref{lem:conservative}, and the calibration failure probability
-accounted in the level); false discovery rate control of the rejected
+Lemma~\ref{lem:conservative}, unconditionally for the proved tiers
+and conditionally on a stated deployment assumption for the
+pool-entangled one); false discovery rate control of the rejected
 set via e-BH \cite{wang2022false} (Proposition~\ref{prop:ebh}); a
 budget bound on the expected probe time to reject an unfaithful
 candidate (Proposition~\ref{prop:budget}); and --- the guarantee on
@@ -488,8 +490,11 @@ At each step ECLAIR selects
 \frac{\mathbb{E}\bigl[\log e \,\bigm|\, q_m\bigr]}{c(p)},
 \end{equation}
 the candidate--probe pair maximizing expected log-wealth growth per
-probe-second: Kelly-optimal evidence acquisition in the sense of the
-GROW criterion \cite{grunwald2024safe, kelly1956new}. Here $q_m$ is a
+probe-second --- Kelly-\emph{style} evidence acquisition in the
+spirit of the GROW criterion \cite{grunwald2024safe, kelly1956new},
+with the caveat of Section~\ref{sec:theory} that the plug-in
+posterior, working rates and mean costs make this a heuristic rather
+than a provably growth-optimal rule. Here $q_m$ is a
 running (Bayes) posterior that $m$ is unfaithful, maintained with the
 same calibrated rates and used \emph{only} for routing; $c(p)$ is the
 tier's calibrated mean cost. For tiers A/C the numerator is
@@ -770,6 +775,21 @@ candidate (the checker is exact) and the run abstains from
 certification.
 \end{remark}
 
+\begin{remark}[What is and is not new here]\label{rem:novelty}
+Theorem~\ref{thm:cert} is elementary, and we prefer to say so. Its
+wealth process becomes permanently zero after a single alarm, so
+operationally it \emph{is} the classical zero-failure binomial rule
+--- ``certify after $n$ consecutive clean instances'' --- restated as
+an e-process. The e-process phrasing is what lets it compose with the
+rest of the framework: it may be stopped at any time, it inherits
+Ville's inequality without a fixed sample size, and, because its
+probes are drawn fresh after screening ends, the candidate it is
+applied to may be chosen by an arbitrarily adaptive screening
+procedure. That composition --- an adaptive, budget-routed
+falsification stage feeding a selection-robust acceptance test --- is
+the contribution; the acceptance test itself is a familiar object.
+\end{remark}
+
 Theorem~\ref{thm:cert} is the answer to ``what guarantee do I get on
 the model I finally accept'': at $\alpha = \varepsilon = 0.05$,
 $59$ consecutive fresh-oracle passes certify, at anytime level
@@ -1024,7 +1044,13 @@ the wall-clock time of all computation a probe consumes --- CP-SAT
 solves and Python brute-force enumeration alike (we avoid
 ``solver-seconds,'' which would suggest solver calls only). Code,
 calibration corpora, all raw results, and the cached LLM generations
-are provided as supplementary material. One reproducibility caveat:
+are provided as supplementary material. An evaluation instrument, separate from the protocol, supports
+Section~\ref{sec:audit}: \texttt{estimate\_error\_rate} draws $400$
+fresh micro instances for a given candidate, scores each against the
+enumeration oracle, and returns the empirical disagreement rate with
+a Wilson interval. It is never consulted by the certifier --- it
+exists so that claims about certified models are measured rather than
+inferred from construction labels. One reproducibility caveat:
 the per-pool budget is set to $80$ times the \emph{measured} mean
 probe cost, so it drifts by a few percent between machines and runs
 ($623$--$649$\,ms in ours) and downstream counts move by a candidate
@@ -1108,61 +1134,82 @@ intervals on the headline rates.
 \caption{Mutation testbed ($100$ replications/policy, $\alpha=0.05$,
 $\varepsilon = 0.10$, real CP-SAT probes; calibration and evaluation
 families disjoint; identical pools across policies). False rejection
-is over faithful candidates ($n = 293$ per policy); detection over
-mutants ($n = 307$), counting screening and certification-phase
-falsifications alike. Kill cost is reported twice: screening probes
-only, and including the certification probes spent on a mutant that
-survived screening. Certification is reported unconditionally (all
-$100$ runs, whether or not the pool contained a faithful candidate);
-the conditional availability rate over the $99$ pools that did
-contain one is given in the text.}
+is over faithful candidates ($n = 293$/policy); detection over mutants
+($n = 307$), counting screening and certification-phase
+falsifications. Kill cost appears twice: screening probes only, and
+including certification probes spent on a mutant that survived
+screening. The last three columns classify every issued certificate by
+an \emph{independent} audit of the certified model's error rate
+(Section~\ref{sec:audit}), not by its construction label.}
 \label{tab:testbed}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccccc}
 \toprule
 Routing & False rej.\ [CI] & Detection [CI] & \multicolumn{2}{c}{Kill cost}
-& Certified & of which & e-BH\\
- & & & screen & +cert & /100 runs & faithful & FDR\\
+& Certif. & \multicolumn{3}{c}{audit vs.\ $\varepsilon$}\\
+ & & & screen & +cert & /100 & below & above & inconcl.\\
 \midrule
-Kelly       & $0.000$ [$0, .013$] & $0.961$ [$.933, .978$] & $23$ & $23$\,ms
-& $98$ & $96$ & $0.0$\\
-round-robin & $0.000$ [$0, .013$] & $0.889$ [$.849, .920$] & $29$ & $29$\,ms
-& $98$ & $98$ & $0.0$\\
-cost-blind  & $0.000$ [$0, .013$] & $0.958$ [$.929, .975$] & $25$ & $26$\,ms
-& $89$ & $89$ & $0.0$\\
+Kelly       & $0.000$ [$0, .013$] & $0.958$ [$.929, .975$] & $22$ & $22$\,ms
+& $98$ & $97$ & $0$ & $1$\\
+round-robin & $0.000$ [$0, .013$] & $0.886$ [$.846, .918$] & $28$ & $28$\,ms
+& $99$ & $99$ & $0$ & $0$\\
+cost-blind  & $0.000$ [$0, .013$] & $0.954$ [$.925, .973$] & $24$ & $25$\,ms
+& $94$ & $94$ & $0$ & $0$\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Validity holds without an observed exception --- none of $879$
 faithful-candidate exposures across the three policies was rejected
-(a finite-sample zero, hence the intervals) --- despite the bets
-being calibrated on different problem families than those evaluated.
-Detection is $89$--$96\%$ within a sub-second budget, the
-certification phase contributing both extra falsifications (a fresh
-oracle alarm hard-falsifies the attempted survivor) and the
-acceptance decision itself.
+(a finite-sample zero, hence the intervals) --- despite the bets being
+calibrated on different problem families than those evaluated.
+Detection is $89$--$96\%$ within a sub-second screening budget.
 
-On the acceptance side, the honest accounting is two-sided.
-Unconditionally, $285$ of the $300$ runs ended in an
-$\varepsilon$-certified output and $15$ abstained; conditionally on
-the pool containing a faithful candidate ($99$ of $100$ pools per
-policy), the availability rate is $0.99$/$0.99$/$0.90$ for
-Kelly/round-robin/cost-blind. Of the $285$ certified outputs,
-\emph{$283$ were faithful and two were not} --- both under Kelly,
-both mutants whose optimum-value disagreement rate on micro
-instances falls below $\varepsilon = 0.10$. This is not a violation
-but the guarantee working as stated: Theorem~\ref{thm:cert} certifies
-``disagreement rate below $\varepsilon$,'' and a near-miss mutant is
-precisely what that tolerance admits. Readers who want a stronger
-promise buy it with probes:
-$\log(1/\alpha)/\log\frac{1}{1-\varepsilon}$ passes per attempt, i.e.\
-$59$ at $\varepsilon = 0.05$ and $299$ at $\varepsilon = 0.01$.
-Certification cost barely moves the kill-cost column (the two mutants
-that reach certification are a small minority), but we report both
-columns rather than attributing screening-only cost to
-certification-assisted kills.
+\paragraph{Auditing the certificates.}\label{sec:audit}
+A certificate is not proof that the certified model satisfies
+$\mathrm{err}(m) < \varepsilon$: certifying a candidate with
+$\mathrm{err}(m) \ge \varepsilon$ is exactly the type-I event
+Theorem~\ref{thm:cert} bounds by $\alpha$. We therefore \emph{measure}
+rather than infer. Every issued certificate triggers an independent
+audit --- $400$ fresh micro instances from $\mathcal{D}_{\mu}$,
+scored against the enumeration oracle, with a Wilson $95\%$ interval
+(Section~\ref{sec:experiments}, \texttt{estimate\_error\_rate}).
+Across the $300$ runs, $291$ ended in a certificate and $9$ abstained.
+Of the $291$ audited certificates, $290$ have an interval lying
+\emph{entirely below} $\varepsilon = 0.10$, none lies entirely above,
+and one is inconclusive at this sample size. Two of the certified
+models are mutants by construction; because they are the only
+audits whose outcome is in question (reference-faithful builders have
+$\mathrm{err} = 0$ identically), we report their intervals at the
+Bonferroni-adjusted $97.5\%$ level, so the pair holds simultaneously
+at $95\%$:
+\begin{itemize}
+\item \texttt{gen\_assignment}, capacity entry shifted by $-1$:
+  $\widehat{\mathrm{err}} = 0.040$, CI $[0.025, 0.064]$ --- a
+  legitimate near miss, comfortably inside the tolerance the
+  certificate claims;
+\item \texttt{gen\_assignment}, size entry shifted by $-3$:
+  $\widehat{\mathrm{err}} = 0.108$, CI $[0.081, 0.142]$ --- an
+  interval \emph{straddling} $\varepsilon$. The audit cannot say
+  whether this is a near miss or a genuine false certification, and
+  we do not claim it is either.
+\end{itemize}
+The honest summary is therefore: at most one of $291$ certificates in
+these runs may have been a false certification, against a budget of
+$\alpha = 0.05$ per run that would tolerate roughly $15$. That is
+consistent with the guarantee and reassuring about its
+conservativeness, but it is an audit of realized outputs, not a
+verification of the theorem --- the distinction we draw explicitly in
+Section~\ref{sec:validation}.
 
-On routing:
+\paragraph{Cost of the acceptance stage.} Certification is
+deterministic in length: a successful attempt consumes exactly
+$\lceil \log(1/\alpha)/\log\frac{1}{1-\varepsilon} \rceil = 29$ fresh
+tier-A probes, i.e.\ ${\approx}148$\,ms at the measured mean tier-A
+cost of $5.1$\,ms, about a quarter of the $622$\,ms screening budget
+on top of it; a failed attempt costs less, stopping at the first
+alarm. Certification probes barely move the kill-cost column because
+few mutants reach the acceptance stage at all.
+
 On routing: at this testbed's probe economics the measured tier costs
 span only a factor $2.4$, and cost-blind selection matches Kelly
 while plain round-robin trails by seven detection points ---
@@ -1170,6 +1217,33 @@ cost-normalization is not what separates policies here;
 Section~\ref{sec:heterogeneity} isolates the routing question in a
 controlled heterogeneous-cost regime, and we flag plainly that the
 Kelly rule's advantage is regime-dependent.
+
+\subsection{Two different questions: procedure vs.\ outputs}
+\label{sec:validation}
+
+The audit above and the guarantee of Theorem~\ref{thm:cert} answer
+different questions, and conflating them would be a category error.
+
+\emph{Procedural validation} asks whether the \emph{rule} has the
+advertised error rate: run the certification procedure repeatedly
+against candidates whose error is known to sit at or above
+$\varepsilon$, and measure how often a certificate is nonetheless
+issued. Theorem~\ref{thm:cert} says this frequency is at most
+$\alpha$. We verify it directly in the implementation's test suite,
+where tier-A outcomes are mocked as Bernoulli draws at exactly the
+boundary $\mathrm{err} = \varepsilon$: over four seeds and $1000$
+simulated runs the realized certification frequency stays below
+$\alpha$, as it must.
+
+\emph{Output auditing} asks a question about the particular models
+this system actually accepted: does \emph{this} certified candidate
+satisfy $\mathrm{err}(m) < \varepsilon$? That is what
+Section~\ref{sec:audit} measures on fresh instances. A clean audit
+does not prove the procedure valid (it could be luck), and a
+straddling interval does not prove it invalid (it is the type-I event
+the procedure is allowed). Reporting both, separately, is the honest
+presentation: the theorem governs the rule, the audit inspects the
+artifacts.
 
 \subsection{Validity across the operating range}\label{sec:alpha}
 
@@ -1213,7 +1287,10 @@ pools; Figure~\ref{fig:ablation} visualizes the two headline columns.
 Kelly, $\alpha=0.05$). (a) Detection by probe pool. (b) The validity
 margin: every pool containing an unentangled tier (blue) records zero
 false rejections; the pool-entangled cross-model tier alone (orange)
-stays within $\alpha$ but consumes the entire conservative margin}
+stays within $\alpha$ but consumes the entire conservative margin.
+Every configuration including tier C is valid only \emph{conditionally}
+on Assumption~\ref{ass:null}(c); the figure reports empirical
+behaviour, not evidence for that assumption}
 \label{fig:ablation}
 \end{figure}
 
@@ -1239,9 +1316,16 @@ margin.} Every configuration containing an unentangled tier records
 zero false rejections; tier C alone records $0.0401$ --- still within
 $\alpha = 0.05$, but with the margin that conservative calibration
 provides everywhere else fully spent. This is the empirical face of
-the Remark after Proposition~\ref{prop:mr}: cross-model probes are
-safe as a supplement, and their calibration must be conditioned on
-pool composition before they can carry certification alone.
+the Remark after Proposition~\ref{prop:mr}. We are careful about what
+it does \emph{not} say: a valid tier does not immunize an invalid one
+--- multiplying sound A/B factors by unsound C factors invalidates
+the product --- so tier C is valid, alone or in combination,
+\emph{only} conditionally on Assumption~\ref{ass:null}(c). What the
+ablation shows is narrower and still useful: empirical false
+rejections appear at the margin precisely when cross-model evidence
+carries the process alone, which is where the assumption is most
+strained and where pool-composition-conditioned calibration should be
+required first.
 \emph{(ii) Hard certificates matter beyond their rate.} Removing tier
 B (A+C vs.\ A+B+C) costs about ten points of detection although
 tier-B alarms occur on only ${\sim}4\%$ of mutant probes.
@@ -1566,10 +1650,13 @@ not a provably identical one.
 \paragraph{The level $\alpha$.} By Proposition~\ref{prop:budget} and
 Figure~\ref{fig:alpha}, tightening $\alpha$ costs only logarithmic
 budget and essentially no detection --- so $\alpha$ should be chosen
-by the downstream stakes --- what fraction of wrongly discarded
-faithful models the application tolerates, the acceptance side being
-governed separately by $\varepsilon$ below --- not by compute
-anxiety. We used $0.05$ throughout; $0.01$
+by the downstream stakes. Note that $\alpha$ governs \emph{both}
+sides: on the screening side it bounds wrongly discarded faithful
+models, and on the acceptance side it bounds the probability of
+certifying a candidate whose error rate is at least $\varepsilon$.
+The two acceptance knobs work together --- $\varepsilon$ fixes the
+tolerated disagreement rate, $\alpha$ the risk of exceeding it ---
+and neither should be chosen from compute anxiety. We used $0.05$ throughout; $0.01$
 behaved identically.
 
 \paragraph{The calibration corpus.} Validity consumes exactly one
@@ -1688,9 +1775,11 @@ bounds the probability of ever certifying a candidate that disagrees
 with the specification on at least an $\varepsilon$-fraction of
 enumerable instances. On real CP-SAT probes no faithful candidate was
 falsified across every operating level tested, nine of ten injected
-faults were caught within sub-second budgets, and $283$ of the $285$
-certified outputs were faithful, the two exceptions being near-miss
-mutants of exactly the kind the $\varepsilon$-tolerance admits. The broader claim is methodological:
+faults were caught within sub-second budgets, and independently auditing
+every issued certificate placed $290$ of $291$ error intervals
+entirely below $\varepsilon$, none above, and one inconclusive ---
+at most one possible false certification against a budget that would
+tolerate roughly fifteen. The broader claim is methodological:
 solver-in-the-loop verification of generative models is, at bottom, a
 sequential inference problem --- and once it is treated as one, the
 difference between ``we found no bugs'' and ``we certify at level

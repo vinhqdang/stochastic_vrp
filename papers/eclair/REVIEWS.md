@@ -98,3 +98,41 @@ promise (previously a clean 287/287 run made this point abstractly).
 Still open (declared as such in the paper, not claimed):
 uniform-conditional calibration for Tier C; solution-level oracle
 probes; repair-tournament FDR; deployment-scale certification.
+
+
+---
+
+## Review 4 (2026-08-12, third re-review; 6/10 borderline weak accept)
+
+| # | Finding | Disposition |
+|---|---------|-------------|
+| **R4.1** | "The two certified mutants are near-misses inside the eps-tolerance" is UNSUPPORTED: a mutant label only means disagreement on >=1 screening instance, and a certificate does not prove err<eps (certifying err>=eps is the type-I event bounded by alpha). | **FIXED by measuring.** New `estimate_error_rate()` audits every issued certificate on 400 fresh micro instances with a Wilson interval; the experiment logs each certified candidate's descriptor, err_hat, CI, and below/above-eps classification. New S7.1 "Auditing the certificates" reports the audit, and Table 4 classifies certificates below/above/inconclusive vs eps instead of by construction label. |
+| **R4.2** | Stale "calibration failure probability accounted in the level" in contributions; intro "suffices for validity" unqualified. | **FIXED.** Contributions now say unconditional for proved tiers, conditional for the entangled one; the intro carries the uniformity requirement in the same sentence. |
+| **R4.3** | "Tier C is safe as a supplement" does not follow. | **FIXED.** Replaced: a valid tier does not immunize an invalid one (sound A/B factors times unsound C factors invalidates the product); tier C is valid alone or in combination only conditionally on Assumption 1(c). Figure 3's caption carries the same reminder. |
+| **R4.4** | "Kelly-optimal" contradicts S5's honest "Kelly-style". | **FIXED** in both intro and S4. |
+| **R4.5** | Acceptance depends on alpha AND eps, not eps alone. | **FIXED** in deployment guidance. |
+| **R4.6** | Theorem 3's novelty should be calibrated (it is the zero-failure binomial rule as an e-process). | **FIXED.** New Remark 3 says so explicitly and locates the contribution in the composition with adaptive screening + fresh-data selection. |
+| code | cert budget one-probe overshoot; single-seed MC test; certified-mutant identity not stored; `pick`/`abstained` aliases; "solver time" print. | **ALL FIXED.** Probe-count cap (no overshoot) with validation; MC boundary test over four seeds/1000 runs with pooled ~3-sigma threshold and per-seed ceiling; descriptors + audits logged; aliases removed and all call sites updated; print corrected. |
+| presentation | duplicated "On routing:"; Fig 2 axis "solver time"; dense abstract. | **ALL FIXED.** |
+
+## Review 5 (2026-08-12, artifact review; 4/10 reject-as-incomplete)
+
+Procedural, and correct: the committed artifact was inconsistent.
+
+| # | Finding | Disposition |
+|---|---------|-------------|
+| **R5.1** | `main.pdf` stale w.r.t. `main.tex` — reviewers get the PDF. | **FIXED.** Recompiled; a pre-commit consistency check now verifies PDF mtime > source mtime, that the shipped results file is a publication run, and that the manuscript's headline counts match the JSON. |
+| **R5.2** | A 4-replication smoke run had OVERWRITTEN the 100-replication publication results. | **FIXED at the root cause.** `run_experiment.py` now writes atomically (tmp + rename) and any run below `PUBLICATION_REPS = 100` is diverted to `*_smoke<N>.*` filenames with a printed notice, so a smoke run cannot clobber shipped artifacts. Full 100-rep run re-executed with auditing. |
+| **R5.3** | The empirical-error claim was not represented in shipped data. | **FIXED.** Shipped `mutation_experiment.json` (n_reps=100) contains the per-certificate audit log; manuscript numbers are read from it: 291 certificates over 300 runs, 290 audited entirely below eps, 0 above, 1 inconclusive. |
+| **R5.4** | "Confirms the acceptance guarantee empirically" overclaims; procedural validation and output auditing are different questions; multiplicity. | **FIXED.** Abstract now states only what the audit found. New S7.2 "Two different questions: procedure vs. outputs" separates procedural validation (the mocked-boundary test) from output auditing (the 400-instance audits). Only the two certified mutants get reported intervals, Bonferroni-adjusted to hold simultaneously at 95%; reference-faithful builders have err = 0 identically. |
+| **R5.5** | Report certification probe counts/costs. | **FIXED.** New paragraph: a successful attempt is deterministic at 29 fresh tier-A probes (~148 ms, ~24% on top of the 622 ms screening budget); failed attempts stop at the first alarm. |
+| code | cert_budget semantics; validate cert_max_probes. | **FIXED** (documented conversion; type/range validation). |
+
+**The decisive new finding, stated as measured:** of 291 certificates,
+290 audit entirely below eps = 0.10 and none above. Two certified
+models were mutants: one a legitimate near miss (err_hat 0.040,
+CI [0.025, 0.064]), one INCONCLUSIVE at n = 400 (err_hat 0.108,
+CI [0.081, 0.142]) — the audit cannot say whether it is a near miss
+or a genuine false certification, and the paper does not claim
+either. At most one possible false certification in 291, against an
+alpha = 0.05 budget that would tolerate roughly 15.

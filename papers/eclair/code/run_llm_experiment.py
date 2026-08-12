@@ -107,7 +107,7 @@ def main():
                 agg["abstain"] += 1
             elif any(labels):
                 agg["picks"] += 1
-                agg["pick_ok"] += labels[res["states"].index(res["pick"])]
+                agg["pick_ok"] += labels[res["states"].index(res["screening_survivor"])]
             agg["families"][name] = fam
         results[policy] = agg
         print(f"{policy:<12} false-rej={agg['faith_rej']}/{agg['n_faith']}  "

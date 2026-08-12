@@ -116,8 +116,8 @@ def main():
                 pool, bets, "kelly", budget, ALPHA,
                 random.Random(SEED + 200 + rep), tiers=tiers)
             rej = [st.rejected for st in res["states"]]
-            pick = (res["states"].index(res["pick"])
-                    if res["pick"] is not None else None)
+            sv = res["screening_survivor"]
+            pick = (res["states"].index(sv) if sv is not None else None)
             score(m, labels, rej, pick)
 
         # same-stream sequential vs fixed-n (shared probes + e-factors)

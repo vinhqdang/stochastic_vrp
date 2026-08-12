@@ -111,7 +111,7 @@ def main():
         fam = {"n": len(pool),
                "canonical": sum(labels),
                "rejected_canonical": 0, "rejected_other": 0,
-               "survived_other": 0, "abstained": res["abstained"]}
+               "survived_other": 0, "abstained": res["screening_abstained"]}
         for st, canonical in zip(res["states"], labels):
             if st.rejected and canonical:
                 fam["rejected_canonical"] += 1

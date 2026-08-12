@@ -100,8 +100,8 @@ def test_certification_separates():
     # no faithful candidate rejected; at least one mutant caught
     assert not rejected[0] and not rejected[1]
     assert any(rejected[2:])
-    if res["pick"] is not None:
-        assert labels[res["states"].index(res["pick"])]
+    if res["screening_survivor"] is not None:
+        assert labels[res["states"].index(res["screening_survivor"])]
 
 
 # ── certification phase (Theorem 3) — deterministic tests with a
@@ -160,7 +160,7 @@ def test_cert_succeeds_after_exactly_need_passes(monkeypatch):
     res, pool = _run_cert(monkeypatch, [False] * need)
     assert res["certified_pick"] is not None
     assert res["certification_abstained"] is False
-    assert res["abstained"] is False
+    assert res["certification_abstained"] is False
     assert res["cert_probes"] == need          # not one probe more
     assert res["certified_pick"].cert_spent > 0
 
@@ -171,7 +171,7 @@ def test_cert_alarm_blocks_certification_and_falsifies(monkeypatch):
     res, pool = _run_cert(monkeypatch, [False, False, True])
     assert res["certified_pick"] is None
     assert res["certification_abstained"] is True
-    assert res["abstained"] is True            # terminal output is None
+    assert res["certified_pick"] is None        # terminal output
     attempted = [s for s in res["states"] if s.rejected_in_cert]
     assert len(attempted) == 1 and attempted[0].rejected
     # a screening survivor may still exist, but it is NOT certified
@@ -217,10 +217,24 @@ def test_ebh_rejected_cannot_be_certified(monkeypatch):
 
 
 def test_cert_false_certification_rate_respects_alpha(monkeypatch):
-    """Empirical check of Theorem 3: candidates whose true error rate
-    is exactly eps must be certified at most ~alpha of the time."""
-    alpha, eps, trials = 0.05, 0.10, 400
-    rng = random.Random(20260812)
+    """Empirical check of Theorem 3 across several seeds: candidates
+    whose true error rate is exactly eps (the boundary of H0') must be
+    certified at most ~alpha of the time. Pooled over seeds the
+    Monte-Carlo standard error is ~0.006, so a 0.02 margin over alpha
+    is ~3 sigma; per-seed rates are also required to stay well below
+    the 2x-alpha line."""
+    alpha, eps = 0.05, 0.10
+    per_seed = []
+    for seed in (20260812, 7, 99, 12345):
+        per_seed.append(_cert_rate_at_boundary(monkeypatch, alpha, eps,
+                                               trials=250, seed=seed))
+    pooled = sum(per_seed) / len(per_seed)
+    assert pooled <= alpha + 0.02, (pooled, per_seed)
+    assert max(per_seed) <= 2 * alpha, per_seed
+
+
+def _cert_rate_at_boundary(monkeypatch, alpha, eps, trials, seed):
+    rng = random.Random(seed)
     certified = 0
     for _ in range(trials):
         draws = [rng.random() < eps for _ in range(400)]
@@ -233,5 +247,4 @@ def test_cert_false_certification_rate_respects_alpha(monkeypatch):
         res = run_certification(pool, _bets(), "kelly", 0.0, alpha,
                                 random.Random(0), eps=eps, cert_budget=10.0)
         certified += res["certified_pick"] is not None
-    rate = certified / trials
-    assert rate <= alpha + 0.02, rate      # Ville bound + MC slack
+    return certified / trials

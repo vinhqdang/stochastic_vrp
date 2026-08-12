@@ -76,7 +76,7 @@ def fig1_trajectories():
         ax.plot(xs, ys, color=c, lw=1.6, ls=ls, label=lab,
                 solid_capstyle="round")
     ax.set_xlim(-12, 360)
-    ax.set_xlabel("cumulative solver time (ms)")
+    ax.set_xlabel("cumulative probe time (ms)")
     ax.set_ylabel(r"$\log E_t(m)$")
     ax.legend(frameon=False, loc="center right")
     fig.tight_layout()
