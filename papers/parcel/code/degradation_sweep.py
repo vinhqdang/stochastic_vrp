@@ -160,15 +160,19 @@ GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
               "{model}:generateContent?key={key}")
 
 
-def call_gemini(model, prompt, key, timeout=240, retries=6, max_tokens=1500):
+def call_gemini(model, prompt, key, timeout=240, retries=10,
+                max_tokens=1500, quota_budget=240.0):
     """Gemini generateContent with backoff.
 
-    Distinguishes a transient 429 (per-minute rate limit -- worth
-    retrying) from DAILY QUOTA EXHAUSTION, which is terminal: retrying
-    against an exhausted free-tier quota just burns wall-clock and
-    writes junk rows. The free tier is 500 requests/day PER MODEL, so
-    hitting it is expected, not exceptional, and the caller needs to
-    know immediately.
+    Free-tier 429s carry a `retryDelay` saying exactly how long the
+    window has left -- typically ~25 SECONDS, not a day. An earlier
+    version read every RESOURCE_EXHAUSTED as a terminal daily cap and
+    aborted runs that would have finished fine after a short wait, so
+    the delay is now parsed and honoured.
+
+    A 429 is abandoned only after `quota_budget` seconds of cumulative
+    waiting, which is what separates a genuinely spent daily allowance
+    from ordinary pacing.
     """
     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
            f"{model}:generateContent?key={key}")
@@ -176,6 +180,7 @@ def call_gemini(model, prompt, key, timeout=240, retries=6, max_tokens=1500):
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens},
     }).encode()
+    waited = 0.0
     for attempt in range(retries):
         req = urllib.request.Request(
             url, data=payload, headers={"Content-Type": "application/json"})
@@ -195,11 +200,16 @@ def call_gemini(model, prompt, key, timeout=240, retries=6, max_tokens=1500):
             except Exception:
                 pass
             if exc.code == 429:
-                if "free_tier" in detail or "RESOURCE_EXHAUSTED" in detail:
-                    return f"__QUOTA__ {model}"
-                if attempt < retries - 1:
-                    time.sleep(12 * (attempt + 1) + random.random() * 6)
+                mm = (re.search(r'"retryDelay"\s*:\s*"?(\d+(?:\.\d+)?)s',
+                                detail)
+                      or re.search(r"retry in (\d+(?:\.\d+)?)s", detail))
+                wait = min(float(mm.group(1)) + 2 if mm
+                           else 20.0 * (attempt + 1), 90.0)
+                if waited + wait <= quota_budget and attempt < retries - 1:
+                    time.sleep(wait + random.random() * 2)
+                    waited += wait
                     continue
+                return f"__QUOTA__ {model} (waited {waited:.0f}s)"
             if attempt == retries - 1:
                 return f"__ERROR__ HTTP{exc.code}"
             time.sleep(2 ** attempt)
