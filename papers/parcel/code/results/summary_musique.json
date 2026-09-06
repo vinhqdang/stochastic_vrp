@@ -1,0 +1,120 @@
+{
+  "source": "musique_gemini-3.1-flash-lite.jsonl",
+  "status": "interim snapshot -- run still in progress",
+  "min_n_per_policy": 14,
+  "caveat": "With n per policy this small the standard error on a proportion near 0.6 is ~0.13, so differences below roughly 0.26 are not distinguishable from noise.",
+  "records": 179,
+  "api_errors": 0,
+  "memorised_fraction": 0.0,
+  "all": [
+    {
+      "policy": "none",
+      "cfg": "{}",
+      "acc": 0.0,
+      "tokens_per_agent": 0.0,
+      "n": 16,
+      "d_acc_vs_broadcast": -0.75,
+      "token_ratio_vs_broadcast": null
+    },
+    {
+      "policy": "topk",
+      "cfg": "{\"k\": 1}",
+      "acc": 0.3333,
+      "tokens_per_agent": 52.9,
+      "n": 15,
+      "d_acc_vs_broadcast": -0.4167,
+      "token_ratio_vs_broadcast": 40.03
+    },
+    {
+      "policy": "oracle",
+      "cfg": "{}",
+      "acc": 0.875,
+      "tokens_per_agent": 78.2,
+      "n": 16,
+      "d_acc_vs_broadcast": 0.125,
+      "token_ratio_vs_broadcast": 27.06
+    },
+    {
+      "policy": "topk",
+      "cfg": "{\"k\": 3}",
+      "acc": 0.5714,
+      "tokens_per_agent": 188.3,
+      "n": 14,
+      "d_acc_vs_broadcast": -0.1786,
+      "token_ratio_vs_broadcast": 11.24
+    },
+    {
+      "policy": "centrality",
+      "cfg": "{\"k\": 3}",
+      "acc": 0.3125,
+      "tokens_per_agent": 218.1,
+      "n": 16,
+      "d_acc_vs_broadcast": -0.4375,
+      "token_ratio_vs_broadcast": 9.7
+    },
+    {
+      "policy": "parcel",
+      "cfg": "{\"q\": 0.95}",
+      "acc": 0.6429,
+      "tokens_per_agent": 250.6,
+      "n": 14,
+      "d_acc_vs_broadcast": -0.1071,
+      "token_ratio_vs_broadcast": 8.44
+    },
+    {
+      "policy": "random",
+      "cfg": "{\"k\": 3}",
+      "acc": 0.0625,
+      "tokens_per_agent": 334.7,
+      "n": 16,
+      "d_acc_vs_broadcast": -0.6875,
+      "token_ratio_vs_broadcast": 6.32
+    },
+    {
+      "policy": "topk",
+      "cfg": "{\"k\": 5}",
+      "acc": 0.6429,
+      "tokens_per_agent": 369.7,
+      "n": 14,
+      "d_acc_vs_broadcast": -0.1071,
+      "token_ratio_vs_broadcast": 5.72
+    },
+    {
+      "policy": "parcel",
+      "cfg": "{\"q\": 0.7}",
+      "acc": 0.7143,
+      "tokens_per_agent": 466.9,
+      "n": 14,
+      "d_acc_vs_broadcast": -0.0357,
+      "token_ratio_vs_broadcast": 4.53
+    },
+    {
+      "policy": "parcel",
+      "cfg": "{\"q\": 0.3}",
+      "acc": 0.6429,
+      "tokens_per_agent": 786.4,
+      "n": 14,
+      "d_acc_vs_broadcast": -0.1071,
+      "token_ratio_vs_broadcast": 2.69
+    },
+    {
+      "policy": "topk",
+      "cfg": "{\"k\": 10}",
+      "acc": 0.7143,
+      "tokens_per_agent": 878.3,
+      "n": 14,
+      "d_acc_vs_broadcast": -0.0357,
+      "token_ratio_vs_broadcast": 2.41
+    },
+    {
+      "policy": "broadcast",
+      "cfg": "{}",
+      "acc": 0.75,
+      "tokens_per_agent": 2116.0,
+      "n": 16,
+      "d_acc_vs_broadcast": 0.0,
+      "token_ratio_vs_broadcast": 1.0
+    }
+  ],
+  "non_memorised": null
+}

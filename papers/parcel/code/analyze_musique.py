@@ -82,8 +82,18 @@ def main():
 
     # The per-call JSONL is gitignored as regenerable; the summary is what
     # the manuscript cites, so it is committed.
+    # A summary read off a partial run must say so: the per-policy n is
+    # the only thing separating a settled result from a snapshot, and a
+    # bare accuracy number invites being quoted as final.
+    per_policy_n = min((r["n"] for r in all_rows), default=0)
     summary = {
         "source": path.name,
+        "status": ("interim snapshot -- run still in progress"
+                   if per_policy_n < 20 else "complete"),
+        "min_n_per_policy": per_policy_n,
+        "caveat": ("With n per policy this small the standard error on a "
+                   "proportion near 0.6 is ~0.13, so differences below "
+                   "roughly 0.26 are not distinguishable from noise."),
         "records": len(rows),
         "api_errors": len(rows) - len(usable),
         "memorised_fraction": (len(memorised) / n_none) if n_none else None,
