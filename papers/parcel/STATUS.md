@@ -43,9 +43,8 @@ first action item.
   appendix material. Assume it counts toward the 8 pages unless
   clarified. For a theory paper this is the binding constraint — proofs
   must be budgeted, not deferred to an unlimited appendix.
-- **LaTeX is mandatory.** A template is linked from the instructions
-  page, but no ACM version string is named there. **Do not assert a
-  template version without opening the file** — still unverified.
+- **LaTeX is mandatory.** The official template is now committed here
+  and its exact invocation is recorded under "Template" below.
 - **Review is DOUBLE-BLIND.** Consequence for this repo: BATON and
   TEMPO must be cited in the **third person**, never as "our previous
   work". The `PROJECT.md` §9.7 lineage note must be written
@@ -95,3 +94,25 @@ Science*), or the CSoNet/JOCO submission. It borrows a *contrast* with
 the vehicle-routing capacity model as motivation, which is a citation
 to this group's own published-or-under-review work at most, not shared
 artifacts. See `README.md` for the full separation argument.
+
+## Template — received and verified 2026-09-06
+
+The official AAMAS 2027 author template is committed to this directory
+(`aamas.cls`, `ACM-Reference-Format.bst`, `template_sample.tex`, plus the
+logo and CC-BY artwork the class expects).
+
+Settled by reading it, replacing the earlier "unverified" notes:
+
+- Class invocation for submission: `\documentclass[sigconf,anonymous]{aamas}`
+  — the `anonymous` option is what enforces double-blind, and it prints
+  the OpenReview submission id on page 1.
+- `\acmSubmissionID{<id>}` must carry the OpenReview submission number.
+- `\submissionType{Research Paper Track}` — the same template also offers
+  AAAI, Demonstration, **Blue Sky Ideas**, JAAMAS and Doctoral Consortium
+  tracks, so a Blue Sky variant needs no separate template.
+- `balance` package is used to even the columns on the final page.
+
+**8 pages remains the hard limit** and the author has confirmed AAMAS
+enforces it strictly. References are excluded from the count; appendix
+material is not exempted, so every proof must be budgeted into the 8
+pages from the outline stage rather than deferred.

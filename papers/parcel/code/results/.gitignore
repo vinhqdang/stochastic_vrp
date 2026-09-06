@@ -1,0 +1,4 @@
+# Raw sweep output is regenerable and can be large. Commit the analysed
+# summaries, not the per-call JSONL.
+*.jsonl
+!summary_*.json
