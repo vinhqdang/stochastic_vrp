@@ -1,0 +1,5 @@
+# This is a public repo. Publisher PDFs are copyrighted -- never commit them.
+# Ignore everything here except this file and the README explaining why.
+*
+!.gitignore
+!README.md

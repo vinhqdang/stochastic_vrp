@@ -58,12 +58,22 @@ density-greedy thresholds under a knapsack are textbook, and a paper
 from Aug 2026 (BPS, arXiv:2608.19993) already publishes the
 single-receiver token-budget version with a guarantee.
 
+**Update 2026-09-06 — the biggest scooping risk is retired.** Shi & Lai
+(2024) was obtained and read: their Theorem 4 needs `γ₁`-weak
+submodularity *and* `γ₂`-weak supermodularity simultaneously, and
+PARCEL's two phenomena kill one parameter each (complementarity kills
+`γ₁`, saturation kills `γ₂`). The parameters **do not exist** on this
+problem class, so PARCEL is not a special case of it. Machine-checked
+in `code/degeneracy_check.py`; details in `PROJECT.md` §10.6.
+
 What survives, and what the paper now leads with:
 
-1. **The negative result** — that saturation breaks monotonicity and
-   complementarity breaks submodularity for inter-agent context,
-   invalidating the influence-maximization toolchain. Unclaimed; every
-   applied paper either assumes submodularity or avoids theory.
+1. **Two negative results** — (a) saturation breaks monotonicity and
+   complementarity breaks submodularity, invalidating the
+   influence-maximization toolchain; (b) the nearest general framework's
+   structural parameters degenerate on exactly these two phenomena.
+   Unclaimed; every applied paper either assumes submodularity or
+   avoids theory.
 2. **Multi-receiver structure** — a *global* token budget allocated
    across *many* saturating receivers. BPS is single-receiver with a
    modular penalty; the general knapsack theorem (Shi & Lai 2024) does
@@ -76,10 +86,7 @@ What survives, and what the paper now leads with:
 
 1. ⚠️ **Register authors on OpenReview by 2026-09-17** — precedes the
    abstract deadline; nearest hard deadline. See `STATUS.md`.
-2. **Get Shi & Lai (TCS 990:114409, 2024) full text** via institutional
-   access — ScienceDirect 403s and no preprint exists. Check whether
-   their weak-supermodular case already absorbs a rising penalty. This
-   is the highest-value unresolved item (`PROJECT.md` §10.6).
+2. ~~Get Shi & Lai full text~~ — **done, §10.6. Risk retired.**
 3. **Read BPS (arXiv:2608.19993) proofs closely** and cite it as the
    special case PARCEL generalizes, pre-empting the obvious referee
    objection (§10.2).
@@ -88,6 +95,17 @@ What survives, and what the paper now leads with:
 5. Run the documented search behind the endogenous-topology absence
    claim, or soften it (`VERIFY_CITATIONS.md`).
 6. Bound the damage from imperfect bundle identification (§9.3).
+
+## Code
+
+- `code/degeneracy_check.py` — exhaustive enumeration showing that
+  Shi & Lai's two structural parameters fail to exist on PARCEL's
+  problem class, one killed by each phenomenon. Stdlib only, runs in a
+  second: `python3 code/degeneracy_check.py`. This is the machine-checked
+  backing for negative result (b) and should become a table in the
+  manuscript.
+- `refs_local/` — downloaded PDFs of prior work, **gitignored**. This is
+  a public repo; publisher PDFs must never be committed.
 
 Verified venue constraints that shape the writing: **8 pages** plus
 unlimited references, appendices apparently **counted** (so proofs must

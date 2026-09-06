@@ -78,12 +78,25 @@ drafting** — several things that looked like contributions are taken.
 The ordering below is the post-sweep ordering, and it is deliberate:
 the negative result is now the spine, not the warm-up.
 
-1. **The negative result — the spine of the paper.** Nobody has shown
-   that per-agent saturation breaks **monotonicity** and complementarity
-   breaks **submodularity** for inter-agent context, and that this
+1. **The negative results — the spine of the paper.** Two of them,
+   independent, pointing the same way:
+
+   **(a) Against classical IM.** Per-agent saturation breaks
+   **monotonicity** and complementarity breaks **submodularity**, which
    invalidates the KKT → RIS → IMM toolchain. Every applied paper found
    either *assumes* submodularity (PACMS, BPS) or avoids theory
-   altogether. This is unclaimed and it is what the paper leads with.
+   altogether.
+
+   **(b) Against the nearest general framework** (§10.6, machine-checked
+   in `code/degeneracy_check.py`). Shi & Lai's Theorem 4 needs
+   `γ₁`-weak submodularity *and* `γ₂`-weak supermodularity at once, and
+   PARCEL's two phenomena kill exactly one parameter each —
+   complementarity kills `γ₁`, saturation kills `γ₂`. Not "the bound is
+   weak": the parameters **do not exist**.
+
+   Two degeneracy results is a substantially stronger paper than one,
+   and (b) also retires the biggest scooping risk. This is what the
+   paper leads with.
 
 2. **Multi-receiver structure — where the real theorem lives.** The
    closest prior work (BPS, arXiv:2608.19993) is **one receiver with a
@@ -394,8 +407,8 @@ non-archival for AAMAS's dual-submission rule.
 
 | Claim | Who owns it |
 |---|---|
-| "Admission price / density threshold" as a novel rule | **Harshaw, Feldman, Ward & Karbasi, ICML 2019** (Distorted-Greedy, submodular-minus-modular with a derived threshold), plus the regularized-submodular line. In the token setting specifically, **BPS got there first.** |
-| A general theorem for weakly-submodular maximization under a knapsack | **Shi & Lai, TCS 990:114409 (2024)** — their input class subsumes it |
+| "Admission price / density threshold" as a novel rule | **Harshaw, Feldman, Ward & Karbasi, ICML 2019** (Distorted-Greedy), the regularized-submodular line, **Shi & Lai Algorithm 1** (density-greedy with a positive-marginal filter — verbatim the same rule), and in the token setting **BPS got there first** |
+| A general theorem for weakly-submodular maximization under a knapsack | **Shi & Lai, TCS 990:114409 (2024)** — but see §10.6: their parameters **do not exist** on PARCEL's problem class, so this does *not* subsume PARCEL |
 | "Submodular context selection under a token budget for LLM agents" | **PACMS** (arXiv:2606.20047), **BPS** (arXiv:2608.19993) |
 
 The dominance/exchange argument in §9.5 is **standard technique** in
@@ -474,18 +487,62 @@ over a down-closed convex body in *continuous* space, not a discrete
 knapsack. Adjacent, not superseding — but being at the same venue makes
 it a likely reviewer touchstone. Know it.
 
-### 10.6 The single biggest unresolved risk
+### 10.6 RESOLVED 2026-09-06 — Shi & Lai does *not* cover PARCEL
 
-**Shi & Lai's full text could not be obtained** (ScienceDirect 403, no
-preprint, null Semantic Scholar abstract). From secondary sources their
-guarantee is `(1−e^{−α(1−ε)γ²})/α` with `γ` the submodularity ratio and
-`α` a weak-monotonicity parameter, via a two-phase greedy.
+Full text obtained and read. **The scooping fear was wrong in the
+direction that matters, and the finding is now the paper's best
+material.** Verified exhaustively by
+`code/degeneracy_check.py` (runs in a second, no dependencies).
 
-**Obtain the full text through institutional access and check whether
-their weak-supermodular case already absorbs a rising penalty.** If it
-does, contribution 3 in §3 weakens substantially and the paper must
-lean harder on the negative result and the multi-receiver structure.
-This is the highest-value unresolved item in the project.
+Their Theorem 4 — the general case allowing negative objective values —
+requires the objective to satisfy **both** parameters simultaneously:
+
+- **Def 1, `γ₁`-weak submodular** (`γ₁ ≥ 1`): for `U₁ ⊊ U₂`, `x ∉ U₂`,
+  `F(U₂+x) − F(U₂) ≤ γ₁·[F(U₁+x) − F(U₁)]`
+- **Def 3, `γ₂`-weak supermodular** (`γ₂ ≥ 1`): for `U₁ ⊊ U₂`, `x ∉ U₂`,
+  `γ₂·(F(U₂+x) − F(U₂)) ≥ F(U₁+x) − F(U₁)`
+
+A finite parameter **fails to exist at all** — not "is large", *does
+not exist* — when a triple forces an inequality no finite multiplier
+can satisfy. And PARCEL's two phenomena each kill exactly one:
+
+| Phenomenon | `γ₁` (Def 1) | `γ₂` (Def 3) |
+|---|---|---|
+| **Complementarity** (hard AND-pair) | **DOES NOT EXIST** | exists |
+| **Saturation** (modular rel, convex penalty) | exists | **DOES NOT EXIST** |
+
+*Complementarity:* with `F(∅)=F({f₁})=F({f₂})=0`, `F({f₁,f₂})=1`, take
+`U₁=∅`, `U₂={f₂}`, `x=f₁`. Def 1 demands `1 ≤ γ₁·0`. No `γ₁` works.
+
+*Saturation:* with modular relevance and a convex load penalty, a fact
+whose marginal is `+0.5` at a lightly-loaded receiver is `−1.5` at a
+saturated one. Def 3 demands `γ₂·(−1.5) ≥ 0.5`. No `γ₂` works.
+
+**The symmetry is exact and quotable:** complementarity breaks weak
+*sub*modularity; saturation breaks weak *super*modularity. Theorem 4
+needs both at once, so it applies to neither phenomenon alone, let
+alone together.
+
+**Consequences.**
+
+1. **The "already covered" risk is retired.** PARCEL cannot be dismissed
+   as a special case of Shi & Lai — their parameters are undefined on
+   this problem class.
+2. **This becomes a formal contribution**, and it strengthens the spine
+   (§3.1): it is a *second, independent* instance of "the standard
+   machinery degenerates here", now against the nearest general
+   framework rather than against classical IM. Two degeneracy results
+   pointing the same way is a much stronger paper than one.
+3. **The admission price is still not novel.** Confirmed directly from
+   their Algorithm 1: line 3 accepts `x` only while
+   `F(A∪{x}) − F(A) > 0`, line 4 picks
+   `argmax [F(A∪{x}) − F(A)] / c(x)`. That *is* density-greedy with a
+   positive-marginal filter — i.e. the admission price. §9 stays
+   demoted; cite Algorithm 1 alongside Harshaw et al. and BPS.
+4. Note also **Theorem 1**'s `θ`-weak monotonicity (`θF(U₁) ≤ F(U₂)`)
+   *does* tolerate bounded saturation, since it only caps the
+   multiplicative drop — but Theorem 1 still needs `γ₁`, which
+   complementarity kills. There is no route through either theorem.
 
 ## 11. Naming
 
