@@ -53,12 +53,22 @@ and a referee will check. A "−55.89% average regression" circulating in
 search results **is not in the cited paper at all** and must never be
 used.
 
-**And state the heterogeneity honestly.** At least one 2026 preprint
-reports large dense models holding 97.5–98.5% accuracy under 15,000
-words of distractors. Degradation is task- and model-dependent. PARCEL
-needs saturation to exist in *some* operating regime — which the
-peer-reviewed evidence supports — not to be a universal law. Claiming
-the latter invites a referee to produce the counterexample.
+**And state the heterogeneity honestly** (detail in §11.3). Dense
+models hold 97.5–98.5% accuracy under 15,000 words of *generic filler*
+(arXiv:2601.11564), and distractor-aware truncation flattens the
+degradation curve entirely for frontier models (arXiv:2608.03297). Both
+results test the **easiest regime on both axes that matter** —
+single-hop retrieval with non-confusable distractors. The contrast is
+the point: with the answer span fixed and only distractors added,
+GPT-4.1 loses **0.270** on multi-hop HotpotQA versus **0.065** on
+single-span SQuAD. Degradation is task- and confusability-dependent.
+
+PARCEL needs saturation to exist in *some* operating regime, not to be
+a universal law — and it plainly does, since frontier models miss
+dangerous actions **2×–30× more often** after 800K tokens of benign
+context (arXiv:2605.12366). Claiming universality invites a referee to
+produce the counterexample; conceding the heterogeneity first, and
+showing the model handles it, is strictly stronger.
 
 **(F2) Complementarity kills submodularity.** Submodularity requires
 diminishing returns. Two facts can be individually inert and jointly
@@ -106,16 +116,18 @@ the negative result is now the spine, not the warm-up.
    per-block supermodular penalties**, not as generic non-submodular
    knapsack maximization, which is already covered (§10).
 
-3. **State-dependent penalty + complementarity-closed bundles.** These
-   are the structural primitives that let the bound be stated in
-   *interpretable, measurable* quantities (a receiver's load, a bundle's
-   closure) where the general theory gives only an opaque global `γ`.
-   The increment over the known technique is that the penalty is
-   **supermodular in the receiver's load** rather than modular, which
-   turns the objective from submodular-minus-modular into
-   submodular-minus-supermodular and makes the threshold a *moving*
-   price. That breaks the Distorted-Greedy analysis it would otherwise
-   inherit.
+3. **Cost and damage are different quantities** (§4, §11.2). You are
+   **billed in tokens** — absolute, global, modular — but **damaged by
+   confusability** — semantic, per-agent, supermodular. The measurements
+   force this: raw length barely predicts degradation once it is
+   controlled for, while topical proximity predicts it strongly. All the
+   prior work optimizes a *single* quantity, so an item's price here
+   depends on two independent properties, and a cheap highly-confusable
+   item can be worse than an expensive orthogonal one. This is the
+   structural primitive that gives an interpretable bound where the
+   general theory offers only an opaque global `γ`, and it is what turns
+   the objective into submodular-minus-*supermodular*, breaking the
+   Distorted-Greedy analysis the work would otherwise inherit.
 
 4. **Endogenous topology — last section, not the pitch.** No formal
    treatment was found, so it is genuinely open, but it is also the
@@ -168,17 +180,40 @@ baseline.
 **Utility with saturation.** Per-agent,
 
 ```
-u_i(K) = rel_i(K) − ρ_i( load_i(K) )
+u_i(K) = rel_i(K) − ρ_i( conf_i(K) )
 ```
 
-`rel_i` is task relevance (coverage-like, plausibly submodular *alone*,
-though F2 says not in general); `ρ_i` is a saturation penalty
-increasing in the tokens loaded into `i`. `ρ_i` must be **calibrated
-against published degradation curves**, not invented — that is what
-stops a reviewer calling the non-monotonicity an artifact of a
-convenient penalty term.
+`rel_i` is task relevance; `ρ_i` is the saturation penalty.
 
-Objective: maximize `U = Σ_i u_i(K_i(T))` subject to the global budget.
+⚠️ **Revised 2026-09-06 — the penalty argument changed.** The draft
+model penalized *absolute* token load. **The evidence does not support
+that** (§12). Raw length is a weak predictor of degradation; what
+predicts it is **confusable load** — irrelevant content weighted by its
+semantic proximity to the task. So `ρ_i` takes `conf_i(K)`, a
+confusability-weighted load, not `c(K)`.
+
+**This decoupling is a feature, and it sharpens the paper's central
+tension.** You are **billed for tokens** — absolute, global, modular —
+but you are **damaged by confusability** — semantic, per-agent,
+supermodular. The two quantities are not proportional and can be
+manipulated independently: 15,000 words of generic filler cost a 70B
+model 0.5 accuracy points, while at *fixed* ~12K tokens a change in
+lexical density alone drives retrieval from near-perfect to under 60%.
+The earlier framing ("money is global, damage is per-agent") is
+therefore too weak. The true statement is:
+
+> **money is global and absolute; damage is per-agent and semantic.**
+
+Consequence for the admission price (§9.4): the numerator and
+denominator no longer share units. The rule becomes "marginal relevance
+per **token** against marginal degradation per unit **confusable**
+load", so an item's price depends on *two* independent properties — what
+it costs to send and how confusable it is with the receiver's task. A
+cheap, highly confusable item can be worse than an expensive, orthogonal
+one. That has no analogue in the single-quantity prior work.
+
+Objective: maximize `U = Σ_i u_i(K_i(T))` subject to the global token
+budget.
 
 ## 5. Theory targets
 
@@ -225,10 +260,23 @@ analysis it would otherwise inherit.
 
 Secondary to the theory, and scoped to the deadline. Simulation over
 synthetic agent graphs with `ρ_i` calibrated to published degradation
-curves; measure utility-per-token against every baseline at matched
-budgets; show the classical-IM seeding control failing in the predicted
-way. A real multi-agent LLM run would strengthen the paper but is a
-stretch inside four weeks and should not be promised in the abstract.
+curves (targets ranked in §11.4); measure utility-per-token against
+every baseline at matched budgets; show the classical-IM seeding
+control failing in the predicted way by over-concentrating and
+saturating hubs.
+
+**Plus one small real measurement, if anything is run at all** (§11.5):
+no published curve is dense enough in the 0–8K region to locate the
+convexity inflection `c*`, and `c*` defines the regime where the
+theorem holds. A fine sweep of that region on one model family — with a
+confusability arm (topical vs random distractors) to separate the two
+variables of §11.2 — is cheap, directly serves a modelling assumption,
+and is the right shape of empirical work for a theory paper. Prefer it
+over a broad benchmark.
+
+A full multi-agent LLM evaluation would strengthen the paper but is a
+stretch inside the remaining time and must not be promised in the
+abstract.
 
 **Self-contained.** No `svrpspd_wdro/` imports, no shared instances, no
 shared results — same separation argument as papers 3 and 5. See
@@ -366,14 +414,19 @@ previous work", and nothing that identifies the author group.
 
 ### 9.8 Open
 
-- **Is `ρ_i` convex?** The rising-bar property depends on it. The
-  verification pass did not settle this, and the available evidence
-  cuts both ways: NoLiMa's cliff-like collapses past a context
-  threshold look more like a **knee than a smooth convex curve**. A
-  knee still yields an admission price, but `τ` becomes a step rather
-  than a continuously rising bar, and the greedy analysis changes. This
-  is now the **top open modeling question** — resolve it against the
-  measured curves before writing the theorem.
+- ~~**Is `ρ_i` convex?**~~ **RESOLVED 2026-09-06 — see §11.1. Answer:
+  only locally, and the draft above overclaims.** ρ is **S-shaped**:
+  convex up to each model's effective length (~1–8K tokens,
+  capability-dependent), concave above it. Above the inflection `ρ′`
+  *decreases*, so the bar would **fall** as an agent fills — the
+  opposite of §9.4's claim. **Fix:** state convexity as an explicit
+  regime assumption `c ≤ c*(i)`, use NoLiMa's published per-model
+  "effective length" as the estimator of `c*`, and claim nothing in the
+  concave tail. Encouragingly, the convex region *widens with model
+  capability*, so the result is strongest for the capable agents real
+  systems deploy. Also note (§11.2) the penalty's argument is
+  **confusable load, not token count** — so `τ` is a price per unit
+  confusability, while the budget is spent in tokens.
 - **Bundle identification is assumed given** (§9.3). Can we bound the
   damage from imperfect bundling? Without such a bound this is the
   paper's most exposed assumption.
@@ -544,7 +597,130 @@ alone together.
    multiplicative drop — but Theorem 1 still needs `γ₁`, which
    complementarity kills. There is no route through either theorem.
 
-## 11. Naming
+## 11. Calibrating ρ — what the measurements actually say
+
+Evidence sweep 2026-09-06. Full extracted tables are in the session
+record; the load-bearing conclusions are below. **All citations here are
+UNVERIFIED by me personally** — they come from an assisted extraction
+pass and must be checked before use (`VERIFY_CITATIONS.md`).
+
+### 11.1 ρ is S-shaped, not convex — the rising bar is a *local* result
+
+The decisive statistic is accuracy lost per 1K tokens between
+consecutive NoLiMa context lengths. Convexity requires it to **rise**.
+It rises for at most one or two intervals, then falls by one to two
+orders of magnitude. Representative (points lost per 1K tokens):
+
+| Model | 1→2K | 2→4K | 4→8K | 8→16K | 16→32K | peak | NoLiMa "effective length" |
+|---|---|---|---|---|---|---|---|
+| GPT-4.1 | 0.40 | **1.75** | 1.05 | 0.32 | 0.32 | 2–4K | 16K |
+| GPT-4o | 0.10 | 1.15 | **1.62** | 0.95 | 0.74 | 4–8K | 8K |
+| Claude 3.5 Sonnet | 1.40 | 3.20 | **3.97** | 2.00 | 0.99 | 4–8K | 4K |
+| Llama 3.1 8B | **11.30** | 5.15 | 3.05 | 1.16 | 0.53 | 1–2K | 1K |
+| Gemma 3 4B | **15.00** | 9.45 | 2.22 | 0.65 | 0.09 | 1–2K | <1K |
+
+**Consequence — and it contradicts the §9.4 draft.** Above the
+inflection `ρ′` is *decreasing*, so the admission bar would **fall** as
+an agent fills, not rise. The rising-bar result holds **only on the
+convex sub-saturation region** `c ≤ c*(i)`.
+
+**The fix is clean and defensible:** state convexity as a *regime
+assumption* `c ≤ c*(i)`, and use **NoLiMa's published per-model
+"effective length" as the empirical estimator of `c*`** — that column
+exists precisely to mark where a model stops using its context
+reliably. Do not claim the guarantee in the concave tail. One honest
+caveat to state: accuracy floors at zero, so *some* upper concavity is
+mechanical rather than behavioural.
+
+**Encouraging corollary:** the convex region **widens with model
+capability** (weak models peak in the first interval — essentially no
+convex region; strong models peak at 4–8K). So the result is *more*
+valid for the capable agents that real multi-agent systems deploy.
+
+### 11.2 The penalty argument is confusability, not length
+
+Five independent length-matched or length-fixed designs agree, and none
+found argues the opposite once length is controlled:
+
+- 15,000 words of generic filler cost Llama-3.1-70B **0.5 points**
+  (98.5 → 98.0) — arXiv:2601.11564.
+- At **fixed ~12K tokens**, varying only lexical density moves
+  retrieval from near-perfect to **under 60%** — arXiv:2606.06203.
+- Length-matched hard negatives cost measurably more than *random*
+  documents of identical length; the random arm stays near control —
+  MUDDLE, arXiv:2608.29477.
+- "Filler insertion has little effect… fragmentation, not prompt
+  length, drives the loss" — arXiv:2608.22140 (EMNLP 2026).
+- All 18 models score **higher on shuffled haystacks than on logically
+  structured ones of the same length** — Context Rot.
+
+A pure *ratio* law also fails: the ratio model of arXiv:2603.15723
+saturates in its own data (0.330 → 0.305 when signal share halves),
+which a ratio law cannot produce.
+
+**So: neither absolute count nor ratio. Confusable load.** Suggested
+functional forms to fit: `ρ(c) = a·log(1 + κ·c_conf/c*)` with a
+topical-weight `κ`, or a two-parameter logistic in `c/c*` if both
+regimes must be covered.
+
+### 11.3 Task dependence — state it, do not hide it
+
+Degradation is far steeper on multi-hop reasoning than single-span
+retrieval. With the answer span held fixed and only distractors added,
+GPT-4.1 loses **0.270** on multi-hop HotpotQA versus **0.065** on
+single-span SQuAD over the same expansion (arXiv:2603.15723). GSM-DC
+shows sensitivity rising monotonically with reasoning depth, with a
+published functional form `E(m; rs) ∝ m^δ(rs)`, `δ` increasing in
+depth — and `δ ≪ 1`, i.e. **error is concave in distractor count**.
+
+This is why the counter-evidence (§2) is real but limited: it tests
+single-hop factual QA with generic filler — the easiest regime on both
+axes that matter.
+
+⚠️ **Contrary to any "it's been fixed in 2026 models" reading:**
+arXiv:2605.12366 reports current frontier models missing dangerous
+actions **2×–30× more often** after 800K tokens of benign context.
+Degradation has not been engineered away; it has moved out in scale.
+
+### 11.4 Calibration targets, ranked
+
+1. **GSM-DC** (arXiv:2505.18761) — best for a *count*-parameterized ρ:
+   8 linearly-spaced points × 6 models × 4 reasoning depths, relevant
+   content held fixed, **and the authors publish a fitted functional
+   form**. ⚠️ Per-point values exist only as a figure; the numbers in
+   the session record were **reconstructed from the source SVG** and
+   validated against the two values quoted in the text. Treat them as
+   reconstruction: usable for shape analysis, **never quotable as
+   published values**.
+2. **NoLiMa** (arXiv:2502.05167) — best for a *token*-parameterized ρ:
+   7–9 log-spaced points, 22 models, plus the per-model `c*` column.
+   Weakness: log spacing leaves only ~2 points inside the convex region.
+3. **Dhara & Sheth** (arXiv:2603.15723) — the cleanest controlled
+   design (fixed 256-token signal window, 128-token distractor chunks,
+   answer-leak filtered, bootstrap CIs). Only 4 points.
+4. **Levy, Jacoby & Goldberg, FLenQA** (ACL 2024, arXiv:2402.14848) —
+   the best-designed length sweep for isolating padding, with a
+   padding-*type* arm that directly tests length-vs-confusability.
+   Per-point values are figure-only, **but the dataset and code are
+   released**, so regenerating them is a modest job.
+
+### 11.5 The experiment worth running ourselves
+
+**No published curve is dense enough in the 0–8K convex region to
+locate the inflection.** NoLiMa gives 3 intervals there, FLenQA 4 in
+aggregate form. If `c*` is load-bearing for the theorem — and §12.1
+says it is, since it defines the regime where the guarantee holds —
+then a dense sweep of that region is the single most valuable
+experiment PARCEL could run, and it is cheap: one model family, fixed
+task, distractor tokens swept finely from 0 to ~8K, with a
+confusability arm (topical vs random distractors) to separate the two
+variables of §11.2.
+
+That is also the ideal empirical contribution for a theory paper: small,
+targeted, and directly in service of a modelling assumption rather than
+a general benchmark.
+
+## 12. Naming
 
 PARCEL — **P**rice-**A**ware **R**elay of **C**ontext over
 **E**ndogenous **L**inks. "Parcel" nods to the repo's routing lineage

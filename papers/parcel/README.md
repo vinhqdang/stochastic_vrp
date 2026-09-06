@@ -11,12 +11,12 @@ Target: **AAMAS 2027**, Hanoi, 3–7 May 2027 (main track). Spec:
 
 ## Files
 
-- `PROJECT.md` — the spec: pitch, why classical IM fails (the two
-  independent structural failures), the formal model, six theory
-  targets with confidence ratings, baselines, experiment plan, open
-  questions, and the naming rationale.
-- `STATUS.md` — venue, deadlines (**unverified — confirm against the
-  official call**), time budget, freeze policy.
+- `PROJECT.md` — the spec: pitch, the two structural failures, the
+  formal model, six theory targets with confidence ratings, baselines,
+  experiment plan, open questions, the prior-art map and positioning
+  (§10), and the ρ calibration evidence (§11).
+- `STATUS.md` — venue, deadlines (verified against the official call),
+  submission requirements, topic fit, time budget, freeze policy.
 - `VERIFY_CITATIONS.md` — the verification log: corrections found
   (including one fabricated statistic that must never be used), logged
   counter-evidence, a scooping risk to assess, what is still
@@ -47,9 +47,10 @@ Keep all PARCEL code inside this directory.
 
 ## State
 
-Planning only — no manuscript, no code, no results yet. The framing was
-settled in a planning dialogue on 2026-09-06; `PROJECT.md` §5 lists what
-has to be proved and §8 lists what is still unresolved.
+Planning — no manuscript yet. One machine-checked result exists
+(`code/`). The framing was settled in a planning dialogue on
+2026-09-06; `PROJECT.md` §5 lists what has to be proved and §8 what is
+still unresolved.
 
 ⚠️ **Repositioned 2026-09-06 after a prior-art sweep — `PROJECT.md`
 §10.** Verdict: *partially scooped, reposition, do not abandon.* The
@@ -78,9 +79,12 @@ What survives, and what the paper now leads with:
    across *many* saturating receivers. BPS is single-receiver with a
    modular penalty; the general knapsack theorem (Shi & Lai 2024) does
    not see the partition. This is where the theorem lives.
-3. **State-dependent (supermodular) penalty** — the increment that
-   breaks the Distorted-Greedy analysis the work would otherwise
-   inherit.
+3. **Cost and damage are different quantities** — you are billed in
+   *tokens* (absolute, global, modular) but damaged by *confusability*
+   (semantic, per-agent, supermodular), and the measurements say the
+   two are not proportional. All prior work optimizes a single
+   quantity. This is the increment that breaks the Distorted-Greedy
+   analysis the work would otherwise inherit.
 
 **Next actions, in order:**
 
@@ -90,11 +94,19 @@ What survives, and what the paper now leads with:
 3. **Read BPS (arXiv:2608.19993) proofs closely** and cite it as the
    special case PARCEL generalizes, pre-empting the obvious referee
    objection (§10.2).
-4. **Settle whether degradation is convex or knee-shaped** against the
-   measured curves (§9.8).
-5. Run the documented search behind the endogenous-topology absence
+4. ~~Settle whether degradation is convex or knee-shaped~~ — **done,
+   §11. Two model changes resulted:** ρ is S-shaped (convex only below
+   each model's effective length, so the rising-bar result needs an
+   explicit regime assumption `c ≤ c*`), and the penalty's argument is
+   **confusable load, not token count** — you are billed in tokens but
+   damaged by semantic proximity, and the two are not proportional.
+5. **Verify the eight citations added by the calibration sweep**
+   (`VERIFY_CITATIONS.md`) — none has been checked, peer-review status
+   varies from EMNLP/ACL to bare preprint, and one dataset used for
+   shape analysis was digitized from a figure.
+6. Run the documented search behind the endogenous-topology absence
    claim, or soften it (`VERIFY_CITATIONS.md`).
-6. Bound the damage from imperfect bundle identification (§9.3).
+7. Bound the damage from imperfect bundle identification (§9.3).
 
 ## Code
 

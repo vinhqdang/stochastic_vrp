@@ -109,6 +109,42 @@ guarantee, rather than importing an off-the-shelf theorem.
 
 ---
 
+## ⚪ Added 2026-09-06 by the calibration sweep — ALL UNVERIFIED
+
+These came from an assisted extraction pass, not from my own reading of
+the records. **None may be cited until checked.** Grouped by the claim
+they support (`PROJECT.md` §11).
+
+| Key | Work | Supports |
+|---|---|---|
+| — | arXiv:2601.11564 — *Context Discipline and Performance Correlation* | the counter-evidence: dense models hold 97.5–98.5% under 15,000 words of generic filler; real cost is **latency** (~720% spike), not accuracy |
+| — | arXiv:2606.06203 — *Dense Contexts Are Hard Contexts* | at **fixed ~12K tokens**, lexical density alone drives retrieval from near-perfect to <60% — the strongest single argument for confusability over length |
+| — | arXiv:2608.29477 — MUDDLE (CBW workshop @ COLM 2026, non-archival) | length-matched hard negatives cost more than random docs of identical length |
+| — | arXiv:2608.22140 — *Lexical Perturbations Disrupt LLM Reasoning* (EMNLP 2026) | "filler insertion has little effect… fragmentation, not prompt length, drives the loss" |
+| — | arXiv:2608.03297 — *Distractor-Aware Truncation* | the sign flip: distractor-aware truncation makes frontier models flat-at-ceiling where naive truncation shows the textbook decay |
+| — | arXiv:2605.12366 — *Classifier Context Rot* | frontier models miss dangerous actions 2×–30× more often after 800K tokens — rebuts "it's been fixed in 2026 models" |
+| — | arXiv:2603.15723 — Dhara & Sheth, *Context-Length Robustness in QA* | the cleanest controlled design; the multi-hop vs single-span contrast (0.270 vs 0.065) |
+| — | arXiv:2402.14848 — Levy, Jacoby & Goldberg, FLenQA (ACL 2024) | best-designed length sweep with a padding-*type* arm; **dataset and code released**, so points can be regenerated |
+
+⚠️ **Peer-review status varies sharply here** — one EMNLP 2026 paper,
+one ACL 2024 paper, one *non-archival workshop* paper, and several bare
+preprints. Label each accordingly at point of use; do not let a preprint
+carry a load-bearing claim without saying what it is.
+
+## 🔴 Reconstructed data — never quote as published
+
+The GSM-DC per-point values used in the §11 shape analysis were
+**extracted from the source SVG of the paper's Figure 4**, not from a
+published table. The extraction was validated against the only two
+values the authors state in prose (Grok rs=5: 43→19 ✔; GPT-4.1 rs=5:
+26→2 ✔), with roughly ±1 point reading error elsewhere.
+
+**Usable for shape analysis. Never quotable as published values.** If
+the manuscript needs those numbers, either request them from the
+authors or regenerate them from the released benchmark — and if a
+figure-derived number does appear anywhere, say plainly that it was
+digitized from the figure.
+
 ## ⚪ Still unverified
 
 | Key | Work | Note |
