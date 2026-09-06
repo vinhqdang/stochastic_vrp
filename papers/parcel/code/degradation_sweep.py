@@ -160,7 +160,7 @@ GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
               "{model}:generateContent?key={key}")
 
 
-def call_gemini(model, prompt, key, timeout=180, retries=5, max_tokens=400):
+def call_gemini(model, prompt, key, timeout=240, retries=6, max_tokens=1500):
     """Google AI Studio backend.
 
     Used in preference to OpenRouter because the free OpenRouter tier
@@ -187,7 +187,7 @@ def call_gemini(model, prompt, key, timeout=180, retries=5, max_tokens=400):
             return "".join(p.get("text", "") for p in parts)
         except urllib.error.HTTPError as exc:
             if exc.code in (429, 503) and attempt < retries - 1:
-                time.sleep(6 * (attempt + 1) + random.random() * 4)
+                time.sleep(12 * (attempt + 1) + random.random() * 6)
                 continue
             if attempt == retries - 1:
                 return f"__ERROR__ HTTP{exc.code}"
@@ -200,7 +200,7 @@ def call_gemini(model, prompt, key, timeout=180, retries=5, max_tokens=400):
     return "__ERROR__ unreachable"
 
 
-def call_model(model, prompt, key, timeout=180, retries=5, max_tokens=400):
+def call_model(model, prompt, key, timeout=240, retries=6, max_tokens=1500):
     payload = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -291,7 +291,7 @@ def run(model, levels, arms, n, k_hops, out_path, workers, seed, backend):
             "actual_words": actual,
             "est_tokens": round(actual * TOKENS_PER_WORD),
             "k_hops": k_hops, "rep": rep,
-            "answer": answer, "response": resp.strip()[:64],
+            "answer": answer, "response": resp.strip()[-200:],
             "correct": graded(resp, answer),
         }
 
@@ -313,7 +313,7 @@ def main():
     p.add_argument("--n", type=int, default=30,
                    help="repetitions per (arm, level) cell")
     p.add_argument("--k-hops", type=int, default=3)
-    p.add_argument("--workers", type=int, default=4)
+    p.add_argument("--workers", type=int, default=2)
     p.add_argument("--seed", default="parcel")
     p.add_argument("--out", default=None)
     p.add_argument("--pilot", action="store_true",
