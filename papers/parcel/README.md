@@ -50,13 +50,24 @@ Planning only — no manuscript, no code, no results yet. The framing was
 settled in a planning dialogue on 2026-09-06; `PROJECT.md` §5 lists what
 has to be proved and §8 lists what is still unresolved.
 
+The T5 structural question is **resolved** — `PROJECT.md` §9 derives an
+*admission price* (send a fact to an agent only when its
+relevance-per-token clears that agent's current marginal degradation
+rate) and shows the restriction is a dominance property rather than an
+assumption. That is the paper's positive result and its defense against
+the "assumed away the hard part" critique.
+
 **Next actions, in order:**
 
 1. Verify the AAMAS 2027 call — page limit, template, blind-review
    model, deadlines (`STATUS.md` has the unverified table).
 2. Verify the two load-bearing citations flagged in
    `VERIFY_CITATIONS.md`, starting with the LLM-degradation figures
-   that the whole non-monotonicity argument rests on.
-3. Settle `PROJECT.md` §8's first open question (does the relevance
-   term stay submodular under bounded complementarity), since it
-   determines whether theory target T5 is provable at all.
+   that the whole non-monotonicity argument rests on. One now carries
+   extra weight: whether degradation is **convex** decides the shape of
+   the §9 admission-price rule.
+3. Confirm the best available guarantee for weakly-submodular
+   maximization under a *knapsack* (not cardinality) constraint —
+   `PROJECT.md` §9.8.
+4. Bound the damage from imperfect bundle identification (§9.3), which
+   the current construction assumes given.

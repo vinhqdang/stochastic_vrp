@@ -133,15 +133,13 @@ Objective: maximize `U = Σ_i u_i(K_i(T))` subject to the global budget.
 | T2 | `U` is not submodular — constructive instance, complementarity-driven | high |
 | T3 | Precise statement of which step of the greedy `(1−1/e)` argument each failure breaks, hence why the RIS/IMM/GPU-IM lineage is inapplicable | high |
 | T4 | NP-hardness (knapsack for the budget; coverage for the relevance term), and inapproximability in the unconstrained case | medium-high |
-| T5 | **Positive result**: identify the structural regime where guarantees return — a *sub-saturation* regime where every agent's allocation stays below its degradation knee — and give a budgeted greedy with a proved ratio there | medium |
+| T5 | **Positive result**: the admission-price rule (§9), plus a budgeted greedy with a proved ratio on the price-respecting region | medium-high — upgraded, see §9 |
 | T6 | Endogeneity: either a competitive ratio for an online algorithm against an offline optimum that knows the realized topology, or a proof that endogeneity strictly increases hardness | low — stretch |
 
 T5 is the one that has to land. T1–T4 without T5 is an all-negative
-paper. The defense against "they assumed away the hard part" is that
-the sub-saturation regime is **where real deployments already operate**
-(operators cap per-agent context because they have observed the
-degradation), and the *global budget stays unrestricted*, so the
-economic difficulty is untouched.
+paper. **§9 now supplies it**, and on a stronger footing than the
+original "assume a sub-saturation regime" plan: the regime is *derived*
+as a dominance property, not assumed.
 
 ## 6. Baselines
 
@@ -172,18 +170,134 @@ shared results — same separation argument as papers 3 and 5. See
 
 ## 8. Open questions
 
-- Does `rel_i` stay submodular once complementarity is admitted, or do
-  we need a bounded-complementarity parameter (a curvature-like
-  quantity) to get anything at all? This likely determines whether T5
-  is provable.
-- Is the sub-saturation regime definable without circularity — i.e.
-  without the knee being defined by the very penalty we chose?
+- ~~Does `rel_i` stay submodular once complementarity is admitted?~~
+  **Resolved 2026-09-06 — see §9.** No, and in the worst case no
+  parameter saves it; the fix is a two-level ground set.
+- ~~Is the sub-saturation regime definable without circularity?~~
+  **Resolved — §9 derives it instead of assuming it.**
 - For T6: is there a clean formalism for endogenous edge formation that
   is not so general it becomes trivially hard?
 - Page limit and review model for the AAMAS main track are **not yet
   verified** — see `STATUS.md`.
 
-## 9. Naming
+## 9. The admission price — resolution of the T5 structural question
+
+Worked 2026-09-06. This section replaces the vague "assume a
+sub-saturation regime" plan and is now the intended core of the paper.
+
+### 9.1 The two failures are separable
+
+Write `u_i(S) = rel_i(S) − ρ_i(c(S))`, with `rel_i` monotone
+non-decreasing, `ρ_i` increasing and **convex** (degradation
+accelerates), and `c` modular.
+
+- `ρ` alone makes `u` non-monotone even when `rel` is perfectly
+  monotone submodular.
+- Complementarity in `rel` alone breaks submodularity even when
+  `ρ ≡ 0`.
+
+They are independent, so they can be parameterized independently.
+Worth stating as a lemma — it is what licenses the rest.
+
+### 9.2 Complementarity: the negative finding
+
+The submodularity ratio `γ` (the standard weak-submodularity handle)
+**collapses to exactly zero under a single hard AND-pair**. Take
+`rel(∅) = rel({f₁}) = rel({f₂}) = 0`, `rel({f₁,f₂}) = 1`. With `S = ∅`,
+`T = {f₁,f₂}`: the sum of individual marginals is `0`, the joint
+marginal is `1`, so `γ = 0` and every `(1 − e^{−γ})` bound degenerates
+to nothing.
+
+So: *one* purely complementary pair anywhere in the instance destroys
+the weak-submodularity route. This is a real finding and it belongs in
+the paper — it rules out the obvious fix and justifies the next move.
+
+### 9.3 The fix: a two-level ground set
+
+Do not run the optimization over facts. Run it over **bundles** —
+complementarity-closed groups of facts, so intra-bundle complementarity
+is eliminated by construction, and only the milder inter-bundle
+complementarity remains, handled by `γ`.
+
+Reads as: *strong complementarity is local and low-order* (a fact and
+its operand; a deadline and a duration), *weak complementarity is
+global*. Bundle identification is a separate problem — a clustering
+over the fact-dependency graph — and the paper must be explicit that it
+is assumed given, not solved here. That is a real limitation and should
+be stated as one rather than buried.
+
+### 9.4 The admission price
+
+The marginal of adding fact `f` to agent `i` holding `S`:
+
+```
+Δu_i(f | S) = Δrel_i(f | S) − [ ρ_i(c(S) + c(f)) − ρ_i(c(S)) ]
+```
+
+Non-negative iff, to first order in `c(f)`,
+
+```
+   Δrel_i(f | S) / c(f)   ≥   ρ_i′( c(S) )
+                              └──── τ_i(S), the admission price ────┘
+```
+
+**Send a fact to an agent only if its relevance-per-token clears that
+agent's current marginal degradation rate.** Because `ρ_i` is convex,
+`ρ_i′` is increasing, so **the bar rises as the agent fills up**: early
+in a task an agent accepts marginal context; as its window loads, only
+high-value facts clear. That is both the operationally right behavior
+and a quotable rule.
+
+### 9.5 Why this is not "assuming away the hard part"
+
+The price rule is a **dominance property, not an assumption**. If `f`
+fails the test, including it both lowers `u_i` *and* consumes budget —
+so dropping it strictly increases `U` and frees budget. No optimal
+solution contains such a fact. Restricting to the price-respecting
+region therefore **loses nothing**.
+
+This is the paper's defense, and it is much stronger than the original
+plan: we do not assume the sub-saturation regime, we *prove the optimum
+lies in it*.
+
+**Where the exchange argument needs care.** Dropping `f` can destroy
+the value of a retained `g` if the two are complementary. So the
+dominance argument is exact only when the removed item is not
+complementary with retained ones — i.e. **at the bundle level**. This
+is a second, independent reason the two-level ground set of §9.3 is
+the right construction: it is what makes the exchange valid. With
+residual inter-bundle complementarity (`γ < 1`) dominance holds only up
+to a factor, and the paper must say so plainly.
+
+### 9.6 What is still hard
+
+The problem does not become easy. Choosing which bundles go to which
+agents under a global knapsack, with **state-dependent prices** (`τ`
+depends on load, which depends on the choices), still embeds knapsack,
+so T4's hardness stands. T5 gives a greedy guarantee *on the
+price-respecting region*, which is where the optimum already lives.
+
+### 9.7 Lineage note
+
+The rule "send iff `Δrel/c > ρ′`" has the same *shape* as BATON's
+"hand off iff `Ĉ_k(W_k) > H_k`" — a marginal value compared against a
+state-dependent price. Different problem, different derivation, no
+shared artifacts. Worth one sentence in the manuscript as intellectual
+through-line; **not** a claim that PARCEL extends BATON.
+
+### 9.8 Open, downgraded
+
+- Does `ρ_i` convexity hold empirically, or is degradation better
+  modeled with a knee/cliff? Convexity is what makes `τ` monotone and
+  the story clean; a cliff would still work but changes the rule's
+  shape. **Depends on the citation check now running.**
+- The knapsack loss: weakly-submodular maximization under a *knapsack*
+  (not cardinality) constraint — confirm the best available guarantee
+  rather than assuming the cardinality bound carries over.
+- Bundle identification is assumed given. Can we at least bound the
+  damage from imperfect bundling?
+
+## 10. Naming
 
 PARCEL — **P**rice-**A**ware **R**elay of **C**ontext over
 **E**ndogenous **L**inks. "Parcel" nods to the repo's routing lineage
