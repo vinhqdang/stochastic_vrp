@@ -73,17 +73,43 @@ for, and that gap is the paper's opening.
 
 ## 3. What is actually new here
 
-Three axes, in decreasing order of confidence:
+⚠️ **Repositioned 2026-09-06 after a prior-art sweep. Read §10 before
+drafting** — several things that looked like contributions are taken.
+The ordering below is the post-sweep ordering, and it is deliberate:
+the negative result is now the spine, not the warm-up.
 
-1. **Non-monotone, non-submodular dissemination under a global budget.**
-   The money constraint is *global* (total tokens billed); the
-   degradation mechanism is *per-agent* (each context window saturates
-   independently). These are different objects and they pull against
-   each other: the budget rewards concentrating spend where marginal
-   value is highest, saturation punishes exactly that concentration.
-   That tension is the theorem territory.
+1. **The negative result — the spine of the paper.** Nobody has shown
+   that per-agent saturation breaks **monotonicity** and complementarity
+   breaks **submodularity** for inter-agent context, and that this
+   invalidates the KKT → RIS → IMM toolchain. Every applied paper found
+   either *assumes* submodularity (PACMS, BPS) or avoids theory
+   altogether. This is unclaimed and it is what the paper leads with.
 
-2. **Endogenous topology.** Temporal/dynamic influence maximization
+2. **Multi-receiver structure — where the real theorem lives.** The
+   closest prior work (BPS, arXiv:2608.19993) is **one receiver with a
+   modular penalty**. The tension PARCEL names — a *global* token
+   knapsack against *per-agent* degradation — is untouched by it. Frame
+   the contribution as a **partition / multi-knapsack problem with
+   per-block supermodular penalties**, not as generic non-submodular
+   knapsack maximization, which is already covered (§10).
+
+3. **State-dependent penalty + complementarity-closed bundles.** These
+   are the structural primitives that let the bound be stated in
+   *interpretable, measurable* quantities (a receiver's load, a bundle's
+   closure) where the general theory gives only an opaque global `γ`.
+   The increment over the known technique is that the penalty is
+   **supermodular in the receiver's load** rather than modular, which
+   turns the objective from submodular-minus-modular into
+   submodular-minus-supermodular and makes the threshold a *moving*
+   price. That breaks the Distorted-Greedy analysis it would otherwise
+   inherit.
+
+4. **Endogenous topology — last section, not the pitch.** No formal
+   treatment was found, so it is genuinely open, but it is also the
+   hardest to get a theorem about. Position it as the closing section
+   or as future work; do not build the abstract around it.
+
+   Temporal/dynamic influence maximization
    exists and is active, but it treats network evolution as
    *exogenous* — the graph changes, you forecast the change, you seed
    against the forecast. In an agent system the orchestrator builds the
@@ -98,15 +124,12 @@ Three axes, in decreasing order of confidence:
    softened to a search-bounded statement. **That search has not been
    run** — see `VERIFY_CITATIONS.md`.
 
-3. **Copyable goods, rivalrous attention.** This is where the repo's
-   vehicle-routing lineage legitimately connects, and it is a
-   *contrast*, not an analogy. In VRP the goods are conserved: what one
-   vehicle carries, another does not. Information is free to duplicate,
-   so the routing intuition does not transfer. What *does* transfer is
-   **capacity**: the receiving agent's context budget is a rivalrous,
-   saturating resource, structurally like vehicle capacity. The paper
-   should state this contrast explicitly and briefly, then move on —
-   it motivates the model, it is not evidence for it.
+5. **Copyable goods, rivalrous attention** — motivation only, one
+   paragraph. A *contrast*, not an analogy: in VRP the goods are
+   conserved, so routing intuitions apply; information duplicates
+   freely, so they do not. What transfers is **capacity** — the
+   receiver's context budget is rivalrous like vehicle capacity. State
+   it briefly and move on. It motivates the model; it is not evidence.
 
 ## 4. Formal model (draft)
 
@@ -152,13 +175,24 @@ Objective: maximize `U = Σ_i u_i(K_i(T))` subject to the global budget.
 | T2 | `U` is not submodular — constructive instance, complementarity-driven | high |
 | T3 | Precise statement of which step of the greedy `(1−1/e)` argument each failure breaks, hence why the RIS/IMM/GPU-IM lineage is inapplicable | high |
 | T4 | NP-hardness (knapsack for the budget; coverage for the relevance term), and inapproximability in the unconstrained case | medium-high |
-| T5 | **Positive result**: the admission-price rule (§9), plus a budgeted greedy with a proved ratio on the price-respecting region | medium-high — upgraded, see §9 |
-| T6 | Endogeneity: either a competitive ratio for an online algorithm against an offline optimum that knows the realized topology, or a proof that endogeneity strictly increases hardness | low — stretch |
+| T5 | **Positive result — MULTI-RECEIVER.** A partition/multi-knapsack allocation with per-block supermodular penalties, bounded in interpretable primitives (receiver load, bundle closure) rather than an opaque global `γ`. The admission price (§9) is a *step inside* this, not the headline. | medium — reframed after §10 |
+| T6 | Endogeneity: either a competitive ratio for an online algorithm against an offline optimum that knows the realized topology, or a proof that endogeneity strictly increases hardness | low — stretch, closing section |
 
-T5 is the one that has to land. T1–T4 without T5 is an all-negative
-paper. **§9 now supplies it**, and on a stronger footing than the
-original "assume a sub-saturation regime" plan: the regime is *derived*
-as a dominance property, not assumed.
+**Post-sweep priority (see §10).** T1–T3 are the spine — the negative
+result is the strongest unclaimed ground the paper has. T5 must be
+stated in the **multi-receiver** form: the single-receiver
+modular-penalty version is already published (BPS, arXiv:2608.19993),
+and the general non-monotone-non-submodular-knapsack version is already
+covered (Shi & Lai 2024). Neither of those touches a *global* budget
+allocated across *many* saturating receivers, which is where PARCEL's
+theorem has to live.
+
+Do **not** headline the admission price itself — density-greedy
+thresholds under a knapsack are textbook, and submodular-minus-modular
+with a derived threshold is Harshaw et al. (ICML 2019). The defensible
+increment is that the penalty is **state-dependent and rising**, which
+turns the objective into submodular-minus-*supermodular* and breaks the
+analysis it would otherwise inherit.
 
 ## 6. Baselines
 
@@ -201,8 +235,17 @@ shared results — same separation argument as papers 3 and 5. See
 
 ## 9. The admission price — resolution of the T5 structural question
 
-Worked 2026-09-06. This section replaces the vague "assume a
-sub-saturation regime" plan and is now the intended core of the paper.
+Worked 2026-09-06. It replaces the vague "assume a sub-saturation
+regime" plan.
+
+⚠️ **Demoted 2026-09-06 by the §10 prior-art sweep.** This was drafted
+as the core of the paper; it is not. Density-greedy thresholds under a
+knapsack are textbook, submodular-minus-modular with a derived
+threshold is Harshaw et al. (ICML 2019), and BPS reached the token
+setting first. The derivation below is still *correct* and still needed
+— it is the mechanism inside the multi-receiver theorem — but it is a
+**step, not a headline**. What survives as novel is the penalty being
+**state-dependent** (§9.4) rather than modular.
 
 ### 9.1 The two failures are separable
 
@@ -340,7 +383,111 @@ not in an abstract non-monotone-non-submodular-knapsack theorem that a
 2024 TCS paper may already own. Cite `shilai2024` as the nearest prior
 guarantee and prove the paper's own result over it.
 
-## 10. Naming
+## 10. Prior art and positioning
+
+Sweep run 2026-09-06. **Verdict: partially scooped — reposition, do not
+abandon.** Everything below is arXiv-preprint or published prior art;
+preprints still count as prior art for novelty, even though they are
+non-archival for AAMAS's dual-submission rule.
+
+### 10.1 Dead as headline claims — do not assert these
+
+| Claim | Who owns it |
+|---|---|
+| "Admission price / density threshold" as a novel rule | **Harshaw, Feldman, Ward & Karbasi, ICML 2019** (Distorted-Greedy, submodular-minus-modular with a derived threshold), plus the regularized-submodular line. In the token setting specifically, **BPS got there first.** |
+| A general theorem for weakly-submodular maximization under a knapsack | **Shi & Lai, TCS 990:114409 (2024)** — their input class subsumes it |
+| "Submodular context selection under a token budget for LLM agents" | **PACMS** (arXiv:2606.20047), **BPS** (arXiv:2608.19993) |
+
+The dominance/exchange argument in §9.5 is **standard technique** in
+the regularized-submodular literature, not a novel proof device.
+Present it as a step, never as a headline. A referee who knows Harshaw
+et al. will recognize it instantly.
+
+### 10.2 The direct competitor — BPS
+
+**"Optimal Skill Selection for LLM Agents with Provable Bicriteria
+Guarantees"** (Chen, Chen, Wang, Li, Huang; arXiv:2608.19993, Aug
+2026). Objective: `max_{S: ℓ(S)≤B} G(S) − κℓ(S)` — a **monotone
+submodular** benefit minus a context penalty under a hard token budget.
+Algorithm BPS is density-greedy over seed sets of size ≤2; bicriteria
+`(1−1/e, 1)`.
+
+This is PARCEL's objective *shape* and PARCEL's admission-price rule,
+already published with a guarantee. **But its assumptions are exactly
+what PARCEL denies:**
+
+- **single agent** — one fixed executor, no multi-receiver allocation;
+- penalty **modular and state-independent** (depends only on total
+  token length);
+- benefit assumed **monotone submodular**.
+
+The opening BPS leaves: its own abstract concedes that redundant skills
+"can even degrade performance" — it *names* the phenomenon and then
+models it away, by keeping the benefit monotone submodular and pushing
+degradation into a separate modular penalty. PARCEL's claim is that
+this decomposition is inadequate: degradation is **state-dependent**
+(supermodular in load), and complementarity breaks submodularity of the
+benefit itself.
+
+**Positioning: BPS is the single-receiver, modular-penalty,
+submodular-benefit special case that PARCEL generalizes.** Cite it
+prominently, use it as the baseline and the foil, and pre-empt the
+obvious referee objection by naming the relationship explicitly rather
+than letting a reviewer discover it. **Read its proofs before drafting.**
+
+### 10.3 Must-cite, partially pre-empts the premise
+
+**"Phase Transition for Budgeted Multi-Agent Synergy"** (Liu, Kong,
+Pei; arXiv:2601.17311) — theory, *multi-agent*, models finite context
+windows as hard fan-in limits and characterizes saturation via mixing
+depth. The mathematics is majority-vote aggregation and correlation
+exponents, not set-function optimization, so it is not a scoop — but it
+partly pre-empts "context saturation is a real constraint worth
+theorizing." Must cite.
+
+⚠️ An automated summary of this paper **hallucinated** claims about
+submodularity and complementarity that its actual abstract does not
+contain. Read the real abstract; do not trust secondary summaries of it.
+
+### 10.4 Empirical cluster — citations, not scoops
+
+None of these are theoretical; all are related work. **RCR-Router**
+(arXiv:2508.04903) is closest to PARCEL's *applied* problem — per-agent
+memory subset selection under a strict token budget, ~30% token
+reduction, no theorems. Also: AgentPrune, AgentDropout, TodyComm
+(arXiv:2602.03688), Guided Topology Diffusion (arXiv:2510.07799),
+KVComm (arXiv:2510.03346), "Cut the Crap" (arXiv:2410.02506), AdaGReS,
+and "Token Economics for LLM Agents" (arXiv:2605.09104, a survey).
+
+**Influence-maximization framing for LLM agents: none found.** The
+nearest is arXiv:2505.23352 on information propagation in LLM-MAS
+topologies, which uses diffusion *language* empirically but never
+invokes KKT greedy or submodularity. **PARCEL's negative result appears
+unclaimed** — this is the strongest remaining ground.
+
+### 10.5 Adjacent theory to track
+
+**"Stronger Approximation Guarantees for Non-Monotone γ-Weakly
+DR-Submodular Maximization"** (arXiv:2601.00611) — **at AAMAS 2026,
+PARCEL's own venue.** Improves `γe^{−γ}` to `Φ_γ` (0.401 at `γ=1`), but
+over a down-closed convex body in *continuous* space, not a discrete
+knapsack. Adjacent, not superseding — but being at the same venue makes
+it a likely reviewer touchstone. Know it.
+
+### 10.6 The single biggest unresolved risk
+
+**Shi & Lai's full text could not be obtained** (ScienceDirect 403, no
+preprint, null Semantic Scholar abstract). From secondary sources their
+guarantee is `(1−e^{−α(1−ε)γ²})/α` with `γ` the submodularity ratio and
+`α` a weak-monotonicity parameter, via a two-phase greedy.
+
+**Obtain the full text through institutional access and check whether
+their weak-supermodular case already absorbs a rising penalty.** If it
+does, contribution 3 in §3 weakens substantially and the paper must
+lean harder on the negative result and the multi-receiver structure.
+This is the highest-value unresolved item in the project.
+
+## 11. Naming
 
 PARCEL — **P**rice-**A**ware **R**elay of **C**ontext over
 **E**ndogenous **L**inks. "Parcel" nods to the repo's routing lineage
