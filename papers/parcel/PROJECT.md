@@ -38,13 +38,27 @@ learning-based descendants. Our objective has neither property, for two
 
 **(F1) Saturation kills monotonicity.** The objective is task utility,
 not the count of informed agents. Delivering additional context to an
-agent measurably *degrades* its performance past a point: controlled
-benchmarks report step accuracy falling from 43% to 19% as irrelevant
-contexts go from 1 to 15, and long-context evaluations show
-non-uniform, degrading use of the context window as input length grows.
-So there exist instances where adding one transmission strictly lowers
-utility. Monotonicity fails not at the margin but for the exact reason
-the problem is worth studying.
+agent can measurably *degrade* its performance: a controlled
+distractor benchmark finds **all six models tested** degrade in
+reasoning accuracy as irrelevant context grows (`distracted2025`), and
+NoLiMa finds **11 of 13 models** claiming ≥128K context falling below
+half their short-context baseline at 32K (`nolima2025`). So there exist
+instances where adding one transmission strictly lowers utility.
+
+**Calibration discipline (learned the hard way — see
+`VERIFY_CITATIONS.md`).** Anchor F1 on those *cross-model* statements.
+Do **not** headline the widely-quoted "43% → 19%" figure: it is one
+model (Grok-3-Beta) at one reasoning depth on a synthetic benchmark,
+and a referee will check. A "−55.89% average regression" circulating in
+search results **is not in the cited paper at all** and must never be
+used.
+
+**And state the heterogeneity honestly.** At least one 2026 preprint
+reports large dense models holding 97.5–98.5% accuracy under 15,000
+words of distractors. Degradation is task- and model-dependent. PARCEL
+needs saturation to exist in *some* operating regime — which the
+peer-reviewed evidence supports — not to be a universal law. Claiming
+the latter invites a referee to produce the counterexample.
 
 **(F2) Complementarity kills submodularity.** Submodularity requires
 diminishing returns. Two facts can be individually inert and jointly
@@ -76,8 +90,13 @@ Three axes, in decreasing order of confidence:
    agent graph in response to the task, and what you transmit
    determines who talks to whom next: an agent that learns of a
    dependency goes and contacts the agent that owns it. Seeding
-   perturbs the topology it is seeding over. No temporal-IM work found
-   so far models that feedback.
+   perturbs the topology it is seeding over.
+
+   ⚠️ "No temporal-IM work models this" is an **absence claim** and no
+   citation can support it. It requires a documented search (queries,
+   databases, dates) plus the named nearest prior work, or it must be
+   softened to a search-bounded statement. **That search has not been
+   run** — see `VERIFY_CITATIONS.md`.
 
 3. **Copyable goods, rivalrous attention.** This is where the repo's
    vehicle-routing lineage legitimately connects, and it is a
@@ -285,17 +304,41 @@ state-dependent price. Different problem, different derivation, no
 shared artifacts. Worth one sentence in the manuscript as intellectual
 through-line; **not** a claim that PARCEL extends BATON.
 
-### 9.8 Open, downgraded
+⚠️ **AAMAS review is double-blind.** BATON and TEMPO must be cited in
+the **third person**, as any other prior work would be — never "our
+previous work", and nothing that identifies the author group.
 
-- Does `ρ_i` convexity hold empirically, or is degradation better
-  modeled with a knee/cliff? Convexity is what makes `τ` monotone and
-  the story clean; a cliff would still work but changes the rule's
-  shape. **Depends on the citation check now running.**
-- The knapsack loss: weakly-submodular maximization under a *knapsack*
-  (not cardinality) constraint — confirm the best available guarantee
-  rather than assuming the cardinality bound carries over.
-- Bundle identification is assumed given. Can we at least bound the
-  damage from imperfect bundling?
+### 9.8 Open
+
+- **Is `ρ_i` convex?** The rising-bar property depends on it. The
+  verification pass did not settle this, and the available evidence
+  cuts both ways: NoLiMa's cliff-like collapses past a context
+  threshold look more like a **knee than a smooth convex curve**. A
+  knee still yields an admission price, but `τ` becomes a step rather
+  than a continuously rising bar, and the greedy analysis changes. This
+  is now the **top open modeling question** — resolve it against the
+  measured curves before writing the theorem.
+- **Bundle identification is assumed given** (§9.3). Can we bound the
+  damage from imperfect bundling? Without such a bound this is the
+  paper's most exposed assumption.
+
+### 9.9 The knapsack result must be proved here, not imported
+
+⚠️ **The clean "weakly submodular under a knapsack constraint" theorem
+assumed in the planning draft does not exist.** Chen, Feldman & Karbasi
+(`chen2017weakly`) generalize beyond cardinality to **matroids**, and a
+knapsack is not a matroid.
+
+The nearest prior guarantee is **Shi & Lai, TCS 990:114409 (2024)**
+(`shilai2024`) — non-monotone *and* non-submodular *and* knapsack,
+which is structurally PARCEL's exact optimization setting.
+
+**This is a scooping risk and must be read in full before drafting.**
+PARCEL's novelty has to live in the **model** — agent context
+saturation, the endogenous graph, the *derived* admission price — and
+not in an abstract non-monotone-non-submodular-knapsack theorem that a
+2024 TCS paper may already own. Cite `shilai2024` as the nearest prior
+guarantee and prove the paper's own result over it.
 
 ## 10. Naming
 

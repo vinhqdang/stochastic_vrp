@@ -11,29 +11,66 @@
   `PROJECT.md`; framing settled through a planning dialogue on
   2026-09-06 (GMT+7).
 
-## Deadlines — UNVERIFIED, confirm against the official call
+## Deadlines — VERIFIED 2026-09-06 against the official call
 
-Taken from secondary sources (conference-listing sites and a mailing
-list announcement), **not** yet from the official Warwick-hosted call
-page, which was not reachable at the time of writing. Confirm every
-date before relying on any of it.
+Source: <https://warwick.ac.uk/fac/sci/dcs/aamas2027/calls/> and its
+main-track subpage (the earlier 404 was transient). All deadlines are
+end-of-day **AoE (UTC−12)**.
 
-| Milestone | Date (unverified) |
+| Milestone | Date |
 |---|---|
+| **OpenReview author registration** | **2026-09-17** ⚠️ |
 | Abstract submission | **2026-10-01** |
 | Full paper submission | **2026-10-08** |
-| Author rebuttal closes | 2026-11-24 |
+| Author rebuttal window | 2026-11-20 – 2026-11-24 |
 | Notification | 2026-12-21 |
 | Camera-ready | 2027-01-25 |
 | Conference | 2027-05-03 – 2027-05-07, Hanoi |
 
-Official call: <https://warwick.ac.uk/fac/sci/dcs/aamas2027/calls/>
-(main track + Blue Sky Ideas tracks listed; the main-track subpage 404'd
-on 2026-09-06 and should be retried).
+⚠️ **The 2026-09-17 OpenReview author-registration step precedes the
+abstract deadline and is easy to miss.** The instructions also state
+that all authors need OpenReview accounts two weeks before abstract
+registration. This is the nearest hard deadline — treat it as the
+first action item.
 
-**Also unverified and needed before drafting:** page limit, ACM
-template version, whether review is double-blind, and the
-prior/concurrent-submission policy.
+## Submission requirements — VERIFIED
+
+- **Page limit: 8 pages**, plus **any number of additional pages for
+  bibliographic references** (references do not count). The call
+  explicitly warns: *"Excessive use of typesetting tricks to make
+  everything fit into 8 pages is not admissible."*
+- **Appendices:** the instructions do **not** separately exempt
+  appendix material. Assume it counts toward the 8 pages unless
+  clarified. For a theory paper this is the binding constraint — proofs
+  must be budgeted, not deferred to an unlimited appendix.
+- **LaTeX is mandatory.** A template is linked from the instructions
+  page, but no ACM version string is named there. **Do not assert a
+  template version without opening the file** — still unverified.
+- **Review is DOUBLE-BLIND.** Consequence for this repo: BATON and
+  TEMPO must be cited in the **third person**, never as "our previous
+  work". The `PROJECT.md` §9.7 lineage note must be written
+  accordingly.
+- **Dual submission:** substantially similar work may not be under
+  review at another archival venue simultaneously. arXiv preprints and
+  non-archival workshops are permitted. Violations mean desk rejection
+  at any stage.
+
+## Topic fit — VERIFIED, strong
+
+Three of the eleven listed areas hit directly. Quoted from the call:
+
+- **GAAI** — *"Memory, state, context, long-lived interaction, and
+  other architectural patterns for generative and agentic AI systems"*.
+  This is close to a bullseye.
+- **LEARN** — *"Learning agent-to-agent interactions, including
+  learning to communicate and emergent communication."*
+- **COINE** — *"Communication, including communication using natural
+  language"*; *"Coordination and teamwork."*
+
+A **Blue Sky Ideas track exists** (`/calls/call-for-blue-sky-ideas/`);
+its deadline was not retrieved and is still unverified. Worth checking
+as a home for the endogenous-topology stretch contribution (T6) if it
+does not mature in time for the main track.
 
 ## Time budget
 

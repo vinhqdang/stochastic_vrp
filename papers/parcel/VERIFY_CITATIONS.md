@@ -1,57 +1,130 @@
-# PARCEL — citations pending verification
+# PARCEL — citation verification log
 
-Repo rule: `references.bib` holds **only** entries checked against live
-publisher / DOI / arXiv records. Everything below was surfaced by web
-search during planning on 2026-09-06 and is recorded here with the
-claim it is meant to support. **Nothing moves to `references.bib`
-until the record is opened and the metadata confirmed.** Search-result
-snippets are not verification.
+Verification pass run 2026-09-06. Most entries are now **verified and
+moved to `references.bib`**. This file retains (a) the corrections
+found, (b) what is still unverified, and (c) the claims that cannot be
+fixed by citation at all.
 
-## Foundational — influence maximization
+---
 
-| Key | Work | Supports | Status |
-|---|---|---|---|
-| kempe2003 | Kempe, Kleinberg, Tardos — Maximizing the spread of influence through a social network, KDD 2003 | the monotone+submodular ⇒ `(1−1/e)` greedy result the paper argues does not transfer | well known, still verify DOI/pages |
-| borgs2014 | Borgs, Brautbar, Chayes, Lucier — reverse influence sampling, SODA 2014 | first near-linear-time IM; head of the scaling lineage | verify |
-| tang2015 | Tang, Xiao, Shi — IMM / influence maximization via martingales, SIGMOD 2015 | the sketch-based state of the art that the GPU work accelerates | verify exact venue/year |
+## ⚠️ CORRECTIONS — errors found in the planning draft
 
-## Recent IM — the "2003 is old" update
+### 1. The "−55.89% average regression" does not exist
 
-| Key | Work | Supports | Status |
-|---|---|---|---|
-| eim2025 | eIM: GPU-Accelerated Efficient Influence Maximization, SC'25 Workshops, doi 10.1145/3731599.3767442 | that current IM scaling work still assumes the monotone-submodular structure | verify |
-| imsurvey2026 | Exploring Influence Maximization: State-of-the-Art Methods, Taxonomies, and Trends, ACM TKDD, doi 10.1145/3779058 | taxonomy/currency of the field; supports the "the whole lineage assumes X" claim | verify |
-| temporalreview2023 | Influence maximization on temporal networks: a review, arXiv:2307.00181 | temporal IM exists and is active | verify, check for journal version |
-| aamas2023temporal | Being an Influencer is Hard: The Complexity of Influence Maximization in Temporal Graphs with a Fixed Source, AAMAS 2023 | AAMAS precedent for this exact style of complexity paper — venue-fit evidence | verify |
-| dtinf2026 | DTInf: Dynamic Topic-Aware Influence Maximization with Incremental Embedding Updates, ACM WebSci 2026, doi 10.1145/3795766.3799740 | current dynamic IM treats evolution as exogenous | verify |
-| temprl2026 | TempRL-IM — temporal IM via continuous-time GNNs + deep RL, Scientific Reports 2026 | same | verify |
-| seaiu2026 | SEAIU — incremental updating for dynamic IM, Intl. J. Machine Learning & Cybernetics 2026, doi 10.1007/s13042-026-03077-6 | same | verify |
-| hotlink | HoTLink — forecast-driven temporal IM in streaming settings (SSRN preprint) | exogenous-forecast framing, explicitly | verify; preprint only — check for peer-reviewed version |
+The planning draft attributed an *"average regression of −55.89%"* to
+`distracted2025`. **That number is not in the paper.** The string
+`55.89` appears zero times in both arXiv v1 and v2, and the word
+"regression" appears zero times. It came from a search-result snippet,
+not the source.
 
-⚠️ The claim "no existing temporal-IM work models *endogenous*
-topology" is a **novelty/absence claim**. It cannot be supported by a
-citation. It needs a documented search (queries, databases, dates) plus
-the named nearest prior work, or it must be softened. Do not let it
-into the manuscript as a bare assertion.
+**Action: never use it.** It has been removed from `PROJECT.md`. If a
+similar figure is wanted, find its actual source first.
 
-## Non-monotone / non-submodular optimization
+### 2. The 43% → 19% figure is real but far narrower than assumed
 
-| Key | Work | Supports | Status |
-|---|---|---|---|
-| feige2011 | Feige, Mirrokni, Vondrák — Maximizing non-monotone submodular functions, FOCS 2007 / SICOMP 2011 | the approximation landscape once monotonicity goes | verify which version to cite |
-| buchbinder2012 | Buchbinder, Feldman, Naor, Schwartz — double greedy, tight 1/2 for unconstrained non-monotone submodular | the best available if we could recover submodularity — and we cannot, which is the point | verify |
-| iyerbilmes | Iyer, Bilmes — algorithms for difference-of-submodular (DS) optimization | the `rel − ρ` decomposition | verify |
+Verbatim from the paper: *"at a fixed reasoning depth of rs=5,
+Grok-3-Beta's step accuracy drops from 43% with one irrelevant context
+to just 19% under fifteen irrelevant context."*
 
-## LLM context degradation — calibrates the saturation penalty
+That is **one model, one metric, one reasoning depth, on a synthetic
+grade-school-math benchmark (GSM-DC) with injected distractors.** Using
+it as a general effect would be a misrepresentation a referee catches
+immediately.
 
-| Key | Work | Supports | Status |
-|---|---|---|---|
-| distracted2025 | How Is LLM Reasoning Distracted by Irrelevant Context? An Analysis Using a Controlled Benchmark, EMNLP 2025 (2025.emnlp-main.674, arXiv:2505.18761) | **the 43%→19% figure and the −55.89% average regression** — load-bearing for F1 | verify the exact numbers in the paper, not the snippet |
-| contextrot | Context Rot: How Increasing Input Tokens Impacts LLM Performance (Chroma technical report) | degradation with input length on simple tasks | industry tech report, not peer reviewed — cite with that caveat or find a peer-reviewed equivalent |
-| shi2023 | Shi et al. — Large Language Models Can Be Easily Distracted by Irrelevant Context, ICML 2023 | the original distraction result | verify |
-| liu2024 | Liu et al. — Lost in the Middle, TACL 2024 | non-uniform use of the context window | verify |
+**What to cite instead** — the paper's own cross-model claim, which is
+weaker in magnitude but far stronger as evidence: *"all six models
+exhibit a clear degradation in reasoning accuracy as the number of
+irrelevant context increases"* (Grok-3-Beta, GPT-4.1, GPT-4o-mini,
+LLaMA-3.3-70B, LLaMA-3.1-8B, LLaMA-3.2-1B), with GPT-4.1 declining more
+steeply still, 26% → 2%.
 
-⚠️ F1 is the paper's load-bearing empirical claim. If the 43%→19%
-figure does not survive checking, or is model-specific in a way that
-does not generalize, the saturation argument needs a different anchor.
-**Check this one first.**
+### 3. IMM author order was wrong
+
+`tang2015` is **Tang, Shi, Xiao** (SIGMOD 2015). "Tang, **Xiao**, Shi"
+is the *different* SIGMOD 2014 TIM/TIM+ paper. Corrected in the .bib.
+
+### 4. A Crossref metadata bug to not copy
+
+Crossref's SICOMP record for `buchbinder2012` renders the third author
+as "Seffi, Joseph". That is a bug — he is Joseph (Seffi) **Naor**. The
+.bib carries the correct form with a warning comment.
+
+### 5. Feige & Izsak DOI
+
+The correct DOI is `10.1145/2422436.2422466`.
+`10.1145/2422436.2422500` is a *different* ITCS'13 paper.
+
+---
+
+## 🔴 Counter-evidence — log it, do not hide it
+
+At least one 2026 preprint reports large dense models holding
+**97.5–98.5% accuracy under 15,000 words of distractors** — i.e. very
+little degradation. Context degradation is **task- and
+model-dependent**, and a referee may well raise exactly this against F1.
+
+This does not sink the argument (PARCEL needs degradation to exist in
+*some* regime, not universally), but the manuscript must acknowledge
+heterogeneity rather than assert a universal law. **Find and verify
+this preprint before drafting §2.**
+
+---
+
+## 🟡 Upgrade available — use it
+
+`nolima2025` (NoLiMa, ICML 2025, PMLR 267:44554–44570) is a **stronger,
+peer-reviewed** anchor than the Chroma `contextrot` tech report: 13
+models claiming ≥128K context, **11 of 13 drop below 50% of their
+short-context baseline at 32K**; GPT-4o falls 99.3% → 69.7%.
+
+Re-anchor F1 on `nolima2025` + the `distracted2025` cross-model
+statement; keep `contextrot` only as a labelled industry supplement.
+No *2026* peer-reviewed result was found that beats NoLiMa (the 2026
+hits are preprints/OpenReview submissions, not archival).
+
+---
+
+## 🔴 SCOOPING RISK — assess before drafting
+
+**Shi & Lai, "Approximation algorithm of maximizing non-monotone
+non-submodular functions under knapsack constraint," Theoretical
+Computer Science 990:114409, 2024** (`shilai2024`) addresses
+*non-monotone* AND *non-submodular* maximization under a *knapsack* —
+structurally PARCEL's exact optimization setting, with ratios
+parameterized by weak-submodularity/weak-monotonicity.
+
+**This must be read in full before drafting.** PARCEL's novelty has to
+live in the *model* (agent context saturation, the endogenous graph,
+the derived admission price) and not in the abstract optimization
+result, which may already be covered. If the paper claims a general
+non-monotone-non-submodular-knapsack theorem, it risks being scooped by
+a 2024 TCS paper.
+
+Related finding: **the clean "weakly submodular under knapsack" theorem
+assumed in the planning draft does not exist.** Chen, Feldman &
+Karbasi (`chen2017weakly`) generalize beyond cardinality to
+**matroids** — and a knapsack is not a matroid. So PARCEL must prove
+its own knapsack result and cite `shilai2024` as the nearest prior
+guarantee, rather than importing an off-the-shelf theorem.
+
+---
+
+## ⚪ Still unverified
+
+| Key | Work | Note |
+|---|---|---|
+| temporalreview2023 | Influence maximization on temporal networks: a review, arXiv:2307.00181 | not checked; also look for a journal version |
+| temprl2026 | TempRL-IM, Scientific Reports 2026 | not checked |
+| seaiu2026 | SEAIU, Intl. J. ML & Cybernetics 2026, doi 10.1007/s13042-026-03077-6 | not checked |
+| hotlink | HoTLink, SSRN preprint | not checked; preprint only — look for peer-reviewed version |
+| — | the 2026 counter-evidence preprint above | must be found and verified |
+
+---
+
+## ⚠️ Not fixable by citation
+
+The claim **"no existing temporal-IM work models *endogenous*
+topology"** is a novelty/absence claim. No citation can support an
+absence. It needs a **documented search** — queries, databases, dates —
+plus the named nearest prior work, or it must be softened to a
+search-bounded statement. **This search has not been performed.**

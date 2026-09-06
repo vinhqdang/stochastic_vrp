@@ -1,10 +1,245 @@
-% PARCEL — verified references only.
+% PARCEL — verified references.
 %
 % Repo rule: an entry appears here ONLY after its record has been
-% opened and its metadata confirmed against a live publisher, DOI, or
-% arXiv page. Search-result snippets are not verification.
-%
-% Currently empty by design. The full intended citation list, with the
-% claim each entry supports and its verification status, is in
-% VERIFY_CITATIONS.md. Two entries there are flagged load-bearing and
-% should be checked first.
+% checked against a live publisher / DOI / arXiv page. Entries below
+% were verified 2026-09-06. Items still unverified live in
+% VERIFY_CITATIONS.md.
+
+% ---------------------------------------------------------------
+% Influence maximization — the lineage PARCEL argues does not transfer
+% ---------------------------------------------------------------
+
+@inproceedings{kempe2003,
+  author    = {Kempe, David and Kleinberg, Jon and Tardos, {\'E}va},
+  title     = {Maximizing the spread of influence through a social network},
+  booktitle = {Proc. 9th ACM SIGKDD Intl. Conf. on Knowledge Discovery and Data Mining (KDD)},
+  pages     = {137--146},
+  year      = {2003},
+  doi       = {10.1145/956750.956769}
+}
+
+@inproceedings{borgs2014,
+  author    = {Borgs, Christian and Brautbar, Michael and Chayes, Jennifer and Lucier, Brendan},
+  title     = {Maximizing Social Influence in Nearly Optimal Time},
+  booktitle = {Proc. 25th Annual ACM-SIAM Symposium on Discrete Algorithms (SODA)},
+  pages     = {946--957},
+  year      = {2014},
+  doi       = {10.1137/1.9781611973402.70}
+}
+
+% NOTE: author order is Tang, SHI, XIAO for the 2015 IMM paper.
+% "Tang, Xiao, Shi" is the DIFFERENT SIGMOD 2014 TIM/TIM+ paper.
+@inproceedings{tang2015,
+  author    = {Tang, Youze and Shi, Yanchen and Xiao, Xiaokui},
+  title     = {Influence Maximization in Near-Linear Time: A Martingale Approach},
+  booktitle = {Proc. 2015 ACM SIGMOD Intl. Conf. on Management of Data},
+  pages     = {1539--1554},
+  year      = {2015},
+  doi       = {10.1145/2723372.2723734}
+}
+
+@inproceedings{aamas2023temporal,
+  author    = {Deligkas, Argyrios and Eiben, Eduard and Skretas, George},
+  title     = {Being an Influencer is Hard: The Complexity of Influence Maximization
+               in Temporal Graphs with a Fixed Source},
+  booktitle = {Proc. 22nd Intl. Conf. on Autonomous Agents and Multiagent Systems (AAMAS)},
+  year      = {2023},
+  note      = {ACM DL 10.5555/3545946.3598898; arXiv:2303.11703.
+               An extended version appears in Information and Computation (2024);
+               cite the AAMAS version for venue fit.}
+}
+
+@inproceedings{eim2025,
+  author    = {Doney, Jacob and Huang, Xin and Lee, Chul-Ho},
+  title     = {{eIM}: {GPU}-Accelerated Efficient Influence Maximization in
+               Large-Scale Social Networks},
+  booktitle = {Proc. SC'25 Workshops of the Intl. Conf. for High Performance
+               Computing, Networking, Storage and Analysis},
+  pages     = {757--765},
+  year      = {2025},
+  doi       = {10.1145/3731599.3767442}
+}
+
+@article{imsurvey2026,
+  author  = {Meena, Sunil Kumar and Singh, Shashank Sheshar and Singh, Kuldeep},
+  title   = {Exploring Influence Maximization: State-of-the-Art Methods,
+             Taxonomies, and Trends},
+  journal = {ACM Transactions on Knowledge Discovery from Data},
+  volume  = {20},
+  number  = {2},
+  pages   = {1--50},
+  year    = {2026},
+  doi     = {10.1145/3779058}
+}
+
+@inproceedings{dtinf2026,
+  author    = {Dam, Arpan and Chandra, Hunny and Mitra, Bivas},
+  title     = {{DTInf}: Dynamic Topic-Aware Influence Maximization with
+               Incremental Embedding Updates},
+  booktitle = {Proc. 18th ACM Web Science Conference},
+  pages     = {299--309},
+  year      = {2026},
+  doi       = {10.1145/3795766.3799740}
+}
+
+% ---------------------------------------------------------------
+% Non-monotone / weakly submodular optimization
+% ---------------------------------------------------------------
+
+@article{feige2011,
+  author  = {Feige, Uriel and Mirrokni, Vahab S. and Vondr{\'a}k, Jan},
+  title   = {Maximizing Non-monotone Submodular Functions},
+  journal = {SIAM Journal on Computing},
+  volume  = {40},
+  number  = {4},
+  pages   = {1133--1153},
+  year    = {2011},
+  doi     = {10.1137/090779346},
+  note    = {Preliminary version: FOCS 2007, pp. 461--471, doi:10.1109/FOCS.2007.29}
+}
+
+% NOTE: Crossref's SICOMP record renders the third author as
+% "Seffi, Joseph" -- that is a metadata bug. He is Joseph (Seffi) Naor.
+@inproceedings{buchbinder2012,
+  author    = {Buchbinder, Niv and Feldman, Moran and Naor, Joseph and Schwartz, Roy},
+  title     = {A Tight Linear Time (1/2)-Approximation for Unconstrained
+               Submodular Maximization},
+  booktitle = {Proc. IEEE 53rd Annual Symposium on Foundations of Computer Science (FOCS)},
+  pages     = {649--658},
+  year      = {2012},
+  doi       = {10.1109/FOCS.2012.73},
+  note      = {Journal version: SIAM J. Computing 44(5):1384--1402, 2015,
+               doi:10.1137/130929205}
+}
+
+@inproceedings{daskempe2011,
+  author    = {Das, Abhimanyu and Kempe, David},
+  title     = {Submodular meets Spectral: Greedy Algorithms for Subset Selection,
+               Sparse Approximation and Dictionary Selection},
+  booktitle = {Proc. 28th Intl. Conf. on Machine Learning (ICML)},
+  pages     = {1057--1064},
+  year      = {2011},
+  note      = {Introduces the submodularity ratio.}
+}
+
+@article{daskempe2018,
+  author  = {Das, Abhimanyu and Kempe, David},
+  title   = {Approximate Submodularity and its Applications: Subset Selection,
+             Sparse Approximation and Dictionary Selection},
+  journal = {Journal of Machine Learning Research},
+  volume  = {19},
+  number  = {3},
+  pages   = {1--34},
+  year    = {2018}
+}
+
+@inproceedings{feigeizsak2013,
+  author    = {Feige, Uriel and Izsak, Rani},
+  title     = {Welfare Maximization and the Supermodular Degree},
+  booktitle = {Proc. 4th Conf. on Innovations in Theoretical Computer Science (ITCS)},
+  pages     = {247--256},
+  year      = {2013},
+  doi       = {10.1145/2422436.2422466}
+}
+
+@inproceedings{iyerbilmes2012,
+  author    = {Iyer, Rishabh and Bilmes, Jeff},
+  title     = {Algorithms for Approximate Minimization of the Difference Between
+               Submodular Functions, with Applications},
+  booktitle = {Proc. 28th Conf. on Uncertainty in Artificial Intelligence (UAI)},
+  pages     = {407--417},
+  year      = {2012},
+  note      = {arXiv:1207.0560}
+}
+
+% Nearest prior guarantee for PARCEL's exact constraint structure
+% (non-monotone AND non-submodular AND knapsack). See VERIFY_CITATIONS.md
+% for why this is a scooping-risk item, not just a citation.
+@article{shilai2024,
+  author  = {Shi, Yishuo and Lai, Xiaoyan},
+  title   = {Approximation algorithm of maximizing non-monotone non-submodular
+             functions under knapsack constraint},
+  journal = {Theoretical Computer Science},
+  volume  = {990},
+  pages   = {114409},
+  year    = {2024},
+  doi     = {10.1016/j.tcs.2024.114409}
+}
+
+@article{chen2017weakly,
+  author  = {Chen, Lin and Feldman, Moran and Karbasi, Amin},
+  title   = {Weakly Submodular Maximization Beyond Cardinality Constraints:
+             Does Randomization Help Greedy?},
+  journal = {arXiv preprint arXiv:1707.04347},
+  year    = {2017},
+  note    = {Guarantee is for MATROID constraints; a knapsack is not a matroid.
+             Does not supply an off-the-shelf weakly-submodular-knapsack theorem.}
+}
+
+% ---------------------------------------------------------------
+% LLM context degradation — calibrates the saturation penalty
+% ---------------------------------------------------------------
+
+% CAUTION: the 43%->19% figure is Grok-3-Beta ONLY, at reasoning depth
+% rs=5, on the synthetic GSM-DC benchmark. Cite the cross-model
+% statement, not that single number, for a general claim.
+@inproceedings{distracted2025,
+  author    = {Yang, Minglai and Huang, Ethan and Zhang, Liang and Surdeanu, Mihai
+               and Wang, William Yang and Pan, Liangming},
+  title     = {How Is {LLM} Reasoning Distracted by Irrelevant Context?
+               An Analysis Using a Controlled Benchmark},
+  booktitle = {Proc. 2025 Conf. on Empirical Methods in Natural Language Processing (EMNLP)},
+  pages     = {13329--13347},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.emnlp-main.674},
+  note      = {arXiv:2505.18761}
+}
+
+@inproceedings{nolima2025,
+  author    = {Modarressi, Ali and Deilamsalehy, Hanieh and Dernoncourt, Franck
+               and Bui, Trung and Rossi, Ryan A. and Yoon, Seunghyun
+               and Sch{\"u}tze, Hinrich},
+  title     = {{NoLiMa}: Long-Context Evaluation Beyond Literal Matching},
+  booktitle = {Proc. 42nd Intl. Conf. on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {267},
+  pages     = {44554--44570},
+  year      = {2025},
+  note      = {arXiv:2502.05167. 11 of 13 models claiming >=128K context drop
+               below 50\% of their short-context baseline at 32K.}
+}
+
+@inproceedings{shi2023,
+  author    = {Shi, Freda and Chen, Xinyun and Misra, Kanishka and Scales, Nathan
+               and Dohan, David and Chi, Ed H. and Sch{\"a}rli, Nathanael and Zhou, Denny},
+  title     = {Large Language Models Can Be Easily Distracted by Irrelevant Context},
+  booktitle = {Proc. 40th Intl. Conf. on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {202},
+  pages     = {31210--31227},
+  year      = {2023},
+  note      = {arXiv:2302.00093}
+}
+
+@article{liu2024,
+  author  = {Liu, Nelson F. and Lin, Kevin and Hewitt, John and Paranjape, Ashwin
+             and Bevilacqua, Michele and Petroni, Fabio and Liang, Percy},
+  title   = {Lost in the Middle: How Language Models Use Long Contexts},
+  journal = {Transactions of the Association for Computational Linguistics},
+  volume  = {12},
+  pages   = {157--173},
+  year    = {2024},
+  doi     = {10.1162/tacl_a_00638}
+}
+
+% Industry technical report, NOT peer reviewed. Label it as such at
+% every use; nolima2025 is the peer-reviewed alternative.
+@techreport{contextrot,
+  author      = {Hong, Kelly and Troynikov, Anton and Huber, Jeff},
+  title       = {Context Rot: How Increasing Input Tokens Impacts {LLM} Performance},
+  institution = {Chroma},
+  year        = {2025},
+  month       = {jul},
+  note        = {18 models. Not peer reviewed; no DOI.
+                 Code: github.com/chroma-core/context-rot}
+}

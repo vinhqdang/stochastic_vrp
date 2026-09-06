@@ -17,11 +17,12 @@ Target: **AAMAS 2027**, Hanoi, 3–7 May 2027 (main track). Spec:
   questions, and the naming rationale.
 - `STATUS.md` — venue, deadlines (**unverified — confirm against the
   official call**), time budget, freeze policy.
-- `VERIFY_CITATIONS.md` — every citation the paper intends to lean on,
-  **all currently unverified**, each recorded with the claim it
-  supports. Two entries are flagged as load-bearing.
-- `references.bib` — verified entries only; **currently empty** by
-  design.
+- `VERIFY_CITATIONS.md` — the verification log: corrections found
+  (including one fabricated statistic that must never be used), logged
+  counter-evidence, a scooping risk to assess, what is still
+  unverified, and the one claim no citation can support.
+- `references.bib` — verified entries only. Populated 2026-09-06;
+  several carry inline warning comments about metadata traps.
 
 ## Self-containment (read before adding code)
 
@@ -59,15 +60,25 @@ the "assumed away the hard part" critique.
 
 **Next actions, in order:**
 
-1. Verify the AAMAS 2027 call — page limit, template, blind-review
-   model, deadlines (`STATUS.md` has the unverified table).
-2. Verify the two load-bearing citations flagged in
-   `VERIFY_CITATIONS.md`, starting with the LLM-degradation figures
-   that the whole non-monotonicity argument rests on. One now carries
-   extra weight: whether degradation is **convex** decides the shape of
-   the §9 admission-price rule.
-3. Confirm the best available guarantee for weakly-submodular
-   maximization under a *knapsack* (not cardinality) constraint —
-   `PROJECT.md` §9.8.
-4. Bound the damage from imperfect bundle identification (§9.3), which
-   the current construction assumes given.
+1. ⚠️ **Register authors on OpenReview by 2026-09-17** — this precedes
+   the abstract deadline and is the nearest hard deadline. See
+   `STATUS.md`.
+2. **Read Shi & Lai, TCS 990:114409 (2024) in full.** It covers
+   non-monotone, non-submodular maximization under a knapsack — 
+   structurally this paper's optimization setting. The novelty must
+   live in the model, not the abstract theorem. `PROJECT.md` §9.9.
+3. **Settle whether degradation is convex or knee-shaped** against the
+   measured curves. It decides the shape of the §9 admission price and
+   is now the top open modeling question (§9.8).
+4. Run the documented search behind the endogenous-topology absence
+   claim, or soften it (`VERIFY_CITATIONS.md`).
+5. Find and verify the 2026 counter-evidence preprint reporting models
+   that resist distractors, and write the heterogeneity into §2 rather
+   than waiting for a referee to raise it.
+6. Bound the damage from imperfect bundle identification (§9.3).
+
+Verified venue constraints that shape the writing: **8 pages** plus
+unlimited references, appendices apparently **counted** (so proofs must
+be budgeted), **LaTeX mandatory**, and **double-blind** review — which
+means BATON and TEMPO get third-person citation, never "our prior
+work".
