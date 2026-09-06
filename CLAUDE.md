@@ -83,7 +83,7 @@ in our own claim; `STATUS.md` records the decision. Kept as a
 documented negative result. The prototype numerics are correct, just
 not novel.
 
-### Paper 5 — ECLAIR (papers/eclair/, ACTIVE — the one open paper)
+### Paper 5 — ECLAIR (papers/eclair/, ACTIVE)
 
 *E-process Certification of LLM-generated Constraint Models with
 Adaptive Instance Routing.* Target: **Constraints (Springer)**, LLM+CP
@@ -98,6 +98,30 @@ second. Ports TEMPO's e-process *technique* but deliberately shares
 NO code, instances, or results with papers 1–3 (same separation
 argument as paper 3) — all ECLAIR code stays inside `papers/eclair/`.
 Spec: `papers/eclair/PROJECT.md`; adoption record: `RESEARCH_LOG.md`.
+
+### Paper 6 — PARCEL (papers/parcel/, ACTIVE — planning)
+
+*Price-Aware Relay of Context over Endogenous Links.* Target:
+**AAMAS 2027** (Hanoi, 3–7 May 2027; abstracts ~2026-10-01 — dates
+UNVERIFIED, see its STATUS.md). Multi-agent LLM systems forward whole
+contexts between agents and pay for it in billed tokens. The obvious
+framing is influence maximization, and the paper's first contribution
+is that this framing **fails**, for two independent reasons: per-agent
+context saturation breaks **monotonicity** (more context measurably
+degrades an agent), and complementary facts break **submodularity**
+(two inert facts can be jointly decisive). Both are required for the
+greedy `(1-1/e)` result and everything built on it (RIS, IMM, the
+GPU/learning descendants). The money constraint is *global* (a token
+knapsack) while degradation is *per-agent*, and that tension is the
+theorem territory: the budget rewards concentrating spend, saturation
+punishes it. Theory targets, hardness, and the sub-saturation regime
+where a guarantee returns: `papers/parcel/PROJECT.md` §5.
+
+The VRP link is a **contrast, not shared machinery**: goods are
+conserved, context is copyable, so routing intuitions do not transfer —
+only *capacity* does (a context window is rivalrous like vehicle
+capacity). Shares NO code, instances, or results with papers 1–3; all
+PARCEL code stays inside `papers/parcel/`.
 
 One live thread from paper 4: BATON's W-DRO gate in
 `svrpspd_wdro/core/wdro_exact.py` adds a **route-independent** constant
@@ -123,12 +147,14 @@ arrives; a referee could raise it. BATON is frozen, so do not act now.
   documented negative result. Do not resume — see its PROJECT.md banner.
 - `papers/eclair/` — paper 5 (ECLAIR), **ACTIVE and open for edits**;
   self-contained (no `svrpspd_wdro/` imports — see its README.md).
+- `papers/parcel/` — paper 6 (PARCEL), **ACTIVE and open for edits**;
+  planning stage, self-contained (see its README.md).
 - **Parallel papers, independent review clocks** — always check each
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1–3 are closed to edits, paper 4 is abandoned, and paper 5
-  (ECLAIR, `papers/eclair/`) is the **one open paper**.
+  papers 1–3 are closed to edits, paper 4 is abandoned, and papers 5
+  (ECLAIR) and 6 (PARCEL) are the **open papers**.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
   manuscript, a `STATUS.md` (venue, review state, freeze policy), a
   `README.md` with the file manifest and how each table/figure
