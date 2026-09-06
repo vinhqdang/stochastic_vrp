@@ -102,8 +102,12 @@ Spec: `papers/eclair/PROJECT.md`; adoption record: `RESEARCH_LOG.md`.
 ### Paper 6 — PARCEL (papers/parcel/, ACTIVE — planning)
 
 *Price-Aware Relay of Context over Endogenous Links.* Target:
-**AAMAS 2027** (Hanoi, 3–7 May 2027; abstracts ~2026-10-01 — dates
-UNVERIFIED, see its STATUS.md). Multi-agent LLM systems forward whole
+**AAMAS 2027**, Hanoi, 3–7 May 2027. Dates verified against the
+official call: **OpenReview author registration 2026-09-17**, abstracts
+2026-10-01, full papers 2026-10-08, notification 2026-12-21.
+**8 pages** + unlimited references, LaTeX mandatory, **double-blind**
+(so BATON/TEMPO take third-person citation). Multi-agent LLM systems
+forward whole
 contexts between agents and pay for it in billed tokens. The obvious
 framing is influence maximization, and the paper's first contribution
 is that this framing **fails**, for two independent reasons: per-agent
@@ -114,8 +118,19 @@ greedy `(1-1/e)` result and everything built on it (RIS, IMM, the
 GPU/learning descendants). The money constraint is *global* (a token
 knapsack) while degradation is *per-agent*, and that tension is the
 theorem territory: the budget rewards concentrating spend, saturation
-punishes it. Theory targets, hardness, and the sub-saturation regime
-where a guarantee returns: `papers/parcel/PROJECT.md` §5.
+punishes it. The positive result is an **admission price** — send a
+fact to an agent only when its relevance-per-token clears that agent's
+current marginal degradation rate — and the restriction is *derived* as
+a dominance property, not assumed: a fact failing the test both lowers
+utility and burns budget, so no optimum contains one. Theory targets
+and hardness: `papers/parcel/PROJECT.md` §5; the price derivation: §9.
+
+Two standing cautions recorded in its `VERIFY_CITATIONS.md`: a
+"−55.89%" degradation statistic circulating in search results **does
+not exist in the cited paper** and must never be used; and Shi & Lai
+(TCS 990:114409, 2024) already cover non-monotone non-submodular
+maximization under a knapsack, so PARCEL's novelty must live in the
+model rather than in an abstract optimization theorem.
 
 The VRP link is a **contrast, not shared machinery**: goods are
 conserved, context is copyable, so routing intuitions do not transfer —
