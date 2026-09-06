@@ -161,18 +161,21 @@ GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
 
 
 def call_gemini(model, prompt, key, timeout=240, retries=6, max_tokens=1500):
-    """Google AI Studio backend.
+    """Gemini generateContent with backoff.
 
-    Used in preference to OpenRouter because the free OpenRouter tier
-    429s on almost every call at this volume, and a single vendor family
-    (flash-lite / flash / pro) gives a controlled capability ladder for
-    the §11.1 prediction that the convex region widens with capability.
+    Distinguishes a transient 429 (per-minute rate limit -- worth
+    retrying) from DAILY QUOTA EXHAUSTION, which is terminal: retrying
+    against an exhausted free-tier quota just burns wall-clock and
+    writes junk rows. The free tier is 500 requests/day PER MODEL, so
+    hitting it is expected, not exceptional, and the caller needs to
+    know immediately.
     """
+    url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+           f"{model}:generateContent?key={key}")
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens},
     }).encode()
-    url = GEMINI_URL.format(model=model, key=key)
     for attempt in range(retries):
         req = urllib.request.Request(
             url, data=payload, headers={"Content-Type": "application/json"})
@@ -180,19 +183,27 @@ def call_gemini(model, prompt, key, timeout=240, retries=6, max_tokens=1500):
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 body = json.loads(r.read())
             cand = body["candidates"][0]
-            parts = cand.get("content", {}).get("parts")
-            if not parts:
-                # MAX_TOKENS with no emitted text, or a safety stop.
-                return f"__ERROR__ no_parts:{cand.get('finishReason')}"
-            return "".join(p.get("text", "") for p in parts)
+            text = "".join(p.get("text", "")
+                           for p in cand.get("content", {}).get("parts", []))
+            if not text:
+                raise KeyError(f"empty ({cand.get('finishReason')})")
+            return text
         except urllib.error.HTTPError as exc:
-            if exc.code in (429, 503) and attempt < retries - 1:
-                time.sleep(12 * (attempt + 1) + random.random() * 6)
-                continue
+            detail = ""
+            try:
+                detail = exc.read().decode()[:400]
+            except Exception:
+                pass
+            if exc.code == 429:
+                if "free_tier" in detail or "RESOURCE_EXHAUSTED" in detail:
+                    return f"__QUOTA__ {model}"
+                if attempt < retries - 1:
+                    time.sleep(12 * (attempt + 1) + random.random() * 6)
+                    continue
             if attempt == retries - 1:
                 return f"__ERROR__ HTTP{exc.code}"
             time.sleep(2 ** attempt)
-        except (urllib.error.URLError, KeyError, IndexError, TimeoutError,
+        except (urllib.error.URLError, KeyError, TimeoutError, IndexError,
                 json.JSONDecodeError, TypeError) as exc:
             if attempt == retries - 1:
                 return f"__ERROR__ {type(exc).__name__}: {exc}"
@@ -243,7 +254,7 @@ def graded(response, answer):
     committing. Returns None for a failed call so errors stay separable
     from wrong answers in the analysis.
     """
-    if response.startswith("__ERROR__"):
+    if response.startswith("__ERROR__") or response.startswith("__QUOTA__"):
         return None
     clean = response.replace(",", "")
     m = re.search(r"ANSWER:\s*(-?\d+)", clean, re.IGNORECASE)

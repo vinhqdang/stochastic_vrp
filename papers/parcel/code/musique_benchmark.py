@@ -231,13 +231,27 @@ POLICIES = {"broadcast": p_broadcast, "none": p_none, "oracle": p_oracle,
             "random": p_random, "centrality": p_centrality,
             "topk": p_topk, "parcel": p_parcel}
 
-CONFIGS = (
+CONFIGS_FULL = (
     [("broadcast", {}), ("none", {}), ("oracle", {})]
     + [("random", {"k": k}) for k in (1, 3, 6)]
     + [("centrality", {"k": k}) for k in (1, 3, 6)]
     + [("topk", {"k": k}) for k in (1, 2, 3, 5, 10)]
     + [("parcel", {"q": q}) for q in (0.95, 0.85, 0.7, 0.5, 0.3)]
 )
+
+# The Gemini free tier allows 500 requests/day PER MODEL. The full grid
+# is 19 configs x 2 agents = 38 calls per instance, which buys only ~13
+# instances a day. This trimmed grid keeps one point per baseline family
+# plus the frontier points that matter -- 12 configs, 24 calls per
+# instance -- so ~20 instances fit inside one model's daily allowance.
+CONFIGS_MIN = (
+    [("broadcast", {}), ("none", {}), ("oracle", {})]
+    + [("random", {"k": 3}), ("centrality", {"k": 3})]
+    + [("topk", {"k": k}) for k in (1, 3, 5, 10)]
+    + [("parcel", {"q": q}) for q in (0.95, 0.7, 0.3)]
+)
+
+CONFIGS = CONFIGS_MIN
 
 
 def build_prompt(inst, idx_list, agent, rng):
@@ -285,9 +299,13 @@ def main():
                     choices=["branching", "2hop"])
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--full-grid", action="store_true",
+                    help="all 19 configs (~38 calls/instance)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
+    global CONFIGS
+    CONFIGS = CONFIGS_FULL if args.full_grid else CONFIGS_MIN
     rows = load_instances(args.instances, args.family)
     print(f"{len(rows)} instances, {sum(len(r['agents']) for r in rows)} agents")
 
@@ -299,7 +317,9 @@ def main():
     if not key:
         sys.exit("set GEMINI_API_KEY")
 
-    out = pathlib.Path(args.out) if args.out else RESULTS / "musique.jsonl"
+    tag = args.model.replace("/", "-")
+    out = (pathlib.Path(args.out) if args.out
+           else RESULTS / f"musique_{tag}.jsonl")
     out.parent.mkdir(parents=True, exist_ok=True)
 
     jobs, meta = [], []
@@ -324,6 +344,13 @@ def main():
         for n, (m, reply) in enumerate(
                 zip(meta, pool.map(lambda p: call_gemini(args.model, p, key),
                                    jobs)), 1):
+            if reply.startswith("__QUOTA__"):
+                # Daily free-tier quota gone. Continuing only burns
+                # wall-clock and writes junk rows; the partial file up to
+                # here is still usable.
+                print(f"\nQUOTA EXHAUSTED for {args.model} after {n - 1} "
+                      f"calls; partial results kept.", file=sys.stderr)
+                break
             pred = extract(reply)
             rec = dict(m)
             rec["pred"] = (pred or "")[:120]
