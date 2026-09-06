@@ -61,12 +61,16 @@ results test the **easiest regime on both axes that matter** —
 single-hop retrieval with non-confusable distractors. The contrast is
 the point: with the answer span fixed and only distractors added,
 GPT-4.1 loses **0.270** on multi-hop HotpotQA versus **0.065** on
-single-span SQuAD. Degradation is task- and confusability-dependent.
+single-span SQuAD (arXiv:2603.15723 — ⚠️ **preprint, claimed venue
+could not be confirmed**; do not let it carry this alone, and pair it
+with NoLiMa-Hard). Degradation is task- and weighting-dependent.
 
 PARCEL needs saturation to exist in *some* operating regime, not to be
 a universal law — and it plainly does, since frontier models miss
 dangerous actions **2×–30× more often** after 800K tokens of benign
-context (arXiv:2605.12366). Claiming universality invites a referee to
+context (arXiv:2605.12366 — note this is a *length* result against a
+near-zero-context baseline, so cite it for "degradation is real", never
+for the confusability claim). Claiming universality invites a referee to
 produce the counterexample; conceding the heterogeneity first, and
 showing the model handles it, is strictly stronger.
 
@@ -117,17 +121,15 @@ the negative result is now the spine, not the warm-up.
    knapsack maximization, which is already covered (§10).
 
 3. **Cost and damage are different quantities** (§4, §11.2). You are
-   **billed in tokens** — absolute, global, modular — but **damaged by
-   confusability** — semantic, per-agent, supermodular. The measurements
-   force this: raw length barely predicts degradation once it is
-   controlled for, while topical proximity predicts it strongly. All the
-   prior work optimizes a *single* quantity, so an item's price here
-   depends on two independent properties, and a cheap highly-confusable
-   item can be worse than an expensive orthogonal one. This is the
-   structural primitive that gives an interpretable bound where the
-   general theory offers only an opaque global `γ`, and it is what turns
-   the objective into submodular-minus-*supermodular*, breaking the
-   Distorted-Greedy analysis the work would otherwise inherit.
+   **billed in tokens** — absolute, global, modular — but **damaged by a
+   weighted load** — per-agent, supermodular. All prior work optimizes a
+   *single* quantity, so here an item carries two independent prices and
+   a cheap but heavily-weighted item can be worse than an expensive
+   orthogonal one. The weights `w_i` are left free precisely because the
+   empirical picture is contested (§4), so the structure does not depend
+   on resolving it. This is what turns the objective into
+   submodular-minus-*supermodular* and breaks the Distorted-Greedy
+   analysis the work would otherwise inherit.
 
 4. **Endogenous topology — last section, not the pitch.** No formal
    treatment was found, so it is genuinely open, but it is also the
@@ -185,24 +187,36 @@ u_i(K) = rel_i(K) − ρ_i( conf_i(K) )
 
 `rel_i` is task relevance; `ρ_i` is the saturation penalty.
 
-⚠️ **Revised 2026-09-06 — the penalty argument changed.** The draft
-model penalized *absolute* token load. **The evidence does not support
-that** (§12). Raw length is a weak predictor of degradation; what
-predicts it is **confusable load** — irrelevant content weighted by its
-semantic proximity to the task. So `ρ_i` takes `conf_i(K)`, a
-confusability-weighted load, not `c(K)`.
+**The penalty's argument is a WEIGHTED load, and the theory is
+deliberately agnostic about the weights.** Define
 
-**This decoupling is a feature, and it sharpens the paper's central
-tension.** You are **billed for tokens** — absolute, global, modular —
-but you are **damaged by confusability** — semantic, per-agent,
-supermodular. The two quantities are not proportional and can be
-manipulated independently: 15,000 words of generic filler cost a 70B
-model 0.5 accuracy points, while at *fixed* ~12K tokens a change in
-lexical density alone drives retrieval from near-perfect to under 60%.
-The earlier framing ("money is global, damage is per-agent") is
-therefore too weak. The true statement is:
+```
+conf_i(K) = Σ_{b ∈ K} w_i(b),     w_i(b) ≥ 0
+```
 
-> **money is global and absolute; damage is per-agent and semantic.**
+`w_i ≡ 1` recovers plain token count; `w_i` = semantic proximity
+recovers confusability-weighted load. **Every structural result in §12
+needs only that `conf_i` is modular and `ρ_i` convex — not which
+reading of `w` is correct.**
+
+That is a design choice, not a hedge. The evidence (§11.2) favours
+confusability over raw length but is **not unanimous** — one *archival*
+result (Levy et al., ACL 2024) finds *dissimilar* padding hurting more
+than similar padding. Staking the theory on a contested empirical claim
+would be a gift to a referee. Leaving `w` free makes calibration an
+empirical parameter rather than a modelling commitment, and both
+readings are special cases.
+
+**The decoupling still sharpens the central tension.** You are **billed
+for tokens** — absolute, global, modular — and **damaged by weighted
+load** — per-agent, supermodular. The two are not proportional: 15,000
+words of generic filler cost a 70B model 0.5 accuracy points
+(arXiv:2601.11564), while at *fixed* ~12K tokens varying distractor
+density alone swings accuracy by 24 points within a single benchmark
+(arXiv:2606.06203, Table 6). So the earlier framing ("money is global,
+damage is per-agent") is too weak. The true statement is:
+
+> **money is global and absolute; damage is per-agent and weighted.**
 
 Consequence for the admission price (§9.4): the numerator and
 denominator no longer share units. The rule becomes "marginal relevance
@@ -637,31 +651,55 @@ capability** (weak models peak in the first interval — essentially no
 convex region; strong models peak at 4–8K). So the result is *more*
 valid for the capable agents that real multi-agent systems deploy.
 
-### 11.2 The penalty argument is confusability, not length
+### 11.2 Weighted load — what the evidence does and does not say
 
-Five independent length-matched or length-fixed designs agree, and none
-found argues the opposite once length is controlled:
+⚠️ **Corrected 2026-09-06 after full-text verification of every source.
+The earlier draft of this section overstated the case and mis-stated one
+source's direction.** All six discrepancies are in `VERIFY_CITATIONS.md`.
 
-- 15,000 words of generic filler cost Llama-3.1-70B **0.5 points**
-  (98.5 → 98.0) — arXiv:2601.11564.
-- At **fixed ~12K tokens**, varying only lexical density moves
-  retrieval from near-perfect to **under 60%** — arXiv:2606.06203.
-- Length-matched hard negatives cost measurably more than *random*
-  documents of identical length; the random arm stays near control —
-  MUDDLE, arXiv:2608.29477.
-- "Filler insertion has little effect… fragmentation, not prompt
-  length, drives the loss" — arXiv:2608.22140 (EMNLP 2026).
-- All 18 models score **higher on shuffled haystacks than on logically
-  structured ones of the same length** — Context Rot.
+**Archival evidence FOR confusability-weighted load** — use these as the
+anchors, all peer-reviewed:
 
-A pure *ratio* law also fails: the ratio model of arXiv:2603.15723
-saturates in its own data (0.330 → 0.305 when signal share halves),
-which a ratio law cannot produce.
+- **Cuconasu et al., SIGIR 2024** (`cuconasu2024`) — *random* documents
+  **improve** RAG accuracy by up to 35%, while high-scoring
+  related-but-irrelevant documents **degrade** it. The
+  length/confusability dissociation in one archival paper, in exactly
+  the direction the model wants. **The strongest anchor.**
+- **NoLiMa, ICML 2025** (`nolima2025`) — removing literal
+  needle-question lexical overlap collapses performance: matching
+  *difficulty* drives the loss, not token count.
+- **Shi et al., ICML 2023** (`shi2023`) — the canonical distractibility
+  result.
 
-**So: neither absolute count nor ratio. Confusable load.** Suggested
-functional forms to fit: `ρ(c) = a·log(1 + κ·c_conf/c*)` with a
-topical-weight `κ`, or a two-parameter logistic in `c/c*` if both
-regimes must be covered.
+⚠️ **Archival evidence AGAINST — state it, do not bury it.**
+**Levy, Jacoby & Goldberg, ACL 2024** (`levy2024`) ran the padding-*type*
+arm and found the **opposite**: *"Our initial expectation was that the
+setup in which the irrelevant paragraphs are different from the relevant
+ones will be easier... However, the results show that is not the case:
+the drop for the different setup is mostly larger than for the similar
+one."* Dissimilar (Books) padding hurt **more** than similar padding.
+
+**Do NOT cite Levy et al. for "similar distractors hurt more" — it says
+the reverse.** It stays valuable for two other things: the headline
+0.92 → 0.68 sweep from 250 to 3000 tokens, and its *duplicated-relevant*
+padding arm, where GPT-3.5 and GPT-4 are less affected by length.
+
+**Consequence.** The evidence is genuinely mixed, which is exactly why
+§4 leaves `w_i` free rather than committing. Present the dissociation as
+*established* (Cuconasu, NoLiMa) and the precise weighting as *open and
+calibratable*, citing Levy as the honest counterweight. A referee who
+knows this literature will respect that far more than a clean story
+built on a suppressed contradiction.
+
+**Supporting non-archival evidence, correctly labelled:**
+
+| Source | Status | What it actually shows |
+|---|---|---|
+| arXiv:2606.06203 | preprint | within-benchmark density sweep at fixed length gives a **24-point swing** (Table 6) — *not* the "near-perfect to <60%" headline, which compares three different benchmarks |
+| arXiv:2608.29477 | **non-archival workshop** (its PDF header wrongly reads "conference paper") | hard negatives beat length-matched random by 0.030 (k=2) and 0.041 (k=4), pooled p=0.016 — small, but the right direction |
+| arXiv:2601.11564 | preprint | 97.5–98.5% under 15,000 *words* of filler; ⚠️ Mixtral is **MoE, not dense**; the 720% latency figure is a serving-infrastructure measure over 5 sampled queries |
+| arXiv:2608.22140 | EMNLP 2026 (archival) | ⚠️ its "fragmentation" is **subword-tokenization damage from typos**, not topical confusability — supports "length alone is inert", *not* the confusability claim |
+| arXiv:2608.03297 | preprint, single author | the truncation sign-flip; good for "benchmarks mismeasure", not for weighting |
 
 ### 11.3 Task dependence — state it, do not hide it
 
@@ -720,7 +758,121 @@ That is also the ideal empirical contribution for a theory paper: small,
 targeted, and directly in service of a modelling assumption rather than
 a general benchmark.
 
-## 12. Naming
+## 12. The structure theorem — c* is the submodularity boundary
+
+Worked and machine-checked 2026-09-06 (`code/structure_check.py`).
+**This is the most important result in the project so far**, and it
+replaces the blanket "nothing applies" claim with a precise trichotomy.
+
+### 12.1 Statement
+
+With the bundled ground set (no intra-bundle complementarity) and a
+**modular** confusable load `conf_i(S) = Σ_{b∈S} w_i(b)`:
+
+| Regime | `ρ_i` | Structure of `u_i = rel_i − ρ_i(conf_i)` |
+|---|---|---|
+| below `c*` | **convex** | **submodular**, non-monotone |
+| above `c*` | **concave** | **not submodular**, non-monotone |
+| any, with residual complementarity in `rel_i` | either | **not submodular** |
+
+*Why.* For convex `ρ` and modular `w`, the composite `ρ∘conf` has
+**increasing** marginals — it is supermodular — so `−ρ∘conf` is
+submodular, and submodular + submodular is submodular. Above `c*`, `ρ`
+turns concave, `ρ∘conf` becomes submodular, `−ρ∘conf` becomes
+*super*modular, and the sum is no longer submodular. Verified by
+exhaustive enumeration; the C2 witness is
+`S={a,c} ⊂ T={a,b,c}, x=d` with `marg(S) = −1.040 < marg(T) = −0.904`,
+a clear violation of diminishing marginals.
+
+### 12.2 Why this matters more than the blanket claim
+
+**The empirically measured inflection `c*` is exactly the boundary of
+submodularity of the objective.** The measurement (§11.1) and the
+optimization structure are not two separate observations — the first
+*determines* the second. That is a genuine bridge between the empirical
+and theoretical halves of the paper, and it is the kind of result a
+CORE-A audience rewards.
+
+**It also forces an honest retreat.** Below `c*`, with bundling and
+modular load, `u_i` **is** non-monotone submodular — so existing
+non-monotone submodular machinery *does* apply there, and PARCEL must
+not claim otherwise. The contribution in that regime is the
+**multi-receiver allocation**, not the failure of structure.
+
+So the corrected story is a trichotomy, not a blanket failure:
+
+- **Monotonicity fails everywhere** saturation is active. That part of
+  negative result (a) stands unconditionally.
+- **Submodularity fails above `c*`, or with complementarity** — not
+  below `c*` in the clean case.
+- The Shi & Lai degeneracy (§10.6) is unaffected: `γ₂` dies on the
+  sign-flipping marginal, which is a *monotonicity* phenomenon, and
+  `γ₁` dies on complementarity.
+
+This is more precise and therefore stronger. Precision is defensible;
+overreach is what a referee at this venue will hunt for.
+
+### 12.3 The multi-receiver rule — two prices
+
+`U(A) = Σ_i u_i(A_i)` is **separable across receivers**; the receivers
+are coupled *only* through the global token budget. Lagrangian
+relaxation of that single linking constraint gives a shadow price `λ`,
+and the admission rule becomes:
+
+```
+send bundle b to receiver i  iff
+
+   Δrel_i(b | S_i)                          w_i(b)
+   ──────────────   ≥   λ   +   ρ_i′(conf_i(S_i)) · ──────
+       c(b)                                          c(b)
+```
+
+**Two prices, and an item must clear both.** `λ` is **global and
+common** — the scarcity of money. `ρ_i′·w_i/c` is **local and personal**
+— the scarcity of *that* receiver's attention. The confusability weight
+enters only the second term, so a cheap but highly confusable item
+passes the budget test and fails the attention test.
+
+This is the multi-receiver generalization that neither competitor has:
+BPS is single-receiver, so it has no `λ`; Shi & Lai have no partition,
+so they have no per-receiver `ρ_i′`.
+
+### 12.4 A tractable special case
+
+With **uniform token costs** and **modular relevance**, the per-receiver
+value function `V_i(k)` = best utility from `k` items is
+**concave in `k`**: the sum of the top `k` values is concave (sorted
+descending), and `−ρ_i(k·w)` is concave for convex `ρ`. Concave plus
+concave is concave.
+
+Therefore the greedy that repeatedly awards the next slot to the
+receiver with the largest marginal `V_i` is **optimal**, and the whole
+allocation is polynomial. This mirrors the tractable-special-case slot
+that paper 3 fills with matroid-greedy, and it makes the two-price rule
+concrete: greedy stops feeding receiver `i` exactly when its marginal
+falls below `λ`.
+
+### 12.5 Hardness
+
+NP-hardness is immediate by restriction: one receiver, `ρ ≡ 0`, modular
+`rel` is exactly **knapsack**. The interesting statement is structural
+rather than a stronger reduction — the problem carries **two nested
+sources of hardness**, the per-receiver subproblem *and* the budget
+split across receivers, and §13.4 shows the split alone becomes easy
+precisely when `V_i` is concave. Establishing strong NP-hardness (no
+FPTAS) for the general multi-receiver case is **open** and should not be
+claimed without a proof.
+
+### 12.6 Open
+
+- `C4` (does non-modular confusable load break submodularity below
+  `c*`?) **did not reproduce** with the interaction form tried; recorded
+  as inconclusive in `structure_check.py`. Do not claim it.
+- The `(1−1/e)`-type ratio for the general multi-receiver case under the
+  two-price greedy is **not yet proved**. §13.4 covers only the uniform
+  cost / modular relevance case.
+
+## 13. Naming
 
 PARCEL — **P**rice-**A**ware **R**elay of **C**ontext over
 **E**ndogenous **L**inks. "Parcel" nods to the repo's routing lineage

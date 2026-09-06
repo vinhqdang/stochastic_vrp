@@ -156,6 +156,50 @@ def build_prompt(k_hops, arm, target_words, rng):
     return prompt, answer, len(text.split())
 
 
+GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
+              "{model}:generateContent?key={key}")
+
+
+def call_gemini(model, prompt, key, timeout=180, retries=5, max_tokens=400):
+    """Google AI Studio backend.
+
+    Used in preference to OpenRouter because the free OpenRouter tier
+    429s on almost every call at this volume, and a single vendor family
+    (flash-lite / flash / pro) gives a controlled capability ladder for
+    the §11.1 prediction that the convex region widens with capability.
+    """
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens},
+    }).encode()
+    url = GEMINI_URL.format(model=model, key=key)
+    for attempt in range(retries):
+        req = urllib.request.Request(
+            url, data=payload, headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                body = json.loads(r.read())
+            cand = body["candidates"][0]
+            parts = cand.get("content", {}).get("parts")
+            if not parts:
+                # MAX_TOKENS with no emitted text, or a safety stop.
+                return f"__ERROR__ no_parts:{cand.get('finishReason')}"
+            return "".join(p.get("text", "") for p in parts)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (429, 503) and attempt < retries - 1:
+                time.sleep(6 * (attempt + 1) + random.random() * 4)
+                continue
+            if attempt == retries - 1:
+                return f"__ERROR__ HTTP{exc.code}"
+            time.sleep(2 ** attempt)
+        except (urllib.error.URLError, KeyError, IndexError, TimeoutError,
+                json.JSONDecodeError, TypeError) as exc:
+            if attempt == retries - 1:
+                return f"__ERROR__ {type(exc).__name__}: {exc}"
+            time.sleep(2 ** attempt)
+    return "__ERROR__ unreachable"
+
+
 def call_model(model, prompt, key, timeout=180, retries=5, max_tokens=400):
     payload = json.dumps({
         "model": model,
@@ -211,10 +255,17 @@ def graded(response, answer):
     return int(m.group(1)) == answer
 
 
-def run(model, levels, arms, n, k_hops, out_path, workers, seed):
-    key = os.environ.get("OPENROUTER_API_KEY")
-    if not key:
-        sys.exit("set OPENROUTER_API_KEY")
+def run(model, levels, arms, n, k_hops, out_path, workers, seed, backend):
+    if backend == "gemini":
+        key = os.environ.get("GEMINI_API_KEY")
+        caller = call_gemini
+        if not key:
+            sys.exit("set GEMINI_API_KEY")
+    else:
+        key = os.environ.get("OPENROUTER_API_KEY")
+        caller = call_model
+        if not key:
+            sys.exit("set OPENROUTER_API_KEY")
 
     jobs = []
     for arm in arms:
@@ -234,9 +285,9 @@ def run(model, levels, arms, n, k_hops, out_path, workers, seed):
     def one(job):
         arm, words, rep, rng = job
         prompt, answer, actual = build_prompt(k_hops, arm, words, rng)
-        resp = call_model(model, prompt, key)
+        resp = caller(model, prompt, key)
         return {
-            "model": model, "arm": arm, "target_words": words,
+            "model": model, "backend": backend, "arm": arm, "target_words": words,
             "actual_words": actual,
             "est_tokens": round(actual * TOKENS_PER_WORD),
             "k_hops": k_hops, "rep": rep,
@@ -256,7 +307,9 @@ def run(model, levels, arms, n, k_hops, out_path, workers, seed):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--model", default="google/gemma-4-31b-it:free")
+    p.add_argument("--model", default="gemini-2.5-flash")
+    p.add_argument("--backend", default="gemini",
+                   choices=["gemini", "openrouter"])
     p.add_argument("--n", type=int, default=30,
                    help="repetitions per (arm, level) cell")
     p.add_argument("--k-hops", type=int, default=3)
@@ -279,9 +332,11 @@ def main():
 
     tag = args.model.split("/")[-1].replace(":", "-")
     out = pathlib.Path(args.out) if args.out else RESULTS / f"sweep_{tag}.jsonl"
-    print(f"model={args.model} levels={len(levels)} arms={len(arms)} "
+    print(f"[{args.backend}] model={args.model} levels={len(levels)} "
+          f"arms={len(arms)} "
           f"n={n} -> {len(levels) * len(arms) * n} calls")
-    run(args.model, levels, arms, n, args.k_hops, out, args.workers, args.seed)
+    run(args.model, levels, arms, n, args.k_hops, out, args.workers,
+        args.seed, args.backend)
 
 
 if __name__ == "__main__":

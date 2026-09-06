@@ -243,3 +243,41 @@
   note        = {18 models. Not peer reviewed; no DOI.
                  Code: github.com/chroma-core/context-rot}
 }
+
+% ---------------------------------------------------------------
+% Archival anchors for the weighted-load argument (verified 2026-09-06)
+% ---------------------------------------------------------------
+
+% THE strongest archival evidence for the length/confusability
+% dissociation: random documents HELP, related-but-irrelevant ones HURT.
+@inproceedings{cuconasu2024,
+  author    = {Cuconasu, Florin and Trappolini, Giovanni and Siciliano, Federico
+               and Filice, Simone and Campagnano, Cesare and Maarek, Yoelle
+               and Tonellotto, Nicola and Silvestri, Fabrizio},
+  title     = {The Power of Noise: Redefining Retrieval for {RAG} Systems},
+  booktitle = {Proc. 47th Intl. ACM SIGIR Conf. on Research and Development
+               in Information Retrieval},
+  year      = {2024},
+  doi       = {10.1145/3626772.3657834},
+  note      = {arXiv:2401.14887. Random documents improve accuracy by up to
+               35\%; high-scoring related-but-irrelevant documents degrade it.}
+}
+
+% ⚠️ CITE WITH CARE. Its padding-TYPE arm found DISSIMILAR padding hurting
+% MORE than similar padding -- the OPPOSITE of the confusability thesis.
+% Cite it for (a) the 0.92 -> 0.68 length sweep and (b) the
+% duplicated-relevant padding arm. NEVER for "similar distractors hurt more".
+@inproceedings{levy2024,
+  author    = {Levy, Mosh and Jacoby, Alon and Goldberg, Yoav},
+  title     = {Same Task, More Tokens: the Impact of Input Length on the
+               Reasoning Performance of Large Language Models},
+  booktitle = {Proc. 62nd Annual Meeting of the Association for
+               Computational Linguistics (ACL), Volume 1: Long Papers},
+  pages     = {15339--15353},
+  year      = {2024},
+  doi       = {10.18653/v1/2024.acl-long.818},
+  note      = {arXiv:2402.14848. FLenQA dataset and code released at
+               github.com/alonj/Same-Task-More-Tokens and
+               huggingface.co/datasets/alonj/FLenQA -- points are
+               regenerable (fields: padding_type, dispersion, ctx_size).}
+}

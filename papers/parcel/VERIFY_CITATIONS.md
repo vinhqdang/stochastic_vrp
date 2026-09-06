@@ -109,7 +109,49 @@ guarantee, rather than importing an off-the-shelf theorem.
 
 ---
 
-## ⚪ Added 2026-09-06 by the calibration sweep — ALL UNVERIFIED
+## 🔴 Full-text verification pass, 2026-09-06 — SIX DISCREPANCIES
+
+Every item below was opened and read in full text. Six errors were
+found; one is serious.
+
+1. ⚠️⚠️ **Levy et al. (ACL 2024) points the OTHER WAY.** Its
+   padding-*type* arm compares *Similar* (resampled from the same task)
+   against *Different* (Books Corpus) — and **dissimilar padding hurt
+   MORE**. Verbatim: *"the drop for the different setup is mostly larger
+   than for the similar one."* The earlier note asserted the opposite.
+   **Never cite it for "similar distractors hurt more."** It is still
+   good for the 0.92→0.68 length sweep and for its
+   duplicated-relevant-padding arm. This is the most serious error found
+   in the project so far and it was in an *archival, peer-reviewed*
+   source — the kind a referee is most likely to know.
+2. **arXiv:2606.06203 overstated.** "Near-perfect to <60% by varying
+   only density" compares **three different benchmarks**. The clean
+   within-benchmark sweep (Table 6) gives a **24-point swing**, and
+   WordChecker is non-monotonic. Use the 24 points.
+3. **arXiv:2603.15723's venue is unconfirmed.** It claims "Math AI 2026";
+   no independent record exists, and the NeurIPS MATH-AI 2026 workshop
+   deadline postdates the posting. Cite as preprint. Non-academic
+   affiliations, n=200, and a suspiciously low SQuAD ceiling (0.635 for
+   gpt-4.1 at the *shortest* setting) — do not let it carry a claim alone.
+4. **arXiv:2608.29477's PDF header falsely reads "Published as a
+   conference paper at COLM 2026."** It is a **non-archival workshop**
+   paper (CBW @ COLM 2026), per its own arXiv comment.
+5. **arXiv:2601.11564** — Mixtral-8x7B is **MoE, not dense**; the paper's
+   97.5–98.5% sentence names only Llama and Qwen. Its 719.64% latency
+   figure is a serving-infrastructure measurement over **5 sampled
+   queries** with prefix caching disabled, not a model property.
+6. **arXiv:2608.22140 and arXiv:2605.12366 support different mechanisms
+   than the section they were filed under.** The first's "fragmentation"
+   is subword-tokenization damage from typos; the second is a pure
+   *length* result against a near-zero-context baseline. Neither is
+   evidence for topical confusability.
+
+**Verified-correct as attributed:** the MUDDLE hard-negative gaps
+(0.030 / 0.041, p=0.016), the distractor-aware truncation sign flip,
+the 2×–30× classifier figure, and the Dhara & Sheth 0.270 vs 0.065
+multi-hop/single-span contrast.
+
+## ⚪ The calibration-sweep citations — status after verification
 
 These came from an assisted extraction pass, not from my own reading of
 the records. **None may be cited until checked.** Grouped by the claim
