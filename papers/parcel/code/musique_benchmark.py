@@ -125,8 +125,24 @@ def tokens_of(par):
     return max(1, round(len(par["text"].split()) * TOKENS_PER_WORD))
 
 
+# Swapped at runtime by --scorer embed. Kept module-level so the policy
+# functions stay pure lookups and the two scorers are exactly comparable.
+SCORER = None
+
+
 def relevance(par, agent):
-    """Cheap lexical overlap -- what a real router would have, imperfect."""
+    """Relevance signal. Lexical by default; embeddings via --scorer embed.
+
+    Both are imperfect on purpose -- a real router has an approximate
+    scorer, not gold labels.
+    """
+    if SCORER is not None:
+        return SCORER(par, agent)
+    return _lexical(par, agent)
+
+
+def _lexical(par, agent):
+    """Cheap bag-of-words overlap."""
     q = set(re.findall(r"[a-z0-9]+", agent["q"].lower())) - STOP
     t = set(re.findall(r"[a-z0-9]+",
                        (par["title"] + " " + par["text"]).lower())) - STOP
@@ -299,6 +315,10 @@ def main():
                     choices=["branching", "2hop"])
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--scorer", default="lexical",
+                    choices=["lexical", "embed"],
+                    help="relevance signal: bag-of-words, or cached "
+                         "embedding cosine (recommended)")
     ap.add_argument("--full-grid", action="store_true",
                     help="all 19 configs (~38 calls/instance)")
     ap.add_argument("--dry-run", action="store_true")
@@ -308,6 +328,13 @@ def main():
     CONFIGS = CONFIGS_FULL if args.full_grid else CONFIGS_MIN
     rows = load_instances(args.instances, args.family)
     print(f"{len(rows)} instances, {sum(len(r['agents']) for r in rows)} agents")
+
+    if args.scorer == "embed":
+        global SCORER
+        from embed_relevance import build_scorer
+        print("embedding paragraphs and sub-questions (cached on disk)...")
+        SCORER = build_scorer(rows)
+        print("scorer ready")
 
     if args.dry_run:
         dry_run(rows)

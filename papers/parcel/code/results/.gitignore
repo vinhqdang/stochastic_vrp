@@ -1,4 +1,6 @@
-# Raw sweep output is regenerable and can be large. Commit the analysed
-# summaries, not the per-call JSONL.
+# Raw per-call output and derived caches are regenerable and large.
+# Commit the analysed summaries, not the raw material.
 *.jsonl
+*.log
+embed_cache.json
 !summary_*.json
