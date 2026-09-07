@@ -267,6 +267,17 @@ CONFIGS_MIN = (
     + [("parcel", {"q": q}) for q in (0.95, 0.7, 0.3)]
 )
 
+# For the POWERED test, only the four arms that carry the claims. At 8
+# calls per instance instead of 24, one model's 500/day allowance buys
+# ~60 instances rather than ~20 -- and power on these four comparisons
+# is what decides whether the mechanism separates from a tuned top-k.
+#   broadcast  the cost baseline
+#   oracle     the ceiling, and the contamination-free upper bound
+#   topk k=5   the single-price baseline at its best observed setting
+#   parcel     the two-price rule at its most permissive setting
+CONFIGS_CORE = [("broadcast", {}), ("oracle", {}),
+                ("topk", {"k": 5}), ("parcel", {"q": 0.3})]
+
 CONFIGS = CONFIGS_MIN
 
 
@@ -319,13 +330,16 @@ def main():
                     choices=["lexical", "embed"],
                     help="relevance signal: bag-of-words, or cached "
                          "embedding cosine (recommended)")
-    ap.add_argument("--full-grid", action="store_true",
-                    help="all 19 configs (~38 calls/instance)")
+    ap.add_argument("--grid", default="min", choices=["core", "min", "full"],
+                    help="core=4 arms (8 calls/instance -- best power per "
+                         "unit of the 500/day/model allowance); min=12; "
+                         "full=19")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
     global CONFIGS
-    CONFIGS = CONFIGS_FULL if args.full_grid else CONFIGS_MIN
+    CONFIGS = {"core": CONFIGS_CORE, "min": CONFIGS_MIN,
+               "full": CONFIGS_FULL}[args.grid]
     rows = load_instances(args.instances, args.family)
     print(f"{len(rows)} instances, {sum(len(r['agents']) for r in rows)} agents")
 
@@ -346,7 +360,7 @@ def main():
 
     tag = args.model.replace("/", "-")
     out = (pathlib.Path(args.out) if args.out
-           else RESULTS / f"musique_{tag}.jsonl")
+           else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}.jsonl")
     out.parent.mkdir(parents=True, exist_ok=True)
 
     jobs, meta = [], []

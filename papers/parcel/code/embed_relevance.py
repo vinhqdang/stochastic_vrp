@@ -22,7 +22,15 @@ point -- a real router has an approximate scorer, not an oracle.
 Embeddings are cached on disk by content hash, so a re-run costs
 nothing and the generation quota is spent only on the benchmark itself.
 
-Uses `gemini-embedding-2` via batchEmbedContents, at a reduced output
+QUOTA, measured: the free tier allows 1000 EmbedContent requests per
+day PER MODEL, and it counts individual TEXTS rather than batches, so
+batching helps latency but not the daily allowance. One model therefore
+covers about 45 MuSiQue instances a day (20 paragraphs plus 2 sub-
+questions each). The cache is permanent and keyed by model, so coverage
+accumulates across days instead of restarting.
+
+Uses `gemini-embedding-001` by default (override with
+PARCEL_EMBED_MODEL) via batchEmbedContents, at a reduced output
 dimensionality: 3072-d vectors cost ~69 KB each as JSON and blew the
 cache to 66 MB for under a thousand paragraphs, while 768 dimensions
 rank just as well for this purpose. Values are rounded before storage,
@@ -39,7 +47,7 @@ import time
 import urllib.error
 import urllib.request
 
-MODEL = "gemini-embedding-2"
+MODEL = os.environ.get("PARCEL_EMBED_MODEL", "gemini-embedding-001")
 URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
        f"{MODEL}:batchEmbedContents?key={{key}}")
 CACHE = pathlib.Path(__file__).parent / "results" / "embed_cache.jsonl"
@@ -51,7 +59,15 @@ RETRIES = 25     # free-tier embedding is paced at ~40s between
 
 
 def _key(text):
-    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:20]
+    """Cache key includes model and width.
+
+    Vectors from different models live in different spaces and are not
+    interchangeable, so keying on text alone would silently mix them
+    once the model is switched -- which the daily-quota situation makes
+    likely.
+    """
+    tag = f"{MODEL}|{DIM}|{text}"
+    return hashlib.sha1(tag.encode("utf-8")).hexdigest()[:20]
 
 
 class Embedder:
