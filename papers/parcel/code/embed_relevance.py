@@ -22,7 +22,11 @@ point -- a real router has an approximate scorer, not an oracle.
 Embeddings are cached on disk by content hash, so a re-run costs
 nothing and the generation quota is spent only on the benchmark itself.
 
-Uses `gemini-embedding-001` via batchEmbedContents.
+Uses `gemini-embedding-2` via batchEmbedContents, at a reduced output
+dimensionality: 3072-d vectors cost ~69 KB each as JSON and blew the
+cache to 66 MB for under a thousand paragraphs, while 768 dimensions
+rank just as well for this purpose. Values are rounded before storage,
+which costs nothing in ranking and shrinks the file again.
 """
 
 import hashlib
@@ -34,11 +38,13 @@ import time
 import urllib.error
 import urllib.request
 
-MODEL = "gemini-embedding-001"
+MODEL = "gemini-embedding-2"
 URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
        f"{MODEL}:batchEmbedContents?key={{key}}")
 CACHE = pathlib.Path(__file__).parent / "results" / "embed_cache.json"
-BATCH = 64
+BATCH = 32
+DIM = 768        # ranking quality is flat well below the 3072 default
+ROUND = 5        # storage precision; irrelevant to cosine ordering
 
 
 def _key(text):
@@ -67,7 +73,8 @@ class Embedder:
     def _fetch(self, texts):
         payload = json.dumps({
             "requests": [{"model": f"models/{MODEL}",
-                          "content": {"parts": [{"text": t[:8000]}]}}
+                          "content": {"parts": [{"text": t[:8000]}]},
+                          "outputDimensionality": DIM}
                          for t in texts]}).encode()
         for attempt in range(6):
             req = urllib.request.Request(
@@ -100,7 +107,7 @@ class Embedder:
             chunk = missing[i:i + BATCH]
             for text, vec in zip(chunk, self._fetch(chunk)):
                 n = math.sqrt(sum(v * v for v in vec)) or 1.0
-                self.cache[_key(text)] = [v / n for v in vec]
+                self.cache[_key(text)] = [round(v / n, ROUND) for v in vec]
                 self._dirty += 1
             self.save()
         return [self.cache[_key(t)] for t in texts]
