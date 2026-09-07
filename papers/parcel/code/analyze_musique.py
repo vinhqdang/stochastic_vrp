@@ -16,7 +16,27 @@ import sys
 
 
 def load(path):
-    return [json.loads(l) for l in open(path) if l.strip()]
+    """Rows, de-duplicated by (instance, policy, config, agent).
+
+    Two resume passes can briefly overlap and record the same call
+    twice. A duplicate would inflate n and corrupt the denominator of
+    every accuracy figure, so the first occurrence wins here rather
+    than relying on the writer never racing.
+    """
+    seen, rows = set(), []
+    for line in open(path):
+        if not line.strip():
+            continue
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        k = (r.get("id"), r.get("policy"), r.get("cfg"), r.get("agent"))
+        if k in seen:
+            continue
+        seen.add(k)
+        rows.append(r)
+    return rows
 
 
 def main():
