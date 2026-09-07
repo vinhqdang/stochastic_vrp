@@ -1,229 +1,120 @@
 {
-  "source": "musique_gemini-3.1-flash-lite.jsonl",
+  "source": "musique_gemini-3.5-flash-lite_lexical_min.jsonl",
   "status": "complete",
-  "min_n_per_policy": 36,
+  "min_n_per_policy": 120,
   "caveat": "With n per policy this small the standard error on a proportion near 0.6 is ~0.13, so differences below roughly 0.26 are not distinguishable from noise.",
-  "records": 445,
+  "records": 1440,
   "api_errors": 0,
-  "memorised_fraction": 0.05263157894736842,
+  "memorised_fraction": 0.0,
   "all": [
-    {
-      "policy": "none",
-      "cfg": "{}",
-      "acc": 0.0526,
-      "tokens_per_agent": 0.0,
-      "n": 38,
-      "d_acc_vs_broadcast": -0.7632,
-      "token_ratio_vs_broadcast": null
-    },
-    {
-      "policy": "topk",
-      "cfg": "{\"k\": 1}",
-      "acc": 0.4474,
-      "tokens_per_agent": 62.1,
-      "n": 38,
-      "d_acc_vs_broadcast": -0.3684,
-      "token_ratio_vs_broadcast": 36.38
-    },
-    {
-      "policy": "oracle",
-      "cfg": "{}",
-      "acc": 0.8684,
-      "tokens_per_agent": 94.6,
-      "n": 38,
-      "d_acc_vs_broadcast": 0.0526,
-      "token_ratio_vs_broadcast": 23.87
-    },
-    {
-      "policy": "topk",
-      "cfg": "{\"k\": 3}",
-      "acc": 0.7027,
-      "tokens_per_agent": 213.4,
-      "n": 37,
-      "d_acc_vs_broadcast": -0.1131,
-      "token_ratio_vs_broadcast": 10.58
-    },
-    {
-      "policy": "centrality",
-      "cfg": "{\"k\": 3}",
-      "acc": 0.5526,
-      "tokens_per_agent": 260.2,
-      "n": 38,
-      "d_acc_vs_broadcast": -0.2632,
-      "token_ratio_vs_broadcast": 8.68
-    },
-    {
-      "policy": "parcel",
-      "cfg": "{\"q\": 0.95}",
-      "acc": 0.75,
-      "tokens_per_agent": 292.3,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.0658,
-      "token_ratio_vs_broadcast": 7.73
-    },
-    {
-      "policy": "random",
-      "cfg": "{\"k\": 3}",
-      "acc": 0.1842,
-      "tokens_per_agent": 345.2,
-      "n": 38,
-      "d_acc_vs_broadcast": -0.6316,
-      "token_ratio_vs_broadcast": 6.54
-    },
-    {
-      "policy": "topk",
-      "cfg": "{\"k\": 5}",
-      "acc": 0.7778,
-      "tokens_per_agent": 418.2,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.038,
-      "token_ratio_vs_broadcast": 5.4
-    },
-    {
-      "policy": "parcel",
-      "cfg": "{\"q\": 0.7}",
-      "acc": 0.7778,
-      "tokens_per_agent": 502.4,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.038,
-      "token_ratio_vs_broadcast": 4.5
-    },
-    {
-      "policy": "parcel",
-      "cfg": "{\"q\": 0.3}",
-      "acc": 0.8056,
-      "tokens_per_agent": 830.6,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.0102,
-      "token_ratio_vs_broadcast": 2.72
-    },
-    {
-      "policy": "topk",
-      "cfg": "{\"k\": 10}",
-      "acc": 0.7778,
-      "tokens_per_agent": 1031.0,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.038,
-      "token_ratio_vs_broadcast": 2.19
-    },
-    {
-      "policy": "broadcast",
-      "cfg": "{}",
-      "acc": 0.8158,
-      "tokens_per_agent": 2258.5,
-      "n": 38,
-      "d_acc_vs_broadcast": 0.0,
-      "token_ratio_vs_broadcast": 1.0
-    }
-  ],
-  "non_memorised": [
     {
       "policy": "none",
       "cfg": "{}",
       "acc": 0.0,
       "tokens_per_agent": 0.0,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.8056,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.7917,
       "token_ratio_vs_broadcast": null
     },
     {
       "policy": "topk",
       "cfg": "{\"k\": 1}",
-      "acc": 0.4444,
-      "tokens_per_agent": 56.4,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.3611,
-      "token_ratio_vs_broadcast": 40.01
+      "acc": 0.3667,
+      "tokens_per_agent": 61.3,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.425,
+      "token_ratio_vs_broadcast": 36.81
     },
     {
       "policy": "oracle",
       "cfg": "{}",
-      "acc": 0.8611,
-      "tokens_per_agent": 89.0,
-      "n": 36,
-      "d_acc_vs_broadcast": 0.0556,
-      "token_ratio_vs_broadcast": 25.39
+      "acc": 0.8417,
+      "tokens_per_agent": 105.7,
+      "n": 120,
+      "d_acc_vs_broadcast": 0.05,
+      "token_ratio_vs_broadcast": 21.35
     },
     {
       "policy": "topk",
       "cfg": "{\"k\": 3}",
-      "acc": 0.6857,
-      "tokens_per_agent": 206.9,
-      "n": 35,
-      "d_acc_vs_broadcast": -0.1198,
-      "token_ratio_vs_broadcast": 10.91
+      "acc": 0.5917,
+      "tokens_per_agent": 220.4,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.2,
+      "token_ratio_vs_broadcast": 10.24
     },
     {
       "policy": "centrality",
       "cfg": "{\"k\": 3}",
-      "acc": 0.5278,
-      "tokens_per_agent": 255.6,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.2778,
-      "token_ratio_vs_broadcast": 8.84
+      "acc": 0.4,
+      "tokens_per_agent": 251.1,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.3917,
+      "token_ratio_vs_broadcast": 8.99
     },
     {
       "policy": "parcel",
       "cfg": "{\"q\": 0.95}",
-      "acc": 0.7353,
-      "tokens_per_agent": 291.6,
-      "n": 34,
-      "d_acc_vs_broadcast": -0.0703,
-      "token_ratio_vs_broadcast": 7.75
+      "acc": 0.6833,
+      "tokens_per_agent": 305.4,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.1083,
+      "token_ratio_vs_broadcast": 7.39
     },
     {
       "policy": "random",
       "cfg": "{\"k\": 3}",
-      "acc": 0.1667,
-      "tokens_per_agent": 341.8,
-      "n": 36,
-      "d_acc_vs_broadcast": -0.6389,
-      "token_ratio_vs_broadcast": 6.61
+      "acc": 0.125,
+      "tokens_per_agent": 336.2,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.6667,
+      "token_ratio_vs_broadcast": 6.71
     },
     {
       "policy": "topk",
       "cfg": "{\"k\": 5}",
-      "acc": 0.7647,
-      "tokens_per_agent": 411.8,
-      "n": 34,
-      "d_acc_vs_broadcast": -0.0408,
-      "token_ratio_vs_broadcast": 5.48
+      "acc": 0.7083,
+      "tokens_per_agent": 419.9,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.0833,
+      "token_ratio_vs_broadcast": 5.37
     },
     {
       "policy": "parcel",
       "cfg": "{\"q\": 0.7}",
-      "acc": 0.7647,
-      "tokens_per_agent": 511.2,
-      "n": 34,
-      "d_acc_vs_broadcast": -0.0408,
+      "acc": 0.7083,
+      "tokens_per_agent": 510.7,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.0833,
       "token_ratio_vs_broadcast": 4.42
     },
     {
       "policy": "parcel",
       "cfg": "{\"q\": 0.3}",
-      "acc": 0.7941,
-      "tokens_per_agent": 853.8,
-      "n": 34,
-      "d_acc_vs_broadcast": -0.0114,
-      "token_ratio_vs_broadcast": 2.65
+      "acc": 0.75,
+      "tokens_per_agent": 845.8,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.0417,
+      "token_ratio_vs_broadcast": 2.67
     },
     {
       "policy": "topk",
       "cfg": "{\"k\": 10}",
-      "acc": 0.7647,
-      "tokens_per_agent": 1021.5,
-      "n": 34,
-      "d_acc_vs_broadcast": -0.0408,
-      "token_ratio_vs_broadcast": 2.21
+      "acc": 0.7333,
+      "tokens_per_agent": 1005.8,
+      "n": 120,
+      "d_acc_vs_broadcast": -0.0583,
+      "token_ratio_vs_broadcast": 2.24
     },
     {
       "policy": "broadcast",
       "cfg": "{}",
-      "acc": 0.8056,
-      "tokens_per_agent": 2258.6,
-      "n": 36,
+      "acc": 0.7917,
+      "tokens_per_agent": 2256.1,
+      "n": 120,
       "d_acc_vs_broadcast": 0.0,
       "token_ratio_vs_broadcast": 1.0
     }
-  ]
+  ],
+  "non_memorised": null
 }

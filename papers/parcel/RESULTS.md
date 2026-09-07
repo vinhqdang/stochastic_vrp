@@ -21,12 +21,19 @@ answers the same items, so the pairing is what supplies the power.
 
 ### What this supports
 
-**The saturation premise is confirmed.** Perfect allocation beats full
-broadcast *on accuracy* while sending **22× fewer tokens**
-(p = 0.039). Sending everything is not merely wasteful; it is worse
-than sending the right thing. This is the paper's F1 premise measured
-directly rather than imported from the degradation literature, and it
-is the first significant result on this benchmark.
+**The saturation premise is supported, though not on one model alone.**
+Perfect allocation beats full broadcast *on accuracy* while sending
+**22× fewer tokens** (p = 0.039 here). Sending everything is not merely
+wasteful; it appears worse than sending the right thing — the paper's
+F1 premise measured directly rather than imported from the degradation
+literature.
+
+⚠️ **Do not quote this single p-value as establishing it.** The same
+comparison on `gemini-3.5-flash-lite` gives an almost identical effect
+(+0.050) at p = 0.146 (§1b). The honest statement is a consistent
+~5-point effect across two models at borderline power, pooled before
+claiming. A referee who sees only the significant model will find the
+other one.
 
 **A 2.6× token reduction costs no measurable accuracy.** The two-price
 rule's confidence interval spans zero (p = 0.45), so "same task
@@ -36,16 +43,66 @@ quality, a third of the tokens" holds.
 accuracy points, and that loss *is* significant (p = 0.027). So the
 frontier is real: past some point token savings do cost quality.
 
-### What this does NOT support
-
-The two arms sit at different token levels (2.6× vs 5.4×), so this
-grid does **not** establish that the two-price rule beats top-k at a
-matched budget. It shows only that the rule sits on the better side of
-the accuracy trade at its setting. A matched-budget comparison needs
-the 12-arm grid at this sample size, which is the next run.
-
 Earlier n≈36 results are superseded; at that size the intervals ran to
 ±0.11–0.17 and none of these three comparisons was significant.
+
+---
+
+## 1b. Matched-budget grid — the mechanism does NOT separate
+
+Model `gemini-3.5-flash-lite`, 12-arm grid, 60 instances complete
+(1440/1440 calls), **n = 120 per policy**. This is the run that the
+core grid could not answer.
+
+| comparison | Δacc | 95% CI | p | token ratio |
+|---|---|---|---|---|
+| **topk k=3 vs centrality k=3** | **+0.192** | [+0.100, +0.283] | **0.0004** | 1.1× (matched) |
+| parcel q=0.95 vs topk k=3 | +0.092 | [+0.025, +0.158] | **0.019** | 0.7× (parcel spends 1.4× MORE) |
+| parcel q=0.7 vs topk k=5 | **+0.000** | [−0.042, +0.042] | 1.000 | 0.8× (parcel spends 1.25× more) |
+| parcel q=0.3 vs topk k=10 | +0.017 | [−0.058, +0.092] | 0.824 | 1.2× |
+| parcel q=0.3 vs broadcast | −0.042 | [−0.100, +0.008] | 0.227 | 2.7× cheaper |
+| topk k=5 vs broadcast | −0.083 | [−0.142, −0.025] | **0.013** | 5.4× cheaper |
+| parcel q=0.7 vs broadcast | −0.083 | [−0.150, −0.025] | **0.013** | 4.4× cheaper |
+| oracle vs broadcast | +0.050 | [−0.008, +0.108] | 0.146 | 21.4× cheaper |
+
+### The two-price rule does not beat a tuned single price
+
+Across three budget levels the saturation price earns nothing at equal
+spend. The cleanest comparison, `parcel q=0.7` against `topk k=5`, is
+**exactly zero** (p = 1.000) while parcel spends 25% *more* tokens. The
+one significant accuracy win, `q=0.95` over `k=3` at +9.2 points, comes
+with **40% more tokens** — it is buying accuracy with budget, not with
+the mechanism.
+
+**This is the paper's central mechanism failing to demonstrate value,
+and it must be reported as such.** Combined with §10.1 (the rule was
+already prior art: Harshaw et al. 2019, Shi & Lai's Algorithm 1, BPS),
+the admission price is a workable method with no measured advantage
+over per-agent top-k. It cannot be the contribution.
+
+### What IS strongly validated: the multi-receiver structure
+
+**Per-agent allocation beats one global seed set by 19.2 points at
+matched cost, p = 0.0004.** The centrality arm is the stand-in for the
+classical influence-maximization answer — rank items by aggregate
+score, seed the top few to everyone — and it fails exactly as the
+theory predicts, by over-concentrating on globally-central items that
+no particular receiver needs.
+
+This is the strongest empirical result in the project, and it supports
+contribution 2 (§3.2, multi-receiver structure) rather than
+contribution 3. It is also the result that most directly earns the
+theory: the reason the seed-set formulation fails here is the same
+reason the IM toolchain does not transfer.
+
+### Cross-model consistency of the oracle effect
+
+The oracle-over-broadcast effect is **+0.050 here and +0.051 on
+`gemini-3.1-flash-lite`** — nearly identical magnitude, same direction,
+significant on one model (p = 0.039, n = 138) and not the other
+(p = 0.146, n = 120). Treat it as a consistent ~5-point effect at
+borderline power, not as an established significant result on a single
+model, and pool across models before claiming it.
 
 ---
 
