@@ -34,45 +34,45 @@ Warning--empty publisher in tang2015
 Warning--empty address in tang2015
 Warning--empty publisher in distracted2025
 Warning--empty address in distracted2025
-You've used 17 entries,
+You've used 16 entries,
             6273 wiz_defined-function locations,
-            1635 strings with 22320 characters,
-and the built_in function-call counts, 21992 in all, are:
-= -- 2787
-> -- 647
+            1628 strings with 22135 characters,
+and the built_in function-call counts, 20834 in all, are:
+= -- 2595
+> -- 616
 < -- 0
-+ -- 222
-- -- 223
-* -- 1530
-:= -- 2000
-add.period$ -- 91
-call.type$ -- 17
-change.case$ -- 129
-chr.to.int$ -- 17
-cite$ -- 39
-duplicate$ -- 2017
-empty$ -- 1398
-format.name$ -- 291
-if$ -- 5409
++ -- 212
+- -- 214
+* -- 1446
+:= -- 1900
+add.period$ -- 86
+call.type$ -- 16
+change.case$ -- 122
+chr.to.int$ -- 16
+cite$ -- 38
+duplicate$ -- 1924
+empty$ -- 1331
+format.name$ -- 278
+if$ -- 5099
 int.to.chr$ -- 2
 int.to.str$ -- 1
-missing$ -- 79
-newline$ -- 188
-num.names$ -- 119
-pop$ -- 789
+missing$ -- 75
+newline$ -- 179
+num.names$ -- 112
+pop$ -- 757
 preamble$ -- 1
-purify$ -- 265
+purify$ -- 250
 quote$ -- 0
-skip$ -- 766
+skip$ -- 737
 stack$ -- 0
-substring$ -- 1794
-swap$ -- 227
+substring$ -- 1706
+swap$ -- 219
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 426
+type$ -- 410
 warning$ -- 22
-while$ -- 120
+while$ -- 114
 width$ -- 0
-write$ -- 376
+write$ -- 356
 (There were 22 warnings)

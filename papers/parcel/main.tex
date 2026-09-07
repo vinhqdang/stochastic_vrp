@@ -18,49 +18,48 @@
 
 \begin{document}
 
-\title{Context Allocation in Multi-Agent LLM Systems is Not Influence
-Maximization}
+\title{Token-Efficient Context Sharing in Multi-Agent LLM Systems:\\
+How Much Can Be Cut, and What Limits It}
 
 \begin{abstract}
 Multi-agent LLM systems coordinate by forwarding context between
-agents, and every forwarded token is billed. The natural formalism is
-influence maximization: choose a seed set of information items, let it
-reach the network, cover the agents cheaply. We show this formalism is
-the wrong one, and not for the usual reason.
+agents, and every forwarded token is billed. Common practice forwards
+whole conversation histories, because deciding what to withhold is
+hard, so coordination cost grows quadratically in the number of
+agents. We ask a practical question: how much of that traffic can be
+removed without paying for it in task quality, and what stops us
+removing more?
 
-Our main result is a separation. On instances with $n$ receivers, the
-best single seed set attains utility $1$ where per-receiver allocation
-attains $n$ at an identical budget, so the ratio is exactly $n$. The
-separation holds under two independent mechanisms --- transmission
-billed per receiver, and free broadcast with saturating attention ---
-and, crucially, it holds on instances where the objective \emph{is}
-monotone and submodular. It is therefore not a statement about badly
-behaved objectives: the seed-set formulation optimizes the wrong
-object, and no approximation ratio for it can be meaningful here.
+On a public multi-hop benchmark reframed as a multi-receiver
+allocation problem, we find that a $2.7\times$ reduction in
+inter-agent tokens costs no measurable accuracy, and that an oracle
+allocation reaches $21\times$ while \emph{improving} accuracy --- so
+over-delivery is not merely wasteful but mildly harmful, and roughly an
+order of magnitude is available in principle. Pushing a practical
+policy to $5.4\times$ does cost $8$ accuracy points, so the frontier is
+real and we characterise it.
 
-We complement this with two degeneracy results. Task utility is
-neither monotone (each agent's context window saturates) nor
-submodular (information items can be complementary), which removes the
-$(1-1/e)$ greedy guarantee and the machinery built on it; and the
-nearest general framework for non-monotone non-submodular maximization
-under a knapsack has \emph{no finite parameters} on this problem class,
-with complementarity and saturation each destroying exactly one of the
-two it requires.
+\emph{How} the budget is spent matters more than how much is spent.
+Allocating per receiver beats selecting one globally-scored set for
+everyone by $19.2$ accuracy points at matched cost. We explain this
+with a separation result: the one-set formulation --- the natural
+reading of the problem as influence maximization --- loses a factor
+$\Theta(n)$ in the number of receivers, under two independent
+mechanisms, and does so even on instances where the objective is
+monotone and submodular. We also show the two standard optimisation
+toolchains are unavailable here, the second because its structural
+parameters do not exist rather than because its bound is loose.
 
-Experiments on a public multi-hop benchmark, reframed as a
-multi-receiver allocation problem, support the theory and constrain the
-practice. Per-receiver allocation beats a seed-set baseline by $19.2$
-accuracy points at matched cost ($p=0.0004$), and the seed-set
-baseline degrades as the number of receivers grows, as predicted.
-Allocation cuts inter-agent tokens by $2.7\times$ at no measurable
-accuracy cost. But we report a negative result honestly: across four
-algorithm designs, including a resource-allocation program that no
-per-receiver baseline can imitate, none beats a tuned uniform
-per-receiver rule at matched budget. Three independent lines of
-evidence locate the binding constraint in relevance
-\emph{estimation}, not allocation \emph{optimization} --- an oracle
-reaches full delivery on $208$ tokens where the best implementable
-policy reaches $62\%$ on $929$.
+Finally, a negative result that we think is the most useful finding
+for practitioners. Across four allocation algorithms, including a
+resource-allocation program that exploits structure no baseline can,
+none beats a tuned uniform per-receiver rule at matched budget; and
+replacing lexical relevance with a dense retriever makes matters
+worse. Three independent lines of evidence place the binding
+constraint on \emph{estimating} which agent needs what, not on
+optimising the allocation. The remaining order of magnitude is a
+retrieval problem, and effort spent on cleverer allocation will not
+recover it.
 \end{abstract}
 
 \keywords{multi-agent systems; large language models; communication;
@@ -72,53 +71,68 @@ resource allocation; submodular optimization}
 
 A multi-agent LLM system coordinates by passing context. A planner
 tells a solver what the constraints are; an auditor is handed the
-records it must check. Each transmission is billed per token, so
-coordination has a direct and measurable operating cost, and the
-prevailing engineering answer --- forward the whole conversation
-because deciding what to withhold is hard --- makes that cost grow
-quadratically in the number of agents.
+records it must check. Every such transmission is billed per token, so
+coordination is a direct operating cost, and the prevailing
+engineering answer --- forward the whole conversation, because
+deciding what to withhold is hard and sending everything is safe ---
+makes that cost grow quadratically in the number of agents.
 
-The problem has an obvious formal home. Information spreading through a
-network of agents, a budget, a coverage objective: this is influence
-maximization~\cite{kempe2003}, and twenty years of machinery sits
-behind it, from reverse influence
-sampling~\cite{borgs2014,tang2015} to current GPU-accelerated and
-learning-based solvers~\cite{eim2025,imsurvey2026}. Adopting it looks
-like the efficient move.
+This paper treats that as the problem to solve. We ask how much
+inter-agent traffic can be removed before task quality suffers, what
+the shape of the cost--quality frontier is, and what prevents us from
+reaching the cheap allocations that clearly exist.
 
-\paragraph{This paper argues the formalism does not fit, and it is
-worth being precise about why.} The familiar objection would be that
-the objective is badly behaved --- and it is: LLM agents degrade when
-given irrelevant context~\cite{distracted2025,nolima2025,liu2024}, so
-utility is not monotone, and information items can be complementary,
-so it is not submodular. Both properties are needed for the greedy
-$(1-1/e)$ bound and everything downstream of it.
+\paragraph{What we find.} Three things, in decreasing order of how
+comfortable they are.
 
-But that objection understates the problem. Influence maximization
-chooses \emph{one} set and lets it serve the network. The setting here
-requires a possibly \emph{different} set per receiver, and the gap
-between those two objects is unbounded. Our main result
-(Proposition~\ref{prop:sep}) exhibits instances where per-receiver
-allocation attains $n$ while the best seed set attains $1$ at the same
-budget --- and does so on instances that are perfectly monotone and
-submodular. Fixing the objective's curvature would not help. The
-formulation is optimizing the wrong thing.
+First, \textbf{a lot of the traffic is free to remove}. On a public
+multi-hop benchmark reframed as multi-receiver allocation, cutting
+inter-agent tokens by $2.7\times$ costs no measurable accuracy, and an
+oracle allocation --- which knows which item each agent needs ---
+reaches $21\times$ while \emph{improving} accuracy by about five
+points. Over-delivery is therefore mildly harmful and not merely
+expensive, which is consistent with the measured tendency of LLMs to
+degrade under irrelevant
+context~\cite{distracted2025,nolima2025,liu2024}. An order of
+magnitude is available in principle.
 
-\paragraph{Contributions.}
-\begin{itemize}
-\item A separation result: the seed-set formulation loses a factor
-  $\Theta(n)$, under two independent mechanisms, and even when the
-  objective is monotone submodular (\S\ref{sec:sep}).
-\item Two degeneracy results: monotonicity and submodularity both
-  fail, and the nearest general framework's two structural parameters
-  \emph{fail to exist} on this class, one destroyed by each phenomenon
-  (\S\ref{sec:degen}).
-\item An empirical study on a public benchmark reframed as
-  multi-receiver allocation, which supports the separation, quantifies
-  the token savings available, and reports a negative result on
-  algorithm design that locates the real bottleneck
-  (\S\ref{sec:exp}).
-\end{itemize}
+Second, \textbf{how the budget is spent matters more than how much}.
+Allocating a possibly different set to each receiver beats choosing one
+globally-scored set for everyone by $19.2$ accuracy points at matched
+cost. This is not a tuning detail: we prove the one-set formulation
+loses a factor $\Theta(n)$ in the number of receivers
+(Proposition~\ref{prop:sep}), under two independent mechanisms, and
+even on instances where the objective is monotone and submodular. That
+formulation is the natural reading of context sharing as influence
+maximization~\cite{kempe2003}, so a substantial and otherwise
+applicable literature~\cite{borgs2014,tang2015,eim2025} turns out to
+optimise the wrong object here. We also show that the nearest general
+framework for the messy objective this problem actually has is
+unavailable, because its structural parameters fail to exist rather
+than merely giving a loose bound (\S\ref{sec:degen}).
+
+Third, and most useful to anyone building such a system,
+\textbf{the remaining order of magnitude is not an optimisation
+problem}. We implement four allocation algorithms, including one that
+exploits separability structure no per-receiver baseline can imitate,
+and none beats a tuned uniform per-receiver rule at matched budget.
+Replacing lexical relevance with a dense retriever makes per-receiver
+delivery \emph{worse}. Three independent observations converge: the
+binding constraint is estimating which agent needs what. The oracle
+fixes the scale --- full delivery on $208$ tokens where the best
+implementable policy reaches $62\%$ on $929$ --- and no allocation
+algorithm closes that gap, because the information required is absent
+from the scores rather than badly exploited.
+
+\paragraph{Contributions.} A measured cost--quality frontier for
+inter-agent context sharing, including the free reduction and the
+oracle ceiling (\S\ref{sec:exp}); a separation result showing the
+one-set formulation is off by $\Theta(n)$ and two degeneracy results
+removing the standard toolchains (\S\ref{sec:sep}, \S\ref{sec:degen});
+a decomposition showing the per-receiver problem factors exactly
+through a scalar budget price (\S\ref{sec:alg}); and a negative result
+locating the residual gap in relevance estimation rather than
+allocation (\S\ref{sec:exp}).
 
 \section{Related work}
 
@@ -532,8 +546,15 @@ have no formal treatment of that feedback.
 
 \section{Conclusion}
 
-Casting inter-agent context sharing as influence maximization is the
-natural move and the wrong one. The obstruction is not that agents
+Most inter-agent context traffic can be removed for free. A
+$2.7\times$ reduction costs nothing measurable, and an oracle reaches
+$21\times$ while improving accuracy, so the ceiling is roughly an
+order of magnitude rather than a few percent. That is the practical
+headline, and it holds on a public benchmark under paired testing.
+
+Reaching the ceiling is a different matter, and the obstruction is not
+where we expected. Casting the problem as influence maximization is
+the natural move and the wrong one. The obstruction is not that agents
 degrade under irrelevant context, though they do, nor that information
 items interact, though they do; it is that the seed-set object --- one
 set serving a network --- is off by a factor $\Theta(n)$ from the
@@ -543,13 +564,14 @@ would otherwise apply are unavailable, the second because its
 structural parameters do not exist rather than because its bound is
 loose.
 
-What follows practically is modest and worth stating without
-inflation. Allocating context instead of broadcasting it is close to
-free: a $2.7\times$ token reduction at no measurable accuracy cost, and
-an oracle suggests an order of magnitude more is available. But the
-route to that order of magnitude does not run through better
-allocation algorithms, which is what we expected and not what we
-found. It runs through better estimates of which receiver needs what.
+But the route to the remaining order of magnitude does not run
+through better allocation algorithms --- which is what we expected,
+and not what we found. It runs through better estimates of which
+receiver needs what. For a practitioner the implication is concrete:
+switch from broadcasting to per-receiver allocation, which is nearly
+free and worth $19$ points over the globally-scored alternative, then
+spend the next increment of effort on retrieval rather than on the
+allocation rule.
 
 \balance
 \bibliographystyle{ACM-Reference-Format}
