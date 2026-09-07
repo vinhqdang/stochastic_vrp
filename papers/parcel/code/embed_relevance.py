@@ -70,11 +70,50 @@ def _key(text):
     return hashlib.sha1(tag.encode("utf-8")).hexdigest()[:20]
 
 
+def load_keys():
+    """Every configured key, in order of use.
+
+    The daily allowance is per Google Cloud PROJECT (the quota metric is
+    literally GenerateRequestsPerDayPerProjectPerModel), so a second key
+    only adds budget if it belongs to a DIFFERENT project. Keys from the
+    same project share one allowance and rotation buys nothing.
+
+    Read from GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3, ...
+    """
+    keys = []
+    for name in ["GEMINI_API_KEY"] + [f"GEMINI_API_KEY_{i}"
+                                      for i in range(2, 6)]:
+        v = os.environ.get(name)
+        if v and v not in keys:
+            keys.append(v)
+    return keys
+
+
 class Embedder:
     def __init__(self, key=None):
-        self.key = key or os.environ.get("GEMINI_API_KEY")
-        if not self.key:
+        self.keys = [key] if key else load_keys()
+        if not self.keys:
             raise SystemExit("set GEMINI_API_KEY")
+        self.ki = 0
+        if len(self.keys) > 1:
+            print(f"  {len(self.keys)} keys configured; will rotate on "
+                  f"daily-quota exhaustion", flush=True)
+        self._load_cache()
+
+    @property
+    def key(self):
+        return self.keys[self.ki]
+
+    def _next_key(self):
+        """Advance to the next key. Returns False when none are left."""
+        if self.ki + 1 < len(self.keys):
+            self.ki += 1
+            print(f"  daily quota spent; switching to key "
+                  f"{self.ki + 1}/{len(self.keys)}", flush=True)
+            return True
+        return False
+
+    def _load_cache(self):
         # Append-only: rewriting the whole map after every batch is
         # quadratic in bytes written, and with a few thousand vectors it
         # dominated the runtime -- two earlier runs were killed by
@@ -125,20 +164,31 @@ class Embedder:
             except urllib.error.HTTPError as exc:
                 detail = ""
                 try:
-                    detail = exc.read().decode()[:300]
+                    # Read the WHOLE body: the quota metric name lives in
+                    # the details array, well past the first few hundred
+                    # characters, and truncating it meant the per-day case
+                    # was never recognised and key rotation never fired.
+                    detail = exc.read().decode()
                 except Exception:
                     pass
                 if exc.code == 429 and attempt < RETRIES - 1:
-                    # Honour the API's own retryDelay rather than guessing.
-                    # A fixed escalating sleep overshot the caller's
-                    # timeout and made a recoverable pause look like a
-                    # failure.
+                    # A per-day exhaustion is not worth waiting out -- the
+                    # window is hours, not seconds -- so switch keys if a
+                    # different project is configured. Only the per-minute
+                    # variety is worth sleeping on, and the API's own
+                    # retryDelay says how long (guessing a fixed escalating
+                    # sleep previously overshot the caller's timeout and
+                    # made a recoverable pause look like a failure).
+                    per_day = ("PerDay" in detail
+                               or "PerProjectPerDay" in detail)
+                    if per_day and self._next_key():
+                        continue
                     m = (re.search(r'"retryDelay"\s*:\s*"?(\d+(?:\.\d+)?)s',
                                    detail)
                          or re.search(r"retry in (\d+(?:\.\d+)?)s", detail))
                     time.sleep(min(float(m.group(1)) + 1 if m else 8.0, 40.0))
                     continue
-                raise RuntimeError(f"embed HTTP{exc.code}: {detail}")
+                raise RuntimeError(f"embed HTTP{exc.code}: {detail[:300]}")
             except (urllib.error.URLError, TimeoutError) as exc:
                 if attempt == RETRIES - 1:
                     raise RuntimeError(f"embed failed: {exc}")

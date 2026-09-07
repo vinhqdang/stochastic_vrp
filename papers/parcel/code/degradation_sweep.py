@@ -62,6 +62,7 @@ import pathlib
 import random
 import re
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -160,6 +161,52 @@ GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
               "{model}:generateContent?key={key}")
 
 
+class KeyRing:
+    """Rotates API keys when one project's DAILY allowance is spent.
+
+    The free-tier quota is per Google Cloud project, so keys from
+    different projects have independent allowances. Shared across
+    threads: a per-day exhaustion is a property of the key, not of the
+    individual call, so once one worker discovers it every worker
+    should move on together.
+    """
+
+    def __init__(self, keys=None):
+        self.keys = keys or _keys_from_env()
+        self.i = 0
+        self._lock = threading.Lock()
+
+    def current(self):
+        with self._lock:
+            return self.i, self.keys[self.i] if self.keys else None
+
+    def retire(self, index):
+        """Mark the key at `index` spent. True if another is available."""
+        with self._lock:
+            if index < self.i:          # another thread already rotated
+                return True
+            if self.i + 1 < len(self.keys):
+                self.i += 1
+                print(f"  daily quota spent; switching to key "
+                      f"{self.i + 1}/{len(self.keys)}",
+                      file=sys.stderr, flush=True)
+                return True
+            return False
+
+
+def _keys_from_env():
+    keys = []
+    for name in ["GEMINI_API_KEY"] + [f"GEMINI_API_KEY_{i}"
+                                      for i in range(2, 6)]:
+        v = os.environ.get(name)
+        if v and v not in keys:
+            keys.append(v)
+    return keys
+
+
+RING = None
+
+
 def call_gemini(model, prompt, key, timeout=240, retries=10,
                 max_tokens=1500, quota_budget=240.0):
     """Gemini generateContent with backoff.
@@ -174,14 +221,19 @@ def call_gemini(model, prompt, key, timeout=240, retries=10,
     waiting, which is what separates a genuinely spent daily allowance
     from ordinary pacing.
     """
-    url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-           f"{model}:generateContent?key={key}")
+    global RING
+    if RING is None:
+        RING = KeyRing()
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens},
     }).encode()
     waited = 0.0
     for attempt in range(retries):
+        ki, active = RING.current()
+        active = active or key
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{model}:generateContent?key={active}")
         req = urllib.request.Request(
             url, data=payload, headers={"Content-Type": "application/json"})
         try:
@@ -196,10 +248,17 @@ def call_gemini(model, prompt, key, timeout=240, retries=10,
         except urllib.error.HTTPError as exc:
             detail = ""
             try:
-                detail = exc.read().decode()[:400]
+                # Full body: the quota metric name sits deep in
+                # the details array, and truncating it hid the
+                # per-day case from the rotation check.
+                detail = exc.read().decode()
             except Exception:
                 pass
             if exc.code == 429:
+                # Per-day exhaustion is a spent project, not a pause:
+                # rotate rather than sleep out a multi-hour window.
+                if "PerDay" in detail and RING.retire(ki):
+                    continue
                 mm = (re.search(r'"retryDelay"\s*:\s*"?(\d+(?:\.\d+)?)s',
                                 detail)
                       or re.search(r"retry in (\d+(?:\.\d+)?)s", detail))
