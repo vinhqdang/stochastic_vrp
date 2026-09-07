@@ -298,17 +298,129 @@
   doi     = {10.1162/tacl_a_00475}
 }
 
-% NAMED BY THE PRIOR-ART SWEEP, metadata NOT independently checked --
-% see VERIFY_CITATIONS.md. This is the distorted-greedy lineage that
-% owns the density rule, so getting the record right matters before
-% submission.
+% VERIFIED 2026-09-07 against the PMLR v97 landing page's own
+% citation_* metadata (authors, pages 2634--2643, ICML 2019, ISSN
+% 2640-3498). Note PMLR renders the title with lowercase "beyond".
+% This is the distorted-greedy lineage that owns the density rule, so
+% the record had to be right before submission.
 @inproceedings{harshaw2019,
   author    = {Harshaw, Chris and Feldman, Moran and Ward, Justin and Karbasi, Amin},
-  title     = {Submodular Maximization Beyond Non-negativity: Guarantees,
+  title     = {Submodular Maximization beyond Non-negativity: Guarantees,
                Fast Algorithms, and Applications},
   booktitle = {Proc. 36th Intl. Conf. on Machine Learning (ICML)},
   series    = {PMLR},
   volume    = {97},
   pages     = {2634--2643},
-  year      = {2019}
+  year      = {2019},
+  url       = {https://proceedings.mlr.press/v97/harshaw19a.html}
+}
+
+% ---------------------------------------------------------------------
+% Context and communication cost in LLM agents.
+% All records below VERIFIED 2026-09-07 from the arXiv API (titles,
+% author lists, first-posting dates, arXiv comment fields). These are
+% preprints or non-ACM-archival venues unless a venue is stated in the
+% note field; label them as such at point of use.
+% ---------------------------------------------------------------------
+
+% The direct competitor: PARCEL's objective shape and admission-price
+% rule, already published with a guarantee -- but single-receiver, with
+% a modular penalty and a benefit assumed monotone submodular. Its own
+% abstract names the phenomenon we model ("redundant or poorly chosen
+% skills waste scarce context tokens and can even degrade performance")
+% and then keeps the benefit submodular. Cite as the special case.
+@misc{bps2026,
+  author       = {Chen, Yu and Chen, Ruishuo and Wang, Xun and Li, Zhuoran and Huang, Longbo},
+  title        = {Optimal Skill Selection for {LLM} Agents with Provable
+                  Bicriteria Guarantees},
+  year         = {2026},
+  eprint       = {2608.19993},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.AI},
+  note         = {Preprint}
+}
+
+@misc{pacms2026,
+  author       = {Ghulyani, Manu and Singh, Arunabh and Bharadwaj, Karan
+                  and Nath, Ankit and Goswami, Suranjan},
+  title        = {{PACMS}: Submodular Context Selection as a Pluggable
+                  Engine for {LLM} Agents},
+  year         = {2026},
+  eprint       = {2606.20047},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.CL},
+  note         = {Preprint}
+}
+
+% Closest to PARCEL's applied problem: per-agent memory subset selection
+% under a strict token budget, up to 30% token reduction, evaluated on
+% HotpotQA / MuSiQue / 2WikiMultihop. No theorems.
+@misc{rcrrouter2025,
+  author       = {Liu, Jun and Kong, Zhenglun and Yang, Changdi and Yang, Fan
+                  and Li, Tianqi and Dong, Peiyan and Nanjekye, Joannah
+                  and Tang, Hao and Yuan, Geng and Niu, Wei and Zhang, Wenbin
+                  and Zhao, Pu and Lin, Xue and Huang, Dong and Wang, Yanzhi},
+  title        = {{RCR-Router}: Efficient Role-Aware Context Routing for
+                  Multi-Agent {LLM} Systems with Structured Memory},
+  year         = {2025},
+  eprint       = {2508.04903},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.MA},
+  note         = {Preprint}
+}
+
+% Theory, multi-agent, models finite context windows as hard fan-in
+% limits and characterizes saturation via a mixing depth. Majority-vote
+% aggregation and correlation exponents, not set-function optimization,
+% so not a scoop -- but it partly pre-empts "saturation is a real
+% constraint worth theorizing". WARNING: an automated summary of this
+% paper hallucinated submodularity/complementarity claims its abstract
+% does not contain. The abstract was read directly.
+@misc{phasetransition2026,
+  author       = {Liu, Bang and Kong, Linglong and Pei, Jian},
+  title        = {Phase Transition for Budgeted Multi-Agent Synergy},
+  year         = {2026},
+  eprint       = {2601.17311},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.MA},
+  note         = {Preprint, 55 pages}
+}
+
+@misc{agentprune2024,
+  author       = {Zhang, Guibin and Yue, Yanwei and Li, Zhixun and Yun, Sukwon
+                  and Wan, Guancheng and Wang, Kun and Cheng, Dawei
+                  and Yu, Jeffrey Xu and Chen, Tianlong},
+  title        = {Cut the Crap: An Economical Communication Pipeline for
+                  {LLM}-based Multi-Agent Systems},
+  year         = {2024},
+  eprint       = {2410.02506},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.MA},
+  note         = {Preprint; the method is named AgentPrune}
+}
+
+@misc{gtd2026,
+  author       = {Jiang, Eric Hanchen and Li, Mengting and Wan, Guancheng
+                  and Yin, Sophia and Wu, Yuchen and Liang, Xiao
+                  and Li, Xinfeng and Sun, Yizhou and Wang, Wei
+                  and Chang, Kai-Wei and Wu, Ying Nian},
+  title        = {Dynamic Generation of Multi-{LLM} Agents Communication
+                  Topologies with Graph Diffusion Models},
+  year         = {2026},
+  eprint       = {2510.07799},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.MA},
+  note         = {ACL 2026 (Main), per the arXiv comment field}
+}
+
+@misc{kvcomm2026,
+  author       = {Shi, Xiangyu and Chiesa, Marco and Maguire, Gerald Q.
+                  and Kostic, Dejan},
+  title        = {{KVComm}: Enabling Efficient {LLM} Communication through
+                  Selective {KV} Sharing},
+  year         = {2026},
+  eprint       = {2510.03346},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.CL},
+  note         = {ICLR 2026, per the arXiv comment field}
 }

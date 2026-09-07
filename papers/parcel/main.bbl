@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{16}
+\begin{thebibliography}{23}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -62,6 +62,19 @@
   doi:10.1137/130929205}.
 \newblock
 \href{https://doi.org/10.1109/FOCS.2012.73}{doi:\nolinkurl{10.1109/FOCS.2012.73}}
+
+
+\bibitem[Chen et~al\mbox{.}(2026)]%
+        {bps2026}
+\bibfield{author}{\bibinfo{person}{Yu Chen}, \bibinfo{person}{Ruishuo Chen},
+  \bibinfo{person}{Xun Wang}, \bibinfo{person}{Zhuoran Li}, {and}
+  \bibinfo{person}{Longbo Huang}.} \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{Optimal Skill Selection for {LLM} Agents with
+  Provable Bicriteria Guarantees}.
+\newblock
+\shownote{Preprint}.
+\newblock
+\showeprint[arxiv]{2608.19993}~[cs.AI]
 
 
 \bibitem[Das and Kempe(2011)]%
@@ -128,17 +141,34 @@
 \href{https://doi.org/10.1137/090779346}{doi:\nolinkurl{10.1137/090779346}}
 
 
+\bibitem[Ghulyani et~al\mbox{.}(2026)]%
+        {pacms2026}
+\bibfield{author}{\bibinfo{person}{Manu Ghulyani}, \bibinfo{person}{Arunabh
+  Singh}, \bibinfo{person}{Karan Bharadwaj}, \bibinfo{person}{Ankit Nath},
+  {and} \bibinfo{person}{Suranjan Goswami}.} \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{{PACMS}: Submodular Context Selection as a Pluggable
+  Engine for {LLM} Agents}.
+\newblock
+\shownote{Preprint}.
+\newblock
+\showeprint[arxiv]{2606.20047}~[cs.CL]
+
+
 \bibitem[Harshaw et~al\mbox{.}(2019)]%
         {harshaw2019}
 \bibfield{author}{\bibinfo{person}{Chris Harshaw}, \bibinfo{person}{Moran
   Feldman}, \bibinfo{person}{Justin Ward}, {and} \bibinfo{person}{Amin
   Karbasi}.} \bibinfo{year}{2019}\natexlab{}.
-\newblock \showarticletitle{Submodular Maximization Beyond Non-negativity:
+\newblock \showarticletitle{Submodular Maximization beyond Non-negativity:
   Guarantees, Fast Algorithms, and Applications}. In
   \bibinfo{booktitle}{\emph{Proc. 36th Intl. Conf. on Machine Learning (ICML)}}
   \emph{(\bibinfo{series}{PMLR}, Vol.~\bibinfo{volume}{97})}.
   \bibinfo{pages}{2634--2643}.
 \newblock
+\urldef\tempurl%
+\url{https://proceedings.mlr.press/v97/harshaw19a.html}
+\showURL{%
+\tempurl}
 
 
 \bibitem[Iyer and Bilmes(2012)]%
@@ -154,6 +184,23 @@
 \newblock
 
 
+\bibitem[Jiang et~al\mbox{.}(2026)]%
+        {gtd2026}
+\bibfield{author}{\bibinfo{person}{Eric~Hanchen Jiang},
+  \bibinfo{person}{Mengting Li}, \bibinfo{person}{Guancheng Wan},
+  \bibinfo{person}{Sophia Yin}, \bibinfo{person}{Yuchen Wu},
+  \bibinfo{person}{Xiao Liang}, \bibinfo{person}{Xinfeng Li},
+  \bibinfo{person}{Yizhou Sun}, \bibinfo{person}{Wei Wang},
+  \bibinfo{person}{Kai-Wei Chang}, {and} \bibinfo{person}{Ying~Nian Wu}.}
+  \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{Dynamic Generation of Multi-{LLM} Agents
+  Communication Topologies with Graph Diffusion Models}.
+\newblock
+\shownote{ACL 2026 (Main), per the arXiv comment field}.
+\newblock
+\showeprint[arxiv]{2510.07799}~[cs.MA]
+
+
 \bibitem[Kempe et~al\mbox{.}(2003)]%
         {kempe2003}
 \bibfield{author}{\bibinfo{person}{David Kempe}, \bibinfo{person}{Jon
@@ -164,6 +211,35 @@
   Knowledge Discovery and Data Mining (KDD)}}. \bibinfo{pages}{137--146}.
 \newblock
 \href{https://doi.org/10.1145/956750.956769}{doi:\nolinkurl{10.1145/956750.956769}}
+
+
+\bibitem[Liu et~al\mbox{.}(2026)]%
+        {phasetransition2026}
+\bibfield{author}{\bibinfo{person}{Bang Liu}, \bibinfo{person}{Linglong Kong},
+  {and} \bibinfo{person}{Jian Pei}.} \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{Phase Transition for Budgeted Multi-Agent Synergy}.
+\newblock
+\shownote{Preprint, 55 pages}.
+\newblock
+\showeprint[arxiv]{2601.17311}~[cs.MA]
+
+
+\bibitem[Liu et~al\mbox{.}(2025)]%
+        {rcrrouter2025}
+\bibfield{author}{\bibinfo{person}{Jun Liu}, \bibinfo{person}{Zhenglun Kong},
+  \bibinfo{person}{Changdi Yang}, \bibinfo{person}{Fan Yang},
+  \bibinfo{person}{Tianqi Li}, \bibinfo{person}{Peiyan Dong},
+  \bibinfo{person}{Joannah Nanjekye}, \bibinfo{person}{Hao Tang},
+  \bibinfo{person}{Geng Yuan}, \bibinfo{person}{Wei Niu},
+  \bibinfo{person}{Wenbin Zhang}, \bibinfo{person}{Pu Zhao},
+  \bibinfo{person}{Xue Lin}, \bibinfo{person}{Dong Huang}, {and}
+  \bibinfo{person}{Yanzhi Wang}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \bibinfo{title}{{RCR-Router}: Efficient Role-Aware Context Routing
+  for Multi-Agent {LLM} Systems with Structured Memory}.
+\newblock
+\shownote{Preprint}.
+\newblock
+\showeprint[arxiv]{2508.04903}~[cs.MA]
 
 
 \bibitem[Liu et~al\mbox{.}(2024)]%
@@ -196,6 +272,19 @@
 \shownote{arXiv:2502.05167. 11 of 13 models claiming >=128K context drop below
   50\% of their short-context baseline at 32K.}.
 \newblock
+
+
+\bibitem[Shi et~al\mbox{.}(2026)]%
+        {kvcomm2026}
+\bibfield{author}{\bibinfo{person}{Xiangyu Shi}, \bibinfo{person}{Marco
+  Chiesa}, \bibinfo{person}{Gerald~Q. Maguire}, {and} \bibinfo{person}{Dejan
+  Kostic}.} \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{{KVComm}: Enabling Efficient {LLM} Communication
+  through Selective {KV} Sharing}.
+\newblock
+\shownote{ICLR 2026, per the arXiv comment field}.
+\newblock
+\showeprint[arxiv]{2510.03346}~[cs.CL]
 
 
 \bibitem[Shi and Lai(2024)]%
@@ -249,6 +338,21 @@
 \shownote{arXiv:2505.18761}.
 \newblock
 \href{https://doi.org/10.18653/v1/2025.emnlp-main.674}{doi:\nolinkurl{10.18653/v1/2025.emnlp-main.674}}
+
+
+\bibitem[Zhang et~al\mbox{.}(2024)]%
+        {agentprune2024}
+\bibfield{author}{\bibinfo{person}{Guibin Zhang}, \bibinfo{person}{Yanwei Yue},
+  \bibinfo{person}{Zhixun Li}, \bibinfo{person}{Sukwon Yun},
+  \bibinfo{person}{Guancheng Wan}, \bibinfo{person}{Kun Wang},
+  \bibinfo{person}{Dawei Cheng}, \bibinfo{person}{Jeffrey~Xu Yu}, {and}
+  \bibinfo{person}{Tianlong Chen}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \bibinfo{title}{Cut the Crap: An Economical Communication Pipeline
+  for {LLM}-based Multi-Agent Systems}.
+\newblock
+\shownote{Preprint; the method is named AgentPrune}.
+\newblock
+\showeprint[arxiv]{2410.02506}~[cs.MA]
 
 
 \end{thebibliography}

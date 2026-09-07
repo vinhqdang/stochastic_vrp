@@ -147,8 +147,9 @@ separation is orthogonal to the quality of those relaxations.
 \paragraph{Non-monotone and non-submodular maximization.} Guarantees
 exist for non-monotone submodular
 maximization~\cite{feige2011,buchbinder2012}, for weakly submodular
-objectives via the submodularity ratio~\cite{daskempe2011,daskempe2018}
-or supermodular degree~\cite{feigeizsak2013}, and for differences of
+objectives via the sub\-modu\-larity
+ratio~\cite{daskempe2011,daskempe2018} or supermodular
+degree~\cite{feigeizsak2013}, and for differences of
 submodular functions~\cite{iyerbilmes2012}. Closest to our setting,
 Shi and Lai~\cite{shilai2024} treat non-monotone, non-submodular
 maximization under a knapsack. \S\ref{sec:degen} shows their
@@ -159,13 +160,37 @@ guarantees~\cite{harshaw2019}; the density rule we discuss in
 such rather than presenting it as new.
 
 \paragraph{Context and communication cost in LLM agents.} Empirical
-work reduces inter-agent context by pruning message graphs, learning
-topologies, or sharing caches, and a parallel line selects context for
-a \emph{single} agent under a token budget, sometimes with submodular
-guarantees. Those results assume the structure we show fails: a single
-receiver, or a monotone submodular benefit. We are not aware of a
-formal treatment of the multi-receiver allocation problem, nor of an
-influence-maximization framing of LLM-agent communication.
+work cuts inter-agent tokens by pruning the message
+graph~\cite{agentprune2024}, generating the topology per
+task~\cite{gtd2026}, or sharing key--value caches instead of
+text~\cite{kvcomm2026}; none states an optimality guarantee. Closest to
+our applied setting, RCR-Router selects a memory subset per agent under a
+strict token budget and reports up to $30\%$ savings on multi-hop QA,
+again without guarantees~\cite{rcrrouter2025}. A parallel line does
+prove guarantees, but for a \emph{single} receiver: PACMS treats
+context assembly as submodular selection~\cite{pacms2026}, and
+BPS maximizes a monotone submodular benefit minus a modular token
+penalty under a hard budget, with a bicriteria $(1-1/e,1)$
+ratio~\cite{bps2026}. BPS is the single-receiver, modular-penalty,
+submodular-benefit special case of the problem we study, and it is the
+closest prior work; it observes that redundant context ``can even
+degrade performance'' and then charges that degradation as a separate
+cost, keeping the benefit submodular. Both halves of the decomposition
+are where our setting departs. Its penalty $\kappa_E\,\ell(S)$ is
+linear in total length, with $\kappa_E$ an explicitly \emph{first-order}
+per-token sensitivity, whereas the degradation we measure accelerates
+with load (\S\ref{sec:model}); and its benefit is a weighted coverage
+$\sum_k w_k h_k(\sum_{i \in S} u_{i,k})$ with each $h_k$ concave, so
+items overlap within a dimension and are \emph{additive} across
+dimensions. Two items that are separately inert but jointly decisive
+have no representation in that form, which is the case
+\S\ref{sec:degen} turns on. On the theory side,
+\cite{phasetransition2026} treats finite context windows as hard fan-in
+limits and locates saturation via a mixing depth, but through
+majority-vote aggregation rather than set-function optimization. We are
+not aware of a formal treatment of the multi-receiver token-allocation
+problem, nor of an influence-maximization framing of LLM-agent
+communication.
 
 \section{Model}
 \label{sec:model}

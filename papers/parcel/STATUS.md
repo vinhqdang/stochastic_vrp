@@ -14,19 +14,29 @@
 
 ### Blocking before submission
 
-1. ⚠️ **The related-work paragraph on LLM-agent context reduction
-   makes claims with NO citations.** The prior-art sweep found the
-   relevant work (message-graph pruning, learned topologies, cache
-   sharing, single-agent context selection under a token budget) but
-   those records are **unverified**, so per the repo rule they cannot
-   enter `references.bib`. A reviewer will flag uncited claims about
-   prior work. Verify and cite, or delete the claims.
-2. `harshaw2019` metadata is not independently checked and it is the
-   lineage that owns the density rule — getting it wrong would be an
-   attribution error on the one point where we concede priority.
-3. Author list, affiliations, `\acmSubmissionID` (blank pending
+1. ✅ **RESOLVED 2026-09-07 — the LLM-agent context-reduction paragraph
+   is now cited.** Seven records were verified directly from the arXiv
+   API (title, author list, first-posting date, arXiv comment field)
+   and entered in `references.bib`: BPS (2608.19993), PACMS
+   (2606.20047), RCR-Router (2508.04903), Phase Transition
+   (2601.17311), AgentPrune/"Cut the Crap" (2410.02506), GTD
+   (2510.07799, ACL 2026 Main), KVComm (2510.03346, ICLR 2026). The
+   paragraph now also states the BPS relationship explicitly rather
+   than leaving a referee to discover it.
+2. ✅ **RESOLVED 2026-09-07 — `harshaw2019` verified** against the
+   PMLR v97 landing page's own `citation_*` metadata: Harshaw,
+   Feldman, Ward, Karbasi; pages 2634–2643; ICML 2019; ISSN 2640-3498.
+   PMLR renders the title with lowercase "beyond"; the .bib now
+   matches and carries the URL.
+3. ✅ **RESOLVED 2026-09-07 — BPS read in full** (model, Theorem 1, and
+   the Appendix A proofs of Lemmas 3–4). The positioning survives and
+   is now stated precisely rather than by assertion; see
+   `PROJECT.md` §10.2.
+4. Author list, affiliations, `\acmSubmissionID` (blank pending
    OpenReview registration).
-4. Page budget: 5 of 8 used. Appendices appear to count, so proofs
+5. The 8 calibration citations in `VERIFY_CITATIONS.md` remain
+   unverified; none of them is currently load-bearing in `main.tex`.
+6. Page budget: 5 of 8 used. Appendices appear to count, so proofs
    must stay in-body.
 
 ## Deadlines — VERIFIED 2026-09-06 against the official call

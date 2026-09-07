@@ -513,7 +513,53 @@ benefit itself.
 submodular-benefit special case that PARCEL generalizes.** Cite it
 prominently, use it as the baseline and the foil, and pre-empt the
 obvious referee objection by naming the relationship explicitly rather
-than letting a reviewer discover it. **Read its proofs before drafting.**
+than letting a reviewer discover it.
+
+#### Read in full 2026-09-07 — the positioning holds, and gets sharper
+
+Read from the arXiv HTML of v1: the model (§3), Theorem 1 and its proof
+(§4.3), and the Appendix A proofs of Lemmas 3–4. Four things to get
+right, two of which correct earlier notes here:
+
+1. **Their benefit is** `G_E(q,S) = Σ_k η_k w_k^q · h_k(λ_k Σ_{i∈S} u_{i,k})`
+   with each `h_k` nondecreasing concave, `h_k(0)=0` — weighted coverage
+   with diminishing returns, the Lin–Bilmes form. They describe this as
+   modelling "complementarity and redundancy", but the complementarity
+   is **additive across dimensions**: supplies overlap *within* a
+   dimension and simply add *between* them. **A pair that is separately
+   inert and jointly decisive has no representation in this form**,
+   because `G_E` is submodular by construction. That is F2, and it is
+   genuinely outside their model. This is the single strongest
+   pre-emption available and it is now in `main.tex`'s related work.
+2. **Their penalty is** `c_E(S) = κ_E · ℓ(S)`, and they call `κ_E` the
+   executor's **"first-order per-token context sensitivity"** — i.e.
+   they name it as a linearization. Our `ρ_i(conf_i(S))` is the
+   state-dependent, accelerating version. Say "first-order", not
+   "wrong".
+3. ⚠️ **Correction to an earlier note here: their *objective* is NOT
+   monotone and they say so.** `F̂ = Ĝ − κ̂ℓ` "can be non-monotone and
+   negative", the classical greedy analysis does not apply, and they
+   cite Nikolakaki et al. (2021) for the impossibility of a constant
+   multiplicative ratio. What is assumed monotone submodular is the
+   **benefit** `Ĝ`. Never write "BPS assumes a monotone objective" — a
+   referee who knows the paper would catch it immediately.
+4. **Theorem 1's hypotheses are minimal:** `Ĝ` normalized,
+   nondecreasing, submodular; `ℓ_i > 0`; `κ̂ ≥ 0`. The bicriteria
+   `(1−1/e, 1)` is tight in the benefit coefficient (Feige 1998), and
+   the novel device is "budget-aligned interpolation" — the budget and
+   the penalty share the length coordinate, which is what converts a
+   fractional point on a density chain into a recorded integral prefix.
+   Algorithm 1 is partial-enumeration density greedy over seeds of size
+   ≤ 2, and the departure from Khuller/Sviridenko is that under a
+   non-monotone objective the chain *endpoint* need not dominate its
+   prefixes, so every prefix is recorded.
+
+Consequence for us: their theorem does **not** apply to PARCEL's class
+(their `Ĝ` submodularity hypothesis is exactly what F2 denies), and
+their guarantee is not weakened by anything we claim. The relationship
+is strict generalization of the model, not a competing bound. Note also
+that they cite PACMS and Harshaw et al. themselves, so our related-work
+lineage is consistent with theirs.
 
 ### 10.3 Must-cite, partially pre-empts the premise
 

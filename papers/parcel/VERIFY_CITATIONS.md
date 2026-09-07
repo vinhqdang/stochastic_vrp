@@ -206,3 +206,55 @@ topology"** is a novelty/absence claim. No citation can support an
 absence. It needs a **documented search** — queries, databases, dates —
 plus the named nearest prior work, or it must be softened to a
 search-bounded statement. **This search has not been performed.**
+
+---
+
+## ✅ Verification pass, 2026-09-07 — LLM-agent context reduction
+
+Source of truth: the **arXiv API** (`export.arxiv.org/api/query`), read
+directly, and for the ICML record the **PMLR v97 landing page's own
+`citation_*` metadata**. Titles, author lists, first-posting dates and
+arXiv `comment` fields were taken from those responses, not from search
+snippets.
+
+| Key | Record | Status |
+|---|---|---|
+| `harshaw2019` | Harshaw, Feldman, Ward, Karbasi, ICML 2019, PMLR 97:2634–2643 | ✅ verified; PMLR spells the title "…Maximization **beyond** Non-negativity" (lowercase), now matched |
+| `bps2026` | Chen, Chen, Wang, Li, Huang — *Optimal Skill Selection for LLM Agents with Provable Bicriteria Guarantees*, arXiv:2608.19993v1, 2026-08-20 | ✅ verified; **preprint**, no venue in the comment field |
+| `pacms2026` | Ghulyani, Singh, Bharadwaj, Nath, Goswami — *PACMS*, arXiv:2606.20047v2 | ✅ verified; **preprint** |
+| `rcrrouter2025` | Liu et al. (15 authors) — *RCR-Router*, arXiv:2508.04903v3, first posted **2025**-08-06 | ✅ verified; **preprint**. Note the year: earlier notes filed it as 2026 |
+| `phasetransition2026` | Liu, Kong, Pei — *Phase Transition for Budgeted Multi-Agent Synergy*, arXiv:2601.17311v2 | ✅ verified; **preprint**, 55 pages |
+| `agentprune2024` | Zhang et al. — *Cut the Crap*, arXiv:2410.02506v1, 2024-10-03 | ✅ verified; **preprint**. The paper's title and its method name (AgentPrune) differ — cite the title, name the method in the note |
+| `gtd2026` | Jiang et al. — *Guided Topology Diffusion*, arXiv:2510.07799v2 | ✅ verified; arXiv comment states **ACL 2026 Main** |
+| `kvcomm2026` | Shi, Chiesa, Maguire, Kostic — *KVComm*, arXiv:2510.03346v3 | ✅ verified; arXiv comment states **ICLR 2026** |
+
+### Two claims confirmed against the primary text
+
+- **BPS's concession is real and quotable.** Its abstract says, verbatim,
+  that redundant or poorly chosen skills "waste scarce context tokens
+  and can even degrade performance", and its objective is stated as "a
+  monotone submodular benefit minus context penalty" under "a hard
+  token budget", with a bicriteria $(1-1/e,1)$ ratio. The §10.2
+  positioning rests on exactly these, and they check out.
+- **RCR-Router's "up to 30%" and its benchmarks check out** — HotpotQA,
+  MuSiQue and 2WikiMultihop. That MuSiQue overlap is worth stating in
+  the paper: our evaluation set is the same benchmark.
+
+### BPS read in full, 2026-09-07
+
+Model, Theorem 1, §4.3 proof and Appendix A read from the arXiv HTML of
+v1. Two attributions in this project's notes were **wrong** and are
+corrected in `PROJECT.md` §10.2: BPS's *objective* is non-monotone and
+they say so (it is the *benefit* that is monotone submodular), and
+their penalty coefficient is described by them as a **first-order**
+per-token sensitivity, so "linearization" is the fair word, not
+"error". The pre-emption that survives, and is now in `main.tex`: their
+benefit is a concave-coverage form, additive across capability
+dimensions, in which a separately-inert jointly-decisive pair has no
+representation at all.
+
+### Still outstanding
+- `Cut the Crap` (2410.02506) is listed here at v1 only; check whether
+  a peer-reviewed version now exists before camera-ready.
+- The 8 calibration citations above remain unverified. None is
+  load-bearing in `main.tex` as it stands.
