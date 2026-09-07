@@ -7,9 +7,27 @@
 - **Venue:** **AAMAS 2027**, the 26th International Conference on
   Autonomous Agents and Multiagent Systems, **Hanoi, Vietnam,
   3–7 May 2027**. Main track.
-- **State:** **ACTIVE — planning.** No manuscript yet. Spec is
-  `PROJECT.md`; framing settled through a planning dialogue on
-  2026-09-06 (GMT+7).
+- **State:** **ACTIVE — drafting.** Manuscript at **5 pages**
+  (`main.tex`, AAMAS `sigconf` anonymous mode), compiles clean with
+  zero errors against the official class. Theory in `THEORY.md`,
+  empirical record in `RESULTS.md`, spec in `PROJECT.md`.
+
+### Blocking before submission
+
+1. ⚠️ **The related-work paragraph on LLM-agent context reduction
+   makes claims with NO citations.** The prior-art sweep found the
+   relevant work (message-graph pruning, learned topologies, cache
+   sharing, single-agent context selection under a token budget) but
+   those records are **unverified**, so per the repo rule they cannot
+   enter `references.bib`. A reviewer will flag uncited claims about
+   prior work. Verify and cite, or delete the claims.
+2. `harshaw2019` metadata is not independently checked and it is the
+   lineage that owns the density rule — getting it wrong would be an
+   attribution error on the one point where we concede priority.
+3. Author list, affiliations, `\acmSubmissionID` (blank pending
+   OpenReview registration).
+4. Page budget: 5 of 8 used. Appendices appear to count, so proofs
+   must stay in-body.
 
 ## Deadlines — VERIFIED 2026-09-06 against the official call
 

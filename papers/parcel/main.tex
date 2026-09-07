@@ -1,0 +1,558 @@
+\documentclass[sigconf,anonymous]{aamas}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+% amssymb omitted: the aamas class already provides it and reloading
+% it redefines \Bbbk
+\usepackage{amsthm}
+\usepackage{balance}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\acmSubmissionID{}
+\submissionType{Research Paper Track}
+
+\begin{document}
+
+\title{Context Allocation in Multi-Agent LLM Systems is Not Influence
+Maximization}
+
+\begin{abstract}
+Multi-agent LLM systems coordinate by forwarding context between
+agents, and every forwarded token is billed. The natural formalism is
+influence maximization: choose a seed set of information items, let it
+reach the network, cover the agents cheaply. We show this formalism is
+the wrong one, and not for the usual reason.
+
+Our main result is a separation. On instances with $n$ receivers, the
+best single seed set attains utility $1$ where per-receiver allocation
+attains $n$ at an identical budget, so the ratio is exactly $n$. The
+separation holds under two independent mechanisms --- transmission
+billed per receiver, and free broadcast with saturating attention ---
+and, crucially, it holds on instances where the objective \emph{is}
+monotone and submodular. It is therefore not a statement about badly
+behaved objectives: the seed-set formulation optimizes the wrong
+object, and no approximation ratio for it can be meaningful here.
+
+We complement this with two degeneracy results. Task utility is
+neither monotone (each agent's context window saturates) nor
+submodular (information items can be complementary), which removes the
+$(1-1/e)$ greedy guarantee and the machinery built on it; and the
+nearest general framework for non-monotone non-submodular maximization
+under a knapsack has \emph{no finite parameters} on this problem class,
+with complementarity and saturation each destroying exactly one of the
+two it requires.
+
+Experiments on a public multi-hop benchmark, reframed as a
+multi-receiver allocation problem, support the theory and constrain the
+practice. Per-receiver allocation beats a seed-set baseline by $19.2$
+accuracy points at matched cost ($p=0.0004$), and the seed-set
+baseline degrades as the number of receivers grows, as predicted.
+Allocation cuts inter-agent tokens by $2.7\times$ at no measurable
+accuracy cost. But we report a negative result honestly: across four
+algorithm designs, including a resource-allocation program that no
+per-receiver baseline can imitate, none beats a tuned uniform
+per-receiver rule at matched budget. Three independent lines of
+evidence locate the binding constraint in relevance
+\emph{estimation}, not allocation \emph{optimization} --- an oracle
+reaches full delivery on $208$ tokens where the best implementable
+policy reaches $62\%$ on $929$.
+\end{abstract}
+
+\keywords{multi-agent systems; large language models; communication;
+resource allocation; submodular optimization}
+
+\maketitle
+
+\section{Introduction}
+
+A multi-agent LLM system coordinates by passing context. A planner
+tells a solver what the constraints are; an auditor is handed the
+records it must check. Each transmission is billed per token, so
+coordination has a direct and measurable operating cost, and the
+prevailing engineering answer --- forward the whole conversation
+because deciding what to withhold is hard --- makes that cost grow
+quadratically in the number of agents.
+
+The problem has an obvious formal home. Information spreading through a
+network of agents, a budget, a coverage objective: this is influence
+maximization~\cite{kempe2003}, and twenty years of machinery sits
+behind it, from reverse influence
+sampling~\cite{borgs2014,tang2015} to current GPU-accelerated and
+learning-based solvers~\cite{eim2025,imsurvey2026}. Adopting it looks
+like the efficient move.
+
+\paragraph{This paper argues the formalism does not fit, and it is
+worth being precise about why.} The familiar objection would be that
+the objective is badly behaved --- and it is: LLM agents degrade when
+given irrelevant context~\cite{distracted2025,nolima2025,liu2024}, so
+utility is not monotone, and information items can be complementary,
+so it is not submodular. Both properties are needed for the greedy
+$(1-1/e)$ bound and everything downstream of it.
+
+But that objection understates the problem. Influence maximization
+chooses \emph{one} set and lets it serve the network. The setting here
+requires a possibly \emph{different} set per receiver, and the gap
+between those two objects is unbounded. Our main result
+(Proposition~\ref{prop:sep}) exhibits instances where per-receiver
+allocation attains $n$ while the best seed set attains $1$ at the same
+budget --- and does so on instances that are perfectly monotone and
+submodular. Fixing the objective's curvature would not help. The
+formulation is optimizing the wrong thing.
+
+\paragraph{Contributions.}
+\begin{itemize}
+\item A separation result: the seed-set formulation loses a factor
+  $\Theta(n)$, under two independent mechanisms, and even when the
+  objective is monotone submodular (\S\ref{sec:sep}).
+\item Two degeneracy results: monotonicity and submodularity both
+  fail, and the nearest general framework's two structural parameters
+  \emph{fail to exist} on this class, one destroyed by each phenomenon
+  (\S\ref{sec:degen}).
+\item An empirical study on a public benchmark reframed as
+  multi-receiver allocation, which supports the separation, quantifies
+  the token savings available, and reports a negative result on
+  algorithm design that locates the real bottleneck
+  (\S\ref{sec:exp}).
+\end{itemize}
+
+\section{Related work}
+
+\paragraph{Influence maximization.} Monotonicity and submodularity of
+the spread function are what license greedy's
+$(1-1/e)$~\cite{kempe2003}, and the scaling
+literature~\cite{borgs2014,tang2015,eim2025} inherits those
+assumptions. Recent work relaxes them in various directions but keeps
+the seed-set object: one chosen set, serving the whole network. Our
+separation is orthogonal to the quality of those relaxations.
+
+\paragraph{Non-monotone and non-submodular maximization.} Guarantees
+exist for non-monotone submodular
+maximization~\cite{feige2011,buchbinder2012}, for weakly submodular
+objectives via the submodularity ratio~\cite{daskempe2011,daskempe2018}
+or supermodular degree~\cite{feigeizsak2013}, and for differences of
+submodular functions~\cite{iyerbilmes2012}. Closest to our setting,
+Shi and Lai~\cite{shilai2024} treat non-monotone, non-submodular
+maximization under a knapsack. \S\ref{sec:degen} shows their
+parameters do not exist here. Regularized objectives of the form
+$g - c$ with $g$ submodular and $c$ modular admit distorted-greedy
+guarantees~\cite{harshaw2019}; the density rule we discuss in
+\S\ref{sec:alg} is an instance of that lineage, and we credit it as
+such rather than presenting it as new.
+
+\paragraph{Context and communication cost in LLM agents.} Empirical
+work reduces inter-agent context by pruning message graphs, learning
+topologies, or sharing caches, and a parallel line selects context for
+a \emph{single} agent under a token budget, sometimes with submodular
+guarantees. Those results assume the structure we show fails: a single
+receiver, or a monotone submodular benefit. We are not aware of a
+formal treatment of the multi-receiver allocation problem, nor of an
+influence-maximization framing of LLM-agent communication.
+
+\section{Model}
+\label{sec:model}
+
+Receivers (agents) are indexed $1,\dots,n$. A pool $F$ of information
+items is given, item $f$ costing $c(f)>0$ tokens. An
+\emph{allocation} assigns a set $S_i \subseteq F$ to each receiver.
+Information is copyable, but each transmission is charged, so total
+spend is $\sum_i c(S_i)$ and serving $n$ receivers with one set costs
+$n$ times serving one. We also consider a \emph{free-broadcast}
+convention, where a set may be given to everyone for one transmission,
+to show our results do not rest on the cost model.
+
+Per-receiver utility is
+\begin{equation}
+u_i(S) = \mathrm{rel}_i(S) - \rho_i\!\left(\mathrm{conf}_i(S)\right),
+\label{eq:util}
+\end{equation}
+relevance minus a saturation penalty. Two features of
+\eqref{eq:util} are empirically motivated rather than assumed for
+convenience. First, $\rho_i$ is increasing: delivering more context
+degrades an agent~\cite{distracted2025,nolima2025}. Second, the
+penalty's argument is \emph{confusable} load
+$\mathrm{conf}_i$, not raw token count, because length-matched studies
+find that semantic proximity to the task predicts degradation while raw
+length barely does~\cite{liu2024}. Cost and damage are therefore
+different quantities: one is billed and modular, the other is semantic
+and per-receiver. The objective is $U = \sum_i u_i(S_i)$ subject to the
+budget.
+
+\begin{example}
+Three agents share a pool of $20$ documents. Agent~1 must check a
+delivery date, agent~2 a payment total, agent~3 must reconcile the
+two. Agents~1 and~2 each need one document; agent~3 needs both. A
+uniform allowance of one document per agent starves agent~3; an
+allowance of two overfeeds agents~1 and~2 with a document that can
+only distract them. No single set serves all three, and the cheapest
+correct allocation sends different sets to different agents. This is
+the structure Proposition~\ref{prop:sep} makes precise.
+\end{example}
+
+\section{The seed-set formulation loses a factor $n$}
+\label{sec:sep}
+
+\begin{proposition}
+\label{prop:sep}
+For every $n \ge 1$ there is an instance with $n$ receivers on which,
+at an identical budget,
+\[
+\frac{\mathrm{OPT}_{\text{per-receiver}}}{\mathrm{OPT}_{\text{seed-set}}} = n .
+\]
+The separation holds under both cost conventions, for two independent
+reasons.
+\end{proposition}
+
+\begin{proof}
+Take $n$ receivers, $n$ distinct items each of cost $c$, and let
+receiver $i$ be satisfied only by item $i$. Set the budget $B = nc$.
+
+\emph{(a) Billed per receiver.} Per-receiver allocation sends item $i$
+to receiver $i$, spending $nc = B$ for utility $n$. A seed set $S$
+reaches all $n$ receivers and so costs $n|S|c \le nc$, forcing
+$|S| \le 1$; a single item satisfies exactly one receiver, for
+utility $1$.
+
+\emph{(b) Free broadcast, saturating attention.} Let the budget be
+non-binding, let a receiver absorb one item freely, and let each
+further item cost it $1$. Broadcasting $S$ to everyone yields
+$|S| - n\max(0,|S|-1)$, maximized at $|S|=1$ with value $1$, while
+per-receiver allocation again yields $n$.
+\end{proof}
+
+Case (b) is the more informative one. A reader may discount (a) as an
+artifact of charging per receiver; (b) removes that objection, because
+even with free broadcast the seed set is capped. The reason is worth
+stating plainly: \emph{an additional broadcast item helps one receiver
+and harms the other $n-1$.}
+
+\begin{remark}
+The instance in case (a) contains no saturation and no
+complementarity: $\mathrm{rel}$ is modular and $\rho \equiv 0$, so the
+objective is monotone and submodular. The separation is therefore not
+a consequence of the degeneracies in \S\ref{sec:degen}. Repairing the
+objective's curvature does not rescue the seed-set formulation,
+because the loss comes from the choice of object, not from the
+objective's shape. Any guarantee proved against a seed-set optimum
+bounds distance from the wrong quantity.
+\end{remark}
+
+\section{Both toolchains degenerate}
+\label{sec:degen}
+
+\paragraph{Monotonicity and submodularity fail.} With $\mathrm{rel}$
+modular and $\rho$ increasing, an item whose relevance falls below its
+marginal saturation cost strictly lowers $u_i$, so $U$ is not
+monotone. And two items individually inert but jointly decisive ---
+$\mathrm{rel}(\emptyset)=\mathrm{rel}(\{a\})=\mathrm{rel}(\{b\})=0$,
+$\mathrm{rel}(\{a,b\})=1$ --- give increasing returns, so $U$ is not
+submodular. Both are required by the greedy argument.
+
+\paragraph{The nearest general framework has no parameters here.}
+Shi and Lai~\cite{shilai2024} give guarantees for non-monotone,
+non-submodular maximization under a knapsack. Their general theorem
+requires the objective to be simultaneously $\gamma_1$-weak submodular
+and $\gamma_2$-weak supermodular:
+\begin{align}
+F(U_2 \cup \{x\}) - F(U_2) &\le \gamma_1\left[F(U_1 \cup \{x\}) - F(U_1)\right],
+\label{eq:d1}\\
+\gamma_2\left(F(U_2 \cup \{x\}) - F(U_2)\right) &\ge F(U_1 \cup \{x\}) - F(U_1),
+\label{eq:d2}
+\end{align}
+for $U_1 \subsetneq U_2$ and $x \notin U_2$. Our two phenomena destroy
+exactly one parameter each.
+
+Under complementarity, take the instance above with $U_1 = \emptyset$,
+$U_2 = \{b\}$, $x = a$: \eqref{eq:d1} demands $1 \le \gamma_1 \cdot 0$,
+which no finite $\gamma_1$ satisfies. Under saturation, an item whose
+marginal is $+0.5$ at a lightly loaded receiver and $-1.5$ at a
+saturated one makes \eqref{eq:d2} demand
+$\gamma_2 \cdot (-1.5) \ge 0.5$, which no $\gamma_2 \ge 1$ satisfies.
+
+\begin{table}[t]
+\centering
+\caption{Existence of the two parameters that~\cite{shilai2024}
+requires \emph{simultaneously}. Each phenomenon destroys exactly one.}
+\label{tab:degen}
+\begin{tabular}{lcc}
+\toprule
+ & $\gamma_1$ (weak sub.) & $\gamma_2$ (weak super.) \\
+\midrule
+Complementarity & \textbf{does not exist} & exists \\
+Saturation      & exists & \textbf{does not exist} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:degen} summarizes. The symmetry is the point:
+complementarity breaks weak \emph{sub}modularity while saturation
+breaks weak \emph{super}modularity, and since the theorem needs both
+at once it applies to neither phenomenon alone. This is a stronger
+statement than a loose bound --- the parameters are undefined, so the
+guarantee is unavailable rather than weak.
+
+\section{Structure and algorithms}
+\label{sec:alg}
+
+Proposition~\ref{prop:sep} says the per-receiver object is the right
+one. It does not say the resulting problem is intractable, and in one
+respect it is unusually well structured.
+
+\begin{proposition}
+\label{prop:decomp}
+The problem is separable across receivers and coupled only by the
+shared budget. Consequently, writing
+$v_i(b) = \max\{u_i(S) : c(S) \le b\}$, an optimal allocation is
+obtained by solving
+\[
+\max\Big\{ \textstyle\sum_i v_i(b_i) \;:\; \sum_i b_i \le B \Big\}
+\]
+and giving receiver $i$ an optimal set at its level $b_i$. If each
+$v_i$ is computed exactly, this is exact.
+\end{proposition}
+
+\begin{proof}
+$U = \sum_i u_i(S_i)$ and the only constraint linking receivers is
+$\sum_i c(S_i) \le B$. Fix any feasible allocation and let
+$b_i = c(S_i)$. Then $u_i(S_i) \le v_i(b_i)$ and $\sum_i b_i \le B$, so
+its value is at most that of the displayed program. Conversely any
+feasible $(b_i)$ with maximisers $S_i$ is a feasible allocation of
+value $\sum_i v_i(b_i)$.
+\end{proof}
+
+Two consequences matter. First, the coupling between receivers is a
+single scalar: a budget price, recovered as the Lagrange multiplier of
+$\sum_i b_i \le B$. Second, and less obviously, the saturation penalty
+enters \emph{only} through the chosen level $b_i$, so $\rho_i$ may have
+any shape whatever --- non-convex, discontinuous, a cliff. This matters
+because the measured degradation curves are S-shaped rather than
+convex, and a rule that reasons about $\rho_i'$ requires convexity to
+argue that its admission bar rises as a receiver fills.
+
+Two algorithm families follow, and we are explicit about what is new.
+
+\paragraph{A density rule.} The marginal of adding $f$ to receiver $i$
+holding $S$ is non-negative iff, to first order,
+$\Delta\mathrm{rel}_i(f\mid S)/c(f) \ge \rho_i'(\mathrm{conf}_i(S))$:
+send an item only when its relevance per token clears that receiver's
+current marginal degradation rate. An item failing the test both
+lowers $u_i$ and consumes budget, so no optimal solution contains one
+--- the restriction is a dominance property rather than an assumption.
+\emph{This rule is not new.} Density-greedy with a positive-marginal
+filter is the distorted-greedy lineage~\cite{harshaw2019}, appears as
+Algorithm~1 of~\cite{shilai2024}, and has been applied to token
+budgets for a single agent. We include it as a baseline for
+completeness.
+
+\paragraph{Marginal allocation.} The objective is separable across
+receivers and coupled only by the shared budget, so the problem
+factors: build each receiver's value-versus-budget curve $v_i(b)$ and
+solve $\max \sum_i v_i(b_i)$ subject to $\sum_i b_i \le B$ by dynamic
+programming. This equalizes marginal value per token \emph{across}
+receivers, which neither a uniform per-receiver rule nor a
+per-receiver density rule can do --- the former spends identically on
+every receiver, the latter has no view of what a token would buy
+elsewhere. The saturation penalty enters only through the chosen
+level, so it may take any shape, including the non-convex ones the
+measurements suggest. \S\ref{sec:exp} reports that this does not, in
+fact, outperform a tuned uniform rule on our benchmark, and why.
+
+\section{Experiments}
+\label{sec:exp}
+
+\paragraph{Setup.} We use MuSiQue-Ans~\cite{musique2022}, where the
+structure we need is annotated: each instance supplies $20$ candidate
+paragraphs with support labels, and sub-questions each carrying the
+index of the paragraph answering it. Receivers are sub-questions,
+the item pool is the paragraph set, and cost is tokens transmitted
+summed over receivers. Ground-truth relevance being labeled makes an
+oracle allocation computable.
+
+Two points of disclosure. MuSiQue is published as a single-agent task;
+splitting it across per-sub-question receivers is our framing. And
+most of its decompositions are sequential, so we restrict to the
+branching families in which two sub-questions carry no back-reference
+and are genuinely independent. Because the benchmark predates current
+models, some answers are memorized; an empty-allocation arm serves as
+a contamination control and we report policy \emph{deltas} rather than
+absolute exact-match. Comparisons are paired --- every policy answers
+the same items --- using McNemar's exact test on discordant pairs.
+
+\begin{table}[t]
+\centering
+\caption{Paired comparisons, $n=120$ receiver-instances,
+matched-budget grid. $\Delta$ is the first policy minus the second;
+token ratio $>1$ means the first is cheaper. Starred $p<0.05$.}
+\label{tab:main}
+\begin{tabular}{lccc}
+\toprule
+Comparison & $\Delta$acc & $p$ & tokens \\
+\midrule
+per-receiver vs.\ seed set & $+0.192$ & $0.0004^{*}$ & $1.1\times$ \\
+oracle vs.\ broadcast      & $+0.050$ & $0.146$      & $21.4\times$ \\
+allocation vs.\ broadcast  & $-0.042$ & $0.227$      & $2.7\times$ \\
+uniform $k{=}5$ vs.\ broadcast & $-0.083$ & $0.013^{*}$ & $5.4\times$ \\
+density vs.\ uniform (matched) & $+0.000$ & $1.000$  & $0.8\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Accuracy and cost per policy, matched-budget grid,
+$n=120$. Tokens are per receiver; the ratio is broadcast's tokens
+divided by the policy's. Absolute exact-match is suppressed in favour
+of deltas because the benchmark is partially memorised
+(\S\ref{sec:exp}); $5\%$ of receiver-instances are answered correctly
+with no context at all.}
+\label{tab:policies}
+\begin{tabular}{lccc}
+\toprule
+Policy & tokens & ratio & $\Delta$acc vs.\ broadcast \\
+\midrule
+broadcast (all items)     & $2258$ & $1.0\times$  & --- \\
+oracle (labelled)         & $99$   & $21.4\times$ & $+0.050$ \\
+per-receiver, uniform     & $418$  & $5.4\times$  & $-0.083$ \\
+density rule              & $502$  & $4.4\times$  & $-0.083$ \\
+marginal allocation       & $831$  & $2.7\times$  & $-0.042$ \\
+seed set (matched)        & $260$  & $8.7\times$  & $-0.263$ \\
+random (matched)          & $345$  & $6.5\times$  & $-0.632$ \\
+no context                & $0$    & ---          & $-0.763$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The separation appears in the data.} The strongest measured
+effect is the first row of Table~\ref{tab:main}: per-receiver
+allocation beats a seed-set baseline --- items ranked by aggregate
+score and sent to everyone --- by $19.2$ accuracy points at matched
+cost. Proposition~\ref{prop:sep} predicts the gap should grow with the
+number of receivers, and it does: as we fuse instances to raise $n$
+from $2$ to $8$ to $16$, seed-set delivery recall falls from $0.45$ to
+$0.08$ to $0.01$ while per-receiver recall stays above $0.55$.
+
+\begin{table}[t]
+\centering
+\caption{Proposition~\ref{prop:sep} predicts the seed-set gap grows
+with the number of receivers. Delivery recall as instances are fused to
+raise $n$. The seed set collapses; per-receiver allocation does not.}
+\label{tab:scaling}
+\begin{tabular}{lccc}
+\toprule
+receivers $n$ & $2$ & $8$ & $16$ \\
+\midrule
+seed set (matched cost)   & $0.45$ & $0.08$ & $0.01$ \\
+per-receiver, uniform     & $0.67$ & $0.56$ & $0.56$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Allocation is cheap.} Allocating rather than broadcasting
+cuts tokens $2.7\times$ with no measurable accuracy cost (row 3,
+$p=0.227$). Pushing to $5.4\times$ does cost $8$ points, significantly
+(row 4), so the frontier is real. The oracle beats broadcast by $\sim5$
+points at $21\times$ fewer tokens, consistently across two models
+($+0.051$ and $+0.050$) though significant on only
+one --- we treat it as a consistent effect at borderline power rather
+than an established one.
+
+\paragraph{A negative result on algorithm design.} Across four
+value-curve designs, marginal allocation does not beat a tuned uniform
+per-receiver rule at matched budget; nor does the density rule
+(row 5, exactly zero at $p=1.000$ while spending $25\%$ more). We also
+found that replacing lexical relevance with a dense embedding scorer
+makes per-receiver retrieval \emph{worse} ($0.43 \to 0.25$ top-$1$
+recall), because the sub-questions are terse relation templates whose
+entity identity a dense encoder discards --- while the same change
+nearly doubles seed-set recall, which needs only instance-level
+topicality.
+
+\begin{table}[t]
+\centering
+\caption{Replacing lexical relevance with a dense embedding scorer
+\emph{harms} per-receiver retrieval but helps the seed set. The two
+signals fail in opposite directions: embeddings capture what an
+instance is about, lexical matching captures which receiver needs
+what.}
+\label{tab:scorer}
+\begin{tabular}{lcc}
+\toprule
+Delivery recall & lexical & embedding \\
+\midrule
+per-receiver, top-$1$ & $\mathbf{0.43}$ & $0.25$ \\
+per-receiver, top-$5$ & $\mathbf{0.79}$ & $0.61$ \\
+seed set, $k{=}3$     & $0.45$ & $\mathbf{0.85}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three independent observations thus point the same way: the binding
+constraint is relevance \emph{estimation}, not allocation
+\emph{optimization}. The oracle fixes the scale of it, reaching full
+delivery on $208$ tokens where the best implementable policy reaches
+$62\%$ on $929$. No allocation algorithm closes that gap, because the
+information required is not present in the scores.
+
+\section{Discussion}
+
+The results divide cleanly. The formulation-level claims are strong:
+the seed-set object is wrong by a factor $\Theta(n)$ even when the
+objective is well behaved, and both the classical toolchain and its
+nearest general successor are unavailable here. The algorithm-level
+claims are deliberately weak: we do not have a method that beats a
+tuned uniform per-receiver rule, and we report that rather than
+selecting a favorable budget point.
+
+We take the negative result to be informative rather than merely
+disappointing. Marginal allocation can only help where per-receiver
+value curves are distinguishable from label-free signals, and on this
+benchmark they are not --- every receiver draws from a common pool with
+a similar score distribution, so an equal split is already near
+optimal. Heterogeneity in what receivers \emph{need} does not surface
+as heterogeneity in what can be \emph{estimated} about them. Settings
+where it does --- receivers with genuinely different and
+predictable appetites --- are where the separation's practical value
+should be sought.
+
+\paragraph{Limitations.} The multi-receiver framing of a single-agent
+benchmark is ours. Our positive result is a separation, not an
+approximation guarantee: we show what fails without supplying a ratio
+for the multi-receiver problem, which we regard as the main open
+question. The saturation penalty is calibrated from published
+degradation curves whose magnitude is model- and task-dependent, and
+at least one study reports large models resisting non-confusable
+distractors almost entirely. Finally, the agent graph is treated as
+given; in deployed systems an orchestrator builds it in response to
+the task, so transmissions reshape the topology they traverse, and we
+have no formal treatment of that feedback.
+
+\section{Conclusion}
+
+Casting inter-agent context sharing as influence maximization is the
+natural move and the wrong one. The obstruction is not that agents
+degrade under irrelevant context, though they do, nor that information
+items interact, though they do; it is that the seed-set object --- one
+set serving a network --- is off by a factor $\Theta(n)$ from the
+per-receiver object the problem actually poses, on instances where the
+objective is as well behaved as one could ask. Two toolchains that
+would otherwise apply are unavailable, the second because its
+structural parameters do not exist rather than because its bound is
+loose.
+
+What follows practically is modest and worth stating without
+inflation. Allocating context instead of broadcasting it is close to
+free: a $2.7\times$ token reduction at no measurable accuracy cost, and
+an oracle suggests an order of magnitude more is available. But the
+route to that order of magnitude does not run through better
+allocation algorithms, which is what we expected and not what we
+found. It runs through better estimates of which receiver needs what.
+
+\balance
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}

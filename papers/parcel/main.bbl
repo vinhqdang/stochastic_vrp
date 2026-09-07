@@ -1,0 +1,268 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{17}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{} and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showURL}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showURL #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[Borgs et~al\mbox{.}(2014)]%
+        {borgs2014}
+\bibfield{author}{\bibinfo{person}{Christian Borgs}, \bibinfo{person}{Michael
+  Brautbar}, \bibinfo{person}{Jennifer Chayes}, {and} \bibinfo{person}{Brendan
+  Lucier}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Maximizing Social Influence in Nearly Optimal
+  Time}. In \bibinfo{booktitle}{\emph{Proc. 25th Annual ACM-SIAM Symposium on
+  Discrete Algorithms (SODA)}}. \bibinfo{pages}{946--957}.
+\newblock
+\href{https://doi.org/10.1137/1.9781611973402.70}{doi:\nolinkurl{10.1137/1.9781611973402.70}}
+
+
+\bibitem[Buchbinder et~al\mbox{.}(2012)]%
+        {buchbinder2012}
+\bibfield{author}{\bibinfo{person}{Niv Buchbinder}, \bibinfo{person}{Moran
+  Feldman}, \bibinfo{person}{Joseph Naor}, {and} \bibinfo{person}{Roy
+  Schwartz}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{A Tight Linear Time (1/2)-Approximation for
+  Unconstrained Submodular Maximization}. In \bibinfo{booktitle}{\emph{Proc.
+  IEEE 53rd Annual Symposium on Foundations of Computer Science (FOCS)}}.
+  \bibinfo{pages}{649--658}.
+\newblock
+\shownote{Journal version: SIAM J. Computing 44(5):1384--1402, 2015,
+  doi:10.1137/130929205}.
+\newblock
+\href{https://doi.org/10.1109/FOCS.2012.73}{doi:\nolinkurl{10.1109/FOCS.2012.73}}
+
+
+\bibitem[Das and Kempe(2011)]%
+        {daskempe2011}
+\bibfield{author}{\bibinfo{person}{Abhimanyu Das} {and} \bibinfo{person}{David
+  Kempe}.} \bibinfo{year}{2011}\natexlab{}.
+\newblock \showarticletitle{Submodular meets Spectral: Greedy Algorithms for
+  Subset Selection, Sparse Approximation and Dictionary Selection}. In
+  \bibinfo{booktitle}{\emph{Proc. 28th Intl. Conf. on Machine Learning
+  (ICML)}}. \bibinfo{pages}{1057--1064}.
+\newblock
+\shownote{Introduces the submodularity ratio.}.
+\newblock
+
+
+\bibitem[Das and Kempe(2018)]%
+        {daskempe2018}
+\bibfield{author}{\bibinfo{person}{Abhimanyu Das} {and} \bibinfo{person}{David
+  Kempe}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Approximate Submodularity and its Applications:
+  Subset Selection, Sparse Approximation and Dictionary Selection}.
+\newblock \bibinfo{journal}{\emph{Journal of Machine Learning Research}}
+  \bibinfo{volume}{19}, \bibinfo{number}{3} (\bibinfo{year}{2018}),
+  \bibinfo{pages}{1--34}.
+\newblock
+
+
+\bibitem[Doney et~al\mbox{.}(2025)]%
+        {eim2025}
+\bibfield{author}{\bibinfo{person}{Jacob Doney}, \bibinfo{person}{Xin Huang},
+  {and} \bibinfo{person}{Chul-Ho Lee}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{{eIM}: {GPU}-Accelerated Efficient Influence
+  Maximization in Large-Scale Social Networks}. In
+  \bibinfo{booktitle}{\emph{Proc. SC'25 Workshops of the Intl. Conf. for High
+  Performance Computing, Networking, Storage and Analysis}}.
+  \bibinfo{pages}{757--765}.
+\newblock
+\href{https://doi.org/10.1145/3731599.3767442}{doi:\nolinkurl{10.1145/3731599.3767442}}
+
+
+\bibitem[Feige and Izsak(2013)]%
+        {feigeizsak2013}
+\bibfield{author}{\bibinfo{person}{Uriel Feige} {and} \bibinfo{person}{Rani
+  Izsak}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{Welfare Maximization and the Supermodular Degree}.
+  In \bibinfo{booktitle}{\emph{Proc. 4th Conf. on Innovations in Theoretical
+  Computer Science (ITCS)}}. \bibinfo{pages}{247--256}.
+\newblock
+\href{https://doi.org/10.1145/2422436.2422466}{doi:\nolinkurl{10.1145/2422436.2422466}}
+
+
+\bibitem[Feige et~al\mbox{.}(2011)]%
+        {feige2011}
+\bibfield{author}{\bibinfo{person}{Uriel Feige}, \bibinfo{person}{Vahab~S.
+  Mirrokni}, {and} \bibinfo{person}{Jan Vondr{\'a}k}.}
+  \bibinfo{year}{2011}\natexlab{}.
+\newblock \showarticletitle{Maximizing Non-monotone Submodular Functions}.
+\newblock \bibinfo{journal}{\emph{SIAM J. Comput.}} \bibinfo{volume}{40},
+  \bibinfo{number}{4} (\bibinfo{year}{2011}), \bibinfo{pages}{1133--1153}.
+\newblock
+\shownote{Preliminary version: FOCS 2007, pp. 461--471,
+  doi:10.1109/FOCS.2007.29}.
+\newblock
+\href{https://doi.org/10.1137/090779346}{doi:\nolinkurl{10.1137/090779346}}
+
+
+\bibitem[Harshaw et~al\mbox{.}(2019)]%
+        {harshaw2019}
+\bibfield{author}{\bibinfo{person}{Chris Harshaw}, \bibinfo{person}{Moran
+  Feldman}, \bibinfo{person}{Justin Ward}, {and} \bibinfo{person}{Amin
+  Karbasi}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Submodular Maximization Beyond Non-negativity:
+  Guarantees, Fast Algorithms, and Applications}. In
+  \bibinfo{booktitle}{\emph{Proc. 36th Intl. Conf. on Machine Learning (ICML)}}
+  \emph{(\bibinfo{series}{PMLR}, Vol.~\bibinfo{volume}{97})}.
+  \bibinfo{pages}{2634--2643}.
+\newblock
+
+
+\bibitem[Iyer and Bilmes(2012)]%
+        {iyerbilmes2012}
+\bibfield{author}{\bibinfo{person}{Rishabh Iyer} {and} \bibinfo{person}{Jeff
+  Bilmes}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{Algorithms for Approximate Minimization of the
+  Difference Between Submodular Functions, with Applications}. In
+  \bibinfo{booktitle}{\emph{Proc. 28th Conf. on Uncertainty in Artificial
+  Intelligence (UAI)}}. \bibinfo{pages}{407--417}.
+\newblock
+\shownote{arXiv:1207.0560}.
+\newblock
+
+
+\bibitem[Kempe et~al\mbox{.}(2003)]%
+        {kempe2003}
+\bibfield{author}{\bibinfo{person}{David Kempe}, \bibinfo{person}{Jon
+  Kleinberg}, {and} \bibinfo{person}{{\'E}va Tardos}.}
+  \bibinfo{year}{2003}\natexlab{}.
+\newblock \showarticletitle{Maximizing the spread of influence through a social
+  network}. In \bibinfo{booktitle}{\emph{Proc. 9th ACM SIGKDD Intl. Conf. on
+  Knowledge Discovery and Data Mining (KDD)}}. \bibinfo{pages}{137--146}.
+\newblock
+\href{https://doi.org/10.1145/956750.956769}{doi:\nolinkurl{10.1145/956750.956769}}
+
+
+\bibitem[Liu et~al\mbox{.}(2024)]%
+        {liu2024}
+\bibfield{author}{\bibinfo{person}{Nelson~F. Liu}, \bibinfo{person}{Kevin Lin},
+  \bibinfo{person}{John Hewitt}, \bibinfo{person}{Ashwin Paranjape},
+  \bibinfo{person}{Michele Bevilacqua}, \bibinfo{person}{Fabio Petroni}, {and}
+  \bibinfo{person}{Percy Liang}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Lost in the Middle: How Language Models Use Long
+  Contexts}.
+\newblock \bibinfo{journal}{\emph{Transactions of the Association for
+  Computational Linguistics}}  \bibinfo{volume}{12} (\bibinfo{year}{2024}),
+  \bibinfo{pages}{157--173}.
+\newblock
+\href{https://doi.org/10.1162/tacl_a_00638}{doi:\nolinkurl{10.1162/tacl_a_00638}}
+
+
+\bibitem[Meena et~al\mbox{.}(2026)]%
+        {imsurvey2026}
+\bibfield{author}{\bibinfo{person}{Sunil~Kumar Meena},
+  \bibinfo{person}{Shashank~Sheshar Singh}, {and} \bibinfo{person}{Kuldeep
+  Singh}.} \bibinfo{year}{2026}\natexlab{}.
+\newblock \showarticletitle{Exploring Influence Maximization: State-of-the-Art
+  Methods, Taxonomies, and Trends}.
+\newblock \bibinfo{journal}{\emph{ACM Transactions on Knowledge Discovery from
+  Data}} \bibinfo{volume}{20}, \bibinfo{number}{2} (\bibinfo{year}{2026}),
+  \bibinfo{pages}{1--50}.
+\newblock
+\href{https://doi.org/10.1145/3779058}{doi:\nolinkurl{10.1145/3779058}}
+
+
+\bibitem[Modarressi et~al\mbox{.}(2025)]%
+        {nolima2025}
+\bibfield{author}{\bibinfo{person}{Ali Modarressi}, \bibinfo{person}{Hanieh
+  Deilamsalehy}, \bibinfo{person}{Franck Dernoncourt}, \bibinfo{person}{Trung
+  Bui}, \bibinfo{person}{Ryan~A. Rossi}, \bibinfo{person}{Seunghyun Yoon},
+  {and} \bibinfo{person}{Hinrich Sch{\"u}tze}.}
+  \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{{NoLiMa}: Long-Context Evaluation Beyond Literal
+  Matching}. In \bibinfo{booktitle}{\emph{Proc. 42nd Intl. Conf. on Machine
+  Learning (ICML)}} \emph{(\bibinfo{series}{PMLR},
+  Vol.~\bibinfo{volume}{267})}. \bibinfo{pages}{44554--44570}.
+\newblock
+\shownote{arXiv:2502.05167. 11 of 13 models claiming >=128K context drop below
+  50\% of their short-context baseline at 32K.}.
+\newblock
+
+
+\bibitem[Shi and Lai(2024)]%
+        {shilai2024}
+\bibfield{author}{\bibinfo{person}{Yishuo Shi} {and} \bibinfo{person}{Xiaoyan
+  Lai}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Approximation algorithm of maximizing non-monotone
+  non-submodular functions under knapsack constraint}.
+\newblock \bibinfo{journal}{\emph{Theoretical Computer Science}}
+  \bibinfo{volume}{990} (\bibinfo{year}{2024}), \bibinfo{pages}{114409}.
+\newblock
+\href{https://doi.org/10.1016/j.tcs.2024.114409}{doi:\nolinkurl{10.1016/j.tcs.2024.114409}}
+
+
+\bibitem[Tang et~al\mbox{.}(2015)]%
+        {tang2015}
+\bibfield{author}{\bibinfo{person}{Youze Tang}, \bibinfo{person}{Yanchen Shi},
+  {and} \bibinfo{person}{Xiaokui Xiao}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{Influence Maximization in Near-Linear Time: A
+  Martingale Approach}. In \bibinfo{booktitle}{\emph{Proc. 2015 ACM SIGMOD
+  Intl. Conf. on Management of Data}}. \bibinfo{pages}{1539--1554}.
+\newblock
+\href{https://doi.org/10.1145/2723372.2723734}{doi:\nolinkurl{10.1145/2723372.2723734}}
+
+
+\bibitem[Trivedi et~al\mbox{.}(2022)]%
+        {musique2022}
+\bibfield{author}{\bibinfo{person}{Harsh Trivedi}, \bibinfo{person}{Niranjan
+  Balasubramanian}, \bibinfo{person}{Tushar Khot}, {and}
+  \bibinfo{person}{Ashish Sabharwal}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{{MuSiQue}: Multihop Questions via Single-hop
+  Question Composition}.
+\newblock \bibinfo{journal}{\emph{Transactions of the Association for
+  Computational Linguistics}}  \bibinfo{volume}{10} (\bibinfo{year}{2022}),
+  \bibinfo{pages}{539--554}.
+\newblock
+\href{https://doi.org/10.1162/tacl_a_00475}{doi:\nolinkurl{10.1162/tacl_a_00475}}
+
+
+\bibitem[Yang et~al\mbox{.}(2025)]%
+        {distracted2025}
+\bibfield{author}{\bibinfo{person}{Minglai Yang}, \bibinfo{person}{Ethan
+  Huang}, \bibinfo{person}{Liang Zhang}, \bibinfo{person}{Mihai Surdeanu},
+  \bibinfo{person}{William~Yang Wang}, {and} \bibinfo{person}{Liangming Pan}.}
+  \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{How Is {LLM} Reasoning Distracted by Irrelevant
+  Context? An Analysis Using a Controlled Benchmark}. In
+  \bibinfo{booktitle}{\emph{Proc. 2025 Conf. on Empirical Methods in Natural
+  Language Processing (EMNLP)}}. \bibinfo{pages}{13329--13347}.
+\newblock
+\shownote{arXiv:2505.18761}.
+\newblock
+\href{https://doi.org/10.18653/v1/2025.emnlp-main.674}{doi:\nolinkurl{10.18653/v1/2025.emnlp-main.674}}
+
+
+\end{thebibliography}
