@@ -363,6 +363,23 @@ def main():
            else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}.jsonl")
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    # Resume: skip work already present in the output file. Runs stop when
+    # a daily allowance runs out, so re-running with fresh keys is the
+    # normal path -- without this it redoes everything and appends
+    # duplicate rows, which would silently double-count in the analysis.
+    done = set()
+    if out.exists():
+        with open(out) as fh:
+            for line in fh:
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue          # tolerate a torn final line
+                if r.get("correct") is not None:
+                    done.add((r["id"], r["policy"], r["cfg"], r["agent"]))
+    if done:
+        print(f"resuming: {len(done)} calls already recorded")
+
     jobs, meta = [], []
     for inst in rows:
         by_idx = {p["idx"]: p for p in inst["paragraphs"]}
@@ -370,6 +387,8 @@ def main():
             alloc = POLICIES[name](inst, rng=random.Random(hash(inst["id"]) % 9),
                                    **kw)
             for i, a in enumerate(inst["agents"]):
+                if (inst["id"], name, json.dumps(kw), i) in done:
+                    continue
                 ids = alloc[i]
                 jobs.append(build_prompt(inst, ids, a, random.Random(i)))
                 meta.append({"id": inst["id"], "policy": name,
