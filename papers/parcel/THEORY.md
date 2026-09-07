@@ -68,6 +68,26 @@ and pay `1` for each further item. Broadcasting `S` to everyone gives
 utility `|S| − n·max(0, |S| − 1)`, maximised at `|S| = 1` with value
 `1`; per-receiver allocation again gives `n`. ∎
 
+**(c) Unbounded — added and VERIFIED 2026-09-07 by
+`code/unbounded_check.py`.** Same items and receivers, broadcast still
+free, but a receiver pays `lam` for each item it receives that is
+irrelevant to it. Broadcasting `S` gives `|S|·(1 − lam·(n−1))`: every
+item satisfies its own receiver and distracts the other `n−1`. For any
+`lam > 1/(n−1)` this is strictly negative for every non-empty `S`, so
+the best seed set is the **empty** one, value `0`. Per-receiver
+allocation sends item `i` to receiver `i` alone, pays no penalty, and
+still gets `n`. Ratio `n/0`. ∎
+
+**Consequence for how Proposition 1 should be stated.** The factor `n`
+of (a) is the one-set formulation's **best case**, attained exactly
+where its own assumptions hold (modular relevance, `rho ≡ 0`, so the
+objective is monotone and submodular). Once saturation is strong
+enough to make broadcasting actively harmful, the gap has no finite
+bound. Do **not** write "Θ(n)" as if `n` were an upper bound — there
+is no matching upper bound, and a referee could construct (c)
+themselves. The manuscript now says "a factor `n` on benign instances,
+unbounded in general".
+
 **Why (b) matters more than (a).** A referee can dismiss (a) as an
 artefact of charging per receiver. (b) removes that objection: even
 with free broadcast the seed set is capped, because **an extra
@@ -192,6 +212,42 @@ overclaim and unsupported by our own experiments.
    (consistent across two models, borderline power).
 4. **Proposition 2, Proposition 4** — completeness and method, both
    credited as routine or prior.
+
+---
+
+## Corollary (of Proposition 5) — approximation transfers
+
+**Status: PROVED, and VERIFIED by `code/unbounded_check.py` (claim B,
+400 random instances against brute-force enumeration).**
+
+> **Corollary.** If for each receiver `i` an oracle returns, for each
+> level `b`, a set `S̃_i(b)` with `c(S̃_i(b)) ≤ b` and
+> `u_i(S̃_i(b)) ≥ (1−eps)·v_i(b)`, then the resource-allocation DP run
+> on the curves `ṽ_i(b) = u_i(S̃_i(b))` returns a feasible allocation
+> worth at least `(1−eps)·OPT`.
+
+**Proof.** Let `(b_i*)` maximise `Σ v_i(b_i)` under `Σ b_i ≤ B`; by
+Proposition 5 its value is `OPT`. The DP returns
+`max{Σ ṽ_i(b_i) : Σ b_i ≤ B} ≥ Σ ṽ_i(b_i*) ≥ (1−eps)·Σ v_i(b_i*)
+= (1−eps)·OPT`. Feasibility and attainment hold because each `ṽ_i(b)`
+is realised by an actual set of cost `≤ b`, and `ṽ_i(b) ≥ 0` because
+`∅` is always available. ∎
+
+**Why it is worth stating despite being routine.** The technique is
+textbook resource allocation and the paper credits it as such. The
+*conclusion* is the contribution: with `rho_i ≡ 0` each `v_i` is a
+knapsack value function and such oracles exist for every `eps`, so in
+that regime the `n`-receiver problem is **no harder to approximate
+than the 1-receiver problem**. Paired with Proposition 1 this gives a
+clean pair of statements — the seed-set object loses a factor `n` or
+worse, and the correct object costs nothing in approximability. So the
+reason to abandon the one-set formulation is not tractability.
+
+This is also the project's **only positive guarantee**, and it is
+conditional. The unconditional ratio for non-trivial `rho_i` remains
+the biggest gap (below).
+
+---
 
 ## Open, and honestly so
 

@@ -7,9 +7,10 @@
 - **Venue:** **AAMAS 2027**, the 26th International Conference on
   Autonomous Agents and Multiagent Systems, **Hanoi, Vietnam,
   3–7 May 2027**. Main track.
-- **State:** **ACTIVE — drafting.** Manuscript at **5 pages**
-  (`main.tex`, AAMAS `sigconf` anonymous mode), compiles clean with
-  zero errors against the official class. Theory in `THEORY.md`,
+- **State:** **ACTIVE — drafting.** Manuscript at **8 pages of body**
+  (`main.tex`, AAMAS `sigconf` anonymous mode) — the full allowance,
+  with references spilling to page 9 and therefore not counted.
+  Compiles clean with zero errors against the official class. Theory in `THEORY.md`,
   empirical record in `RESULTS.md`, spec in `PROJECT.md`.
 
 ### Blocking before submission
@@ -36,8 +37,14 @@
    OpenReview registration).
 5. The 8 calibration citations in `VERIFY_CITATIONS.md` remain
    unverified; none of them is currently load-bearing in `main.tex`.
-6. Page budget: 5 of 8 used. Appendices appear to count, so proofs
-   must stay in-body.
+6. ✅ Page budget: **8 of 8 used**, body ending on page 8 with
+   references starting there and running onto page 9. All proofs are
+   in-body (appendices are not exempted). Any further addition now
+   requires cutting something — check the count after every edit.
+7. The AAMAS copyright block, `\setcopyright{ifaamas}` and
+   `\acmConference` were **missing** and are now in place; the footer
+   had been rendering the ACM placeholder "Conference'17, Washington
+   DC". Worth re-checking after any preamble edit.
 
 ## Deadlines — VERIFIED 2026-09-06 against the official call
 

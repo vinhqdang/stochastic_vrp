@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{23}
+\begin{thebibliography}{26}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -64,11 +64,28 @@
 \href{https://doi.org/10.1109/FOCS.2012.73}{doi:\nolinkurl{10.1109/FOCS.2012.73}}
 
 
-\bibitem[Chen et~al\mbox{.}(2026)]%
+\bibitem[Chen et~al\mbox{.}(2026a)]%
+        {tokenecon2026}
+\bibfield{author}{\bibinfo{person}{Yuxi Chen}, \bibinfo{person}{Junming Chen},
+  \bibinfo{person}{Chenyu He}, \bibinfo{person}{Yiwei Li},
+  \bibinfo{person}{Yicheng Ji}, \bibinfo{person}{Yifan Wu},
+  \bibinfo{person}{Dingyu Yang}, \bibinfo{person}{Lansong Diao},
+  \bibinfo{person}{Lidan Shou}, \bibinfo{person}{Hongliang Zhang},
+  \bibinfo{person}{Huan Li}, {and} \bibinfo{person}{Gang Chen}.}
+  \bibinfo{year}{2026}\natexlab{a}.
+\newblock \bibinfo{title}{Token Economics for {LLM} Agents: A Dual-View Study
+  from Computing and Economics}.
+\newblock
+\shownote{Survey; preprint}.
+\newblock
+\showeprint[arxiv]{2605.09104}~[cs.MA]
+
+
+\bibitem[Chen et~al\mbox{.}(2026b)]%
         {bps2026}
 \bibfield{author}{\bibinfo{person}{Yu Chen}, \bibinfo{person}{Ruishuo Chen},
   \bibinfo{person}{Xun Wang}, \bibinfo{person}{Zhuoran Li}, {and}
-  \bibinfo{person}{Longbo Huang}.} \bibinfo{year}{2026}\natexlab{}.
+  \bibinfo{person}{Longbo Huang}.} \bibinfo{year}{2026}\natexlab{b}.
 \newblock \bibinfo{title}{Optimal Skill Selection for {LLM} Agents with
   Provable Bicriteria Guarantees}.
 \newblock
@@ -113,6 +130,20 @@
   \bibinfo{pages}{757--765}.
 \newblock
 \href{https://doi.org/10.1145/3731599.3767442}{doi:\nolinkurl{10.1145/3731599.3767442}}
+
+
+\bibitem[Fan et~al\mbox{.}(2026)]%
+        {todycomm2026}
+\bibfield{author}{\bibinfo{person}{Wenzhe Fan}, \bibinfo{person}{Tommaso
+  Tognoli}, \bibinfo{person}{Henry~Peng Zou}, \bibinfo{person}{Chunyu Miao},
+  \bibinfo{person}{Yibo Wang}, {and} \bibinfo{person}{Xinhua Zhang}.}
+  \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{{TodyComm}: Task-Oriented Dynamic Communication for
+  Multi-Round {LLM}-based Multi-Agent System}.
+\newblock
+\shownote{Preprint}.
+\newblock
+\showeprint[arxiv]{2602.03688}~[cs.MA]
 
 
 \bibitem[Feige and Izsak(2013)]%
@@ -272,6 +303,21 @@
 \shownote{arXiv:2502.05167. 11 of 13 models claiming >=128K context drop below
   50\% of their short-context baseline at 32K.}.
 \newblock
+
+
+\bibitem[Shen et~al\mbox{.}(2025)]%
+        {propagation2025}
+\bibfield{author}{\bibinfo{person}{Xu Shen}, \bibinfo{person}{Yixin Liu},
+  \bibinfo{person}{Yiwei Dai}, \bibinfo{person}{Yili Wang},
+  \bibinfo{person}{Rui Miao}, \bibinfo{person}{Yue Tan},
+  \bibinfo{person}{Shirui Pan}, {and} \bibinfo{person}{Xin Wang}.}
+  \bibinfo{year}{2025}\natexlab{}.
+\newblock \bibinfo{title}{Understanding the Information Propagation Effects of
+  Communication Topologies in {LLM}-based Multi-Agent Systems}.
+\newblock
+\shownote{Preprint}.
+\newblock
+\showeprint[arxiv]{2505.23352}~[cs.MA]
 
 
 \bibitem[Shi et~al\mbox{.}(2026)]%
