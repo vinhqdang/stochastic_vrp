@@ -34,6 +34,7 @@ import json
 import math
 import os
 import pathlib
+import re
 import time
 import urllib.error
 import urllib.request
@@ -41,10 +42,12 @@ import urllib.request
 MODEL = "gemini-embedding-2"
 URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
        f"{MODEL}:batchEmbedContents?key={{key}}")
-CACHE = pathlib.Path(__file__).parent / "results" / "embed_cache.json"
+CACHE = pathlib.Path(__file__).parent / "results" / "embed_cache.jsonl"
 BATCH = 32
 DIM = 768        # ranking quality is flat well below the 3072 default
 ROUND = 5        # storage precision; irrelevant to cosine ordering
+RETRIES = 25     # free-tier embedding is paced at ~40s between
+                 # batches, so patience is the whole strategy
 
 
 def _key(text):
@@ -56,19 +59,38 @@ class Embedder:
         self.key = key or os.environ.get("GEMINI_API_KEY")
         if not self.key:
             raise SystemExit("set GEMINI_API_KEY")
+        # Append-only: rewriting the whole map after every batch is
+        # quadratic in bytes written, and with a few thousand vectors it
+        # dominated the runtime -- two earlier runs were killed by
+        # timeouts because of it, not because of the API.
         self.cache = {}
         if CACHE.exists():
-            try:
-                self.cache = json.loads(CACHE.read_text())
-            except json.JSONDecodeError:
-                self.cache = {}
-        self._dirty = 0
+            with open(CACHE) as fh:
+                for line in fh:
+                    if not line.strip():
+                        continue
+                    try:
+                        k, v = json.loads(line)
+                        self.cache[k] = v
+                    except (json.JSONDecodeError, ValueError):
+                        continue      # tolerate a torn final line
+        self._fh = None
 
     def save(self):
-        if self._dirty:
+        if self._fh:
+            self._fh.flush()
+
+    def _append(self, key, vec):
+        if self._fh is None:
             CACHE.parent.mkdir(parents=True, exist_ok=True)
-            CACHE.write_text(json.dumps(self.cache))
-            self._dirty = 0
+            self._fh = open(CACHE, "a")
+        self._fh.write(json.dumps([key, vec]) + "\n")
+        self.cache[key] = vec
+
+    def close(self):
+        if self._fh:
+            self._fh.close()
+            self._fh = None
 
     def _fetch(self, texts):
         payload = json.dumps({
@@ -76,7 +98,7 @@ class Embedder:
                           "content": {"parts": [{"text": t[:8000]}]},
                           "outputDimensionality": DIM}
                          for t in texts]}).encode()
-        for attempt in range(6):
+        for attempt in range(RETRIES):
             req = urllib.request.Request(
                 URL.format(key=self.key), data=payload,
                 headers={"Content-Type": "application/json"})
@@ -90,25 +112,36 @@ class Embedder:
                     detail = exc.read().decode()[:300]
                 except Exception:
                     pass
-                if exc.code == 429 and attempt < 5:
-                    time.sleep(15 * (attempt + 1))
+                if exc.code == 429 and attempt < RETRIES - 1:
+                    # Honour the API's own retryDelay rather than guessing.
+                    # A fixed escalating sleep overshot the caller's
+                    # timeout and made a recoverable pause look like a
+                    # failure.
+                    m = (re.search(r'"retryDelay"\s*:\s*"?(\d+(?:\.\d+)?)s',
+                                   detail)
+                         or re.search(r"retry in (\d+(?:\.\d+)?)s", detail))
+                    time.sleep(min(float(m.group(1)) + 1 if m else 8.0, 40.0))
                     continue
                 raise RuntimeError(f"embed HTTP{exc.code}: {detail}")
             except (urllib.error.URLError, TimeoutError) as exc:
-                if attempt == 5:
+                if attempt == RETRIES - 1:
                     raise RuntimeError(f"embed failed: {exc}")
                 time.sleep(2 ** attempt)
         raise RuntimeError("embed unreachable")
 
-    def embed(self, texts):
+    def embed(self, texts, progress=False):
         """Return one unit-normalised vector per text, using the cache."""
         missing = [t for t in dict.fromkeys(texts) if _key(t) not in self.cache]
+        if progress and missing:
+            print(f"  embedding {len(missing)} new texts "
+                  f"({len(self.cache)} already cached)", flush=True)
         for i in range(0, len(missing), BATCH):
+            if progress and i and i % (BATCH * 5) == 0:
+                print(f"    {i}/{len(missing)}", flush=True)
             chunk = missing[i:i + BATCH]
             for text, vec in zip(chunk, self._fetch(chunk)):
                 n = math.sqrt(sum(v * v for v in vec)) or 1.0
-                self.cache[_key(text)] = [round(v / n, ROUND) for v in vec]
-                self._dirty += 1
+                self._append(_key(text), [round(v / n, ROUND) for v in vec])
             self.save()
         return [self.cache[_key(t)] for t in texts]
 
@@ -130,8 +163,8 @@ def build_scorer(instances, embedder=None):
             texts.append(p["title"] + ". " + p["text"])
         for a in inst["agents"]:
             texts.append(a["q"])
-    vecs = dict(zip(texts, emb.embed(texts)))
-    emb.save()
+    vecs = dict(zip(texts, emb.embed(texts, progress=True)))
+    emb.close()
 
     def score(par, agent):
         pv = vecs.get(par["title"] + ". " + par["text"])

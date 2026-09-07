@@ -3,4 +3,5 @@
 *.jsonl
 *.log
 embed_cache.json
+embed_cache.jsonl
 !summary_*.json
