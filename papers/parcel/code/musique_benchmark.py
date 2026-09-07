@@ -98,10 +98,45 @@ def load_instances(limit, family="branching", seed=0):
             "agents": [{"q": q["question"], "answer": q["answer"],
                         "needs": q["paragraph_support_idx"]}
                        for q in indep],
+            "full_q": r["question"],
+            "full_a": r["answer"],
         })
     random.Random(seed).shuffle(rows)
     rows = rows[:limit] if limit else rows
     return rows
+
+
+def add_composite_receivers(rows):
+    """Add a receiver holding the FULL multi-hop question.
+
+    WHY. Proposition 1's advantage grows with receiver HETEROGENEITY,
+    and the branching subset has none: every sub-question receiver needs
+    exactly one paragraph, so a uniform per-receiver allowance is
+    already near-optimal and there is nothing for marginal allocation to
+    exploit. That is why the DP only tied.
+
+    MuSiQue supplies grounded heterogeneity without inventing a task.
+    Its top-level `question` requires ALL supporting paragraphs, so a
+    receiver holding it needs 2-4 items where a sub-question receiver
+    needs 1. A single global k must then either starve the composite
+    receiver or overfeed the simple ones -- precisely the failure the
+    per-receiver formulation is supposed to avoid.
+
+    `needs_all` marks the composite receiver so recall is scored
+    all-or-nothing: a multi-hop question is not answerable from a subset
+    of its hops, and scoring it fractionally would hide the effect.
+    """
+    out = []
+    for inst in rows:
+        gold = [p["idx"] for p in inst["paragraphs"] if p.get("gold")]
+        if len(gold) < 2:
+            continue
+        agents = [dict(a, needs_all=[a["needs"]]) for a in inst["agents"]]
+        agents.append({"q": inst["full_q"], "answer": inst["full_a"],
+                       "needs": gold[0], "needs_all": list(gold),
+                       "composite": True})
+        out.append(dict(inst, agents=agents))
+    return out
 
 
 def merge_instances(rows, m, seed=0):
@@ -234,7 +269,15 @@ def p_none(inst, **_):
 
 
 def p_oracle(inst, **_):
-    return {i: [a["needs"]] for i, a in enumerate(inst["agents"])}
+    """Exactly what each receiver needs -- all of it.
+
+    Returning a single paragraph capped the ceiling at 0.67 once
+    composite receivers existed, because a multi-hop receiver needs
+    every supporting paragraph. The oracle is the upper bound, so
+    getting this wrong understates what allocation can achieve.
+    """
+    return {i: list(a.get("needs_all", [a["needs"]]))
+            for i, a in enumerate(inst["agents"])}
 
 
 def p_random(inst, k=3, rng=None, **_):
@@ -341,15 +384,15 @@ def p_dp(inst, per_recv=200, bins=24, sat=0.0, **_):
                         reverse=True)
         row = []
         for lvl in levels:
-            got, spend, miss = [], 0, 1.0
+            got, spend, mass = [], 0, 0.0
             for p in ranked:
                 t = tokens_of(p)
                 if spend + t > lvl:
                     continue
                 got.append(p["idx"])
                 spend += t
-                miss *= (1.0 - q[p["idx"]])
-            row.append(((1.0 - miss) - sat * spend, list(got)))
+                mass += q[p["idx"]]
+            row.append((mass - sat * spend, list(got)))
         curves.append(row)
 
     n = len(inst["agents"])
@@ -457,7 +500,8 @@ def dry_run(rows):
             for i, a in enumerate(inst["agents"]):
                 ids = alloc[i]
                 tok += sum(tokens_of(by_idx[j]) for j in ids if j in by_idx)
-                rec += 1.0 if a["needs"] in ids else 0.0
+                need = a.get("needs_all", [a["needs"]])
+                rec += 1.0 if all(j in ids for j in need) else 0.0
                 n += 1
         print(f"{name:11s} {json.dumps(kw):>14s} {tok / n:10.0f} {rec / n:8.2f}")
 
@@ -466,6 +510,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--model", default="gemini-3.5-flash-lite")
     ap.add_argument("--instances", type=int, default=150)
+    ap.add_argument("--composite", action="store_true",
+                    help="add a receiver holding the full multi-hop "
+                         "question, which needs ALL supporting paragraphs "
+                         "-- creates the receiver heterogeneity Prop 1 "
+                         "predicts the advantage from")
     ap.add_argument("--merge", type=int, default=1,
                     help="fuse m instances into one problem with 2m "
                          "receivers (Prop 1 predicts the gap grows with n)")
@@ -488,6 +537,8 @@ def main():
     CONFIGS = {"core": CONFIGS_CORE, "min": CONFIGS_MIN,
                "full": CONFIGS_FULL, "head": CONFIGS_HEAD}[args.grid]
     rows = load_instances(args.instances, args.family)
+    if args.composite:
+        rows = add_composite_receivers(rows)
     if args.merge > 1:
         rows = merge_instances(rows, args.merge)
     print(f"{len(rows)} instances, "
@@ -511,8 +562,9 @@ def main():
         sys.exit("set GEMINI_API_KEY")
 
     tag = args.model.replace("/", "-")
+    suffix = "c" if args.composite else ""
     out = (pathlib.Path(args.out) if args.out
-           else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}_m{args.merge}.jsonl")
+           else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}_m{args.merge}{suffix}.jsonl")
     out.parent.mkdir(parents=True, exist_ok=True)
 
     # Resume: skip work already present in the output file. Runs stop when
@@ -548,7 +600,10 @@ def main():
                              "tokens": sum(tokens_of(by_idx[j])
                                            for j in ids if j in by_idx),
                              "n_sent": len(ids),
-                             "had_gold": a["needs"] in ids,
+                             "had_gold": all(
+                                 j in ids
+                                 for j in a.get("needs_all", [a["needs"]])),
+                             "composite": bool(a.get("composite")),
                              "gold": a["answer"], "model": args.model})
 
     print(f"{len(jobs)} calls -> {out}")

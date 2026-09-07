@@ -106,6 +106,60 @@ model, and pool across models before claiming it.
 
 ---
 
+## 1c. Marginal allocation does not beat uniform top-k either
+
+The decomposition (THEORY.md Prop 5) gives an algorithm no baseline can
+imitate: build each receiver's value-versus-budget curve, then solve a
+resource-allocation DP for the split that equalises marginal value per
+token. A global `k` cannot reallocate between receivers; greedy pricing
+has no view of what a token would buy elsewhere.
+
+**It ties.** Four value-curve designs were tried, on 130 instances,
+scored by delivery recall at matched spend:
+
+| value curve for `v_i(b)` | outcome vs tuned top-k |
+|---|---|
+| sum of relevance scores | **loses** — near-linear in `b`, so nothing to balance; pours budget into receivers with many mediocre candidates |
+| noisy-OR over normalised scores | ties; +4–5pp at large budgets only |
+| captured share of own score mass | ties |
+| any of the above, with composite receivers | ties (≈11% cheaper at equal recall, +2.5pp at equal tokens) |
+
+Composite receivers were added specifically to create the heterogeneity
+Proposition 1 predicts the advantage from: MuSiQue's full multi-hop
+question needs **all** its supporting paragraphs (2–4) where a
+sub-question receiver needs 1, so a global `k` must starve one or
+overfeed the other. Even then, marginal allocation only matches.
+
+### Why — and this is the useful finding
+
+Marginal allocation can only help if the per-receiver value curves are
+**distinguishable from label-free signals**. On this benchmark they are
+not: every receiver draws from the same pool with a similar score
+distribution, so the curves look alike and an equal split is already
+near-optimal. Heterogeneity in what receivers *need* (1 vs 3 items)
+does not show up as heterogeneity in what can be *estimated* about
+them.
+
+That is the third independent line of evidence for the same
+conclusion. The pricing rule ties (§1b); marginal allocation ties
+(here); and a stronger scorer family makes things *worse* (§2). All
+three say the binding constraint is **relevance estimation, not
+allocation optimisation**.
+
+The oracle makes the size of it plain: **1.00 recall at 208 tokens**,
+where the best practical policy reaches 0.62 at 929. No allocation
+algorithm closes that gap, because the information required to allocate
+well is not present in the scores. That is a statement about the
+problem, not about our algorithms, and it is worth more to the paper
+than a three-percent win would have been.
+
+⚠️ **Consequence for the paper: do not claim an algorithmic win.**
+The contribution is the separation theorem, the two degeneracy results,
+and the measured fact that allocation buys large token savings for free
+while the remaining gap is an estimation problem.
+
+---
+
 ## 2. Relevance scorer: dense embeddings are WORSE here
 
 **Prediction falsified.** The retrieval bottleneck (top-1 recall of the
