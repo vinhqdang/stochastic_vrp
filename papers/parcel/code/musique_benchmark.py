@@ -100,7 +100,49 @@ def load_instances(limit, family="branching", seed=0):
                        for q in indep],
         })
     random.Random(seed).shuffle(rows)
-    return rows[:limit] if limit else rows
+    rows = rows[:limit] if limit else rows
+    return rows
+
+
+def merge_instances(rows, m, seed=0):
+    """Fuse m instances into one allocation problem with 2m receivers.
+
+    WHY. Proposition 1 says the advantage of per-receiver allocation over
+    one-set-for-everyone grows as Theta(n). A single MuSiQue instance has
+    only 2 independent receivers, each needing exactly 1 paragraph, so
+    the receivers are nearly symmetric and a uniform allowance is already
+    near-optimal -- there is no heterogeneity for marginal allocation to
+    exploit, and measurement at n=2 cannot see the effect the theory
+    predicts.
+
+    Merging m instances gives 2m receivers over a shared pool of 20m
+    paragraphs. Receivers now differ sharply in how peaked their
+    relevance scores are: some have one obvious candidate, others a flat
+    and misleading spread. That difference is what a per-receiver budget
+    can act on and a global k cannot.
+
+    This is OUR construction and must be disclosed as such. It changes
+    the retrieval difficulty (a 20m-paragraph pool is harder than 20),
+    which is why every policy is re-measured on the merged instances
+    rather than compared across merge levels.
+    """
+    rng = random.Random(seed)
+    out = []
+    for i in range(0, len(rows) - m + 1, m):
+        chunk = rows[i:i + m]
+        paras, agents, offset = [], [], 0
+        for inst in chunk:
+            remap = {}
+            for p in inst["paragraphs"]:
+                remap[p["idx"]] = offset
+                paras.append({**p, "idx": offset})
+                offset += 1
+            for a in inst["agents"]:
+                agents.append({**a, "needs": remap[a["needs"]]})
+        rng.shuffle(paras)
+        out.append({"id": "+".join(c["id"] for c in chunk),
+                    "paragraphs": paras, "agents": agents})
+    return out
 
 
 def norm(s):
@@ -243,7 +285,99 @@ def p_parcel(inst, lam=0.0, c_star=1500.0, q=0.5, **_):
     return out
 
 
-POLICIES = {"broadcast": p_broadcast, "none": p_none, "oracle": p_oracle,
+def p_dp(inst, per_recv=200, bins=24, sat=0.0, **_):
+    """MARGINAL ALLOCATION: split one global budget across receivers.
+
+    This is the algorithm the separation result implies, and it is
+    structurally different from every baseline here.
+
+    The objective is separable across receivers and coupled only by the
+    shared budget, so the problem factors: build each receiver's own
+    value-versus-budget curve, then solve a resource-allocation DP for
+    the split that maximises the total. The DP equalises MARGINAL value
+    per token across receivers instead of giving each the same
+    allowance.
+
+    Top-k cannot do this: one global k spends the same on a receiver
+    whose best candidate is obvious and on one whose candidates are
+    uniformly mediocre. Greedy pricing cannot either -- it accumulates
+    per receiver against a threshold with no view of what the budget
+    would buy elsewhere.
+
+    `sat` optionally charges a per-receiver saturation penalty on the
+    chosen level. It enters only through the level, so it may be any
+    shape at all -- convex, a cliff, non-monotone. The greedy admission
+    price needs rho convex for its rising-bar argument, and the measured
+    curves are S-shaped rather than convex, so this is where the two
+    algorithms genuinely differ.
+    """
+    # `per_recv` is the average allowance per receiver, so the pool
+    # scales with n and the comparison against a per-receiver top-k is
+    # at matched spend. (Passing a fixed TOTAL made the DP compete at a
+    # fraction of top-k's budget once receivers were merged.)
+    budget = per_recv * len(inst["agents"])
+    step = max(1, budget // bins)
+    levels = [b * step for b in range(bins + 1)]
+
+    # Per-receiver value curve: greedily fill by relevance density, which
+    # is exact for a modular relevance and near-optimal for a submodular
+    # one, then subtract the level's saturation charge.
+    curves = []
+    for a in inst["agents"]:
+        # Per-receiver value is the estimated CHANCE the receiver holds
+        # what it needs, as a noisy-OR over normalised scores -- not the
+        # sum of scores. This matters: a sum is near-linear in budget, so
+        # the DP had nothing to balance and simply poured tokens into
+        # receivers with many mediocre-but-scoring candidates, starving
+        # ones with a single sharply-peaked correct match. A noisy-OR is
+        # concave and saturating, so marginal value per token falls as a
+        # receiver fills, which is exactly the quantity the DP should be
+        # equalising across receivers.
+        raw = {p["idx"]: max(0.0, relevance(p, a)) for p in inst["paragraphs"]}
+        tot = sum(raw.values()) or 1.0
+        q = {k: v / tot for k, v in raw.items()}          # label-free
+        ranked = sorted(inst["paragraphs"],
+                        key=lambda p: q[p["idx"]] / tokens_of(p),
+                        reverse=True)
+        row = []
+        for lvl in levels:
+            got, spend, miss = [], 0, 1.0
+            for p in ranked:
+                t = tokens_of(p)
+                if spend + t > lvl:
+                    continue
+                got.append(p["idx"])
+                spend += t
+                miss *= (1.0 - q[p["idx"]])
+            row.append(((1.0 - miss) - sat * spend, list(got)))
+        curves.append(row)
+
+    n = len(inst["agents"])
+    NEG = float("-inf")
+    dp = [[NEG] * (bins + 1) for _ in range(n + 1)]
+    pick = [[None] * (bins + 1) for _ in range(n + 1)]
+    for b in range(bins + 1):
+        dp[n][b] = 0.0
+    for i in range(n - 1, -1, -1):
+        for b in range(bins + 1):
+            for spend in range(b + 1):
+                v, ids = curves[i][spend]
+                nxt = dp[i + 1][b - spend]
+                if nxt == NEG:
+                    continue
+                if v + nxt > dp[i][b]:
+                    dp[i][b] = v + nxt
+                    pick[i][b] = (spend, ids)
+
+    out, b = {}, bins
+    for i in range(n):
+        spend, ids = pick[i][b]
+        out[i] = ids
+        b -= spend
+    return out
+
+
+POLICIES = {"broadcast": p_broadcast, "dp": p_dp, "none": p_none, "oracle": p_oracle,
             "random": p_random, "centrality": p_centrality,
             "topk": p_topk, "parcel": p_parcel}
 
@@ -253,6 +387,7 @@ CONFIGS_FULL = (
     + [("centrality", {"k": k}) for k in (1, 3, 6)]
     + [("topk", {"k": k}) for k in (1, 2, 3, 5, 10)]
     + [("parcel", {"q": q}) for q in (0.95, 0.85, 0.7, 0.5, 0.3)]
+    + [("dp", {"per_recv": b}) for b in (60, 120, 200, 350, 550)]
 )
 
 # The Gemini free tier allows 500 requests/day PER MODEL. The full grid
@@ -265,6 +400,7 @@ CONFIGS_MIN = (
     + [("random", {"k": 3}), ("centrality", {"k": 3})]
     + [("topk", {"k": k}) for k in (1, 3, 5, 10)]
     + [("parcel", {"q": q}) for q in (0.95, 0.7, 0.3)]
+    + [("dp", {"per_recv": b}) for b in (120, 200, 350, 550)]
 )
 
 # For the POWERED test, only the four arms that carry the claims. At 8
@@ -277,6 +413,14 @@ CONFIGS_MIN = (
 #   parcel     the two-price rule at its most permissive setting
 CONFIGS_CORE = [("broadcast", {}), ("oracle", {}),
                 ("topk", {"k": 5}), ("parcel", {"q": 0.3})]
+
+# Head-to-head at MATCHED spend: the single comparison that decides
+# whether marginal allocation beats a tuned global k. topk k=5 spends
+# ~411 tokens/agent, dp per_recv=350 spends ~324 -- so the DP is given
+# LESS budget, not more, and any accuracy win is not bought with tokens.
+CONFIGS_HEAD = [("broadcast", {}), ("oracle", {}), ("none", {}),
+                ("topk", {"k": 5}), ("dp", {"per_recv": 350}),
+                ("topk", {"k": 3}), ("dp", {"per_recv": 200})]
 
 CONFIGS = CONFIGS_MIN
 
@@ -322,6 +466,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--model", default="gemini-3.5-flash-lite")
     ap.add_argument("--instances", type=int, default=150)
+    ap.add_argument("--merge", type=int, default=1,
+                    help="fuse m instances into one problem with 2m "
+                         "receivers (Prop 1 predicts the gap grows with n)")
     ap.add_argument("--family", default="branching",
                     choices=["branching", "2hop"])
     ap.add_argument("--workers", type=int, default=3)
@@ -330,7 +477,7 @@ def main():
                     choices=["lexical", "embed"],
                     help="relevance signal: bag-of-words, or cached "
                          "embedding cosine (recommended)")
-    ap.add_argument("--grid", default="min", choices=["core", "min", "full"],
+    ap.add_argument("--grid", default="min", choices=["core", "min", "full", "head"],
                     help="core=4 arms (8 calls/instance -- best power per "
                          "unit of the 500/day/model allowance); min=12; "
                          "full=19")
@@ -339,9 +486,14 @@ def main():
 
     global CONFIGS
     CONFIGS = {"core": CONFIGS_CORE, "min": CONFIGS_MIN,
-               "full": CONFIGS_FULL}[args.grid]
+               "full": CONFIGS_FULL, "head": CONFIGS_HEAD}[args.grid]
     rows = load_instances(args.instances, args.family)
-    print(f"{len(rows)} instances, {sum(len(r['agents']) for r in rows)} agents")
+    if args.merge > 1:
+        rows = merge_instances(rows, args.merge)
+    print(f"{len(rows)} instances, "
+          f"{sum(len(r['agents']) for r in rows)} agents, "
+          f"{sum(len(r['paragraphs']) for r in rows) // max(len(rows),1)} "
+          f"paragraphs/instance")
 
     if args.scorer == "embed":
         global SCORER
@@ -360,7 +512,7 @@ def main():
 
     tag = args.model.replace("/", "-")
     out = (pathlib.Path(args.out) if args.out
-           else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}.jsonl")
+           else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}_m{args.merge}.jsonl")
     out.parent.mkdir(parents=True, exist_ok=True)
 
     # Resume: skip work already present in the output file. Runs stop when
