@@ -240,3 +240,37 @@ per instance, so one project-model pair buys ~62 instances a day.
 **Contamination control:** 0–5% of agent-instances are answerable with
 no context at all, and results are reported both with and without them.
 Deltas, never absolute EM.
+
+---
+
+## 5. Two logged traces, quoted in the manuscript
+
+Added 2026-09-09 to make the mechanism concrete rather than only
+statistical. Both are real logged calls, not constructed examples;
+reproducible from the committed JSONL plus `code/musique_benchmark.py`
+(policy functions are pure and offline — no API call needed to
+recompute which items a policy delivers, only to reproduce the model's
+answer).
+
+**Trace 1 — over-delivery misleads.** Instance
+`4hop2__161602_474028_88460_20985`, receiver 0 (`Who hosted the
+tournament?`, gold `Thailand`, supporting paragraph idx 17).
+`gemini-3.1-flash-lite`: broadcast (20 paragraphs, 2297 tokens) →
+`"Russia"` (wrong); oracle (1 paragraph, 43 tokens, 53.4× cheaper) →
+`"Thailand"` (correct). Source:
+`results/musique_gemini-3.1-flash-lite_lexical_run1.jsonl` and
+`..._core.jsonl`.
+
+**Trace 2 — the seed set starves a receiver.** Instance
+`3hop2__84553_90098_10557`. Receiver 0 needs paragraph idx 2
+(`Charlemagne`); receiver 1 needs paragraph idx 0 (`Sylvester`).
+Seed set / centrality at `k=3` sends the identical set
+`{Holy Roman Emperor, Rover SD1, Charlemagne}` to both — receiver 0
+correct by luck, receiver 1 `UNKNOWN` (paragraph 0 never delivered;
+`Rover SD1` matched receiver 1's query lexically through unrelated
+word overlap and occupied the slot instead). Per-receiver top-3, at
+nearly the same total budget (517 vs. 588 tokens), delivers
+`{Sylvester, Gaius Julius Priscus, Maria Theresa of Naples and
+Sicily}` to receiver 1 and both answer correctly. Source:
+`results/musique_gemini-3.1-flash-lite_lexical_run1.jsonl`
+(`centrality` k=3 and `topk` k=3 rows for this id).

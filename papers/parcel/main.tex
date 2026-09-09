@@ -905,16 +905,16 @@ spend against a tuned uniform per-receiver rule. The structure
 Proposition~\ref{prop:decomp} exposes is real; on this benchmark it is
 not \emph{estimable}.}
 \label{tab:curves}
-\begin{tabular}{lp{3.9cm}}
+\begin{tabular}{p{3.9cm}p{3.6cm}}
 \toprule
 Value curve $v_i(b)$ & Outcome vs.\ tuned uniform \\
 \midrule
-sum of relevance scores & \textbf{loses}: near-linear in $b$, so
-nothing to balance \\
-noisy-OR over scores    & ties; $+4$--$5$pp at large budgets only \\
+sum of relevance scores & \textbf{loses}: near-linear in $b$, nothing
+to balance \\
+noisy-OR over scores & ties; $+4$--$5$pp at large budgets only \\
 captured own score mass & ties \\
-any of the above, with composite receivers & ties ($\approx 11\%$
-cheaper at equal recall) \\
+any of the above, composite receivers & ties ($\approx 11\%$ cheaper
+at equal recall) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -983,12 +983,41 @@ delivery on $208$ tokens where the best implementable policy reaches
 $62\%$ on $929$. No allocation algorithm closes that gap, because the
 information required is not present in the scores.
 
+\paragraph{Two logged traces.} Aggregates average over noise; two
+individual runs from the matched-budget grid make the mechanism
+concrete.
+
+\emph{Over-delivery misleads, not just wastes.} In one instance a
+receiver's sub-question is ``Who hosted the tournament?'', answered by
+a single supporting paragraph (gold: Thailand). Broadcasting the pool's
+$20$ paragraphs ($2297$ tokens) led the model to answer ``Russia'' ---
+wrong, drawn off by unrelated candidates. The oracle sends only the
+supporting paragraph ($43$ tokens, $53\times$ cheaper) and answers
+correctly. Fewer tokens, a better answer, on one logged call rather
+than an aggregate statistic.
+
+\emph{The seed set starves a receiver.} A second instance has two
+receivers at matched budget ($k=3$, $\approx 290$ tokens each): one
+needs the paragraph on Charlemagne, the other the paragraph on the
+surname \emph{Sylvester}'s Latin origin. The seed set --- one
+globally-ranked top-$3$, sent to both --- is \{Holy Roman Emperor,
+\emph{Rover SD1}, Charlemagne\}: it happens to cover the first
+receiver, but sends the identical three items to the second, whose
+needed paragraph never appears; a car marque, lexically matched
+through an unrelated word overlap, fills the slot instead. Logged
+answer: receiver~1 correct, receiver~2 ``UNKNOWN.'' Per-receiver
+top-$3$, at nearly the same total budget ($517$ vs.\ $588$ tokens),
+gives receiver~2 its own ranking --- \{Sylvester, Gaius Julius
+Priscus, Maria Theresa of Naples and Sicily\} --- and both receivers
+answer correctly. One global set cannot serve two different needs at
+this cost; two different sets can, for the same cost.
+
 \section{Discussion}
 
 The results divide cleanly. The formulation-level claims are strong:
-the seed-set object is wrong by a factor $\Theta(n)$ even when the
-objective is well behaved, and both the classical toolchain and its
-nearest general successor are unavailable here. The algorithm-level
+the seed-set object is wrong by a factor $n$ on its own best-case
+instances, unboundedly wrong in general, and both the classical
+toolchain and its nearest general successor are unavailable here. The algorithm-level
 claims are deliberately weak: we do not have a method that beats a
 tuned uniform per-receiver rule, and we report that rather than
 selecting a favorable budget point.
