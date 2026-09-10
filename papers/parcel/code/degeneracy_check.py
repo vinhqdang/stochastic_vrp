@@ -84,8 +84,10 @@ def and_pair(S):
 
 # (B) Pure saturation: modular relevance, convex load penalty, no
 #     complementarity anywhere. Each fact is individually useful; the
-#     receiver degrades once loaded.
-RHO = {0: 0.0, 1: 0.0, 2: 0.5, 3: 3.0}
+#     receiver degrades once loaded. Matches main.tex's Proposition 3
+#     witness (a) exactly: F={a,b}, rel(S)=conf(S)=|S|, rho(0)=0,
+#     rho(1)=0.5, rho(2)=3 -- giving marginals +0.5 then -1.5.
+RHO = {0: 0.0, 1: 0.5, 2: 3.0}
 
 
 def saturating(S):
@@ -99,7 +101,7 @@ def saturating(S):
 #     receiver side by side, and the two violating triples embed
 #     unchanged since neither touches the other receiver's items.
 def combined(S):
-    return and_pair(S & {"f1", "f2"}) + saturating(S & {"a", "b", "x"})
+    return and_pair(S & {"f1", "f2"}) + saturating(S & {"a", "b"})
 
 
 if __name__ == "__main__":
@@ -107,14 +109,14 @@ if __name__ == "__main__":
     report("(A) Pure complementarity -- hard AND-pair",
            and_pair, {"f1", "f2"})
     report("(B) Pure saturation -- modular relevance, convex penalty",
-           saturating, {"a", "b", "x"})
+           saturating, {"a", "b"})
     print("\nEach phenomenon kills exactly one of the two parameters that")
     print("Theorem 4 requires simultaneously.")
 
     print()
     report("(C) Combined -- (A) and (B) on disjoint receivers, same instance",
-           combined, {"f1", "f2", "a", "b", "x"})
-    d1, _, d3, _ = parameters_exist(combined, {"f1", "f2", "a", "b", "x"})
+           combined, {"f1", "f2", "a", "b"})
+    d1, _, d3, _ = parameters_exist(combined, {"f1", "f2", "a", "b"})
     assert not d1 and not d3, "expected BOTH parameters to fail on the combined instance"
     print("\n(C) confirms: gamma1 and gamma2 can both fail on ONE instance,")
     print("not just on two separate ones -- a single instance is enough to")

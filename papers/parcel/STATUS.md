@@ -188,6 +188,104 @@
     Body still exactly 8 pages after all of this; the new Table 2 design
     introduced a real 29pt table-width overflow, fixed with `\footnotesize`
     and tighter `\tabcolsep` before this was called done.
+11. ✅ **RESOLVED 2026-09-10 — a third technical review (external,
+    forwarded by the user) found the "tokens" metric was never
+    real, plus a self-inflicted sample-accounting error and several
+    rigor gaps.** Each finding was verified against code/data (or, for
+    tokens, against Gemini's own API) before acting, per the standing
+    rule of this changelog:
+    - **"Tokens" were word-count × 1.33, not a model tokenizer** ---
+      the review's most consequential catch. Recomputed every token
+      figure in Tables 2/3, Figure 2, and the composite-receiver
+      discussion using Gemini's real `countTokens` endpoint on the
+      exact transmitted context for every logged call (item selection
+      is deterministic, so this needed no new generation calls, only
+      lightweight token-count calls). New script
+      `code/real_tokens.py`. Real tokens run ~9-16% higher than the
+      old estimate and the bias is non-uniform (worse on short
+      contexts), so every ratio changed slightly: oracle's headline
+      compression is `21.9x`→`22x` (was `21.3-21.4x`, inconsistent
+      between two tables besides), broadcast `2517` (was `2256`), and
+      so on throughout. All of Table 2, Table 3, Figure 2's axis
+      positions, and the composite-receiver `230`/`1050`-token claims
+      were updated to match.
+    - **The "other model" grid's sample size was simply wrong**: the
+      paper claimed "69 instances, n=138 receivers" for the
+      confirmatory 4-arm grid; the actual committed file
+      (`musique_gemini-3.1-flash-lite_lexical_core.jsonl`) has 125
+      instances (one cut short by quota, 124 complete, 248 receivers).
+      The oracle-vs-broadcast delta and p-value quoted from it
+      (`+0.051`, `p=0.039`) were also stale — recomputed from the
+      actual file with a new cluster-robust test script
+      (`code/cluster_test.py`, block bootstrap + permutation at the
+      instance level): the real numbers are `+0.065`, cluster-robust
+      `p=0.001`, n=124 — a *stronger*, not weaker, result, but not the
+      number that was published. Fixed throughout (Protocol,
+      Discussion, cost-quality-frontier paragraph, Table 3's caption).
+      This was our own error, not carried over correctly from an
+      earlier draft — flagged here rather than minimized.
+    - **Table 5 was unreproducible**: no code implementing the paper's
+      claimed "four value-curve designs" survived in this repository.
+      Rewrote it as three precisely-defined curves (sum / noisy-OR /
+      captured-mass) evaluated on both the plain and composite-receiver
+      sets (`code/value_curves_check.py`, deterministic recall + real
+      `countTokens` spend, cluster-bootstrap CIs) and relabeled the old
+      table's fourth "row" for what it actually was — a second
+      *condition*, not a fourth curve. The new numbers are not a
+      recovery of the old ones (STATUS.md and the table caption both
+      say so); qualitatively similar (sum loses, noisy-OR ties) but not
+      identical (captured-mass now loses on the plain set, ties only on
+      composite).
+    - **Figure 2's caption made a false claim**: "only the oracle's CI
+      clears [broadcast]" — oracle's CI in fact crosses zero; the one
+      CI that does exclude zero (uniform k=5) does so on the *negative*
+      side. Rewrote the caption to say so plainly, and fixed a
+      matching `21.4×` vs.\ `21.3×` arithmetic inconsistency between
+      Tables 2 and 3 (now both `21.9×` with real tokens).
+    - Added the missing formal step the review's point 1 asked for: a
+      lifted receiver-item ground set `E=[n]×F` stated once, so
+      Proposition 3's submodularity claims have an explicit domain
+      rather than an implicit one.
+    - Fully instantiated Proposition 3's saturation witness (previously
+      only its marginal values were given): `F={a,b}`,
+      `rel=conf=|S|`, `rho(0)=0, rho(1)=0.5, rho(2)=3` — matching the
+      reviewer's own suggested construction, verified in
+      `degeneracy_check.py` (now a 2-item witness instead of 3, kept in
+      sync with the paper).
+    - Qualified Remark 2 (`rho=0` explicit) and Remark 5 ("standard
+      value-oracle guarantee" instead of an unqualified "only") per the
+      review's minor wording points.
+    - "0% memorised" → "0% no-context accuracy" (a correct no-context
+      answer is not proof of memorisation); softened "the binding
+      constraint is X" to "points to X as the leading bottleneck"
+      throughout (abstract, intro, Discussion, Conclusion), and
+      softened the influence-maximization framing to an explicit
+      analogy rather than a verdict on that literature, per the
+      review's points on overclaiming.
+    - Verified temperature=0 empirically (3 identical repeated calls)
+      and confirmed via the API's own model-listing endpoint that
+      `gemini-3.5-flash-lite` still exposes temperature/top-p/top-k as
+      live parameters (contradicting the reviewer's speculative
+      deprecation concern for this specific model); added a sentence
+      documenting this. Verified the AAMAS copyright/conference block
+      matches the official template's own anonymous-mode configuration
+      exactly (not a bug). Re-checked the review's "missing spaces"
+      complaints against the `.tex` source: still `pdftotext`
+      extraction artifacts, not real bugs (third round confirming this
+      pattern).
+    - **Not addressed**: Table 5's per-model breakdown (only one model
+      backs the value-curve comparisons — now stated explicitly as a
+      threats-to-validity item rather than fixed, since replicating on
+      the second model needs a new run); the proxy-vs-real-deployment
+      limitation (needs a new experiment, unchanged from rounds 9-10).
+    Body still exactly 8 pages after all of this — the largest
+    trimming pass yet, needing a genuinely redundant table
+    (`tab:scaling`, fully restated in adjacent prose) and one
+    illustrative figure removed outright, plus a modest, standard
+    caption/float-spacing tightening (`\captionsetup{skip=4pt}` and
+    reduced `\floatsep`/`\textfloatsep`/`\intextsep`) in addition to
+    prose cuts throughout, before references started cleanly at the
+    top of page 9.
 
 ## Deadlines — VERIFIED 2026-09-06 against the official call
 

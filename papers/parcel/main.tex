@@ -17,6 +17,13 @@
 \newtheorem{remark}{Remark}
 \newtheorem{example}{Example}
 
+% Modest, standard float/caption spacing (not a margin or font-size
+% change) to recover a little vertical room given the number of tables.
+\captionsetup{skip=4pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+
 %%% AAMAS-2027 copyright block (do not change!)
 \makeatletter
 \gdef\@copyrightpermission{
@@ -57,43 +64,41 @@ removed without paying for it in task quality, and what stops us
 removing more?
 
 On a controlled proxy for multi-agent context sharing built from a
-public multi-hop benchmark, a $2.7\times$ reduction in inter-agent
+public multi-hop benchmark, a $2.6\times$ reduction in inter-agent
 tokens produces an uncertain $4.2$-point accuracy loss ($95\%$ CI
 $-10$ to $+1$ points): the point estimate favours sending everything,
 and the interval does not establish a free region, only that both a
 real loss and no loss are compatible with this sample. An oracle
-reaches $21\times$ fewer tokens with an observed $+5$-point
-\emph{gain}, significant on one of two models tested. Over-delivery
+reaches $22\times$ fewer tokens with an observed $+5$-point
+\emph{gain}, significant on the larger of two models tested. Over-delivery
 may thus be mildly harmful rather than merely wasteful, with roughly
 an order of magnitude available in principle, though the evidence for
-that ceiling is directional. A practical policy at $5.4\times$
+that ceiling is directional. A practical policy at $5.3\times$
 establishes that a loss exists at that compression, $8$ points with a
 CI excluding zero.
 
 \emph{How} the budget is spent matters more than how much is spent.
 Allocating per receiver beats selecting one globally-scored set for
-everyone by $19.2$ accuracy points at matched cost, and we explain this
-with a separation result: the one-set formulation --- the natural
-reading of the problem as influence maximization --- loses a factor
-$n$ in the number of receivers, by two independent constructions, even
-on instances where the objective is monotone and submodular; adding
-saturation removes any finite bound. We also show the two nearest
-optimisation toolchains do not apply here, the second because its
-structural parameters do not exist rather than because its bound is
-loose --- and, on the positive side, that the correct per-receiver
-formulation costs nothing extra in approximability under an explicit
-oracle assumption, since it decomposes exactly into a resource-allocation
-program over a shared budget. Abandoning the one-set object is
-therefore not a tractability trade.
+everyone by $19.2$ accuracy points at matched cost; a separation result
+explains why: the one-set formulation, the natural seed-set analogy to
+influence maximization, loses a factor $n$ in the number of receivers,
+by two independent constructions, even on monotone submodular
+instances, and adding saturation removes any finite bound. The two
+nearest optimisation toolchains do not apply here, the second because
+its structural parameters do not exist rather than because its bound
+is loose --- yet the correct per-receiver formulation costs nothing
+extra in approximability, decomposing exactly into a
+resource-allocation program over a shared budget. Abandoning the
+one-set object is not a tractability trade.
 
 Finally, a negative result that we think is the most useful finding
-for practitioners. None of four value-curve designs fed to a
+for practitioners. None of three value-curve designs fed to a
 resource-allocation program that exploits structure no baseline can
 showed a detectable advantage over a tuned uniform per-receiver rule
 at matched budget, and replacing lexical relevance with a dense
 retriever makes matters worse. Three independent lines of evidence
-place the binding constraint on \emph{estimating} which agent needs
-what, not on the allocation rule.
+point to relevance \emph{estimation} as the leading bottleneck on this
+proxy, not the allocation rule.
 \end{abstract}
 
 \keywords{multi-agent systems; large language models; communication;
@@ -125,13 +130,14 @@ comfortable they are.
 
 First, \textbf{cutting tokens produces an uncertain, not a zero,
 cost}. On a controlled proxy built from a public multi-hop benchmark,
-cutting inter-agent tokens by $2.7\times$ has an observed cost of $4.2$
+cutting inter-agent tokens by $2.6\times$ has an observed cost of $4.2$
 accuracy points (95\% CI $-10$ to $+1$): the point estimate favours
 sending everything, and absent a pre-registered non-inferiority test we
 do not claim a free region (\S\ref{sec:disc}). An oracle allocation ---
-which knows which item each agent needs --- reaches $21\times$ fewer
-tokens with an observed $+5$-point \emph{gain}, significant on one of
-the two models we test, consistent with LLMs' measured tendency to
+which knows which item each agent needs --- reaches $22\times$ fewer
+tokens with an observed $+5$-point \emph{gain}, significant on the
+larger of the two models we test, consistent with LLMs' measured
+tendency to
 degrade under irrelevant
 context~\cite{distracted2025,nolima2025,liu2024}. An order of magnitude
 is available in principle.
@@ -143,10 +149,12 @@ cost. This is not a tuning detail: the one-set formulation provably loses a
 factor $n$ in the number of receivers (Proposition~\ref{prop:sep}), by
 two independent constructions, on monotone submodular instances; once
 saturation is added, the same family admits no finite bound at all.
-That formulation is the natural reading of context sharing as
-influence maximization~\cite{kempe2003}, so a substantial and
-otherwise applicable literature~\cite{borgs2014,tang2015,eim2025} turns
-out to optimise the wrong object here. We also show that the nearest general
+That formulation is our seed-set analogy to influence
+maximization~\cite{kempe2003} (\S\ref{sec:model} states precisely where
+the analogy is and is not exact), and a substantial, otherwise
+applicable literature~\cite{borgs2014,tang2015,eim2025} optimises
+exactly that restricted object, which our separation shows is the
+wrong one here. We also show that the nearest general
 framework for the messy objective this problem actually has is
 unavailable, because its structural parameters fail to exist rather
 than merely giving a loose bound (\S\ref{sec:degen}). The switch of
@@ -157,16 +165,17 @@ unchanged to $n$ of them (Corollary~\ref{prop:approx}).
 
 Third, and most useful to anyone building such a system,
 \textbf{the remaining order of magnitude is not an optimisation
-problem}. We try four value-curve designs in the resource-allocation
+problem}. We try three value-curve designs in the resource-allocation
 program, which exploits separability structure no per-receiver
 baseline can imitate, and none beats a tuned uniform per-receiver rule
 at matched budget.
 Replacing lexical relevance with a dense retriever makes per-receiver
-delivery \emph{worse}. Three independent observations converge: the
-binding constraint is estimating which agent needs what. In the
+delivery \emph{worse}. Three independent observations converge on
+relevance estimation, not the allocation rule, as this proxy's leading
+bottleneck. In the
 composite-receiver design built to expose it (\S\ref{sec:exp}), the
-oracle reaches full delivery recall on $208$ tokens where the best
-implementable policy reaches only $62\%$ recall on $929$, and no
+oracle reaches full delivery recall on $230$ tokens where the best
+implementable policy reaches only $62\%$ recall on $1050$, and no
 allocation algorithm closes that gap, because the information required
 is absent from the scores rather than badly exploited.
 
@@ -199,17 +208,16 @@ to the quality of those relaxations.
 \paragraph{Non-monotone and non-submodular maximization.} Guarantees
 exist for non-monotone submodular
 maximization~\cite{feige2011,buchbinder2012}, for weakly submodular
-objectives via the sub\-modu\-larity
+objectives via the submodularity
 ratio~\cite{daskempe2011,daskempe2018} or supermodular
-degree~\cite{feigeizsak2013}, and for differences of
-submodular functions~\cite{iyerbilmes2012}. Closest to our setting,
-Shi and Lai~\cite{shilai2024} treat non-monotone, non-submodular
-maximization under a knapsack. \S\ref{sec:degen} shows their
-parameters do not exist here. Regularized objectives of the form
-$g - c$ with $g$ submodular and $c$ modular admit distorted-greedy
-guarantees~\cite{harshaw2019}; the density rule we discuss in
-\S\ref{sec:alg} is an instance of that lineage, and we credit it as
-such rather than presenting it as new.
+degree~\cite{feigeizsak2013}, and for differences of submodular
+functions~\cite{iyerbilmes2012}. Closest to our setting, Shi and
+Lai~\cite{shilai2024} treat non-monotone, non-submodular maximization
+under a knapsack; \S\ref{sec:degen} shows their parameters do not exist
+here. Regularized objectives $g-c$ with $g$ submodular and $c$ modular
+admit distorted-greedy guarantees~\cite{harshaw2019}; \S\ref{sec:alg}'s
+density rule is an instance of that lineage, credited as such rather
+than presented as new.
 
 \paragraph{Context and communication cost in LLM agents.} Empirical
 work cuts inter-agent tokens by pruning the message
@@ -312,11 +320,10 @@ analogy that fails on one property: goods are conserved, so a
 delivered unit cannot serve a second customer, whereas context is
 \emph{copyable} and one item can serve every receiver at once.
 Conservation is what makes routing a partition problem; without it,
-the allocation is a covering problem, and the interesting constraint
-is who should be \emph{spared} an item rather than who gets the last
-one. Only \emph{capacity} survives the analogy --- a context window is
-rivalrous the way a vehicle is, which is what $\rho_i$ encodes --- and
-capacity here is soft, per-receiver, and semantic, so a
+the interesting constraint is who should be \emph{spared} an item
+rather than who gets the last one. Only \emph{capacity} survives ---
+a context window is rivalrous the way a vehicle is, which is what
+$\rho_i$ encodes --- and it is soft, per-receiver, and semantic, so a
 per-vehicle-capacity formulation is not a route to the multi-receiver
 guarantee we lack.
 
@@ -388,34 +395,6 @@ allocation delivers item $i$ to receiver $i$ alone, incurs no penalty,
 and attains $n$ regardless of $\lambda$.
 \end{proof}
 
-\begin{figure}[t]
-\centering
-\scalebox{0.8}{%
-\begin{tikzpicture}[x=1cm,y=1cm,font=\small,
-  item/.style={draw,rounded corners,minimum width=8mm,minimum height=5mm},
-  recv/.style={draw,circle,inner sep=1.5pt,minimum size=6.5mm}]
-\node[anchor=south] at (0,2.55) {\footnotesize items};
-\node[anchor=south] at (3.4,2.55) {\footnotesize receivers};
-\foreach \i/\y/\lab in {0/2.2/$f_1$,1/1.1/$f_2$,2/0/$f_3$}{
-  \node[item] (I\i) at (0,\y) {\lab};
-  \node[recv] (R\i) at (3.4,\y) {\footnotesize \the\numexpr\i+1\relax};
-}
-% relevant edges
-\foreach \i in {0,1,2}{ \draw[-latex,thick] (I\i) -- (R\i); }
-% distracting edges, drawn only for f_1
-\draw[-latex,dashed,gray] (I0) -- (R1);
-\draw[-latex,dashed,gray] (I0) -- (R2);
-\node[anchor=west,align=left,font=\footnotesize] at (4.05,1.55)
-  {\,---\, relevant};
-\node[anchor=west,align=left,font=\footnotesize,gray] at (4.05,0.95)
-  {\,--\,--\, distracting};
-\end{tikzpicture}}
-\caption{Proposition~\ref{prop:sep}'s instance at $n=3$: each item is
-relevant to one receiver (solid) and distracting to the other $n-1$
-(dashed, shown only for $f_1$). Per-receiver follows the solid edges;
-a seed set must also send down the dashed ones.}
-\label{fig:sep}
-\end{figure}
 
 Case (b) is the more informative one. A reader may discount (a) as an
 artifact of charging per receiver; (b) removes that objection, because
@@ -486,6 +465,19 @@ at all.
 \subsection{Both toolchains degenerate}
 \label{sec:degen}
 
+Definition~\ref{def:prob} makes an allocation a tuple
+$(S_1,\dots,S_n)\in(2^F)^n$, one set per receiver, but submodularity and
+the two parameters below are properties of a \emph{set} function, made
+explicit once here rather than left implicit. Let $E=[n]\times F$ be
+the receiver-item ground set; identify an allocation with
+$A=\{(i,f)\in E: f\in S_i\}\subseteq E$, and define
+$U(A)=\sum_i u_i(\{f:(i,f)\in A\})$, agreeing with
+Definition~\ref{def:prob}'s objective. $2^E$ is the domain on which
+\eqref{eq:d1}--\eqref{eq:d2} are stated below, and the witnesses in
+Proposition~\ref{prop:degen} are sets of receiver-item pairs in it; the
+combined instance's two violating triples occupy disjoint coordinates
+of $E$ (different receivers), which is why both survive side by side.
+
 \begin{proposition}
 \label{prop:degen}
 Neither hypothesis of the greedy $(1-1/e)$ argument, nor either
@@ -521,7 +513,7 @@ falls below its marginal saturation cost strictly lowers $u_i$, so $U$
 is not monotone; this is witness (a).
 
 \paragraph{Submodularity and $\gamma_1$ fail under complementarity.}
-Two items individually inert but jointly decisive ---
+Two items individually inert but jointly decisive, with $\rho\equiv0$:
 $\mathrm{rel}(\emptyset)=\mathrm{rel}(\{a\})=\mathrm{rel}(\{b\})=0$,
 $\mathrm{rel}(\{a,b\})=1$ --- give increasing returns, so $U$ is not
 submodular; this is witness (b). Definition~\ref{def:prob} places no
@@ -529,6 +521,13 @@ modularity requirement on $\mathrm{rel}_i$, so this instance is a
 legitimate member of the class even though it falls outside witness
 (a)'s hypothesis. Both failures are required by the greedy argument,
 on their respective instances.
+
+Witness (a): one receiver, $F=\{a,b\}$, modular
+$\mathrm{rel}{=}\mathrm{conf}{=}|S|$, convex saturation
+$\rho(0){=}0$, $\rho(1){=}0.5$, $\rho(2){=}3$. Then $u(\{a\})=0.5$ and
+$u(\{a,b\})=-1$, so the marginals \eqref{eq:d2} is checked against are
+$+0.5$ then $-1.5$. Both witnesses and the combined instance are
+verified exhaustively in \texttt{code/degeneracy\_check.py}.
 
 \paragraph{The nearest general framework has no parameters here.}
 Shi and Lai~\cite{shilai2024} give guarantees for non-monotone,
@@ -678,13 +677,12 @@ oracle hypothesis must hold at \emph{every} level $b$. With
 $\rho_i\equiv0$ and $\mathrm{rel}_i$ additionally modular, each $v_i$
 is an ordinary knapsack value function with a
 $(1-\varepsilon)$-oracle for every $\varepsilon$; for general monotone
-submodular $\mathrm{rel}_i$, only $(1-1/e)$ is available, and the
-Corollary transfers that coarser ratio instead. Either way the
-$n$-receiver problem is no harder to approximate than the
-$1$-receiver one: alongside Proposition~\ref{prop:sep}, the seed-set
-formulation is off by a factor $n$ or worse while the correct one
-costs nothing extra in approximability, so abandoning the one-set
-object is not a tractability trade.
+submodular $\mathrm{rel}_i$, the standard value-oracle guarantee is
+$(1-1/e)$, and the Corollary transfers that coarser ratio instead.
+Either way the $n$-receiver problem is no harder to approximate than
+the $1$-receiver one: the seed-set formulation is off by a factor $n$
+or worse (Proposition~\ref{prop:sep}) while the correct one costs
+nothing extra, so abandoning it is not a tractability trade.
 \end{remark}
 
 \begin{algorithm}[t]
@@ -713,15 +711,14 @@ object is not a tractability trade.
 
 \begin{example}
 \label{ex:dp}
-In the running example, $v_1,v_2$ jump from $0$ to $1$ at $b=1$; $v_3$
-stays at $0$ until $b=2$, then jumps to $1$. At $B=4$ the DP splits
-$(1,1,2)$ for value $3$; a uniform split ($b_i=4/3$, rounding to $1$
-each) scores only $2$, wasting a document on agent~3 that it cannot
-use alone. A greedy density rule also scores $2$: at the moment it
-must choose, agent~3's first document has marginal value $0$ and loses
-to agent~1's or agent~2's marginal value $1$, and a zero-marginal item,
-once passed over, is never revisited. The DP avoids this because
-$v_3$ is built in full before any budget is committed.
+In the running example, $v_1,v_2$ jump $0\to1$ at $b=1$; $v_3$ stays
+$0$ until $b=2$, then jumps to $1$. At $B=4$ the DP splits $(1,1,2)$ for
+value $3$; uniform ($b_i=4/3$, rounding to $1$ each) scores only $2$,
+wasting a document agent~3 cannot use alone. Greedy density also scores
+$2$: agent~3's first document has marginal value $0$ and loses to
+agent~1's or agent~2's marginal $1$, and a zero-marginal item once
+passed over is never revisited --- the DP avoids this because $v_3$ is
+built in full before any budget commits.
 \end{example}
 
 Concavifying $v_i$ (time-sharing between two integer levels) does
@@ -821,13 +818,12 @@ Neither substitution is assumed elsewhere: every theory result in
 \S\ref{sec:sep}--\S\ref{sec:alg} holds for general $\mathrm{conf}_i$
 and $u_i$.
 
-Splitting MuSiQue's single-agent task across per-sub-question receivers
-is our framing (\S\ref{sec:disc} discusses this and contamination as
-threats to validity); we restrict to the branching families where two
-sub-questions carry no back-reference and are genuinely independent.
-Comparisons are paired --- every policy answers the same items ---
-using McNemar's exact test on discordant pairs and, for the
-token--accuracy points, a bootstrap over items.
+Splitting MuSiQue's single-agent task across per-sub-question
+receivers is our framing, discussed as a threat to validity in
+\S\ref{sec:disc}; we restrict to branching families where two
+sub-questions are genuinely independent. Comparisons are paired ---
+every policy answers the same items --- using McNemar's exact test on
+discordant pairs and a bootstrap over items.
 
 \paragraph{Protocol.} \texttt{gemini-3.5-flash-lite} (matched-budget
 grid) and \texttt{gemini-3.1-flash-lite} (the earlier grid), both at
@@ -839,18 +835,30 @@ cannot differ between policies and arms differ only in which
 paragraphs the receiver is given. Lexical relevance is normalized
 bag-of-words overlap, $|q\cap t|/\sqrt{|q|\,|t|}$ over non-stopword
 tokens; the embedding scorer is \texttt{gemini-embedding-001} at $768$
-dimensions, cosine similarity; token counts are word counts scaled by
-a fixed constant, not a model tokenizer. $q\in\{0.3,0.7,0.95\}$ are
-quantiles of a receiver's own candidate-density distribution
-(\S\ref{sec:alg}'s $\mathrm{auto\_scale}$); $k\in\{3,5\}$ are the
-cardinalities reported; neither was chosen on a calibration split
-disjoint from the evaluation grid --- we do not have one, so we cannot
-certify ``tuned uniform'' is free of having been examined on
-overlapping data (\S\ref{sec:disc}). The matched-budget grid has $12$
-arms over $60$ instances ($1440$ calls, all completed); the earlier
-$4$-arm grid covers $69$ instances at $n=138$ receiver-instances ---
-both the full branching-family split, no further filtering. Arms are
-matched on delivered tokens before accuracy is compared, since an
+dimensions, cosine similarity. Token counts reported everywhere here
+are real \texttt{countTokens} responses on the exact transmitted
+context, not a word-count proxy; selection is deterministic given the
+instance and policy, so the exact context for every logged call is
+reconstructed and recounted rather than re-estimated
+(\texttt{code/real\_tokens.py}), excluding the fixed per-call scaffold
+($54$ tokens, identical across every arm). Temperature $0$ was
+verified to reproduce identical output across repeated calls, and
+every response's \texttt{modelVersion} field confirms the named model.
+$q\in\{0.3,0.7,0.95\}$ are quantiles of a receiver's own
+candidate-density distribution (\S\ref{sec:alg}'s
+$\mathrm{auto\_scale}$); $k\in\{3,5\}$ are the cardinalities reported;
+neither was chosen on a calibration split disjoint from the evaluation
+grid --- we do not have one, so we cannot certify ``tuned uniform'' is
+free of having been examined on overlapping data (\S\ref{sec:disc}).
+The matched-budget grid has $12$ arms over $60$ instances ($1440$
+calls, all completed) on \texttt{gemini-3.5-flash-lite}; on
+\texttt{gemini-3.1-flash-lite} a $12$-arm, $19$-instance pilot and a
+separate $4$-arm, $125$-instance confirmatory grid were run, both the
+full branching-family split, no further filtering. One instance's run
+in the confirmatory grid was cut short by API quota and is excluded
+from every paired comparison that uses it, leaving $124$ instances
+($248$ receiver-instances) with complete data on all four arms. Arms
+are matched on delivered tokens before accuracy is compared, since an
 accuracy gain bought with a larger budget is not a gain from the
 mechanism. Runs are keyed and resumable per
 $(\text{instance}, \text{policy}, \text{arm}, \text{receiver})$, and
@@ -862,13 +870,15 @@ silently breaks and $n$ inflates.
 \caption{Paired comparisons, $n=120$ receiver-instances ($60$
 instances $\times$ $2$ independent sub-questions), matched-budget
 grid. $\Delta$ is the first policy minus the second; tokens are each
-arm's mean (broadcast $2256$). CI and $p$ are the \emph{primary},
-cluster-robust statistics: a block bootstrap and a permutation test
-resampling the $60$ source instances, not the $120$ receivers, since
-each instance contributes two non-independent receivers --- the flat,
-receiver-level version differs negligibly (largest shift: this CI's
-lower bound $-.142\to-.150$, $p$ $0.013\to0.028$) and is not shown.
-Starred $p<0.05$.}
+arm's mean, real \texttt{countTokens} counts on the exact transmitted
+context, not a word-count proxy (broadcast $2517$;
+\texttt{code/real\_tokens.py}). CI and $p$ are the \emph{primary},
+cluster-robust statistics from \texttt{code/cluster\_test.py}: a block
+bootstrap and a permutation test resampling the $60$ source instances,
+not the $120$ receivers, since each instance contributes two
+non-independent receivers --- the flat, receiver-level McNemar test
+differs negligibly (largest shift: this $p$ $0.013\to0.029$) and is not
+shown. Starred $p<0.05$.}
 \label{tab:main}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -876,11 +886,11 @@ Starred $p<0.05$.}
 \toprule
 Comparison & $\Delta$acc & 95\% CI & $p$ & tokens \\
 \midrule
-per-r.\ $k{=}3$ (220) vs.\ seed $k{=}3$ (251) & $+0.192$ & $[+.10,+.28]$ & $0.0002^{*}$ & $1.1\times$ \\
-oracle (106) vs.\ b'cast & $+0.050$ & $[-.01,+.11]$ & $0.148$      & $21.4\times$ \\
-density, loose (846) vs.\ b'cast & $-0.042$ & $[-.10,+.01]$ & $0.225$   & $2.7\times$ \\
-unif.\ $k{=}5$ (420) vs.\ b'cast & $-0.083$ & $[-.15,-.03]$ & $0.028^{*}$ & $5.4\times$ \\
-density, tight (511) vs.\ unif.\ $k{=}5$ & $+0.000$ & $[-.05,+.05]$ & $1.000$  & $0.8\times$ \\
+per-r.\ $k{=}3$ (254) vs.\ seed $k{=}3$ (283) & $+0.192$ & $[+.10,+.28]$ & $0.0003^{*}$ & $1.1\times$ \\
+oracle (115) vs.\ b'cast & $+0.050$ & $[-.01,+.11]$ & $0.140$      & $21.9\times$ \\
+density, loose (952) vs.\ b'cast & $-0.042$ & $[-.10,+.01]$ & $0.225$   & $2.6\times$ \\
+unif.\ $k{=}5$ (478) vs.\ b'cast & $-0.083$ & $[-.15,-.02]$ & $0.027^{*}$ & $5.3\times$ \\
+density, tight (586) vs.\ unif.\ $k{=}5$ & $+0.000$ & $[-.05,+.05]$ & $1.000$  & $0.8\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -888,11 +898,12 @@ density, tight (511) vs.\ unif.\ $k{=}5$ & $+0.000$ & $[-.05,+.05]$ & $1.000$  &
 \begin{table}[t]
 \centering
 \caption{Accuracy and cost per policy, matched-budget grid, $n=120$.
-Tokens are per receiver; the ratio is broadcast's mean tokens divided
-by the policy's, from the two numbers shown. Absolute exact-match is
+Tokens are per receiver, real \texttt{countTokens} counts (not a
+word-count proxy); the ratio is broadcast's mean tokens divided by the
+policy's, from the two numbers shown. Absolute exact-match is
 suppressed for deltas since MuSiQue predates current models
-(\S\ref{sec:disc}: $0\%$ memorised here, up to $5\%$ on the other
-model). ``Density'' is \S\ref{sec:alg}'s density-greedy heuristic (an
+(\S\ref{sec:disc}: $0\%$ no-context accuracy here, up to $5\%$ on the
+other model's pilot). ``Density'' is \S\ref{sec:alg}'s density-greedy heuristic (an
 approximation of the exact dominance test, \emph{not} an instance of
 it) at two thresholds; it is a different policy from
 Algorithm~\ref{alg:dp}, evaluated separately in Table~\ref{tab:curves}.}
@@ -902,14 +913,14 @@ Algorithm~\ref{alg:dp}, evaluated separately in Table~\ref{tab:curves}.}
 \toprule
 Policy & tokens & ratio & $\Delta$acc \\
 \midrule
-broadcast (all items)  & $2256$ & $1.0\times$  & --- \\
-oracle (labelled)      & $106$  & $21.3\times$ & $+0.050$ \\
-per-recv., unif.\ $k{=}3$ & $220$ & $10.3\times$ & $-0.200$ \\
-per-recv., unif.\ $k{=}5$ & $420$ & $5.4\times$ & $-0.083$ \\
-density, tight $q{=}0.7$ & $511$ & $4.4\times$  & $-0.083$ \\
-density, loose $q{=}0.3$ & $846$ & $2.7\times$  & $-0.042$ \\
-seed set, $k{=}3$      & $251$  & $9.0\times$  & $-0.392$ \\
-random, $k{=}3$        & $336$  & $6.7\times$  & $-0.667$ \\
+broadcast (all items)  & $2517$ & $1.0\times$  & --- \\
+oracle (labelled)      & $115$  & $21.9\times$ & $+0.050$ \\
+per-recv., unif.\ $k{=}3$ & $254$ & $9.9\times$ & $-0.200$ \\
+per-recv., unif.\ $k{=}5$ & $478$ & $5.3\times$ & $-0.083$ \\
+density, tight $q{=}0.7$ & $586$ & $4.3\times$  & $-0.083$ \\
+density, loose $q{=}0.3$ & $952$ & $2.6\times$  & $-0.042$ \\
+seed set, $k{=}3$      & $283$  & $8.9\times$  & $-0.392$ \\
+random, $k{=}3$        & $390$  & $6.5\times$  & $-0.667$ \\
 no context             & $0$    & ---          & $-0.792$ \\
 \bottomrule
 \end{tabular}
@@ -934,41 +945,45 @@ no context             & $0$    & ---          & $-0.792$ \\
 % broadcast reference line
 \draw[dashed,gray] (-0.15,3.15) -- (7.3,3.15);
 % frontier: oracle -> broadcast (the achievable envelope)
-\draw[thick,gray!60] (0.41,3.38) -- (6.29,3.15);
+\draw[thick,gray!60] (0.69,3.375) -- (6.50,3.15);
 % points
 % 95% CIs (cluster-robust, Table 2) for the three points Table 2 covers
-\draw (0.41,3.105) -- (0.41,3.645); \draw (0.31,3.105)--(0.51,3.105); \draw (0.31,3.645)--(0.51,3.645);
-\draw (4.41,2.70) -- (4.41,3.195); \draw (4.31,2.70)--(4.51,2.70); \draw (4.31,3.195)--(4.51,3.195);
-\draw (3.12,2.475) -- (3.12,3.015); \draw (3.02,2.475)--(3.22,2.475); \draw (3.02,3.015)--(3.22,3.015);
-\fill (0.41,3.38) circle (2.4pt);
-\node[right,inner sep=3pt] at (0.41,3.38) {\footnotesize oracle};
-\fill (6.29,3.15) circle (2.4pt);
-\node[left,inner sep=3pt] at (6.29,3.15) {\footnotesize broadcast};
-\fill (4.41,2.96) circle (2.4pt);
-\node[below,inner sep=2pt] at (4.41,2.9) {\footnotesize density, loose};
-\fill (3.12,2.78) circle (2.4pt);
-\draw[gray,thin] (3.12,2.78) -- (2.55,2.35);
-\node[below,inner sep=2pt] at (2.55,2.32) {\footnotesize uniform};
-\fill (3.47,2.78) circle (2.4pt);
-\draw[gray,thin] (3.47,2.78) -- (4.05,2.35);
-\node[below,inner sep=2pt] at (4.05,2.32) {\footnotesize density, tight};
-\fill (2.16,1.39) circle (2.4pt);
-\node[below right,inner sep=2pt] at (2.16,1.39) {\footnotesize seed set};
-\fill (2.71,0.15) circle (2.4pt);
-\node[above right,inner sep=2pt] at (2.71,0.15) {\footnotesize random};
+\draw (0.69,3.114) -- (0.69,3.636); \draw (0.59,3.114)--(0.79,3.114); \draw (0.59,3.636)--(0.79,3.636);
+\draw (4.67,2.70) -- (4.67,3.186); \draw (4.57,2.70)--(4.77,2.70); \draw (4.57,3.186)--(4.77,3.186);
+\draw (3.37,2.475) -- (3.37,3.074); \draw (3.27,2.475)--(3.47,2.475); \draw (3.27,3.074)--(3.47,3.074);
+\fill (0.69,3.375) circle (2.4pt);
+\node[right,inner sep=3pt] at (0.69,3.375) {\footnotesize oracle};
+\fill (6.50,3.15) circle (2.4pt);
+\node[left,inner sep=3pt] at (6.50,3.15) {\footnotesize broadcast};
+\fill (4.67,2.961) circle (2.4pt);
+\node[below,inner sep=2pt] at (4.67,2.9) {\footnotesize density, loose};
+\fill (3.37,2.776) circle (2.4pt);
+\draw[gray,thin] (3.37,2.776) -- (2.80,2.35);
+\node[below,inner sep=2pt] at (2.80,2.32) {\footnotesize uniform};
+\fill (3.76,2.776) circle (2.4pt);
+\draw[gray,thin] (3.76,2.776) -- (4.30,2.35);
+\node[below,inner sep=2pt] at (4.30,2.32) {\footnotesize density, tight};
+\fill (2.39,1.386) circle (2.4pt);
+\node[below right,inner sep=2pt] at (2.39,1.386) {\footnotesize seed set};
+\fill (2.99,0.148) circle (2.4pt);
+\node[above right,inner sep=2pt] at (2.99,0.148) {\footnotesize random};
 \end{tikzpicture}
 \caption{The measured cost--quality frontier, $n=120$
-receiver-instances. Vertical bars are $95\%$ cluster-robust CIs for the
-three points Table~\ref{tab:main} reports against broadcast (oracle,
-density-loose, uniform $k{=}5$); the other points have no CI reported
-here. The dashed line is broadcast's accuracy; anything above it is
-both cheaper \emph{and} better, though only the oracle's CI clears it.
-The implementable policies cluster well below the grey envelope, and
---- the point of the paper's negative result --- they differ from one
-another by far less than any of them differs from the oracle. The
-seed set at matched cost is $39$ points down, and random delivery
-($-0.667$) fixes the scale of the task. An empty-allocation arm (not
-shown, $0$ tokens, $-0.792$) is the contamination control.}
+receiver-instances, real \texttt{countTokens} counts. Vertical bars are
+$95\%$ cluster-robust CIs for the three points Table~\ref{tab:main}
+reports against broadcast (oracle, density-loose, uniform $k{=}5$); the
+other points have no CI reported here. The dashed line is broadcast's
+accuracy; anything above it is both cheaper \emph{and} better. None of
+the three plotted intervals clears zero on the positive side: oracle's
+and density-loose's both cross the dashed line, and uniform $k{=}5$'s
+interval excludes zero entirely but on the \emph{negative} side, i.e.\
+is confidently below broadcast, not above it. The implementable
+policies cluster well below the grey envelope, and --- the point of
+the paper's negative result --- they differ from one another by far
+less than any of them differs from the oracle. The seed set at matched
+cost is $39$ points down, and random delivery ($-0.667$) fixes the
+scale of the task. An empty-allocation arm (not shown, $0$ tokens,
+$-0.792$) is the contamination control.}
 \label{fig:frontier}
 \end{figure}
 
@@ -984,68 +999,60 @@ holds here: as we fuse instances to raise $n$ from $2$ to $8$ to $16$,
 seed-set delivery recall falls from $0.45$ to $0.08$ to $0.01$ while
 per-receiver recall stays above $0.55$.
 
-\begin{table}[t]
-\centering
-\caption{The seed-set gap, motivated by Proposition~\ref{prop:sep} but
-not implied by it for this fused construction, grows with the number
-of receivers. Delivery recall as instances are fused to raise $n$. The
-seed set collapses; per-receiver allocation does not.}
-\label{tab:scaling}
-\begin{tabular}{lccc}
-\toprule
-receivers $n$ & $2$ & $8$ & $16$ \\
-\midrule
-seed set (matched cost)   & $0.45$ & $0.08$ & $0.01$ \\
-per-receiver, uniform     & $0.67$ & $0.56$ & $0.56$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \paragraph{A cost--quality frontier, honestly reported.} The loose
-density rule cuts tokens $2.7\times$ at an observed, uncertain
+density rule cuts tokens $2.6\times$ at an observed, uncertain
 $-4.2$-point loss, $95\%$ CI $[-10,+1]$ points (row 3): the point
 estimate favours broadcast, and most of the interval is negative, so
 this does not establish a free region --- only that a loss up to $10$
 points and a loss of zero are both compatible with the data. We report
 the estimate and interval rather than a verdict; we did not run a
-pre-registered non-inferiority test. Pushing to $5.4\times$ establishes
+pre-registered non-inferiority test. Pushing to $5.3\times$ establishes
 that a loss exists at that stronger compression, $8.3$ points with a
 CI excluding zero (row 4); it does not by itself trace the frontier's
-shape between the two points. The oracle beats broadcast by an observed $\sim5$
-points at $21\times$ fewer tokens, consistently in sign across two
-models ($+0.051$ and $+0.050$) but with a CI excluding zero on only
-one of them --- a consistent effect at borderline power, not an
-established one.
+shape between the two points. The oracle beats broadcast by an observed
+$\sim5$--$7$ points at $22\times$ fewer tokens, consistent in sign
+across two models and significant on the larger of the two
+($+0.065$, $p=0.001$, $n=124$) though not on the primary grid
+($+0.050$, $p=0.140$, $n=60$) --- a real effect, not yet established at
+the primary grid's own sample size.
 
-\paragraph{A negative result on algorithm design.} Across four
-value-curve designs, marginal allocation does not beat a tuned uniform
-per-receiver rule at matched budget; nor does the density rule
-(row 5, exactly zero at $p=1.000$ while spending $25\%$ more). We also found that replacing lexical relevance with one (unnamed)
+\paragraph{A negative result on algorithm design.} Across three
+value-curve designs and both conditions (Table~\ref{tab:curves}), no
+curve beats tuned uniform at matched nominal spend: sum-of-scores
+loses on both (CI excludes zero); noisy-OR ties on both (CI crosses
+zero); captured-mass loses on plain but ties once composite receivers
+add heterogeneity --- the one cell not detectably worse than uniform.
+Nor does the density rule (Table~\ref{tab:main}, row 5, exactly zero at
+$p=1.000$ while spending $23\%$ more). We also found that replacing
+lexical relevance with one (unnamed)
 dense embedding scorer makes per-receiver retrieval \emph{worse}
 ($0.43 \to 0.25$ top-$1$ recall) while nearly doubling seed-set recall
 --- a suggestive contrast we discuss below, not yet a causal one.
 
 \begin{table}[t]
 \centering
-\caption{Four designs for the value curve $v_i(b)$ that
-Algorithm~\ref{alg:dp} consumes, scored by delivery recall at matched
-spend against a tuned uniform per-receiver rule, $n=130$ composite
-instances (SE~$\approx\!0.04$ on a recall near $0.6$, comparable to
-the differences below --- read ``ties'' as \emph{not detectably
-different}, not \emph{proven equal}). The structure
-Proposition~\ref{prop:decomp} exposes is real; on this benchmark it is
-not \emph{estimable}.}
+\caption{Three designs for $v_i(b)$: $\sum\mathrm{raw}$ (sum),
+$1-\prod(1-\mathrm{raw})$ (noisy-OR), $\sum\mathrm{raw}/\sum\mathrm{raw}$
+(captured mass, Algorithm~\ref{alg:dp}'s own curve). Scored by delivery
+recall (deterministic) at matched nominal spend against tuned uniform,
+on $n=130$ branching instances (plain, $260$ receivers, uniform
+recall $0.673$) and the same $130$ with a composite receiver added
+(390 receivers, uniform recall $0.528$). $\Delta$ is curve minus
+uniform with a 95\% cluster bootstrap CI over instances; tokens are
+real \texttt{countTokens} counts
+(\texttt{code/value\_curves\_check.py}), freshly computed since the
+code behind a prior version of this table no longer exists (see
+STATUS.md).}
 \label{tab:curves}
-\begin{tabular}{p{3.9cm}p{3.6cm}}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrr}
 \toprule
-Value curve $v_i(b)$ & Outcome vs.\ tuned uniform \\
+Curve & $\Delta$ [95\% CI], plain & $\Delta$ [95\% CI], composite & tokens (pl./comp.) \\
 \midrule
-sum of relevance scores & \textbf{loses}: near-linear in $b$, nothing
-to balance \\
-noisy-OR over scores & ties; $+4$--$5$pp at large budgets only \\
-captured own score mass & ties \\
-any of the above, composite receivers & ties ($\approx 11\%$ cheaper
-at equal recall) \\
+sum      & $-0.092$ $[-.14,-.05]$ & $-0.044$ $[-.07,-.02]$ & $225/420$ \\
+noisy-OR & $-0.012$ $[-.05,+.02]$ & $-0.013$ $[-.03,+.01]$ & $220/415$ \\
+captured & $-0.046$ $[-.08,-.01]$ & $+0.003$ $[-.02,+.02]$ & $221/416$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1056,13 +1063,12 @@ the instance's full multi-hop question, which needs \emph{all} its
 supporting paragraphs where a sub-question receiver needs one ---
 manufacture the heterogeneity Proposition~\ref{prop:sep} draws its
 advantage from, so a global $k$ must starve one receiver or overfeed
-the other. Even then, marginal allocation only matches
-uniform, because it can only help where per-receiver value curves are
-\emph{distinguishable from label-free signals}, and here they are not:
-every receiver draws from a common pool with a similar score
-distribution, so an equal split is already near optimal. Heterogeneity
-in what receivers \emph{need} did not surface as heterogeneity in what
-could be \emph{estimated} about them.
+the other. Even then, marginal allocation only matches uniform: it can
+only help where per-receiver value curves are distinguishable from
+label-free signals, and here they are not, since every receiver draws
+from a common pool with a similar score distribution. Heterogeneity in
+what receivers \emph{need} did not surface as heterogeneity in what
+could be \emph{estimated}.
 
 \begin{table}[t]
 \centering
@@ -1083,39 +1089,30 @@ seed set, $k{=}3$     & $0.45$ & $\mathbf{0.85}$ \\
 \end{tabular}
 \end{table}
 
-A plausible direction for that failure is suggested by the data, on
-one unnamed embedding model, so we hold it as a hypothesis rather than
-a demonstrated cause. MuSiQue's branching sub-questions are mostly
-terse relation templates --- of the form
-\texttt{"<entity> >> <relation>"}, for instance
-\texttt{"The Poor Boob >> screenwriter"} --- and not natural-language
-questions, and exact entity-token overlap locates the right paragraph
-directly. The seed-set row of Table~\ref{tab:scorer} is a suggestive,
-not causal, contrast: it moves the other way, $0.45 \to 0.85$, since
-sending one global set to everyone needs only instance-level
-topicality. Embeddings and lexical overlap thus fail in opposite
-directions on this benchmark --- one seems to capture what an instance
-is about but not who needs what, the other the reverse --- and we
-hypothesize that part of the residual gap arises from query
-representation rather than scorer family; a hybrid or entity-aware
-scorer, and a named, varied set of retrievers (BM25, dense, hybrid), is
-the obvious next attempt. We have not tried it, and confirming the
-hypothesis needs that intervention, not this single comparison.
+A plausible, unconfirmed direction: MuSiQue's branching sub-questions
+are mostly terse relation templates, not natural-language questions,
+so exact entity-token overlap locates the right paragraph directly.
+The seed-set row of Table~\ref{tab:scorer} moves the other way
+($0.45\to0.85$), suggestively not causally, since one global set needs
+only instance-level topicality. We hypothesize the residual gap partly
+reflects query representation, not scorer family; a hybrid or
+entity-aware scorer, tested against a named set of retrievers, is the
+obvious next attempt. We have not tried it.
 
 Figure~\ref{fig:frontier} puts all of this on one axis. The visual
 summary is the paper's argument in miniature: the gap between the
 implementable policies and the oracle dwarfs the gaps among the
-policies themselves, which is what it looks like when the binding
-constraint is not the allocation rule.
+policies themselves, consistent with relevance estimation rather than
+the allocation rule being what limits these results.
 
-Three independent observations thus point the same way: the binding
-constraint is relevance \emph{estimation}, not allocation
-\emph{optimization}. On the composite-receiver design just described,
+Three independent observations thus point the same way: on this proxy,
+relevance \emph{estimation} looks like the leading bottleneck, not
+allocation \emph{optimization}. On the composite-receiver design just described,
 the oracle fixes the scale of it, reaching full delivery recall on
-$208$ tokens where the best implementable policy reaches only $62\%$
-recall on $929$ --- a different sample and metric from
+$230$ tokens where the best implementable policy reaches only $62\%$
+recall on $1050$ --- a different sample and metric from
 Table~\ref{tab:policies}'s accuracy grid, and not directly comparable
-to its $106$-versus-broadcast tokens. No allocation algorithm closes
+to its $115$-versus-broadcast tokens. No allocation algorithm closes
 this gap, because the information required is not present in the
 scores.
 
@@ -1133,71 +1130,73 @@ the seed-set object is wrong by a factor $n$ on monotone submodular
 instances, unboundedly wrong once saturation is added, and both the
 classical toolchain and its nearest general successor are unavailable
 here. The algorithm-level claims are deliberately weak: no tested
-method beats a tuned uniform per-receiver rule, and we report that
-rather than a favorable budget point --- a negative result we take as
-informative (\S\ref{sec:exp}: heterogeneity in what receivers
-\emph{need} did not surface as heterogeneity in what could be
-\emph{estimated} here). Genuinely different, predictable appetites are
-where the separation's practical value should be sought.
+method beats tuned uniform, reported rather than a favorable budget
+point --- informative in itself (\S\ref{sec:exp}: heterogeneity in what
+receivers \emph{need} did not surface as heterogeneity in what could be
+\emph{estimated}). Genuinely different, predictable appetites are where
+the separation's practical value should be sought.
 
 \paragraph{Threats to validity.} We list these in the order we think a
 referee should weigh them.
 
 \emph{The multi-receiver framing is ours.} Splitting MuSiQue into
 per-sub-question receivers is defensible --- sub-questions and
-supporting paragraphs are annotated, which is what makes the oracle
-computable --- but no conclusion here measures a deployed multi-agent
-system; we restrict to branching decompositions since sequential ones
-would make receivers dependent.
+supporting paragraphs are annotated, making the oracle computable ---
+but no conclusion here measures a deployed multi-agent system; we
+restrict to branching decompositions since sequential ones would make
+receivers dependent.
 
 \emph{Contamination.} The benchmark predates current models: $0\%$ of
-receiver-instances in Table~\ref{tab:policies}'s run are answered
-correctly with no context, rising to $5\%$ on the $n{=}138$ grid. We
+receiver-instances in Table~\ref{tab:policies}'s run answer correctly
+with no context, rising to $5\%$ on the other model's smaller
+$19$-instance pilot (not rerun at the confirmatory grid's scale). We
 report policy deltas, not absolute exact-match, so memorisation cannot
 be mistaken for policy quality if it affects arms equally.
 
-\emph{Statistical power and clustering.} The oracle-over-broadcast
-effect is $+0.051$ on one model, $+0.050$ on the other, significant on
-only one ($p=0.039$ vs.\ $0.146$) --- a consistent $\sim5$-point effect
-at borderline power. Each original instance also contributes two
-receivers sharing a pool and difficulty, so Table~\ref{tab:main}
-resamples and permutes at the instance level throughout; the
-unreported receiver-level version differs negligibly (three of five
-rows unchanged to three decimals, largest shift $p{:}\,0.013\to0.028$),
-so this cluster size's design effect is real but small here.
+\emph{Statistical power, clustering, and cross-model scope.} Only
+oracle-vs-broadcast replicates on the second model
+(\texttt{gemini-3.1-flash-lite}, a different sample) --- $+0.065$
+there (cluster-robust $p=0.001$, $n{=}124$) vs.\ $+0.050$ on the
+primary grid ($p=0.140$), consistent in sign and significant on one of
+the two; the headline per-receiver-vs-seed-set result and
+Table~\ref{tab:curves} run on \texttt{gemini-3.5-flash-lite} alone.
+Each instance also contributes two or three non-independent receivers,
+so Table~\ref{tab:main} resamples and permutes at the instance level;
+the unreported receiver-level version differs negligibly (three of
+five rows unchanged to three decimals, largest shift
+$p{:}\,0.013\to0.028$).
 
 \emph{Calibration of $\rho$.} The saturation penalty's shape comes from
 published degradation curves whose magnitude is model- and
-task-dependent, and at least one study finds large models unaffected
-by non-confusable filler. Proposition~\ref{prop:sep}(a) needs no
+task-dependent, and at least one study finds large models unaffected by
+non-confusable filler. Proposition~\ref{prop:sep}(a) needs no
 degradation at all; the over-delivery claim is only as general as that
 literature.
 
-\paragraph{Open problems.} (i)~An unconditional approximation guarantee
-for non-trivial $\rho_i$ (Corollary~\ref{prop:approx} reduces this to
-the non-monotone, non-submodular single-receiver case), and whether
+\paragraph{Open problems.} (i)~An unconditional guarantee for
+non-trivial $\rho_i$ (Corollary~\ref{prop:approx} reduces this to the
+non-monotone, non-submodular single-receiver case), and whether
 saturation adds hardness beyond Proposition~\ref{prop:hard}'s knapsack
 structure. (ii)~Bundle identification: our witness assumes the
 jointly-decisive pair is known, not discovered. (iii)~An end-to-end
-multi-agent task on a dependent graph, against stronger receiver-aware
-baselines than our global-top-$k$ seed-set translation. (iv)~Endogeneity:
-a deployed orchestrator decides which agents to instantiate per task,
-with no competitive-analysis treatment that does not first fix a model
-of that response.
+multi-agent task on a dependent graph, against stronger baselines.
+(iv)~Endogeneity: which agents a deployed orchestrator instantiates per
+task, with no competitive-analysis treatment that does not first fix a
+model of that response.
 
 \subsection{Conclusion}
 
 On a controlled proxy, not a deployed multi-agent system, a
-$2.7\times$ reduction produced an uncertain $4.2$-point loss (95\% CI
-$-10$ to $+1$), and an oracle reached $21\times$ with an observed gain
---- a ceiling plausibly an order of magnitude, not yet shown free in
+$2.6\times$ reduction produced an uncertain $4.2$-point loss (95\% CI
+$-10$ to $+1$), and an oracle reached $22\times$ with an observed gain
+--- a ceiling plausibly an order of magnitude, not shown free in
 between. The obstruction is not degradation or item interaction (both
 occur) but that the seed-set object is off by a factor $n$ from the
 per-receiver one on well-behaved instances, unboundedly once saturation
-is added, at no cost in approximability. That gap runs through better
-estimates of what a receiver needs, not better allocation algorithms:
-switch to per-receiver allocation, worth $19$ points over the
-globally-scored alternative, then spend further effort on retrieval.
+is added, at no cost in approximability. That remaining gap points to
+relevance estimation, not allocation algorithms, as the bottleneck:
+switch to per-receiver allocation, worth $19$ points over the seed-set
+alternative, then spend further effort on retrieval.
 
 \balance
 \bibliographystyle{ACM-Reference-Format}
