@@ -45,6 +45,74 @@
    `\acmConference` were **missing** and are now in place; the footer
    had been rendering the ACM placeholder "Conference'17, Washington
    DC". Worth re-checking after any preamble edit.
+8. ⚠️ **The OpenReview submission form shown 2026-09-09 lists Abstract
+   2026-10-02 / Submission 2026-10-09 — one day later than the dates
+   recorded below**, verified 2026-09-06 from the call page. Flagged to
+   the user; not yet resolved which is authoritative. Trust the live
+   form over this file until confirmed.
+9. ✅ **RESOLVED 2026-09-10 — a detailed technical review (external,
+   forwarded by the user) found and we fixed six real correctness
+   defects**, verified independently against the model/code/data before
+   editing, not taken on the reviewer's word alone:
+   - **Proposition 3 was malformed**: its formal statement claimed
+     `rel` modular for *both* halves, but the submodularity-violation
+     witness is necessarily non-modular (superadditive). Split into two
+     explicit witnesses with their own hypotheses (§4.2 in `main.tex`).
+   - **The "scalar budget price" claim was false in general.** A
+     Lagrange multiplier decentralizes the DP's optimum only when every
+     `v_i` is concave; Proposition 4 explicitly allows non-concave
+     (S-shaped) `v_i`. Added a verified counterexample
+     (`v_1=(0,0,3)`, `v_2=(0,2,2)`, `B=2`: no scalar price reaches the
+     optimum) and removed every "decides locally"/"price a system
+     could publish" claim; kept the DP, which is unaffected.
+   - **The density-rule admission test conflated token cost with
+     confusable load**, contradicting the model's own stated
+     distinction. Rewrote the dominance argument to be exact (no
+     first-order hedge, no differentiability needed) in terms of the
+     true marginal penalty, and separated the density-*greedy
+     heuristic* (which does specialize `conf_i(S):=c(S)` and needs
+     `rho_i` differentiable) from the exact test.
+   - **Table 3's numbers didn't match the committed data.** Recomputed
+     every row directly from `results/summary_musique.json`
+     (authoritative): oracle tokens 99→106, seed-set Δacc
+     −0.263→−0.392, random −0.632→−0.667, no-context −0.763→−0.792.
+     Table 2 gained a 95% CI column. Also fixed a genuine naming
+     collision: the `q=0.3` arm was labeled "marginal allocation" in
+     Tables 2–3, colliding with Algorithm 1's own name; renamed to
+     "density, loose" throughout (Table 5 is the actual Algorithm 1
+     results and was correctly named already).
+   - **Statistical overclaiming**: "costs nothing"/"free" language
+     throughout (abstract, intro, conclusion) rewritten to report the
+     point estimate + 95% CI honestly (e.g. the 2.7× arm is "−4.2
+     points, CI crossing zero," not "free"). Added a cluster-robustness
+     check (block bootstrap by original instance, not receiver) to
+     Discussion — it changes little (3/5 rows unchanged to 3dp), which
+     is itself worth stating rather than assuming.
+   - **Proposition 1 overclaims**: "the factor n is the best case" is
+     false (an instance where every receiver needs the same item gives
+     ratio 1); retracted throughout. Fixed `n≥1` vs `n≥2` for the
+     unboundedness clause, and replaced "OPT_seed=0" division language
+     with a rigorous derivation (ratio `1/(1-λ(n-1))→∞` as `λ`
+     approaches the threshold), verified numerically.
+   Also fixed: Corollary 5's knapsack-oracle remark needed
+   `rel_i` modular (else only a `(1-1/e)`-oracle exists); Algorithm 1's
+   pseudocode computed exact `v_i` but returned tilde-decorated
+   (approximate) sets — genericized to take either oracle; the
+   `u_i(\emptyset)=0` normalization was asserted but never derived from
+   `rel_i,conf_i,rho_i`; the IM-identity claim ("the seed-set
+   restriction is *exactly* what IM imposes") softened to an analogy,
+   since IM's diffusion can still reach nodes differently once the seed
+   set is fixed; the "quadratic in agents" and tokens-as-cost claims
+   qualified (architecture- and billing-dependent). Two logged traces
+   moved to `supplementary_material/` (now `logged_traces.md`) to make
+   room. The reviewer's larger asks — a real end-to-end multi-agent
+   benchmark with dependent messages, stronger receiver-aware routing
+   baselines, full CIs for Table 5's four value-curve comparisons — are
+   **not** addressed (would need new experiments/API budget); recorded
+   as Open Problems (iii) and folded into the power caveat on Table 5.
+   Body still exactly 8 pages after all of this; two real table-width
+   overflows were introduced and caught by rebuilding (`\small` fonts,
+   shorter labels) before this was called done.
 
 ## Deadlines — VERIFIED 2026-09-06 against the official call
 
