@@ -92,6 +92,16 @@ def saturating(S):
     return len(S) - RHO[len(S)]
 
 
+# (C) Combined instance -- direct sum of (A) and (B) over disjoint
+#     ground sets, one per receiver. Added after a review caught that
+#     "no single instance has both" is FALSE in general: nothing stops
+#     one instance containing an (A)-style receiver and a (B)-style
+#     receiver side by side, and the two violating triples embed
+#     unchanged since neither touches the other receiver's items.
+def combined(S):
+    return and_pair(S & {"f1", "f2"}) + saturating(S & {"a", "b", "x"})
+
+
 if __name__ == "__main__":
     print(__doc__.split("Run:")[0].rstrip())
     report("(A) Pure complementarity -- hard AND-pair",
@@ -100,3 +110,12 @@ if __name__ == "__main__":
            saturating, {"a", "b", "x"})
     print("\nEach phenomenon kills exactly one of the two parameters that")
     print("Theorem 4 requires simultaneously.")
+
+    print()
+    report("(C) Combined -- (A) and (B) on disjoint receivers, same instance",
+           combined, {"f1", "f2", "a", "b", "x"})
+    d1, _, d3, _ = parameters_exist(combined, {"f1", "f2", "a", "b", "x"})
+    assert not d1 and not d3, "expected BOTH parameters to fail on the combined instance"
+    print("\n(C) confirms: gamma1 and gamma2 can both fail on ONE instance,")
+    print("not just on two separate ones -- a single instance is enough to")
+    print("place it entirely outside Shi & Lai's Theorem 4.")

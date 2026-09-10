@@ -25,6 +25,8 @@
 \citation{pacms2026}
 \citation{bps2026}
 \citation{phasetransition2026}
+\citation{distracted2025,nolima2025}
+\citation{liu2024}
 \@writefile{toc}{\contentsline {paragraph}{Contributions.}{2}{section*.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {2}Related work}{2}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Influence maximization.}{2}{section*.6}\protected@file@percent }
@@ -33,10 +35,8 @@
 \@writefile{toc}{\contentsline {section}{\numberline {3}Model}{2}{section.3}\protected@file@percent }
 \newlabel{sec:model}{{3}{2}{Model}{section.3}{}}
 \newlabel{def:prob}{{1}{2}{Multi-receiver context allocation}{definition.1}{}}
-\citation{distracted2025,nolima2025}
-\citation{liu2024}
+\newlabel{eq:util}{{1}{2}{Model}{equation.3.1}{}}
 \citation{nolima2025,liu2024}
-\newlabel{eq:util}{{1}{3}{Model}{equation.3.1}{}}
 \@writefile{toc}{\contentsline {paragraph}{Why routing intuitions do not transfer.}{3}{section*.9}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{On the shape of $\rho _i$.}{3}{section*.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {4}Theory: separation, degeneracy, and structure}{3}{section.4}\protected@file@percent }
@@ -67,42 +67,41 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Structure and algorithms}{4}{subsection.4.3}\protected@file@percent }
 \newlabel{sec:alg}{{4.3}{4}{Structure and algorithms}{subsection.4.3}{}}
 \newlabel{prop:decomp}{{4}{4}{}{proposition.4}{}}
-\citation{harshaw2019}
-\citation{shilai2024}
-\citation{bps2026}
-\newlabel{rem:noprice}{{3}{5}{}{remark.3}{}}
+\newlabel{rem:noprice}{{4}{5}{}{remark.4}{}}
 \newlabel{prop:approx}{{5}{5}{}{proposition.5}{}}
 \newlabel{ex:dp}{{2}{5}{}{example.2}{}}
 \@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Marginal allocation, given any per-receiver oracle}}{5}{algorithm.1}\protected@file@percent }
 \newlabel{alg:dp}{{1}{5}{Marginal allocation, given any per-receiver oracle}{algorithm.1}{}}
 \@writefile{toc}{\contentsline {paragraph}{An exact dominance test.}{5}{section*.16}\protected@file@percent }
 \newlabel{eq:dominance}{{4}{5}{An exact dominance test}{equation.4.4}{}}
-\@writefile{toc}{\contentsline {paragraph}{A density-greedy heuristic.}{5}{section*.17}\protected@file@percent }
+\citation{harshaw2019}
+\citation{shilai2024}
+\citation{bps2026}
 \citation{musique2022}
+\@writefile{toc}{\contentsline {paragraph}{A density-greedy heuristic.}{6}{section*.17}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Marginal allocation.}{6}{section*.18}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {5}Experiments}{6}{section.5}\protected@file@percent }
 \newlabel{sec:exp}{{5}{6}{Experiments}{section.5}{}}
 \@writefile{toc}{\contentsline {paragraph}{Setup.}{6}{section*.19}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Paired comparisons, $n=120$ receiver-instances ($60$ instances $\times $ $2$ independent sub-questions), matched-budget grid. $\Delta $ is the first policy minus the second; tokens are each arm's mean (broadcast $2256$). CI and $p$ are the \emph  {primary}, cluster-robust statistics: a block bootstrap and a permutation test resampling the $60$ source instances, not the $120$ receivers, since each instance contributes two non-independent receivers --- the flat, receiver-level version differs negligibly (largest shift: this CI's lower bound $-.142\to -.150$, $p$ $0.013\to 0.028$) and is not shown. Starred $p<0.05$.}}{6}{table.caption.21}\protected@file@percent }
+\newlabel{tab:main}{{2}{6}{Paired comparisons, $n=120$ receiver-instances ($60$ instances $\times $ $2$ independent sub-questions), matched-budget grid. $\Delta $ is the first policy minus the second; tokens are each arm's mean (broadcast $2256$). CI and $p$ are the \emph {primary}, cluster-robust statistics: a block bootstrap and a permutation test resampling the $60$ source instances, not the $120$ receivers, since each instance contributes two non-independent receivers --- the flat, receiver-level version differs negligibly (largest shift: this CI's lower bound $-.142\to -.150$, $p$ $0.013\to 0.028$) and is not shown. Starred $p<0.05$}{table.caption.21}{}}
 \@writefile{toc}{\contentsline {paragraph}{Protocol.}{6}{section*.20}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Paired comparisons, $n=120$ receiver-instances ($60$ instances $\times $ $2$ independent sub-questions), matched-budget grid. $\Delta $ is the first policy minus the second, with a $95\%$ paired bootstrap CI; token ratio $>1$ means the first is cheaper. Starred $p<0.05$ (McNemar, exact); see \S  \ref {sec:disc} for a cluster-robust check.}}{6}{table.caption.21}\protected@file@percent }
-\newlabel{tab:main}{{2}{6}{Paired comparisons, $n=120$ receiver-instances ($60$ instances $\times $ $2$ independent sub-questions), matched-budget grid. $\Delta $ is the first policy minus the second, with a $95\%$ paired bootstrap CI; token ratio $>1$ means the first is cheaper. Starred $p<0.05$ (McNemar, exact); see \S \ref {sec:disc} for a cluster-robust check}{table.caption.21}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Accuracy and cost per policy, matched-budget grid, $n=120$. Tokens are per receiver; the ratio is broadcast's mean tokens divided by the policy's, from the two numbers shown. Absolute exact-match is suppressed for deltas since MuSiQue predates current models (\S  \ref {sec:disc}: $0\%$ memorised here, up to $5\%$ on the other model). ``Density'' is \S  \ref {sec:alg}'s exact-dominance heuristic at two thresholds, not Algorithm\nonbreakingspace \ref {alg:dp}, evaluated separately in Table\nonbreakingspace \ref {tab:curves}.}}{6}{table.caption.22}\protected@file@percent }
-\newlabel{tab:policies}{{3}{6}{Accuracy and cost per policy, matched-budget grid, $n=120$. Tokens are per receiver; the ratio is broadcast's mean tokens divided by the policy's, from the two numbers shown. Absolute exact-match is suppressed for deltas since MuSiQue predates current models (\S \ref {sec:disc}: $0\%$ memorised here, up to $5\%$ on the other model). ``Density'' is \S \ref {sec:alg}'s exact-dominance heuristic at two thresholds, not Algorithm~\ref {alg:dp}, evaluated separately in Table~\ref {tab:curves}}{table.caption.22}{}}
 \@writefile{toc}{\contentsline {paragraph}{The separation appears in the data.}{6}{section*.24}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{A cost--quality frontier, honestly reported.}{6}{section*.26}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The measured cost--quality frontier, $n=120$ receiver-instances. The dashed line is broadcast's accuracy; anything above it is both cheaper \emph  {and} better. The oracle sits there, at $21\times $ fewer tokens, which is the order of magnitude the problem makes available. The implementable policies cluster well below the grey envelope, and --- the point of the paper's negative result --- they differ from one another by far less than any of them differs from the oracle. The seed set at matched cost is $39$ points down, and random delivery ($-0.667$) fixes the scale of the task. An empty-allocation arm (not shown, $0$ tokens, $-0.792$) is the contamination control.}}{7}{figure.caption.23}\protected@file@percent }
-\newlabel{fig:frontier}{{2}{7}{The measured cost--quality frontier, $n=120$ receiver-instances. The dashed line is broadcast's accuracy; anything above it is both cheaper \emph {and} better. The oracle sits there, at $21\times $ fewer tokens, which is the order of magnitude the problem makes available. The implementable policies cluster well below the grey envelope, and --- the point of the paper's negative result --- they differ from one another by far less than any of them differs from the oracle. The seed set at matched cost is $39$ points down, and random delivery ($-0.667$) fixes the scale of the task. An empty-allocation arm (not shown, $0$ tokens, $-0.792$) is the contamination control}{figure.caption.23}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Proposition\nonbreakingspace \ref {prop:sep} predicts the seed-set gap grows with the number of receivers. Delivery recall as instances are fused to raise $n$. The seed set collapses; per-receiver allocation does not.}}{7}{table.caption.25}\protected@file@percent }
-\newlabel{tab:scaling}{{4}{7}{Proposition~\ref {prop:sep} predicts the seed-set gap grows with the number of receivers. Delivery recall as instances are fused to raise $n$. The seed set collapses; per-receiver allocation does not}{table.caption.25}{}}
-\@writefile{toc}{\contentsline {paragraph}{A negative result on algorithm design.}{7}{section*.27}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Accuracy and cost per policy, matched-budget grid, $n=120$. Tokens are per receiver; the ratio is broadcast's mean tokens divided by the policy's, from the two numbers shown. Absolute exact-match is suppressed for deltas since MuSiQue predates current models (\S  \ref {sec:disc}: $0\%$ memorised here, up to $5\%$ on the other model). ``Density'' is \S  \ref {sec:alg}'s density-greedy heuristic (an approximation of the exact dominance test, \emph  {not} an instance of it) at two thresholds; it is a different policy from Algorithm\nonbreakingspace \ref {alg:dp}, evaluated separately in Table\nonbreakingspace \ref {tab:curves}.}}{7}{table.caption.22}\protected@file@percent }
+\newlabel{tab:policies}{{3}{7}{Accuracy and cost per policy, matched-budget grid, $n=120$. Tokens are per receiver; the ratio is broadcast's mean tokens divided by the policy's, from the two numbers shown. Absolute exact-match is suppressed for deltas since MuSiQue predates current models (\S \ref {sec:disc}: $0\%$ memorised here, up to $5\%$ on the other model). ``Density'' is \S \ref {sec:alg}'s density-greedy heuristic (an approximation of the exact dominance test, \emph {not} an instance of it) at two thresholds; it is a different policy from Algorithm~\ref {alg:dp}, evaluated separately in Table~\ref {tab:curves}}{table.caption.22}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The measured cost--quality frontier, $n=120$ receiver-instances. Vertical bars are $95\%$ cluster-robust CIs for the three points Table\nonbreakingspace \ref {tab:main} reports against broadcast (oracle, density-loose, uniform $k{=}5$); the other points have no CI reported here. The dashed line is broadcast's accuracy; anything above it is both cheaper \emph  {and} better, though only the oracle's CI clears it. The implementable policies cluster well below the grey envelope, and --- the point of the paper's negative result --- they differ from one another by far less than any of them differs from the oracle. The seed set at matched cost is $39$ points down, and random delivery ($-0.667$) fixes the scale of the task. An empty-allocation arm (not shown, $0$ tokens, $-0.792$) is the contamination control.}}{7}{figure.caption.23}\protected@file@percent }
+\newlabel{fig:frontier}{{2}{7}{The measured cost--quality frontier, $n=120$ receiver-instances. Vertical bars are $95\%$ cluster-robust CIs for the three points Table~\ref {tab:main} reports against broadcast (oracle, density-loose, uniform $k{=}5$); the other points have no CI reported here. The dashed line is broadcast's accuracy; anything above it is both cheaper \emph {and} better, though only the oracle's CI clears it. The implementable policies cluster well below the grey envelope, and --- the point of the paper's negative result --- they differ from one another by far less than any of them differs from the oracle. The seed set at matched cost is $39$ points down, and random delivery ($-0.667$) fixes the scale of the task. An empty-allocation arm (not shown, $0$ tokens, $-0.792$) is the contamination control}{figure.caption.23}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces The seed-set gap, motivated by Proposition\nonbreakingspace \ref {prop:sep} but not implied by it for this fused construction, grows with the number of receivers. Delivery recall as instances are fused to raise $n$. The seed set collapses; per-receiver allocation does not.}}{7}{table.caption.25}\protected@file@percent }
+\newlabel{tab:scaling}{{4}{7}{The seed-set gap, motivated by Proposition~\ref {prop:sep} but not implied by it for this fused construction, grows with the number of receivers. Delivery recall as instances are fused to raise $n$. The seed set collapses; per-receiver allocation does not}{table.caption.25}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Four designs for the value curve $v_i(b)$ that Algorithm\nonbreakingspace \ref {alg:dp} consumes, scored by delivery recall at matched spend against a tuned uniform per-receiver rule, $n=130$ composite instances (SE\nonbreakingspace $\approx \!0.04$ on a recall near $0.6$, comparable to the differences below --- read ``ties'' as \emph  {not detectably different}, not \emph  {proven equal}). The structure Proposition\nonbreakingspace \ref {prop:decomp} exposes is real; on this benchmark it is not \emph  {estimable}.}}{7}{table.caption.28}\protected@file@percent }
 \newlabel{tab:curves}{{5}{7}{Four designs for the value curve $v_i(b)$ that Algorithm~\ref {alg:dp} consumes, scored by delivery recall at matched spend against a tuned uniform per-receiver rule, $n=130$ composite instances (SE~$\approx \!0.04$ on a recall near $0.6$, comparable to the differences below --- read ``ties'' as \emph {not detectably different}, not \emph {proven equal}). The structure Proposition~\ref {prop:decomp} exposes is real; on this benchmark it is not \emph {estimable}}{table.caption.28}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Replacing lexical relevance with a dense embedding scorer \emph  {harms} per-receiver retrieval but helps the seed set. The two signals fail in opposite directions: embeddings capture what an instance is about, lexical matching captures which receiver needs what.}}{7}{table.caption.29}\protected@file@percent }
-\newlabel{tab:scorer}{{6}{7}{Replacing lexical relevance with a dense embedding scorer \emph {harms} per-receiver retrieval but helps the seed set. The two signals fail in opposite directions: embeddings capture what an instance is about, lexical matching captures which receiver needs what}{table.caption.29}{}}
+\@writefile{toc}{\contentsline {paragraph}{A negative result on algorithm design.}{7}{section*.27}\protected@file@percent }
 \bibstyle{ACM-Reference-Format}
 \bibdata{references}
 \bibcite{borgs2014}{{1}{2014}{{Borgs et~al\mbox  {.}}}{{}}}
-\bibcite{buchbinder2012}{{2}{2012}{{Buchbinder et~al\mbox  {.}}}{{}}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Replacing lexical relevance with a dense embedding scorer \emph  {harms} per-receiver retrieval but helps the seed set. The two signals fail in opposite directions: embeddings capture what an instance is about, lexical matching captures which receiver needs what.}}{8}{table.caption.29}\protected@file@percent }
+\newlabel{tab:scorer}{{6}{8}{Replacing lexical relevance with a dense embedding scorer \emph {harms} per-receiver retrieval but helps the seed set. The two signals fail in opposite directions: embeddings capture what an instance is about, lexical matching captures which receiver needs what}{table.caption.29}{}}
 \@writefile{toc}{\contentsline {paragraph}{Logged traces.}{8}{section*.30}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {6}Discussion and conclusion}{8}{section.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Discussion}{8}{subsection.6.1}\protected@file@percent }
@@ -110,7 +109,7 @@
 \@writefile{toc}{\contentsline {paragraph}{Threats to validity.}{8}{section*.31}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Open problems.}{8}{section*.32}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Conclusion}{8}{subsection.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{References}{8}{section*.34}\protected@file@percent }
+\bibcite{buchbinder2012}{{2}{2012}{{Buchbinder et~al\mbox  {.}}}{{}}}
 \bibcite{tokenecon2026}{{3}{2026a}{{Chen et~al\mbox  {.}}}{{}}}
 \bibcite{bps2026}{{4}{2026b}{{Chen et~al\mbox  {.}}}{{}}}
 \bibcite{daskempe2011}{{5}{2011}{{Das and Kempe}}{{}}}
@@ -142,5 +141,6 @@
 \newlabel{tocindent3}{0pt}
 \newlabel{tocindent4}{0pt}
 \newlabel{tocindent5}{0pt}
+\@writefile{toc}{\contentsline {section}{References}{9}{section*.34}\protected@file@percent }
 \newlabel{TotPages}{{9}{9}{}{page.9}{}}
 \gdef \@abspage@last{9}

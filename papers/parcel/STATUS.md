@@ -113,6 +113,81 @@
    Body still exactly 8 pages after all of this; two real table-width
    overflows were introduced and caught by rebuilding (`\small` fonts,
    shorter labels) before this was called done.
+10. ✅ **RESOLVED 2026-09-10 — a second, independent technical review
+    (external, forwarded by the user) found one genuine error in our own
+    round-9 fix plus several real presentation/rigor gaps**, again
+    verified independently (Python re-derivation, direct code/data
+    checks) rather than taken on the reviewer's word:
+    - **Proposition 3's "no single instance repairs both" claim was
+      itself false**, and this was *our* mistake from round 9, not the
+      reviewer's. A direct-sum instance (disjoint receivers, one
+      complementarity-witness, one saturation-witness) forces both
+      degeneracies at once, verified exhaustively
+      (`code/degeneracy_check.py`'s new `combined()` check over the
+      5-item ground set). Rewrote the proposition and added an explicit
+      modesty caveat that the class of escaping instances is not
+      claimed to be unique or deep.
+    - **Proposition 2's proof wrongly claimed the general-$n$ case
+      "contains Multiple Knapsack."** False: Multiple Knapsack needs
+      per-bin capacities and forbids item reuse; PARCEL has one shared
+      budget and copyable items, so general $n$ reduces to ordinary
+      Knapsack over receiver-item pairs instead. Removed the false
+      sentence, added a correct remark.
+    - **The exact dominance test (Eq. 4) was described as usable for
+      incremental/forward construction**; it is only a necessary
+      condition on a *completed* set — under complementarity an item
+      failing it mid-construction can pass once the rest of $S_i$ is in
+      place. Added that clarification explicitly.
+    - **Table 3's caption called the density rule an "exact-dominance
+      heuristic"** — self-contradictory. Fixed to "density-greedy
+      heuristic (an approximation of the exact test, not an instance of
+      it)."
+    - **Table 2 vs. Table 3 appeared inconsistent**: Table 2's headline
+      per-receiver-vs-seed row is actually per-receiver $k{=}3$ (220
+      tokens) vs. seed $k{=}3$ (251 tokens), but Table 3 only listed
+      per-receiver $k{=}5$ (420 tokens), so the two tables looked like
+      they disagreed. Verified the correct numbers directly from
+      `results/summary_musique.json`, added explicit configs/token
+      counts to every Table 2 row label, and added the missing
+      per-receiver $k{=}3$ row to Table 3.
+    - **Concavification's "restores a market-clearing price" claim
+      needed an ex-post/ex-ante qualification**: it holds only in
+      expectation under independent per-receiver randomization; exact
+      per-realization budget feasibility needs correlated (dependent)
+      rounding. Added that caveat.
+    - **"Free"/"no measured cost" framing persisted in a few spots**
+      (abstract, Finding 1, cost-quality-frontier paragraph, conclusion)
+      despite round 9's fix elsewhere; reworded to the point-estimate +
+      95% CI framing throughout ("uncertain 4.2-point loss, CI −10 to
+      +1").
+    - Redesigned Table 2 so cluster-robust CIs/$p$-values are the
+      *primary* reported statistic (previously only a Discussion
+      side-check), and correspondingly compressed the Discussion's
+      clustering paragraph since it no longer introduces new numbers.
+      Fixed Figure 2's overlapping point labels (leader lines) and
+      added CI error bars to the oracle/density-loose/uniform-$k{=}5$
+      points.
+    - Expanded the reproducibility protocol paragraph with exact model
+      names, temperature, call date, prompt template, extraction rule,
+      lexical-score formula, and embedding model/dimension, including an
+      honest disclosure that there is no calibration/evaluation split,
+      so "tuned uniform" cannot be certified free of leakage.
+    - **Not addressed** (recorded here rather than silently dropped):
+      Table 5's four value-curve comparisons still lack full per-model
+      paired CIs (would need new analysis of data not in hand — stays
+      an Open Problem/power caveat); the proxy-vs-real-multi-agent-system
+      limitation is unchanged from round 9 (needs a new experiment,
+      already listed as Open Problem (iii)); IM's positioning in Related
+      Work was tightened stylistically but not restructured further, a
+      judgment call. The reviewer's "missing spaces" complaints
+      (`can stillreach`, `item cost it1`, etc.) were re-checked against
+      the `.tex` source and confirmed, again, to be `pdftotext`
+      extraction artifacts around line breaks/ligatures, not real
+      source bugs — same conclusion as round 9's version of this
+      complaint.
+    Body still exactly 8 pages after all of this; the new Table 2 design
+    introduced a real 29pt table-width overflow, fixed with `\footnotesize`
+    and tighter `\tabcolsep` before this was called done.
 
 ## Deadlines — VERIFIED 2026-09-06 against the official call
 
