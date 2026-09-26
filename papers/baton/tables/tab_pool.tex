@@ -1,0 +1,30 @@
+\begin{table}[t]
+\caption{Shared, capacitated standby pool: expected daily recourse cost per
+plan (currency units, excluding the holding cost of reserved vehicles).
+Pay-per-use: the default model (pooled capacity, day rate billed per
+handoff). Reserved pool of $S$ vehicles: each held vehicle costs
+$F_{\mathrm{sb}} = 20$ per day whether or not it is used, a handoff then
+costs its marginal price $H_k - F_{\mathrm{sb}}$, requests are served
+first come, first served in the order of their time along the routes, and
+a route whose request is refused continues under its fallback menu
+(continue or return to the depot). Naive: every route decides at the
+marginal price and ignores the cap. Shadow: every route decides at
+$H_k - F_{\mathrm{sb}} + \lambda$, with the shadow price $\lambda$ of a
+standby vehicle chosen on the training days. $S^\star$: pool size
+minimising holding plus recourse for the shadow-priced policy.}
+\label{tab:pool}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l cc c cc cc cc c}
+\toprule
+& & & pay-per- & \multicolumn{2}{c}{$S = 0$} & \multicolumn{2}{c}{$S = 1$} & \multicolumn{2}{c}{$S = 2$} & \\ \cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
+Benchmark & plans & routes & use & naive & shadow & naive & shadow & naive & shadow & $S^\star$ \\
+\midrule
+Dethloff (SAA plans) & 40 & 9.5 & 8.3 & 9.9 & 8.3 & 9.0 & 8.2 & 8.5 & 8.1 & 0.0 \\
+City (Det plans) & 19 & 8.4 & 33.4 & 38.3 & 36.7 & 34.2 & 33.0 & 31.4 & 30.5 & 0.0 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

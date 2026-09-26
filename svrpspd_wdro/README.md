@@ -24,6 +24,10 @@ core/
                         the execution stage; quantile-binned backward induction)
   published_policies.py Salavati-Khoshghalb et al. (2019) rule-based recourse
                         (pi1/pi2/pi3), adapted to handoff recourse
+  extra_policies.py     BATON revision 1: position-dependent threshold,
+                        cost-scaled rollout, three-action near-exact DP
+                        (state-conditional fresh-start value), BATON-cf,
+                        exact post-return reset, CVaR
   alns_wdro.py, wdro_*.py, filter.py, cache.py, ...   W-DRO planning internals
 
 scripts/
@@ -46,6 +50,10 @@ scripts/
                         policy=compare: reactive vs OTR-2.0 side by side;
                         policy=fleet: every vehicle of a plan simultaneously
   validate_otr21.py     Paired v2 vs v2.1 validation over real routes
+  run_baton_r1.py       BATON revision experiments -> results/r1/*.csv
+                        (dependence, shape, daytype, fresh, budget, timing,
+                        pool, regret, synthetic)
+  make_zero_pickup_variants.py  deliver-only city twins (data/CityZP*)
 
 data/    Dethloff (40x50 cust), SalhiNagy (14x50-199), City (9x100-400)
 tests/   pytest suite (~180 tests)
@@ -78,6 +86,10 @@ python scripts/animate_execution.py policy=compare scenario=0
 # tests
 python -m pytest tests/ -q
 ```
+
+Scenario seeds are fixed functions of the instance name (md5), so every
+run draws identical scenarios; route-level results go to results/routes/.
+See ../papers/baton/README.md for the full BATON regeneration sequence.
 
 Solved plans are cached per instance in `results/plans/*.json` (all gates
 merged), so evaluation reruns skip ALNS. Results roll up in

@@ -1,0 +1,35 @@
+\begin{table}[t]
+\caption{Paired comparison of \textsc{Baton} with, in turn, the strongest
+competitor on each gate (the implementable policy with the highest mean
+saving in Table~\ref{tab:grand}), its handoff-only restriction, and the
+near-exact three-action dynamic program. The experimental unit is the
+instance ($n = 40$ per gate; the routes of a plan share their test days
+and are aggregated within the plan). $\Delta$: mean difference in saving
+(percentage points; positive favours \textsc{Baton}) with a 95\%
+bootstrap confidence interval; W: instances on which \textsc{Baton} is
+better; $r$: matched-pairs rank-biserial effect size; $p$: two-sided
+Wilcoxon signed-rank test, Holm-adjusted over the 18 comparisons.}
+\label{tab:stats}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l l cccc cccc cccc}
+\toprule
+& & \multicolumn{4}{c}{vs.\ strongest competitor}
+& \multicolumn{4}{c}{vs.\ \textsc{Baton-ho}}
+& \multicolumn{4}{c}{vs.\ DP$^3_{50\mathrm{k}}$ (reference)} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-10}\cmidrule(lr){11-14}
+Gate & competitor & $\Delta$ [95\% CI] & W & $r$ & $p$
+& $\Delta$ [95\% CI] & W & $r$ & $p$ & $\Delta$ [95\% CI] & W & $r$ & $p$ \\
+\midrule
+\textsc{Det} & thr.-$k$ & +2.1 [+1.6, +2.6] & 40 & +1.00 & $<\!10^{-4}$ & +1.8 [+1.4, +2.2] & 40 & +1.00 & $<\!10^{-4}$ & -1.6 [-2.2, -1.2] & 0 & -1.00 & $<\!10^{-4}$ \\
+\textsc{SAA} & restock & +10.0 [+8.5, +11.4] & 40 & +1.00 & $<\!10^{-4}$ & +33.5 [+32.0, +35.0] & 40 & +1.00 & $<\!10^{-4}$ & -2.7 [-3.3, -2.3] & 0 & -1.00 & $<\!10^{-4}$ \\
+\textsc{WDRO} & restock & +6.5 [+3.5, +9.6] & 31 & +0.70 & $<\!10^{-4}$ & +31.2 [+28.6, +33.7] & 40 & +1.00 & $<\!10^{-4}$ & -6.6 [-8.9, -4.6] & 3 & -0.91 & $<\!10^{-4}$ \\
+\textsc{Rob-G} & restock & +9.6 [+8.1, +11.1] & 40 & +1.00 & $<\!10^{-4}$ & +32.3 [+30.5, +34.0] & 40 & +1.00 & $<\!10^{-4}$ & -3.1 [-3.6, -2.6] & 1 & -1.00 & $<\!10^{-4}$ \\
+\textsc{Rob-BS} & restock & +10.5 [+8.6, +12.5] & 40 & +1.00 & $<\!10^{-4}$ & +31.8 [+30.3, +33.3] & 40 & +1.00 & $<\!10^{-4}$ & -2.5 [-2.9, -2.0] & 2 & -0.99 & $<\!10^{-4}$ \\
+\textsc{M-DRO} & restock & +7.9 [+5.1, +11.1] & 34 & +0.89 & $<\!10^{-4}$ & +33.5 [+30.9, +36.0] & 40 & +1.00 & $<\!10^{-4}$ & -5.0 [-7.2, -3.1] & 5 & -0.84 & $<\!10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

@@ -276,6 +276,7 @@ def _stats(costs: np.ndarray, action: np.ndarray) -> dict:
         "handoff_rate":  float((action == 1).mean()),
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
+        "costs":         costs,
     }
 
 
@@ -423,6 +424,7 @@ def simulate_restock(g_test: np.ndarray, B: float, E: np.ndarray,
         "handoff_rate":  float((action == 1).mean()),   # = restock rate here
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
+        "costs":         costs_out,
     }
     return (stats, action) if return_actions else stats
 
@@ -587,6 +589,7 @@ def simulate_actions(g_test: np.ndarray, B: float, H: np.ndarray,
         "handoff_rate":  float((action == 1).mean()),
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
+        "costs":         costs_out,
     }
     return (stats, action) if return_actions else stats
 

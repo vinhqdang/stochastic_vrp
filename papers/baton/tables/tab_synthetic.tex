@@ -1,17 +1,23 @@
 \begin{table}[t]
 \caption{Structural synthetic scenarios (five seeds, $1.2\times10^4$ test
-routes each): saving \% over the reactive policy, \emph{higher is
-better}. On collect-then-deliver structure the endpoint-labelled
-predecessor never intervenes.}
+routes each, flat prices $\omega_F = 1$, $C_{\mathrm{fail}}/\omega_F$
+as shown or 5): saving \% over the reactive policy, \emph{higher is
+better}. The synthetic routes have no geometry, so the depot return of
+the full \textsc{Baton} is priced flat at half a handoff; the first
+three columns use the handoff lever only. On collect-then-deliver
+structure the endpoint-labelled predecessor never intervenes.}
 \label{tab:synthetic}
 \centering
-\begin{tabular}{l ccc}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l cccc}
 \toprule
-Scenario & endpoint + $\tau$ & peak + $\tau$ & \textsc{Baton-ho} \\
+Scenario & endpoint + $\tau$ & peak + $\tau$ & \textsc{Baton-ho} &
+\textsc{Baton} \\
 \midrule
-collect-then-deliver & 0.0 & 49.2 & \textbf{51.9} \\
-milk run, regime switching & 58.9 & 58.9 & \textbf{63.8} \\
-milk run, $C/\omega = 20$ & 85.5 & 85.5 & \textbf{88.2} \\
+collect-then-deliver & 0.0 & 49.2 & 51.9 & \textbf{69.1} \\
+milk run, regime switching & 58.9 & 58.9 & 63.8 & \textbf{78.5} \\
+milk run, $C/\omega = 20$ & 85.5 & 85.5 & 88.2 & \textbf{93.5} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}

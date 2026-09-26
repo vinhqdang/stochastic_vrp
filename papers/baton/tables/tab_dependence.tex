@@ -1,0 +1,36 @@
+\begin{table}[t]
+\caption{Robustness to the demand dependence (40 Dethloff instances,
+\textsc{Det} and \textsc{SAA} plans, saving \% vs.\ reactive; plans are
+held fixed and policies are re-fitted and re-tested under each demand
+law; react.: expected daily recourse cost of the reactive policy per
+plan, which shows how much there is to save). $\rho$ is the Gaussian-copula equicorrelation among deliveries and
+among pickups; the day-factor law multiplies every demand of a day by a
+common lognormal factor (s.d.\ 0.25) on top of independent marginals.
+Last column: share of adjacent-bin pairs in which the unconstrained
+binned estimate of $\mathbb E[\text{future cost} \mid W_k]$, fitted on
+$5\times10^4$ paths per route with 25 bins, \emph{decreases}
+significantly (one-sided, 2.5\% level; the rate under independence,
+where monotonicity is a theorem, calibrates the test).}
+\label{tab:dependence}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l l c ccccccc c}
+\toprule
+Demand law & gate & react. & thr. & thr.-$k$ & \textsc{Baton-ho} & \textsc{Baton} & \textsc{Baton-cf} & DP$^3_{50\mathrm{k}}$ & oracle & viol.\ (\%) \\
+\midrule
+$\rho = 0$ (independent) & \textsc{Det} & 176.4 & 9.9 & 10.5 & 10.6 & \textbf{15.5} & 15.4 & 15.5 & 40.1 & 0.2 \\
+ & \textsc{SAA} & 2.8 & -24.9 & 0.0 & -8.0 & \textbf{-0.1} & 0.2 & 7.4 & 37.3 &  \\
+$\rho = 0.3$ & \textsc{Det} & 180.2 & 18.0 & 19.0 & 19.3 & \textbf{21.9} & 22.5 & 22.7 & 40.6 & -- \\
+ & \textsc{SAA} & 8.0 & 3.1 & 1.3 & 7.9 & \textbf{36.3} & 36.6 & 40.9 & 42.9 &  \\
+$\rho = 0.6$ (benchmark) & \textsc{Det} & 179.2 & 24.7 & 25.8 & 26.1 & \textbf{27.9} & 29.2 & 29.5 & 40.7 & 0.1 \\
+ & \textsc{SAA} & 16.5 & 16.3 & 15.4 & 20.1 & \textbf{53.7} & 53.8 & 56.4 & 43.5 &  \\
+$\rho = 0.9$ & \textsc{Det} & 177.5 & 32.3 & 33.9 & 34.1 & \textbf{35.4} & 37.6 & 38.0 & 40.7 & 0.0 \\
+ & \textsc{SAA} & 25.9 & 27.3 & 29.1 & 33.0 & \textbf{64.5} & 65.9 & 67.7 & 43.8 &  \\
+day factor, $\rho = 0$ & \textsc{Det} & 172.2 & 9.1 & 9.7 & 9.8 & \textbf{14.2} & 14.2 & 14.2 & 40.0 & -- \\
+ & \textsc{SAA} & 5.2 & -15.6 & -0.1 & -6.9 & \textbf{7.4} & 8.0 & 12.4 & 41.7 &  \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

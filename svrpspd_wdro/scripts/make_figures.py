@@ -6,7 +6,8 @@ Outputs (results/figures/):
   fig1_city_maps.png     2x2 street maps (Hanoi, New York, Paris, Shanghai)
                          with the depot, customers and ALNS routes drawn on
                          the real drive network.
-  fig2_how_it_works.png  The algorithm explainer: (A) onboard-load fan over
+  fig2a_how_it_works.png / fig2b_test_costs.png  The algorithm explainer
+                         (split for print legibility): (A) onboard-load fan over
                          route stops with the capacity line; (B) the BATON
                          decision rule on one demand-spike day — estimated
                          cost-to-continue vs the per-stop handoff price, with
@@ -26,6 +27,7 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib
+import matplotlib.ticker
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -41,7 +43,8 @@ from core.otr_endpoint import fit_otr
 from core.otr2 import fit_otr_peak, calibrate_B_empirical_peak
 from core.costs import (LastMileCosts, route_cost_schedules, fit_lsm_general,
                         simulate_v2_general, simulate_tau_general,
-                        tune_tau_general, oracle_costs_general)
+                        tune_tau_general, oracle_costs_general,
+                        restock_schedule, fit_lsm_actions, simulate_actions)
 from core.published_policies import pi_thresholds, simulate_pi, tune_pi
 
 # ── palette (reference instance, light mode) ─────────────────────────────────
@@ -271,91 +274,87 @@ def fig23(city="hanoi"):
     k_v1 = first_trigger(lambda k, w: v1_models[k].predict(np.array([w]))[0] > tau_v1)
     k_p3 = first_trigger(lambda k, w: w > thr3[k - 1])
 
-    # ── figure 2 ────────────────────────────────────────────────────────────
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.6),
-                             gridspec_kw={"width_ratios": [1.15, 1.15, 0.9]})
+    # ── figure 2 (panels A, B) and figure 2c (test-day costs) ──────────────
+    # print-size fonts: the panels are set at full text width in the paper
+    big = {"font.size": 12.5, "axes.titlesize": 13, "axes.labelsize": 13,
+           "xtick.labelsize": 12, "ytick.labelsize": 12, "legend.fontsize": 11.5}
+    with plt.rc_context(big):
+        fig, (axA, axB) = plt.subplots(1, 2, figsize=(13, 5.2))
+        stops = np.arange(m + 1)
+        fan = L0 + cum_te[:200]
+        for i in range(200):
+            axA.plot(stops, np.concatenate([[L0], fan[i]]), color=C["blue"],
+                     alpha=0.05, lw=0.8, zorder=1)
+        axA.plot(stops, np.concatenate([[L0], L0 + np.median(cum_te, 0)]),
+                 color=C["blue"], lw=2.4, zorder=3, label="median day")
+        axA.plot(stops, np.concatenate([[L0], L0 + spike]), color=C["yellow"],
+                 lw=2.8, zorder=4, label="demand-spike day")
+        axA.axhline(Q, color=STATUS_CRITICAL, ls="--", lw=1.6, zorder=2)
+        axA.text(0.1, Q + 2, "vehicle capacity Q", color=STATUS_CRITICAL)
+        if o <= m:
+            axA.scatter([o], [L0 + spike[o - 1]], marker="X", s=160,
+                        color=STATUS_CRITICAL, zorder=6)
+            axA.annotate("breach if nobody acts", (o, L0 + spike[o - 1]),
+                         textcoords="offset points", xytext=(-100, 12),
+                         color=STATUS_CRITICAL)
+        axA.set_xlabel("stop along route"); axA.set_ylabel("onboard load (kg)")
+        axA.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+        axA.set_ylim(bottom=0, top=max(Q * 1.18, float(fan.max()) + 5))
+        axA.set_title("(a) Onboard load over 200 simulated days", loc="left")
+        axA.legend(frameon=False, loc="lower left")
 
-    axA, axB, axC = axes
-    stops = np.arange(m + 1)
-    fan = L0 + cum_te[:200]
-    for i in range(200):
-        axA.plot(stops, np.concatenate([[L0], fan[i]]), color=C["blue"],
-                 alpha=0.05, lw=0.8, zorder=1)
-    axA.plot(stops, np.concatenate([[L0], L0 + np.median(cum_te, 0)]),
-             color=C["blue"], lw=2, zorder=3, label="median day")
-    axA.plot(stops, np.concatenate([[L0], L0 + spike]), color=C["yellow"],
-             lw=2.2, zorder=4, label="demand-spike day")
-    axA.axhline(Q, color=STATUS_CRITICAL, ls="--", lw=1.4, zorder=2)
-    axA.text(0.1, Q + 2, "vehicle capacity Q", color=STATUS_CRITICAL,
-             fontsize=8.5)
-    if o <= m:
-        axA.scatter([o], [L0 + spike[o - 1]], marker="X", s=110,
-                    color=STATUS_CRITICAL, zorder=6)
-        axA.annotate("breach if nobody acts", (o, L0 + spike[o - 1]),
-                     textcoords="offset points", xytext=(-70, 10),
-                     fontsize=8.5, color=STATUS_CRITICAL)
-    axA.set_xlabel("stop along route"); axA.set_ylabel("onboard load (kg)")
-    axA.set_ylim(bottom=0, top=max(Q * 1.15, float(fan.max()) + 5))
-    axA.set_title("A — Onboard load is uncertain: 200 simulated days",
-                  fontsize=10, loc="left")
-    axA.legend(frameon=False, fontsize=8.5, loc="lower left")
+        k_max = min(o, m - 1)                    # decisions end at the breach
+        ks = np.arange(1, k_max + 1)
+        chat = np.array([cm[k].predict(np.array([spike[k - 1]]))[0] for k in ks])
+        axB.plot(ks, chat, color=C["blue"], lw=2.4,
+                 label=r"estimated cost of continuing $\hat C_k(W_k)$")
+        axB.plot(ks, H[:k_max], color=MUTED, lw=2.0,
+                 label=r"handoff price $H_k$")
+        if k_v2:
+            axB.scatter([k_v2], [chat[k_v2 - 1]], s=130, color=C["green"], zorder=5)
+            axB.annotate("hand off here:\ncontinuing costs more",
+                         (k_v2, chat[k_v2 - 1]), textcoords="offset points",
+                         xytext=(10, -46), color=C["green"])
+        if o <= m:
+            axB.axvline(o, color=STATUS_CRITICAL, lw=1.4, ls="--")
+            axB.text(o - 0.45, axB.get_ylim()[1] * 0.30, "breach",
+                     rotation=90, color=STATUS_CRITICAL)
+        axB.set_xlabel("stop along route"); axB.set_ylabel("cost ($)")
+        axB.set_title("(b) The decision rule on the spike day", loc="left")
+        axB.legend(frameon=False, loc="upper right")
+        fig.tight_layout()
+        fig.savefig(FIG_DIR / "fig2a_how_it_works.png", dpi=220,
+                    facecolor="white", bbox_inches="tight")
+        plt.close(fig)
 
-    # panel B: cost-to-continue vs price-to-hand-off along the spike day
-    k_max = min(o, m - 1)                    # decisions end at the breach
-    ks = np.arange(1, k_max + 1)
-    chat = np.array([cm[k].predict(np.array([spike[k - 1]]))[0] for k in ks])
-    axB.plot(ks, chat, color=C["blue"], lw=2,
-             label=r"BATON estimate $\hat C_k$: cost of continuing")
-    axB.plot(ks, H[:k_max], color=MUTED, lw=1.6, ls="-",
-             label=r"handoff price $H_k$ at this stop")
-    if k_v2:
-        axB.scatter([k_v2], [chat[k_v2 - 1]], s=90, color=C["green"], zorder=5)
-        axB.annotate("BATON hands off:\ncontinuing now costs more",
-                     (k_v2, chat[k_v2 - 1]), textcoords="offset points",
-                     xytext=(8, -34), fontsize=8.5, color=C["green"])
-    if k_p3 and k_p3 != k_v2:
-        axB.axvline(k_p3, color=C["violet"], lw=1.2, ls=":")
-        axB.text(k_p3 + 0.1, axB.get_ylim()[1] * 0.55, "π3 rule",
-                 rotation=90, fontsize=8, color=C["violet"])
-    if k_v1 and k_v1 != k_v2:
-        axB.axvline(k_v1, color=C["aqua"], lw=1.2, ls=":")
-        axB.text(k_v1 + 0.1, axB.get_ylim()[1] * 0.8, "endpoint threshold",
-                 rotation=90, fontsize=8, color=C["aqua"])
-    if o <= m:
-        axB.axvline(o, color=STATUS_CRITICAL, lw=1.2, ls="--")
-        axB.text(o + 0.1, axB.get_ylim()[1] * 0.25, "breach",
-                 rotation=90, fontsize=8, color=STATUS_CRITICAL)
-    axB.set_xlabel("stop along route"); axB.set_ylabel("cost ($)")
-    axB.set_title("B — The decision rule on the spike day", fontsize=10,
-                  loc="left")
-    axB.legend(frameon=False, fontsize=8.5, loc="upper right")
-
-    # panel C: expected execution cost per policy on the test days
-    pol_costs = {
-        "reactive": simulate_tau_general(g_te, B, H, E, fb_models, tau=1.0),
-        "tuned threshold": simulate_tau_general(g_te, B, H, E, v1_models, tau=tau_v1),
-        "π3 rule":  simulate_pi(g_te, B, H, E, thr3),
-        "BATON":  simulate_v2_general(g_te, B, H, E, cm),
-    }
-    orc = oracle_costs_general(g_te, B, H, E)
-    labels = list(pol_costs) + ["oracle"]
-    vals = [pol_costs[k]["mean_cost"] for k in pol_costs] + [float(orc.mean())]
-    bar_cols = [MUTED, C["aqua"], C["violet"], C["blue"], INK]
-    bars = axC.bar(labels, vals, color=bar_cols, width=0.62)
-    for b, v in zip(bars, vals):
-        axC.text(b.get_x() + b.get_width() / 2, v, f"{v:.1f}",
-                 ha="center", va="bottom", fontsize=8.5, color=INK)
-    axC.set_ylabel("expected execution cost ($/day)")
-    axC.set_title("C — Result over 2,000 test days", fontsize=10, loc="left")
-    axC.tick_params(axis="x", labelrotation=20)
-
-    fig.suptitle(f"How BATON works — route with {m} stops, {name} "
-                 f"(peak-overflow rate {ovr * 100:.0f}%)", fontsize=12.5)
-    fig.tight_layout()
-    fig.savefig(FIG_DIR / "fig2_how_it_works.png", dpi=200,
-                facecolor="white", bbox_inches="tight")
-    plt.close(fig)
-    print("wrote fig2_how_it_works.png", flush=True)
+        # expected execution cost per policy on the test days
+        R = restock_schedule(route, D, scale, costs)
+        am = fit_lsm_actions(g_tr, B, H, E, R)
+        full = simulate_actions(g_te, B, H, E, R, am)
+        ho = simulate_v2_general(g_te, B, H, E, cm)
+        if simulate_actions(g_tr, B, H, E, R, am)["mean_cost"] > \
+                simulate_v2_general(g_tr, B, H, E, cm)["mean_cost"]:
+            full = ho                            # deployment selection
+        pol = [("reactive", simulate_tau_general(g_te, B, H, E, fb_models, tau=1.0), MUTED),
+               ("endpoint\nthreshold", simulate_tau_general(g_te, B, H, E, v1_models, tau=tau_v1), C["aqua"]),
+               (r"$\pi_3$ rule", simulate_pi(g_te, B, H, E, thr3), C["violet"]),
+               ("BATON-ho", ho, C["yellow"]),
+               ("BATON", full, C["blue"])]
+        orc = oracle_costs_general(g_te, B, H, E)
+        labels = [p[0] for p in pol] + ["oracle\n(handoff)"]
+        vals = [p[1]["mean_cost"] for p in pol] + [float(orc.mean())]
+        fig, ax = plt.subplots(figsize=(9.5, 4.4))
+        bars = ax.bar(labels, vals, color=[p[2] for p in pol] + [INK], width=0.62)
+        for b, v in zip(bars, vals):
+            ax.text(b.get_x() + b.get_width() / 2, v, f"{v:.2f}",
+                    ha="center", va="bottom", color=INK)
+        ax.set_ylabel("expected cost ($/day)")
+        fig.tight_layout()
+        fig.savefig(FIG_DIR / "fig2b_test_costs.png", dpi=220,
+                    facecolor="white", bbox_inches="tight")
+        plt.close(fig)
+    print("wrote fig2a_how_it_works.png, fig2b_test_costs.png", flush=True)
+    fig = None
 
     # ── figure 3: map replay ────────────────────────────────────────────────
     G = _load_graph(city)
@@ -469,17 +468,6 @@ def fig7(city="hanoi", size=200):
     print("wrote fig7_shops_vs_uniform.png", flush=True)
 
 
-if __name__ == "__main__":
-    FIG_DIR.mkdir(parents=True, exist_ok=True)
-    which = sys.argv[1] if len(sys.argv) > 1 else "all"
-    if which in ("all", "1"):
-        fig1()
-    if which in ("all", "23"):
-        fig23()
-    if which in ("all", "7"):
-        fig7()
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # Figures 4 & 5 — results charts (dot plots)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -491,10 +479,12 @@ def fig45():
                  "Gounaris": "Robust (Gounaris)", "Cui": "Robust (B-S budget)",
                  "MDRO": "Moment-DRO"}
     POL = [("fb_tau", "tuned threshold", MUTED, "o"),
+           ("thr_k", "position-dependent threshold", C["yellow"], "o"),
            ("restock", "restock rule", C["violet"], "o"),
-           ("v2_lsm", "BATON-HO", C["aqua"], "o"),
+           ("v2_lsm", "BATON-ho", C["aqua"], "o"),
            ("v2_act", "BATON", C["blue"], "D"),
-           ("oracle", "oracle (handoff-only)", INK, "*")]
+           ("dp_xl3", "near-exact DP, 3 actions (reference)", INK, "^"),
+           ("oracle", "oracle, handoff-only (reference)", INK, "*")]
 
     d = pd.read_csv(_WDRO / "results" / "results_grand_dethloff.csv")
     fig, ax = plt.subplots(figsize=(8.6, 4.6))
@@ -518,9 +508,8 @@ def fig45():
                           ms=11 if mk == "*" else (8 if mk == "D" else 7),
                           label=nm) for _, nm, col, mk in POL]
     ax.legend(handles=handles, frameon=False, fontsize=8.5,
-              loc="upper left", bbox_to_anchor=(0.0, -0.12), ncols=5)
-    ax.set_title("Execution-policy savings by planning gate — 40 Dethloff "
-                 "instances, three-class fleet costs", fontsize=11, loc="left")
+              loc="upper left", bbox_to_anchor=(0.0, -0.12), ncols=3)
+    ax.set_ylim(-0.6, len(GATES) - 0.4)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig4_gate_dots.png", dpi=200, facecolor="white",
                 bbox_inches="tight")
@@ -537,11 +526,13 @@ def fig45():
           ("low SLA price (p$_{late}$=0.5)", "p_late_0_5"),
           ("high SLA price (p$_{late}$=3)", "p_late_3_0"),
           ("mild surge (s$_{emg}$=1.5)", "s_emg_1_5"),
-          ("heavy surge (s$_{emg}$=4)", "s_emg_4_0")]
-    base = d[d.Plan.isin(["Det", "SAA"])]
+          ("heavy surge (s$_{emg}$=4)", "s_emg_4_0"),
+          ("standby above emergency (F$_{sb}$=60)", "F_standby_60")]
+    ref = pd.read_csv(_WDRO / "results" / "results_costsens_F_emg_25.csv")
+    base = d[d.Plan.isin(["Det", "SAA"]) & d.Instance.isin(ref.Instance)]
     fig, ax = plt.subplots(figsize=(8.6, 4.9))
     ys = np.arange(len(CS))[::-1]
-    POL5 = [p for p in POL if p[0] != "v2_lsm"]
+    POL5 = [p for p in POL if p[0] in ("fb_tau", "restock", "v2_act", "oracle")]
     for y, (disp, tag) in zip(ys, CS):
         s = base if tag is None else pd.read_csv(
             _WDRO / "results" / f"results_costsens_{tag}.csv")
@@ -565,3 +556,56 @@ def fig45():
                 bbox_inches="tight")
     plt.close(fig)
     print("wrote fig5_costsens.png")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Figure 8 — training-data budget (results/r1/budget.csv)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def fig8():
+    import pandas as pd
+    d = pd.read_csv(_WDRO / "results" / "r1" / "budget.csv")
+    panels = [("Dethloff", "Det", "Dethloff, deterministic gate"),
+              ("Dethloff", "SAA", "Dethloff, SAA gate"),
+              ("City", "Det", "City, real shops")]
+    big = {"font.size": 11.5, "axes.titlesize": 12, "axes.labelsize": 12,
+           "legend.fontsize": 11}
+    with plt.rc_context(big):
+        fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.3))
+        for ax, (fam, pln, title) in zip(axes, panels):
+            s = d[(d.fam == fam) & (d.Plan == pln)].groupby("N").mean(numeric_only=True)
+            N = s.index.values
+            ax.plot(N, s.fb_tau_saving, "o-", color=MUTED, label="tuned threshold")
+            ax.plot(N, s.dp_n_saving, "s-", color=C["violet"], label="DP$_N$ (equal data)")
+            ax.plot(N, s.v2_act_saving, "D-", color=C["blue"], lw=2.2, label="BATON")
+            ax.axhline(s.dp_xl_saving.iloc[-1], color=INK, ls=":", lw=1.3,
+                       label="DP$_{50k}$ (handoff only)")
+            ax.axhline(s.dp_xl3_saving.iloc[-1], color=INK, ls="--", lw=1.3,
+                       label="DP$^3_{50k}$ (three actions)")
+            ax.set_xscale("log")
+            ax.set_xlabel("training days per route $N$")
+            ax.set_title(title, loc="left")
+        axes[0].set_ylabel("saving vs reactive (%)")
+        h, l = axes[0].get_legend_handles_labels()
+        fig.legend(h, l, frameon=False, loc="lower center", ncols=5,
+                   bbox_to_anchor=(0.5, -0.06))
+        fig.tight_layout(rect=(0, 0.06, 1, 1))
+        fig.savefig(FIG_DIR / "fig8_budget.png", dpi=220, facecolor="white",
+                    bbox_inches="tight")
+        plt.close(fig)
+    print("wrote fig8_budget.png")
+
+
+if __name__ == "__main__":
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    which = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if which in ("all", "1"):
+        fig1()
+    if which in ("all", "23"):
+        fig23()
+    if which in ("all", "45"):
+        fig45()
+    if which in ("all", "7"):
+        fig7()
+    if which in ("all", "8"):
+        fig8()

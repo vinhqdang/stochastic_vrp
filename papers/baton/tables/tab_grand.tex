@@ -1,28 +1,35 @@
 \begin{table}[t]
 \caption{Expected-recourse saving over the reactive policy (\%, mean over
 the 40 Dethloff instances) for each planning gate and execution policy
-under the three-class fleet cost model; \emph{higher is better}, and the
-best non-clairvoyant value per gate is in bold. \textsc{Baton-ho} is the
-handoff-only restriction; DP$_{50\mathrm{k}}$ and the clairvoyant oracle
-are handoff-only reference points, so \textsc{Baton} may legitimately
-exceed them by exercising its richer action set.}
+under the three-class fleet cost model; \emph{higher is better}.
+\textsc{Baton} (bold) has the highest saving of all implementable
+policies on every gate. thr.\ is the label-corrected tuned threshold,
+thr.-$k$ the position-dependent threshold, roll.-$\theta$ the
+cost-scaled rollout. The last three columns are reference points, not
+competitors: DP$_{50\mathrm{k}}$ and DP$^3_{50\mathrm{k}}$ are
+near-exact dynamic programs for the handoff-only and the three-action
+problem with fifty times the training data, and the clairvoyant oracle
+is restricted to the handoff lever, so \textsc{Baton} may legitimately
+exceed it.}
 \label{tab:grand}
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{l cccc cc cc}
+\footnotesize
+\setlength{\tabcolsep}{2.6pt}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l cccccc cc ccc}
 \toprule
-& \multicolumn{4}{c}{published / tuned competitors}
-& \multicolumn{2}{c}{this paper} & \multicolumn{2}{c}{reference (HO)} \\
-\cmidrule(lr){2-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
-Gate & $\pi_3$ & rollout & restock & threshold & \textsc{Baton-ho} & \textsc{Baton} & DP$_{50\mathrm{k}}$ & oracle \\
+& \multicolumn{6}{c}{published / tuned competitors}
+& \multicolumn{2}{c}{this paper} & \multicolumn{3}{c}{reference points} \\
+\cmidrule(lr){2-7}\cmidrule(lr){8-9}\cmidrule(lr){10-12}
+Gate & $\pi_3$ & roll. & roll.-$\theta$ & restock & thr. & thr.-$k$ & \textsc{Baton-ho} & \textsc{Baton} & DP$_{50\mathrm{k}}$ & DP$^3_{50\mathrm{k}}$ & oracle \\
 \midrule
-\textsc{Det} & 17.3 & 20.7 & 5.6 & 24.8 & 26.1 & \textbf{27.8} & 26.5 & 40.7 \\
-\textsc{SAA} & 12.8 & 10.0 & 43.7 & 16.6 & 20.5 & \textbf{53.4} & 22.3 & 43.5 \\
-\textsc{WDRO} & 7.8 & -4.7 & 34.8 & -8.3 & 9.3 & \textbf{40.9} & 12.0 & 42.0 \\
-\textsc{Rob-G} & 15.8 & 9.6 & 43.3 & 17.0 & 21.2 & \textbf{52.8} & 22.9 & 43.5 \\
-\textsc{Rob-BS} & 10.8 & 9.5 & 41.0 & 16.6 & 20.7 & \textbf{51.6} & 22.7 & 43.2 \\
-\textsc{M-DRO} & 10.0 & -3.1 & 38.8 & -1.8 & 11.9 & \textbf{44.3} & 14.2 & 42.2 \\
+\textsc{Det} & 17.0 & 20.8 & 24.9 & 5.8 & 24.7 & 25.8 & 26.1 & \textbf{27.9} & 26.4 & 29.5 & 40.7 \\
+\textsc{SAA} & 12.6 & 8.9 & 18.4 & 43.7 & 16.3 & 15.4 & 20.1 & \textbf{53.7} & 22.1 & 56.4 & 43.5 \\
+\textsc{WDRO} & 8.0 & -4.2 & 8.9 & 34.7 & -1.3 & -0.2 & 10.0 & \textbf{41.2} & 13.2 & 47.8 & 42.0 \\
+\textsc{Rob-G} & 15.7 & 10.1 & 19.1 & 43.6 & 16.7 & 16.7 & 21.0 & \textbf{53.2} & 22.9 & 56.3 & 43.3 \\
+\textsc{Rob-BS} & 11.1 & 10.3 & 18.7 & 42.0 & 16.7 & 16.3 & 20.7 & \textbf{52.5} & 22.6 & 54.9 & 43.1 \\
+\textsc{M-DRO} & 9.6 & -1.4 & 10.3 & 37.4 & 0.5 & -1.0 & 11.8 & \textbf{45.3} & 14.2 & 50.2 & 42.2 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}

@@ -14,6 +14,7 @@ Usage:
 
 import sys
 import json
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -24,7 +25,7 @@ sys.path.insert(0, str(_WDRO))
 sys.path.insert(0, str(_SCRIPTS))
 
 from dethloff_runner import parse_dethloff, sample_demands, CV, DIST, SEED
-from core.costs import LastMileCosts, route_cost_schedules
+from core.costs import LastMileCosts, route_cost_schedules, restock_schedule
 from core.otr2 import calibrate_B_empirical_peak
 
 PLANS_DIR = _WDRO / "results" / "plans"
@@ -47,7 +48,7 @@ def collect(instances, n_train=1000, n_test=2000):
             continue
         dbar = dem[:, 0].astype(float)
         pbar = dem[:, 1].astype(float)
-        seed = SEED + abs(hash(inst)) % 10_000
+        seed = SEED + int(hashlib.md5(inst.encode()).hexdigest(), 16) % 10_000
         rng = np.random.default_rng(seed)
         dsc_tr = sample_demands(dbar, n, n_train, CV, DIST, rng)
         psc_tr = sample_demands(pbar, n, n_train, CV, DIST, rng)
@@ -63,8 +64,9 @@ def collect(instances, n_train=1000, n_test=2000):
             if B <= 0:
                 B = calibrate_B_empirical_peak(g_tr, alpha=0.10)
             H, E = route_cost_schedules(route, D, scale, costs)
+            R = restock_schedule(route, D, scale, costs)
             routes.append(dict(
-                inst=inst, m=len(r), B=np.float32(B),
+                inst=inst, m=len(r), B=np.float32(B), R=R.astype(np.float32),
                 g_train=g_tr,
                 g_test=(psc_te[:, r] - dsc_te[:, r]).astype(np.float32),
                 H=H.astype(np.float32), E=E.astype(np.float32)))
@@ -85,7 +87,7 @@ def main():
 
     payload = {"n_routes": np.array([len(routes)])}
     for i, rt in enumerate(routes):
-        for key in ("g_train", "g_test", "H", "E"):
+        for key in ("g_train", "g_test", "H", "E", "R"):
             payload[f"r{i}_{key}"] = rt[key]
         payload[f"r{i}_B"] = np.array([rt["B"]])
         payload[f"r{i}_inst"] = np.array([rt["inst"]])

@@ -33,6 +33,7 @@ import sys
 import glob
 import json
 import time
+import hashlib
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
@@ -68,6 +69,10 @@ from core.costs import (
     fit_lsm_actions,
     simulate_actions,
 )
+from core.extra_policies import (
+    fit_threshold_k, simulate_threshold_k, tune_rollout_theta,
+    fit_dp_actions_cf, cvar, fit_lsm_actions_cf, simulate_actions_cf,
+)
 from dethloff_runner import (
     parse_dethloff, sample_demands, solve_instance,
     ALPHA, CV, DIST, SEED, NO_IMPROVE,
@@ -83,8 +88,9 @@ PLANS_DIR   = RESULTS_DIR / os.environ.get("SVRPSPD_PLANS_SUBDIR", "plans")
 def set_plans_dir(data_dir: str) -> None:
     global PLANS_DIR
     base = Path(data_dir).name
-    # Dethloff and the (shops) City set keep the historical shared cache
-    if base not in ("Dethloff", "City"):
+    # Dethloff, Salhi-Nagy and the (shops) City set keep the historical
+    # shared cache
+    if base not in ("Dethloff", "City", "SalhiNagy"):
         PLANS_DIR = RESULTS_DIR / f"plans_{base}"
         # ProcessPoolExecutor workers re-import this module (spawn on
         # macOS), losing the global — the env var survives the fork/spawn
@@ -93,9 +99,19 @@ def set_plans_dir(data_dir: str) -> None:
 
 POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau",
                  "pi1", "pi2", "pi3", "rollout", "restock",
-                 "v2_lsm", "v2_act", "dp_n", "dp_xl", "oracle"]
+                 "thr_k", "ro_theta",
+                 "v2_lsm", "v2_act", "v2_cf", "dp_n", "dp_xl", "dp_xl3",
+                 "oracle"]
 
-N_XL = 50_000       # training scenarios for the near-exact DP anchor
+N_XL = int(os.environ.get("SVRPSPD_N_XL", 50_000))  # near-exact DP anchor
+RHO_EXEC = os.environ.get("SVRPSPD_RHO")            # execution-day copula rho
+                                                    # (None: benchmark 0.6)
+
+
+def stable_seed(name: str) -> int:
+    """Per-instance seed independent of Python's salted str hash, so every
+    run of the pipeline draws identical scenarios."""
+    return SEED + int(hashlib.md5(name.encode()).hexdigest(), 16) % 10_000
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -140,11 +156,13 @@ def _load_plans(name: str) -> dict | None:
 # Per-instance runner (worker process)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _gen_scenarios(dbar, pbar, N, seed):
+def _gen_scenarios(dbar, pbar, N, seed, rho=None):
     n = len(dbar)
+    if rho is None and RHO_EXEC is not None:
+        rho = float(RHO_EXEC)
     rng = np.random.default_rng(seed)
-    dsc = sample_demands(dbar, n, N, CV, DIST, rng)
-    psc = sample_demands(pbar, n, N, CV, DIST, rng)
+    dsc = sample_demands(dbar, n, N, CV, DIST, rng, rho=rho)
+    psc = sample_demands(pbar, n, N, CV, DIST, rng, rho=rho)
     return dsc, psc
 
 
@@ -159,6 +177,7 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     (the retainer is charged separately at plan level).
     """
     lam = lam or {}
+    tfit = {}
     r = np.array(route)
     g_train = psc_tr[:, r] - dsc_tr[:, r]
     g_test  = psc_te[:, r] - dsc_te[:, r]
@@ -174,32 +193,65 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     def Hd(lbl):
         return H + float(lam.get(lbl, 0.0))
 
+    t0 = time.perf_counter()
     v1_end_models = fit_otr(g_train, B)          # endpoint label (the v1 bug)
-    fb_models     = fit_otr_peak(g_train, B)     # peak label
-    tau_myo = float(Hd("v1_myo").mean() / max(E.mean(), 1e-9))
     tau_end = tune_tau_general(g_train, B, Hd("v1_end"), E, v1_end_models) if v1_end_models else 1.0
+    tfit["v1_end"] = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    fb_models     = fit_otr_peak(g_train, B)     # peak label
+    t_fb = time.perf_counter() - t0
+    tau_myo = float(Hd("v1_myo").mean() / max(E.mean(), 1e-9))
+    tfit["v1_myo"] = t_fb
+    t0 = time.perf_counter()
     tau_fb  = tune_tau_general(g_train, B, Hd("fb_tau"), E, fb_models) if fb_models else 1.0
+    tfit["fb_tau"] = t_fb + time.perf_counter() - t0
+    t0 = time.perf_counter()
     cm      = fit_lsm_general(g_train, B, Hd("v2_lsm"), E)
+    tfit["v2_lsm"] = time.perf_counter() - t0
+
+    # position-dependent load thresholds, tuned by coordinate descent
+    t0 = time.perf_counter()
+    thr_k = fit_threshold_k(g_train, B, Hd("thr_k"), E)
+    tfit["thr_k"] = time.perf_counter() - t0
 
     # plug-in DP benchmarks: equal data budget, and near-exact 50k anchor
+    t0 = time.perf_counter()
     dp_same = fit_dp(g_train, B, Hd("dp_n"), E)
+    tfit["dp_n"] = time.perf_counter() - t0
+    t0 = time.perf_counter()
     dp_xl   = fit_dp(g_xl,    B, Hd("dp_xl"), E)
+    tfit["dp_xl"] = time.perf_counter() - t0
 
     # published rule-based recourse (Salavati-Khoshghalb et al. 2019),
     # adapted to handoff recourse and grid-tuned on realized cost + lambda
     g_mean = g_train.mean(axis=0)
     pis = {}
     for kind in ("pi1", "pi2", "pi3"):
+        t0 = time.perf_counter()
         c = tune_pi(kind, g_train, B, Hd(kind), E)
+        tfit[kind] = time.perf_counter() - t0
         pis[kind] = simulate_pi(g_test, B, H, E,          # bills true H
                                 pi_thresholds(kind, B, g_mean, c),
                                 return_actions=True)
 
     # published-family comparators re-implemented (no public code):
     # Secomandi-2001-style rollout; Florio/Legault-style depot restocking
+    t0 = time.perf_counter()
     ro_models = fit_rollout(g_train, B, Hd("rollout"), E)
+    tfit["rollout"] = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    theta = tune_rollout_theta(g_train, B, Hd("ro_theta"), E, ro_models)
+    tfit["ro_theta"] = tfit["rollout"] + time.perf_counter() - t0
     R = restock_schedule(route, D, scale, costs)
+    t0 = time.perf_counter()
     thr_rs = tune_restock(g_train, B, E, R)
+    tfit["restock"] = time.perf_counter() - t0
+    # near-exact yardstick for the THREE-action problem (50k paths)
+    t0 = time.perf_counter()
+    # bins for C_k fitted on one half, state-conditional F_k(W_k) on the other
+    half = g_xl.shape[0] // 2
+    dp3 = fit_dp_actions_cf(g_xl[:half], B, Hd("dp_xl3"), E, R, g_eval=g_xl[half:])
+    tfit["dp_xl3"] = time.perf_counter() - t0
 
     orc, orc_a = oracle_general_billed(g_test, B, Hd("oracle"), E, H)
 
@@ -207,10 +259,16 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     # choice is made per route ON TRAINING DATA (no test leakage): when the
     # restock action cannot pay for itself (e.g. remote depots), the extra
     # action only adds estimation noise, so fall back to handoff-only.
+    t0 = time.perf_counter()
     am = fit_lsm_actions(g_train, B, Hd("v2_act"), E, R)
     tr_act = simulate_actions(g_train, B, Hd("v2_act"), E, R, am)["mean_cost"]
     tr_ho  = simulate_v2_general(g_train, B, Hd("v2_act"), E, cm)["mean_cost"]
     use_actions = tr_act <= tr_ho
+    tfit["v2_act"] = tfit["v2_lsm"] + time.perf_counter() - t0
+    # conditional fresh-start value F_k(W_k): no deployment selection needed
+    t0 = time.perf_counter()
+    cf = fit_lsm_actions_cf(g_train, B, Hd("v2_cf"), E, R)
+    tfit["v2_cf"] = time.perf_counter() - t0
 
     out, acts = {}, {}
     out["rollout"], acts["rollout"] = simulate_v2_general(
@@ -232,12 +290,24 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     out["v2_lsm"], acts["v2_lsm"] = simulate_v2_general(g_test, B, Hd("v2_lsm"), E, cm, return_actions=True, H_bill=H)
     out["dp_n"],   acts["dp_n"]   = simulate_v2_general(g_test, B, Hd("dp_n"), E, dp_same, return_actions=True, H_bill=H)
     out["dp_xl"],  acts["dp_xl"]  = simulate_v2_general(g_test, B, Hd("dp_xl"), E, dp_xl, return_actions=True, H_bill=H)
+    out["dp_xl3"], acts["dp_xl3"] = simulate_actions_cf(g_test, B, Hd("dp_xl3"), E, R, dp3, return_actions=True, H_bill=H)
+    out["v2_cf"],  acts["v2_cf"]  = simulate_actions_cf(g_test, B, Hd("v2_cf"), E, R, cf, return_actions=True, H_bill=H)
+    out["thr_k"],  acts["thr_k"]  = simulate_threshold_k(g_test, B, Hd("thr_k"), E, thr_k, return_actions=True, H_bill=H)
+    t0 = time.perf_counter()
+    out["ro_theta"], acts["ro_theta"] = simulate_v2_general(g_test, B, theta * Hd("ro_theta"), E, ro_models, return_actions=True, H_bill=H)
+    # online cost: wall time of one full test pass per decision epoch
+    n_dec = max(g_test.shape[0] * (len(route) - 1), 1)
+    t_on = (time.perf_counter() - t0) / n_dec
+    out["v2_act"]["use_actions"] = bool(use_actions)
     out["oracle"] = {"mean_cost": float(orc.mean()),
+                     "costs": orc,
                      "handoff_rate": float((orc_a == 1).mean()),
                      "fail_rate": float((orc_a == 2).mean()),
                      "complete_rate": float((orc_a == 0).mean())}
     acts["oracle"] = orc_a
-    return out, acts
+    tfit["none"] = tfit["oracle"] = 0.0
+    tfit["_online_s"] = t_on
+    return out, acts, tfit
 
 
 def _run_instance(path, tlim, n_train, n_test, active_policies, reuse,
@@ -261,13 +331,14 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse,
         sol = _load_plans(name)
 
     dbar, pbar = sol["dbar"], sol["pbar"]
-    inst_seed = SEED + abs(hash(name)) % 10_000
+    inst_seed = stable_seed(name)
 
     dsc_tr, psc_tr = _gen_scenarios(dbar, pbar, n_train, inst_seed)
     dsc_te, psc_te = _gen_scenarios(dbar, pbar, n_test,  inst_seed + 99_991)
     dsc_xl, psc_xl = _gen_scenarios(dbar, pbar, N_XL,    inst_seed + 424_243)
 
     rows = []
+    route_rows = []
     for policy in active_policies:
         pdata = sol["res"][policy]
         plan, K, dist = pdata["plan"], pdata["K"], pdata["dist"]
@@ -277,17 +348,31 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse,
         ho  = {lbl: [] for lbl in POLICY_LABELS}
         fl  = {lbl: [] for lbl in POLICY_LABELS}
         hand = {lbl: [] for lbl in POLICY_LABELS}   # (route, day) handoffs
-        for route in plan:
+        emg  = {lbl: [] for lbl in POLICY_LABELS}   # (route, day) emergencies
+        daily = {lbl: np.zeros(n_test) for lbl in POLICY_LABELS}
+        tf = {lbl: 0.0 for lbl in POLICY_LABELS}
+        t_online = []
+        n_act_routes = 0
+        for ri, route in enumerate(plan):
             if not route:
                 continue
-            res, acts = _eval_route_realistic(route, dbar, Q, D, scale, costs,
-                                              dsc_tr, psc_tr, dsc_te, psc_te,
-                                              dsc_xl, psc_xl)
+            res, acts, tfit = _eval_route_realistic(
+                route, dbar, Q, D, scale, costs,
+                dsc_tr, psc_tr, dsc_te, psc_te, dsc_xl, psc_xl)
+            n_act_routes += int(res["v2_act"].get("use_actions", False))
+            t_online.append(tfit["_online_s"])
+            rrow = {"Instance": name, "Plan": policy, "route": ri,
+                    "m": len(route)}
             for lbl in POLICY_LABELS:
                 agg[lbl].append(res[lbl]["mean_cost"])
                 ho[lbl].append(res[lbl]["handoff_rate"])
                 fl[lbl].append(res[lbl]["fail_rate"])
                 hand[lbl].append(acts[lbl] == 1)
+                emg[lbl].append(acts[lbl] == 2)
+                daily[lbl] += res[lbl]["costs"]
+                tf[lbl] += tfit.get(lbl, 0.0)
+                rrow[f"{lbl}_rec"] = round(res[lbl]["mean_cost"], 4)
+            route_rows.append(rrow)
         # dedicated-pool size a policy WOULD need (95% service): diagnostic
         # only — the retainer is billed per vehicle-day inside handoff_cost
         pool = {}
@@ -321,6 +406,15 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse,
             if lbl not in ("none", "oracle"):
                 row[f"{lbl}_gap"] = round(
                     100.0 * (rec - orc_rec) / max(none_rec - orc_rec, 1e-9), 2)
+            # tail risk of the plan's DAILY recourse bill, and the chance
+            # that at least one route of the plan breaches on a day
+            row[f"{lbl}_cvar95"] = round(cvar(daily[lbl], 0.95), 3)
+            row[f"{lbl}_p95"] = round(float(np.quantile(daily[lbl], 0.95)), 3)
+            row[f"{lbl}_pem"] = round(float(np.array(emg[lbl]).any(axis=0).mean()), 4)
+            row[f"{lbl}_fit_s"] = round(tf[lbl], 4)
+        row["online_us"] = round(1e6 * float(np.mean(t_online)), 3) if t_online else 0.0
+        row["act_routes"] = n_act_routes
+        row["n_routes"] = len([r for r in plan if r])
         row["solve_s"] = round(solve_time, 1)
         row["eval_s"]  = round(eval_time, 1)
         rows.append(row)
@@ -334,7 +428,7 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse,
             f"{row['fb_tau_saving']:.1f}/{row['v2_lsm_saving']:.1f}/"
             f"{row['dp_n_saving']:.1f}/{row['dp_xl_saving']:.1f}"
         )
-    return rows, "\n".join(log)
+    return rows, "\n".join(log), route_rows
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -421,6 +515,7 @@ def main():
     print("-" * W)
 
     all_rows = []
+    all_route_rows = []
     t_start = time.time()
     with ProcessPoolExecutor(max_workers=n_workers) as pool:
         futures = {
@@ -433,8 +528,9 @@ def main():
             stem = futures[fut]
             done += 1
             try:
-                rows, log = fut.result()
+                rows, log, rrows = fut.result()
                 all_rows.extend(rows)
+                all_route_rows.extend(rrows)
                 print(f"\n[{done}/{len(files)}] {stem}")
                 print(log, flush=True)
             except Exception as exc:
@@ -452,6 +548,10 @@ def main():
     csv_path = RESULTS_DIR / (out_stem + ".csv")
     df.to_csv(csv_path, index=False)
     print(f"\n  Wrote {csv_path}")
+    rpath = RESULTS_DIR / "routes" / (out_stem + "_routes.csv")
+    rpath.parent.mkdir(exist_ok=True)
+    pd.DataFrame(all_route_rows).to_csv(rpath, index=False)
+    print(f"  Wrote {rpath}")
 
 
 if __name__ == "__main__":
