@@ -1,5 +1,44 @@
 # Citation verification status
 
+**Current state (2026-09-26, revision 1).** `references.bib` holds 48
+entries, 43 of them cited in `main.tex` (the other five —
+`min1989multiple`, `ropke2006adaptive`, `ai2009particle`,
+`subramanian2010parallel`, `hoogendoorn2025evaluation` — are not cited
+and do not appear in the reference list); 43 entries carry a DOI. Every DOI was checked
+against its registry record (Crossref, or DataCite for the two arXiv
+DOIs) and the registered title compared with the BibTeX title:
+
+- 41 DOIs: registered title matches the BibTeX title.
+- `puterman1994markov`: matches; Crossref stores the subtitle separately.
+- `legault2025superadditivity` (arXiv:2508.05877) and `ota2026scenario`
+  (arXiv:2604.02496): DataCite title and authors match; preprints, check
+  journal status at submission.
+- No DOI (books and one chapter): `barlow1972statistical`,
+  `chow1971great`, `christofides1979vehicle`, `muller2002comparison`;
+  `iklassov2024rl` cites the PMLR proceedings page instead of the arXiv
+  DOI.
+
+Corrections made in this pass (after an external reference audit):
+
+- `novoa2009approximate`: DOI was `10.1016/j.ejor.2008.02.038`, which
+  resolves to a different paper (Castillo, Joro and Li, *Workforce
+  scheduling with multiple objectives*). Corrected to
+  `10.1016/j.ejor.2008.03.023` (Novoa and Storer, EJOR 196(2):509-515).
+  Resolving is not the same as being the right paper; titles are now
+  compared for every DOI.
+- `hu2025vehicle`: final version is Annals of OR 358:1285-1327 (2026);
+  volume, pages and year updated (online 2025).
+- Duplicates removed: `salhi1999cluster2` (same work as
+  `salhi1999cluster`) and `iklassov2024reinforcement` (same work as
+  `iklassov2024rl`); neither duplicate was cited.
+- `christofides1979vehicle`: CVRPLIB URL removed (it is the data set's
+  page, not a record of the chapter).
+
+The rest of this file is the earlier log, kept for the record; its
+counts (for example "20 DOIs") refer to the bibliography of July 2026.
+
+## Earlier log (2026-07-05)
+
 Every entry in `references.bib` was checked automatically on 2026-07-05:
 each DOI was resolved through `https://doi.org/<doi>`. **None returned
 404** — all 20 DOIs exist and redirect to a publisher landing page.
