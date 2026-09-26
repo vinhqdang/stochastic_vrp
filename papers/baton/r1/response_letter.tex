@@ -87,6 +87,15 @@ the submission is provided separately.
   established regression-based stopping methods; the conclusion states
   the scope of the managerial conclusions and the boundaries of the
   action set.
+\item \textbf{Machine-checked proofs}: all four propositions have been
+  verified formally in the Lean~4 proof assistant with the Mathlib
+  library. The formalisation compiles without errors or unproved steps
+  and relies only on Lean's standard axioms. It is released with the
+  replication code (directory \texttt{papers/baton/BatonProofs}), and its
+  correspondence to the text is documented there. The formal proof of
+  Proposition~\ref{m-prop:regret} works on probability trees whose nodes
+  are full histories, so on finite-support demand distributions that
+  result holds even without the Markov assumption.
 \end{enumerate}
 
 In the course of the revision we also found and corrected several
@@ -811,6 +820,10 @@ does not shrink with data: it is the value of knowing the future.
   state in which the myopic rule itself fires. It also derives strict
   inclusion of the stopping regions under continuity, and it is now
   stated for position-dependent prices.
+\item \textbf{A side condition in Proposition 1.} The formal
+  verification showed that the lower bound on the loss needs routes with
+  at least two stops (so that a decision epoch precedes the last stop)
+  and $0 \le \omega_F \le C_{\mathrm{fail}}$; the statement now says so.
 \item \textbf{The ``92--99\% of a near-exact dynamic program'' claim}
   in the original abstract did not hold on every gate: it referred to
   the handoff-only program, and on the \textsc{WDRO} and

@@ -396,7 +396,17 @@ approach and their formal diagnosis (\S\ref{sec:defects}), the
 estimation scheme (\S\ref{sec:estimation}), the generalisation to the
 full recourse action set (\S\ref{sec:actions}), and the resulting
 algorithms with their complexity and reference bounds
-(\S\ref{sec:algorithms}).
+(\S\ref{sec:algorithms}). The four propositions have been verified
+formally in the Lean~4 proof assistant with the Mathlib library; the
+formal statements, and how they correspond to the text, are part of the
+replication repository (see Data availability). The formalisation of
+the inclusion and strictness claims of Proposition~\ref{prop:myopic} and
+of Proposition~\ref{prop:regret} works on finite probability trees whose
+nodes are full histories. On finite-support demand
+distributions---including the empirical distribution of the training
+days---these claims therefore hold without the Markov
+Assumption~\ref{ass:markov}, with continuation values conditioned on the
+history rather than on $W_k$ alone.
 
 \subsection{Operational setting and the three-class fleet cost model}
 \label{sec:setting}
@@ -617,7 +627,9 @@ entire value of preventive recourse,
 $\Delta := V^{\mathrm{react}} - V^\star$, where
 $V^{\mathrm{react}} = \mathbb E[E_T \mathbf 1\{T \le m\}]$ and
 $V^\star = \inf_\sigma \mathbb E J(\sigma)$. Under flat prices
-$(\omega_F, C_{\mathrm{fail}})$,
+$(\omega_F, C_{\mathrm{fail}})$ with $0 \le \omega_F \le C_{\mathrm{fail}}$
+and routes with $m \ge 2$ stops (so that at least one decision epoch
+precedes the last stop),
 \begin{multline}\label{eq:biasbounds}
   \max\bigl\{0,\;
   (C_{\mathrm{fail}} - \omega_F)\,\mathbb P(2 \le T \le m)
@@ -2045,6 +2057,9 @@ All instance generators, result files, and code sufficient to reproduce
 every table and figure are available in a public repository
 \ifanon (anonymised for review; link supplied to the editors)\else at
 \url{https://github.com/vinhqdang/stochastic_vrp}\fi.
+Machine-checked proofs of Propositions~\ref{prop:bias}--\ref{prop:monotone},
+written in Lean~4 with the Mathlib library, are in the same repository,
+in the subdirectory \nolinkurl{BatonProofs} of the manuscript directory.
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{references}

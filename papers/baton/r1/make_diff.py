@@ -58,7 +58,7 @@ def main():
     (tmp / "old.tex").write_text(flatten(old_dir))
     (tmp / "new.tex").write_text(flatten(HERE))
     work = tmp / "build"
-    shutil.copytree(HERE, work, ignore=shutil.ignore_patterns("r1", "*.pdf"))
+    shutil.copytree(HERE, work, ignore=shutil.ignore_patterns("r1", "*.pdf", "BatonProofs"))
     diff = subprocess.run(
         ["latexdiff", "--type=UNDERLINE", "--math-markup=coarse",
          "--config", "PICTUREENV=(?:picture|DIFnomarkup|table|figure|algorithm|tikzpicture)[\\w\\d*@]*",
@@ -74,6 +74,7 @@ def main():
     if not pdf.exists():
         sys.exit("latexdiff build failed; see " + str(work / "main_diff.log"))
     shutil.copy(pdf, HERE / "r1" / "main_diff.pdf")
+    shutil.rmtree(tmp, ignore_errors=True)
     print("wrote r1/main_diff.pdf")
 
 
