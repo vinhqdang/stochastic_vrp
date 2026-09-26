@@ -287,8 +287,10 @@ def fig23(city="hanoi"):
                      alpha=0.05, lw=0.8, zorder=1)
         axA.plot(stops, np.concatenate([[L0], L0 + np.median(cum_te, 0)]),
                  color=C["blue"], lw=2.4, zorder=3, label="median day")
-        axA.plot(stops, np.concatenate([[L0], L0 + spike]), color=C["yellow"],
-                 lw=2.8, zorder=4, label="demand-spike day")
+        # the vehicle cannot serve past the breach: cut the trace there
+        o_cut = o if o <= m else m
+        axA.plot(stops[:o_cut + 1], np.concatenate([[L0], L0 + spike[:o_cut]]),
+                 color=C["yellow"], lw=2.8, zorder=4, label="demand-spike day")
         axA.axhline(Q, color=STATUS_CRITICAL, ls="--", lw=1.6, zorder=2)
         axA.text(0.1, Q + 2, "vehicle capacity Q", color=STATUS_CRITICAL)
         if o <= m:
@@ -319,7 +321,7 @@ def fig23(city="hanoi"):
             axB.axvline(o, color=STATUS_CRITICAL, lw=1.4, ls="--")
             axB.text(o - 0.45, axB.get_ylim()[1] * 0.30, "breach",
                      rotation=90, color=STATUS_CRITICAL)
-        axB.set_xlabel("stop along route"); axB.set_ylabel("cost ($)")
+        axB.set_xlabel("stop along route"); axB.set_ylabel("cost (currency units)")
         axB.set_title("(b) The decision rule on the spike day", loc="left")
         axB.legend(frameon=False, loc="upper right")
         fig.tight_layout()
@@ -348,7 +350,7 @@ def fig23(city="hanoi"):
         for b, v in zip(bars, vals):
             ax.text(b.get_x() + b.get_width() / 2, v, f"{v:.2f}",
                     ha="center", va="bottom", color=INK)
-        ax.set_ylabel("expected cost ($/day)")
+        ax.set_ylabel("expected cost (currency units per day)")
         fig.tight_layout()
         fig.savefig(FIG_DIR / "fig2b_test_costs.png", dpi=220,
                     facecolor="white", bbox_inches="tight")
@@ -481,10 +483,12 @@ def fig45():
     POL = [("fb_tau", "tuned threshold", MUTED, "o"),
            ("thr_k", "position-dependent threshold", C["yellow"], "o"),
            ("restock", "restock rule", C["violet"], "o"),
+           ("thr2", "two-lever rule", C["red"], "o"),
            ("v2_lsm", "BATON-ho", C["aqua"], "o"),
            ("v2_act", "BATON", C["blue"], "D"),
-           ("dp_xl3", "near-exact DP, 3 actions (reference)", INK, "^"),
-           ("oracle", "oracle, handoff-only (reference)", INK, "*")]
+           ("dp_xl3", "high-data DP, 3 actions (reference)", INK, "^"),
+           ("oracle", "oracle, handoff-only (reference)", INK, "*"),
+           ("oracle3", "oracle, 3 actions (bound)", MUTED, "*")]
 
     d = pd.read_csv(_WDRO / "results" / "results_grand_dethloff.csv")
     fig, ax = plt.subplots(figsize=(8.6, 4.6))
@@ -503,7 +507,7 @@ def fig45():
                             color=C["blue"], fontweight="bold")
     ax.set_yticks(ys); ax.set_yticklabels([GATE_DISP[g] for g in GATES])
     ax.set_xlabel("expected-recourse saving vs reactive policy (%)")
-    ax.set_xlim(-12, 60)
+    ax.set_xlim(-12, 84)
     handles = [plt.Line2D([], [], marker=mk, color=col, lw=0,
                           ms=11 if mk == "*" else (8 if mk == "D" else 7),
                           label=nm) for _, nm, col, mk in POL]
@@ -527,7 +531,9 @@ def fig45():
           ("high SLA price (p$_{late}$=3)", "p_late_3_0"),
           ("mild surge (s$_{emg}$=1.5)", "s_emg_1_5"),
           ("heavy surge (s$_{emg}$=4)", "s_emg_4_0"),
-          ("standby above emergency (F$_{sb}$=60)", "F_standby_60")]
+          ("standby above emergency (F$_{sb}$=60)", "F_standby_60"),
+          ("depot-return fee 10", "F_return_10"),
+          ("depot-return fee 30", "F_return_30")]
     ref = pd.read_csv(_WDRO / "results" / "results_costsens_F_emg_25.csv")
     base = d[d.Plan.isin(["Det", "SAA"]) & d.Instance.isin(ref.Instance)]
     fig, ax = plt.subplots(figsize=(8.6, 4.9))

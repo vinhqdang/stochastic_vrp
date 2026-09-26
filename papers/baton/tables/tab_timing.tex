@@ -3,32 +3,36 @@
 median and 90th percentile over 102 routes of ten Dethloff
 \textsc{SAA} plans and four city plans). Every policy is fitted on the
 same $10^3$ training days except the two reference programs. Tuning by
-grid search on realised training cost is included. The online decision
-of every cost-comparison policy is one lookup in a monotone step function
-and two comparisons: 1.2\,$\mu$s per decision through the
-fitted breakpoints (66\,$\mu$s through the
+grid search on realised training cost is included; the
+position-dependent threshold includes the fits of its two starting
+points. The online decision
+of every cost-comparison policy is one lookup in a monotone
+piecewise-linear function and two comparisons: 1.2\,$\mu$s per decision through the
+fitted breakpoints (63\,$\mu$s through the
 scikit-learn prediction call).}
 \label{tab:timing}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3.5pt}
-\begin{adjustbox}{max width=\textwidth}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l c cc}
 \toprule
 Policy & training days & median & p90 \\
 \midrule
-tuned threshold (peak label) & $10^3$ & 62.8 & 105.1 \\
-position-dependent threshold & $10^3$ & 67.9 & 171.3 \\
-$\pi_3$ rule (grid-tuned) & $10^3$ & 5.1 & 8.0 \\
-rollout & $10^3$ & 7.3 & 10.8 \\
-cost-scaled rollout & $10^3$ & 50.9 & 78.9 \\
-depot-return restocking & $10^3$ & 5.1 & 7.5 \\
-DP$_N$ (equal data) & $10^3$ & 3.4 & 5.3 \\
-\textsc{Baton-ho} & $10^3$ & 7.5 & 12.5 \\
-\textsc{Baton} (incl.\ deployment selection) & $10^3$ & 27.5 & 52.4 \\
-\textsc{Baton-cf} & $10^3$ & 29.3 & 60.2 \\
-DP$_{50\mathrm{k}}$ (reference, $5\times10^4$ paths) & $5\times10^4$ & 113.2 & 181.2 \\
-DP$^3_{50\mathrm{k}}$ (reference, $5\times10^4$ paths) & $5\times10^4$ & 299.3 & 626.9 \\
+tuned threshold (peak label) & $10^3$ & 63.9 & 100.4 \\
+position-dependent threshold & $10^3$ & 155.7 & 343.7 \\
+$\pi_3$ rule (grid-tuned) & $10^3$ & 4.9 & 7.6 \\
+rollout & $10^3$ & 6.1 & 10.7 \\
+cost-scaled rollout & $10^3$ & 47.9 & 81.6 \\
+depot-return restocking & $10^3$ & 4.8 & 7.4 \\
+two-lever rule (joint grid) & $10^3$ & 413.4 & 677.6 \\
+DP$_N$ (equal data) & $10^3$ & 3.1 & 5.0 \\
+DP$^3_N$ (equal data) & $10^3$ & 7.0 & 14.4 \\
+\textsc{Baton-ho} & $10^3$ & 7.2 & 11.3 \\
+\textsc{Baton} (incl.\ deployment selection) & $10^3$ & 24.2 & 49.2 \\
+\textsc{Baton-cf} & $10^3$ & 25.0 & 58.6 \\
+DP$_{50\mathrm{k}}$ (reference, $5\times10^4$ paths) & $5\times10^4$ & 110.0 & 170.7 \\
+DP$^3_{50\mathrm{k}}$ (reference, $5\times10^4$ paths) & $5\times10^4$ & 279.8 & 573.8 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

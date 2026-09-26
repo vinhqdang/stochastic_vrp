@@ -79,6 +79,9 @@ class LastMileCosts:
     p_late: float = 1.5      # $ SLA compensation per downstream customer served late
     p_breach: float = 10.0   # $ churn/goodwill loss at the breached stop itself
 
+    # ── depot return ─────────────────────────────────────────────────
+    F_return: float = 0.0    # fixed fee per depot return (dock slot, driver time)
+
     def handoff_cost(self, remaining_km: float) -> float:
         """Planned handoff after stop k: one standby vehicle-day consumed
         (retainer F_standby, pooled city-wide) + dispatch fee + the standby
@@ -378,7 +381,7 @@ def restock_schedule(route: list, D: np.ndarray, scale: float,
         detour = (float(D[cur, 0]) + float(D[0, nxt])
                   - float(D[cur, nxt])) / scale
         R[k] = (costs.c_km * detour + costs.c_transfer
-                + costs.p_late * (m - (k + 1)))
+                + costs.p_late * (m - (k + 1)) + costs.F_return)
     return R
 
 

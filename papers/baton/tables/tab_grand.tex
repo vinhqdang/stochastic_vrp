@@ -1,34 +1,43 @@
 \begin{table}[t]
 \caption{Expected-recourse saving over the reactive policy (\%, mean over
 the 40 Dethloff instances) for each planning gate and execution policy
-under the three-class fleet cost model; \emph{higher is better}.
-\textsc{Baton} (bold) has the highest saving of all implementable
-policies on every gate. thr.\ is the label-corrected tuned threshold,
-thr.-$k$ the position-dependent threshold, roll.-$\theta$ the
-cost-scaled rollout. The last three columns are reference points, not
-competitors: DP$_{50\mathrm{k}}$ and DP$^3_{50\mathrm{k}}$ are
-near-exact dynamic programs for the handoff-only and the three-action
-problem with fifty times the training data, and the clairvoyant oracle
-is restricted to the handoff lever, so \textsc{Baton} may legitimately
-exceed it.}
+under the three-class fleet cost model; \emph{higher is better}; the
+best implementable policy of each row is in bold. thr.\ is the
+label-corrected tuned threshold, thr.-$k$ the position-dependent
+threshold, roll.-$\theta$ the cost-scaled rollout, two-lever a tuned
+handoff threshold combined with a tuned depot-return trigger that may
+fire repeatedly, and DP$^3_N$ the three-action plug-in dynamic program
+fitted on the same $10^3$ training days as \textsc{Baton}. $\pi_1$,
+$\pi_2$ and the plain rollout are dominated by $\pi_3$ and
+roll.-$\theta$ on every gate and are omitted; the equal-data
+handoff-only program DP$_N$ is discussed in Section~\ref{sec:learning}. \textsc{Baton-cf}, the
+state-conditional variant of Section~\ref{sec:cf}, was introduced during
+the revision after the city results and is reported for completeness.
+The last four columns are reference points, not competitors:
+DP$_{50\mathrm{k}}$ and DP$^3_{50\mathrm{k}}$ are high-data plug-in
+programs in the $(k, W_k)$ state for the handoff-only and the
+three-action problem (fifty times the training data); oracle-ho is the
+clairvoyant restricted to the handoff lever, which \textsc{Baton} may
+therefore exceed; oracle$^3$ is the clairvoyant with all three actions,
+a lower bound on the cost of every policy.}
 \label{tab:grand}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{2.6pt}
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{l cccccc cc ccc}
+\setlength{\tabcolsep}{2.2pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l ccccccc ccc cccc}
 \toprule
-& \multicolumn{6}{c}{published / tuned competitors}
-& \multicolumn{2}{c}{this paper} & \multicolumn{3}{c}{reference points} \\
-\cmidrule(lr){2-7}\cmidrule(lr){8-9}\cmidrule(lr){10-12}
-Gate & $\pi_3$ & roll. & roll.-$\theta$ & restock & thr. & thr.-$k$ & \textsc{Baton-ho} & \textsc{Baton} & DP$_{50\mathrm{k}}$ & DP$^3_{50\mathrm{k}}$ & oracle \\
+& \multicolumn{7}{c}{published / tuned competitors}
+& \multicolumn{3}{c}{this paper} & \multicolumn{4}{c}{reference points} \\
+\cmidrule(lr){2-8}\cmidrule(lr){9-11}\cmidrule(lr){12-15}
+Gate & $\pi_3$ & roll.-$\theta$ & restock & thr. & thr.-$k$ & two-lever & DP$^3_N$ & \textsc{Baton-ho} & \textsc{Baton} & \textsc{Baton-cf} & DP$_{50\mathrm{k}}$ & DP$^3_{50\mathrm{k}}$ & oracle-ho & oracle$^3$ \\
 \midrule
-\textsc{Det} & 17.0 & 20.8 & 24.9 & 5.8 & 24.7 & 25.8 & 26.1 & \textbf{27.9} & 26.4 & 29.5 & 40.7 \\
-\textsc{SAA} & 12.6 & 8.9 & 18.4 & 43.7 & 16.3 & 15.4 & 20.1 & \textbf{53.7} & 22.1 & 56.4 & 43.5 \\
-\textsc{WDRO} & 8.0 & -4.2 & 8.9 & 34.7 & -1.3 & -0.2 & 10.0 & \textbf{41.2} & 13.2 & 47.8 & 42.0 \\
-\textsc{Rob-G} & 15.7 & 10.1 & 19.1 & 43.6 & 16.7 & 16.7 & 21.0 & \textbf{53.2} & 22.9 & 56.3 & 43.3 \\
-\textsc{Rob-BS} & 11.1 & 10.3 & 18.7 & 42.0 & 16.7 & 16.3 & 20.7 & \textbf{52.5} & 22.6 & 54.9 & 43.1 \\
-\textsc{M-DRO} & 9.6 & -1.4 & 10.3 & 37.4 & 0.5 & -1.0 & 11.8 & \textbf{45.3} & 14.2 & 50.2 & 42.2 \\
+\textsc{Det} & 17.0 & 24.9 & 5.8 & 24.7 & 26.0 & 26.5 & 27.8 & 26.1 & 27.9 & \textbf{29.2} & 26.4 & 29.5 & 40.7 & 47.2 \\
+\textsc{SAA} & 12.6 & 18.4 & 43.7 & 16.3 & 19.8 & 43.9 & 35.4 & 20.1 & 53.7 & \textbf{53.8} & 22.1 & 56.4 & 43.5 & 78.4 \\
+\textsc{WDRO} & 8.0 & 8.9 & 34.7 & -1.3 & 7.2 & 32.4 & -1.4 & 10.0 & 41.2 & \textbf{41.7} & 13.2 & 47.8 & 42.0 & 79.4 \\
+\textsc{Rob-G} & 15.7 & 19.1 & 43.6 & 16.7 & 20.7 & 43.8 & 36.2 & 21.0 & 53.2 & \textbf{53.8} & 22.9 & 56.3 & 43.3 & 78.0 \\
+\textsc{Rob-BS} & 11.1 & 18.7 & 42.0 & 16.7 & 20.3 & 42.2 & 34.3 & 20.7 & 52.5 & \textbf{53.0} & 22.6 & 54.9 & 43.1 & 76.6 \\
+\textsc{M-DRO} & 9.6 & 10.3 & 37.4 & 0.5 & 8.5 & 35.6 & -4.7 & 11.8 & 45.3 & \textbf{45.6} & 14.2 & 50.2 & 42.2 & 79.4 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

@@ -65,34 +65,65 @@ def _costs_threshold_k(g: np.ndarray, B: float, H: np.ndarray,
     return costs, action
 
 
+def cuts_from_models(g_train: np.ndarray, B: float, models: dict,
+                     level) -> np.ndarray:
+    """Per-stop load cuts that reproduce, on the training paths, the rule
+    'act iff model_k(W_k) > level_k' of a monotone model. `level` is a
+    scalar or an array indexed by stop (entry k-1 for stop k). Stops where
+    the rule never fires get +inf; stops where it always fires get a cut
+    below every training load."""
+    N, m = g_train.shape
+    cum = np.cumsum(g_train, axis=1)
+    ostep = _overflow_step(cum, B)
+    lev = np.broadcast_to(np.asarray(level, float), (m,))
+    thr = np.full(m, np.inf)
+    for k in range(1, m):
+        mdl = models.get(k)
+        alive = ostep > k
+        if mdl is None or alive.sum() == 0:
+            continue
+        W = cum[alive, k - 1]
+        fire = np.asarray(mdl.predict(W)) > lev[k - 1]
+        if not fire.any():
+            continue
+        thr[k - 1] = W[~fire].max() if (~fire).any() else W.min() - 1.0
+    return thr
+
+
 def fit_threshold_k(g_train: np.ndarray, B: float, H: np.ndarray,
-                    E: np.ndarray, n_cand: int = 24,
-                    sweeps: int = 2) -> np.ndarray:
+                    E: np.ndarray, starts: list | None = None,
+                    n_cand: int = 48, sweeps: int = 8) -> np.ndarray:
     """Tune one load threshold per stop by coordinate descent on the
     realised training cost.
 
-    The policy class {hand off iff W_k > w_k} is exactly the class of
-    boundaries BATON-ho can represent (its continuation estimate is
-    monotone, so its stopping region at each stop is an upper set in W).
-    The difference is the estimator: here the m-1 boundaries are searched
-    directly against realised cost instead of being derived by backward
-    induction. Candidates per stop are quantiles of the training W_k
-    among alive paths, plus +inf (never hand off at that stop). Sweeps run
-    backwards (late stops first), starting from the reactive policy.
+    The class {hand off iff W_k > w_k} contains every monotone handoff
+    boundary: the global peak-probability threshold (a per-stop cut in W
+    because the fitted probability is monotone) and BATON-ho's boundary.
+    The descent starts from the best of the supplied starting boundaries
+    (and from the reactive policy), so on the training days it is never
+    worse than any of them; it then sweeps the stops backwards until no
+    single-stop change improves the realised cost. Candidates per stop are
+    quantiles of the alive training loads, the starting cuts, and +inf.
     """
     N, m = g_train.shape
     cum = np.cumsum(g_train, axis=1)
     ostep = _overflow_step(cum, B)
-    thr = np.full(m, np.inf)
-    best = float(_costs_threshold_k(g_train, B, H, E, thr)[0].mean())
-    qs = np.linspace(0.02, 0.98, n_cand)
+    cands_start = [np.full(m, np.inf)] + [np.asarray(s, float).copy()
+                                         for s in (starts or [])]
+    costs0 = [float(_costs_threshold_k(g_train, B, H, E, s)[0].mean())
+              for s in cands_start]
+    j = int(np.argmin(costs0))
+    thr, best = cands_start[j].copy(), costs0[j]
+    qs = np.linspace(0.01, 0.99, n_cand)
     for _ in range(sweeps):
         improved = False
         for k in range(m - 1, 0, -1):
             alive = ostep > k
             if alive.sum() < 2:
                 continue
-            cands = np.unique(np.quantile(cum[alive, k - 1], qs))
+            cands = np.unique(np.concatenate([
+                np.quantile(cum[alive, k - 1], qs),
+                [s[k - 1] for s in cands_start if np.isfinite(s[k - 1])]]))
             cur = thr[k - 1]
             for c in np.concatenate([[np.inf], cands]):
                 if c == cur:
@@ -548,7 +579,7 @@ def fit_dp_actions_cf(g_hist: np.ndarray, B: float, H: np.ndarray,
                       E: np.ndarray, R: np.ndarray,
                       g_eval: np.ndarray | None = None,
                       n_bins: int | None = None) -> dict:
-    """Near-exact three-action yardstick with a state-conditional
+    """High-data three-action reference with a state-conditional
     fresh-start value: binned conditional means for C_k (fitted on
     g_hist) and for F_k(W_k) (the post-reset suffix cost of each path of
     g_eval, computed from that path's own future increments, regressed on
@@ -592,3 +623,100 @@ def fit_dp_actions_cf(g_hist: np.ndarray, B: float, H: np.ndarray,
         future[act_ho] = H[k - 1]
         future[act_rs] = v_rs[act_rs]
     return models
+
+
+
+# ============================================================
+# Two-lever threshold heuristic (handoff threshold + return trigger)
+# ============================================================
+
+
+def _costs_two_lever(g, B, H, E, R, prob_models, tau, c, H_bill=None):
+    """Hand off iff p_k(W_k) > tau; otherwise return to the depot iff
+    W_k > c*B (reset to 0, repeated returns allowed); else continue."""
+    if H_bill is None:
+        H_bill = H
+    N, m = g.shape
+    W = np.zeros(N)
+    costs = np.zeros(N)
+    action = np.zeros(N, dtype=np.int8)
+    stopped = np.zeros(N, dtype=bool)
+    for k_idx in range(m):
+        act = ~stopped
+        if not act.any():
+            break
+        W[act] += g[act, k_idx]
+        em = act & (W > B)
+        costs[em] += E[k_idx]
+        action[em] = 2
+        stopped |= em
+        if k_idx + 1 == m:
+            break
+        alive = act & ~em
+        idx = np.where(alive)[0]
+        if len(idx) == 0:
+            continue
+        mdl = prob_models.get(k_idx + 1)
+        ho = (np.asarray(mdl.predict(W[idx])) > tau) if mdl is not None else np.zeros(len(idx), bool)
+        rs = ~ho & (W[idx] > c * B)
+        costs[idx[ho]] += H_bill[k_idx]
+        action[idx[ho]] = 1
+        stopped[idx[ho]] = True
+        costs[idx[rs]] += R[k_idx]
+        W[idx[rs]] = 0.0
+    return costs, action
+
+
+def tune_two_lever(g_train, B, H, E, R, prob_models,
+                   tau_grid=None, c_grid=None):
+    """Joint grid search of (tau, c) on realised training cost; tau = 1
+    disables the handoff, c = inf disables the return."""
+    if tau_grid is None:
+        tau_grid = np.concatenate([[1.0], np.linspace(0.02, 0.95, 24)])
+    if c_grid is None:
+        c_grid = np.concatenate([[np.inf], np.linspace(0.1, 0.95, 12)])
+    best, arg = np.inf, (1.0, np.inf)
+    for t in tau_grid:
+        for c in c_grid:
+            v = float(_costs_two_lever(g_train, B, H, E, R, prob_models, t, c)[0].mean())
+            if v < best - 1e-12:
+                best, arg = v, (float(t), float(c))
+    return arg
+
+
+def simulate_two_lever(g_test, B, H, E, R, prob_models, tau, c,
+                       return_actions=False, H_bill=None):
+    cst, a = _costs_two_lever(g_test, B, H, E, R, prob_models, tau, c, H_bill)
+    st = _stats(cst, a)
+    return (st, a) if return_actions else st
+
+
+# ============================================================
+# Three-action clairvoyant bound
+# ============================================================
+
+
+def oracle3_costs(g: np.ndarray, B: float, H: np.ndarray, E: np.ndarray,
+                  R: np.ndarray) -> np.ndarray:
+    """Per-day perfect-information optimum over {continue, handoff, depot
+    return} (return resets the load to 0, the same convention as the
+    policies). Deterministic DP over (stop k, stop j of the last reset),
+    vectorised over days. No non-anticipative policy with these three
+    actions pays less on any day."""
+    N, m = g.shape
+    cum = np.concatenate([np.zeros((N, 1)), np.cumsum(g, axis=1)], axis=1)
+    # V[(k, j)] : cost-to-go after serving stop k (not breached), last reset after stop j
+    V = {}
+    for j in range(m):
+        V[(m, j)] = np.zeros(N)
+    for k in range(m - 1, 0, -1):
+        # after a return at stop k the next load is g[k] (0-indexed stop k+1)
+        nxt_after_ret = cum[:, k + 1] - cum[:, k]
+        cont_after_ret = np.where(nxt_after_ret > B, E[k], V[(k + 1, k)])
+        ret = R[k - 1] + cont_after_ret
+        for j in range(k):
+            nxt = cum[:, k + 1] - cum[:, j]
+            cont = np.where(nxt > B, E[k], V[(k + 1, j)])
+            V[(k, j)] = np.minimum(np.minimum(cont, H[k - 1]), ret)
+    first = cum[:, 1]
+    return np.where(first > B, E[0], V[(1, 0)])

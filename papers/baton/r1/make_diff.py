@@ -61,7 +61,7 @@ def main():
     shutil.copytree(HERE, work, ignore=shutil.ignore_patterns("r1", "*.pdf", "BatonProofs"))
     diff = subprocess.run(
         ["latexdiff", "--type=UNDERLINE", "--math-markup=coarse",
-         "--config", "PICTUREENV=(?:picture|DIFnomarkup|table|figure|algorithm|tikzpicture)[\\w\\d*@]*",
+         "--config", "PICTUREENV=(?:picture|DIFnomarkup|table|sidewaystable|figure|algorithm|tikzpicture)[\\w\\d*@]*",
          str(tmp / "old.tex"), str(tmp / "new.tex")],
         check=True, capture_output=True, text=True).stdout
     (work / "main_diff.tex").write_text(diff)
@@ -69,7 +69,7 @@ def main():
                 ["bibtex", "main_diff"],
                 ["pdflatex", "-interaction=nonstopmode", "main_diff"],
                 ["pdflatex", "-interaction=nonstopmode", "main_diff"]):
-        subprocess.run(cmd, cwd=work, capture_output=True)
+        subprocess.run(cmd, cwd=work, capture_output=True, timeout=600)
     pdf = work / "main_diff.pdf"
     if not pdf.exists():
         sys.exit("latexdiff build failed; see " + str(work / "main_diff.log"))

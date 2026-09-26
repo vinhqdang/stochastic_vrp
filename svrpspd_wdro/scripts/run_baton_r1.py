@@ -20,6 +20,8 @@ timing      single-thread offline fit and online decision latency
 pool        capped standby pool with reservation cost; shadow price
 regret      over-triggering of the myopic rule vs near-exact optimum
 synthetic   synthetic scenarios with a flat-priced depot return added
+exact       exact grid-convolution DP under independent demands (rho = 0)
+            against BATON and the plug-in references
 
 Usage (from svrpspd_wdro/):
     python scripts/run_baton_r1.py <mode> [workers=4] [max=N]
@@ -155,8 +157,9 @@ def _sv(agg, lbl):
     return 100 * (agg["none"] - agg[lbl]) / max(agg["none"], 1e-9)
 
 
-KEY = ["fb_tau", "thr_k", "ro_theta", "pi3", "restock", "v2_lsm", "v2_act",
-       "v2_cf", "dp_n", "dp_xl", "dp_xl3", "oracle"]
+KEY = ["fb_tau", "thr_k", "thr2", "dp3_n", "ro_theta", "pi3", "restock",
+       "v2_lsm", "v2_act", "v2_cf", "dp_n", "dp_xl", "dp_xl3", "oracle",
+       "oracle3"]
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -198,12 +201,19 @@ def mode_dependence(workers, max_n):
 # shape: is E[future cost | W_k] monotone under dependence?
 # ═══════════════════════════════════════════════════════════════════════════
 
+SHAPE_CFG = [("0.0", dict(rho=0.0)), ("0.3", dict(rho=0.3)),
+             ("0.6", dict(rho=0.6)), ("0.9", dict(rho=0.9)),
+             ("dayfac", dict(rho=0.0, dfac=0.25))]
+DIP = (0.10, 0.25)  # injected dips, share of the mean continuation cost
+
+
 def _shape_job(path, gates):
     D, Q, n, scale, dbar, pbar, res = load(path)
     seed = rre.stable_seed(path.stem)
     rows = []
-    for rho in (0.0, 0.6, 0.9):
-        d, p = scen(dbar, pbar, 50_000, seed + 7, rho=rho)
+    for tag, kw in SHAPE_CFG:
+        rho = tag
+        d, p = scen(dbar, pbar, 50_000, seed + 7, **kw)
         for g in gates:
             for route in res[g]["plan"]:
                 if len(route) < 3:
@@ -218,7 +228,7 @@ def _shape_job(path, gates):
                 br = ost <= m
                 fut[br] = E[np.clip(ost[br] - 1, 0, m - 1)]
                 n_pairs = n_viol = 0
-                gain = []
+                n_dip, n_hit = 0, [0] * len(DIP)
                 for k in range(m - 1, 0, -1):
                     al = ost > k
                     if al.sum() < 500:
@@ -236,6 +246,14 @@ def _shape_job(path, gates):
                     ok = (cnt[1:] > 0) & (cnt[:-1] > 0) & (sd > 0)
                     n_pairs += int(ok.sum())
                     n_viol += int((ok & (dif < -1.96 * sd)).sum())
+                    # power: inject a dip of DIP x the mean continuation cost
+                    # into the middle bin and test the pair entering it
+                    j = nb // 2
+                    if j >= 1 and cnt[j] > 0 and cnt[j - 1] > 0 and y.mean() > 0:
+                        n_dip += 1
+                        for q, dp_ in enumerate(DIP):
+                            dj = (mu[j] - dp_ * float(y.mean())) - mu[j - 1]
+                            n_hit[q] += int(dj < -1.96 * sd[j - 1])
                     # continue the backward pass with the near-exact policy
                     from sklearn.isotonic import IsotonicRegression
                     iso = IsotonicRegression(increasing=True, out_of_bounds="clip")
@@ -244,7 +262,10 @@ def _shape_job(path, gates):
                     stop = al & (pred > H[k - 1])
                     fut[stop] = H[k - 1]
                 rows.append({"Instance": path.stem, "Plan": g, "rho": rho,
-                             "m": m, "pairs": n_pairs, "viol": n_viol})
+                             "m": m, "pairs": n_pairs, "viol": n_viol,
+                             "dip_tests": n_dip,
+                             **{f"dip_hits_{int(100 * dp_)}": n_hit[q]
+                                for q, dp_ in enumerate(DIP)}})
     return rows
 
 
@@ -263,18 +284,23 @@ P_PROMO = 0.2
 
 
 def _mix(dbar, pbar, N, seed):
+    """Pooled history of N days, a Binomial(N, 0.2) share of promotion
+    days. Returns the pooled matrices and the two typed subsets."""
     rng = np.random.default_rng(seed + 3)
     npro = rng.binomial(N, P_PROMO)
     a = scen(dbar, pbar, N - npro, seed)
     b = scen(dbar, pbar, npro, seed + 1, **PROMO)
-    return np.vstack([a[0], b[0]]), np.vstack([a[1], b[1]])
+    return (np.vstack([a[0], b[0]]), np.vstack([a[1], b[1]])), a, b
 
 
 def _daytype_job(path, gates):
     D, Q, n, scale, dbar, pbar, res = load(path)
     s = rre.stable_seed(path.stem)
-    tr = {"normal": scen(dbar, pbar, 1000, s), "promo": scen(dbar, pbar, 1000, s + 5, **PROMO),
-          "mix": _mix(dbar, pbar, 1000, s + 11)}
+    # the day-type-aware fits see the SAME history as the pooled fit, split
+    # by type (~800 normal / ~200 promotion days), so the comparison isolates
+    # the day-type information rather than the sample size
+    mix, sub_n, sub_p = _mix(dbar, pbar, 1000, s + 11)
+    tr = {"normal": sub_n, "promo": sub_p, "mix": mix}
     te = {"normal": scen(dbar, pbar, 2000, s + 99_991),
           "promo": scen(dbar, pbar, 2000, s + 99_997, **PROMO)}
     xl = {"normal": scen(dbar, pbar, 50_000, s + 424_243),
@@ -285,7 +311,8 @@ def _daytype_job(path, gates):
                          ("promo", "promo"), ("normal", "promo")):
             agg, _ = _plan_eval(res[g]["plan"], dbar, Q, D, scale,
                                 tr[trk], te[tek], xl[tek])
-            row = {"Instance": path.stem, "Plan": g, "train": trk, "test": tek}
+            row = {"Instance": path.stem, "Plan": g, "train": trk, "test": tek,
+                   "n_train": len(tr[trk][0])}
             for lbl in ["none"] + KEY:
                 row[f"{lbl}_rec"] = agg[lbl]
             rows.append(row)
@@ -565,12 +592,23 @@ def _run_primary(g, B, Hd, Hb, E, R, models, use_actions):
 
 
 def _run_fallback(g, B, E, R, fb_models, k_start, W0, use_actions):
-    """Cost of the remainder k_start+1..m from state W0 (per day) under the
-    fallback menu {continue, depot return} (or pure continuation)."""
+    """Cost of the rest of the day for a route whose handoff request at
+    stop k_start was refused, from state W0, under the fallback menu
+    {continue, depot return}. The fallback may act at the refusal stop
+    itself (a return there), then continues from stop k_start+1."""
     N, m = g.shape
     W = W0.copy()
     cost = np.zeros(N)
     stopped = k_start >= m
+    if use_actions:
+        # decision at the refusal stop
+        for k in np.unique(k_start[~stopped]):
+            sel = np.where((~stopped) & (k_start == k))[0]
+            mdl, F = fb_models[int(k)]
+            chat = np.asarray(mdl.predict(W[sel]))
+            rs = (R[int(k) - 1] + F) < chat
+            cost[sel[rs]] += R[int(k) - 1]
+            W[sel[rs]] = 0.0
     for k_idx in range(m):
         k = k_idx + 1
         live = (~stopped) & (k > k_start)
@@ -594,10 +632,10 @@ def _run_fallback(g, B, E, R, fb_models, k_start, W0, use_actions):
     return cost
 
 
-def _fleet_day_costs(routes_data, S, lam, split):
-    """Plan-level daily recourse under a pool of S standby vehicles, FCFS
-    by request time. routes_data[i] carries fitted models per lambda."""
-    per_route = []
+def _prep_lambda(routes_data, lam, split):
+    """Per-route request times, pre-request costs, billed handoff prices and
+    refusal costs for one shadow price (independent of the pool size)."""
+    Ts, base, hbs, cfbs = [], 0.0, [], []
     for rd in routes_data:
         g = rd[split]
         mdl, use = rd["models"][lam]
@@ -605,23 +643,32 @@ def _fleet_day_costs(routes_data, S, lam, split):
                                                rd["E"], rd["R"], mdl, use)
         c_fb = _run_fallback(g, rd["B"], rd["E"], rd["R"], rd["fb"], k_req, W_req, True)
         t = np.where(k_req <= g.shape[1], rd["t"][np.minimum(k_req, g.shape[1]) - 1], np.inf)
-        per_route.append((t, c_pre, hb, c_fb))
-    T = np.vstack([p[0] for p in per_route])            # routes x days
+        Ts.append(t)
+        base = base + c_pre
+        hbs.append(hb)
+        cfbs.append(c_fb)
+    return np.vstack(Ts), base, np.vstack(hbs), np.vstack(cfbs)
+
+
+def _eval_pool(prep, S):
+    """Daily recourse under a pool of S reserved vehicles, first come first
+    served by request time."""
+    T, base, HB, CFB = prep
     order = np.argsort(T, axis=0, kind="stable")
     rank = np.empty_like(order)
     np.put_along_axis(rank, order, np.arange(T.shape[0])[:, None].repeat(T.shape[1], 1), 0)
-    granted = (rank < S) & np.isfinite(T)
-    denied = (rank >= S) & np.isfinite(T)
-    tot = np.zeros(T.shape[1])
-    for i, (t, c_pre, hb, c_fb) in enumerate(per_route):
-        tot += c_pre + np.where(granted[i], hb, 0.0) + np.where(denied[i], c_fb, 0.0)
-    return tot, granted.sum(axis=0), denied.sum(axis=0)
+    fin = np.isfinite(T)
+    granted = (rank < S) & fin
+    denied = (rank >= S) & fin
+    tot = base + np.where(granted, HB, 0.0).sum(0) + np.where(denied, CFB, 0.0).sum(0)
+    return tot, granted.sum(0), denied.sum(0)
 
 
-LAMS = [0.0, 2.0, 5.0, 10.0, 20.0, 40.0, 1e6]
+LAMS = [0.0, 2.0, 5.0, 10.0, 20.0, 40.0, 1e6]      # 20 = F_sb (pay-per-use pricing)
+HOLD = [0.0, 1.0, 2.5, 5.0, 10.0, 20.0]             # reserved holding cost per vehicle-day
 
 
-def _pool_job(path, gate, fam, sub):
+def _route_data(path, gate, sub):
     D, Q, n, scale, dbar, pbar, res = load(path, sub)
     s = rre.stable_seed(path.stem)
     tr = scen(dbar, pbar, 1000, s)
@@ -634,9 +681,8 @@ def _pool_job(path, gate, fam, sub):
         r = np.array(route)
         gtr, gte = tr[1][:, r] - tr[0][:, r], te[1][:, r] - te[0][:, r]
         B, H, E, R = route_setup(route, dbar, Q, D, scale, gtr)
-        Hm = H - COSTS.F_standby                    # marginal (reserved pool)
-        # pay-per-use benchmark: unlimited pool, day rate billed per use
-        cm, am, use = baton_full(gtr, B, H, E, R)
+        Hm = H - COSTS.F_standby                    # per-use part of a handoff
+        cm, am, use = baton_full(gtr, B, H, E, R)   # pay-per-use benchmark
         ppu += (simulate_actions(gte, B, H, E, R, am) if use else
                 simulate_v2_general(gte, B, H, E, cm))["costs"]
         models = {}
@@ -646,32 +692,50 @@ def _pool_job(path, gate, fam, sub):
         fb = fit_lsm_actions(gtr, B, np.full_like(H, 1e9), E, R)
         pos = [0] + list(route)
         t = np.cumsum([D[pos[i], pos[i + 1]] / scale for i in range(len(route))])
-        rds.append(dict(tr=gtr, te=gte, B=B, Hm=Hm, E=E, R=R, models=models,
-                        fb=fb, t=t))
-    K = len(rds)
+        rds.append(dict(tr=gtr, te=gte, B=B, Hm=Hm, E=E, R=R, models=models, fb=fb, t=t))
+    return rds, ppu
+
+
+def _pool_rows(rds, ppu, fam, name, gate, S_max):
+    prep_tr = {L: _prep_lambda(rds, L, "tr") for L in LAMS}
+    prep_te = {L: _prep_lambda(rds, L, "te") for L in LAMS}
     rows = []
-    for S in range(0, K + 1):
-        # naive: decide at the marginal price, ignore the cap
-        naive, g_n, d_n = _fleet_day_costs(rds, S, 0.0, "te")
-        # shadow price chosen on TRAINING days for this pool size
-        best = min(LAMS, key=lambda L: _fleet_day_costs(rds, S, L, "tr")[0].mean())
-        shad, g_s, d_s = _fleet_day_costs(rds, S, best, "te")
-        hold = COSTS.F_standby * S
-        rows.append({"fam": fam, "Instance": path.stem, "Plan": gate, "K": K,
-                     "S": S, "hold": hold,
-                     "naive_rec": naive.mean(), "shadow_rec": shad.mean(),
-                     "naive_total": hold + naive.mean(),
-                     "shadow_total": hold + shad.mean(),
+    for S in range(0, S_max + 1):
+        best = min(LAMS, key=lambda L: _eval_pool(prep_tr[L], S)[0].mean())
+        shad, g_s, d_s = _eval_pool(prep_te[best], S)
+        naive, _, d_n = _eval_pool(prep_te[0.0], S)
+        ppuP, _, _ = _eval_pool(prep_te[20.0], S)
+        fbk, _, _ = _eval_pool(prep_te[1e6], S)
+        rows.append({"fam": fam, "Instance": name, "Plan": gate, "K": len(rds), "S": S,
+                     "shadow_rec": shad.mean(), "naive_rec": naive.mean(),
+                     "ppuprice_rec": ppuP.mean(), "fallback_rec": fbk.mean(),
                      "lambda": best, "denied_naive": d_n.mean(),
                      "denied_shadow": d_s.mean(), "granted_shadow": g_s.mean(),
                      "ppu_rec": ppu.mean()})
     return rows
 
 
+def _pool_job(path, gate, fam, sub):
+    rds, ppu = _route_data(path, gate, sub)
+    return _pool_rows(rds, ppu, fam, path.stem, gate, len(rds))
+
+
+def _metro_job(cls, gate):
+    rds, ppu = [], np.zeros(2000)
+    for f in instances("Dethloff"):
+        if f.stem.startswith(cls + "-"):
+            r, p_ = _route_data(f, gate, "plans")
+            rds += r
+            ppu += p_
+    return _pool_rows(rds, ppu, "Metro", cls, gate, min(len(rds), 40))
+
+
 def mode_pool(workers, max_n):
-    jobs = [(f, "SAA", "Dethloff", "plans") for f in instances("Dethloff")[:max_n]]
+    jobs = [(f, g, "Dethloff", "plans") for f in instances("Dethloff")[:max_n]
+            for g in ("Det", "SAA")]
     jobs += [(f, "Det", "City", "plans") for f in instances("City")[:max_n]]
     rows = run_pool(_pool_job, jobs, workers)
+    rows += run_pool(_metro_job, [(c, "Det") for c in ("CON3", "CON8", "SCA3", "SCA8")], workers)
     pd.DataFrame(rows).to_csv(OUT / "pool.csv", index=False)
 
 
@@ -787,7 +851,105 @@ def mode_synthetic(workers, max_n):
     pd.DataFrame(rows).to_csv(OUT / "synthetic_actions.csv", index=False)
 
 
-MODES = {"dependence": mode_dependence, "shape": mode_shape,
+# ═══════════════════════════════════════════════════════════════════════════
+# exact: grid-convolution dynamic program under independent demands (rho = 0)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _gamma_pmf(mu, h, jmax):
+    """Probability mass of a Gamma(1/CV^2, mu CV^2) demand on the cells
+    [(j-1/2)h, (j+1/2)h), j = 0..jmax (last cell absorbs the tail)."""
+    from scipy import stats as st
+    if mu <= 0:
+        out = np.zeros(jmax + 1)
+        out[0] = 1.0
+        return out
+    k = 1.0 / CV ** 2
+    edges = (np.arange(jmax + 2) - 0.5) * h
+    edges[0] = 0.0
+    c = st.gamma.cdf(edges, k, scale=mu / k)
+    c[-1] = 1.0
+    return np.diff(c)
+
+
+def exact_values(dbar_r, pbar_r, B, H, E, R, G=1500):
+    """Exact optimal expected recourse of one route under independent Gamma
+    demands, on a W-grid of G cells over [L, B]: no action, handoff only,
+    and the three-action menu with the conservative reset W <- 0.
+    Returns (none, handoff-only, three-action)."""
+    m = len(dbar_r)
+    sd = CV * np.sqrt((dbar_r ** 2 + pbar_r ** 2).sum())
+    L = min(0.0, -float(np.cumsum(dbar_r - pbar_r).max()) - 6 * sd)
+    h = (B - L) / (G - 1)
+    x = L + h * np.arange(G)
+    i0 = int(round(-L / h))                        # grid index of W = 0
+    pmfs = []
+    for i in range(m):
+        jd = int(np.ceil(dbar_r[i] * (1 + 12 * CV) / h)) + 1
+        jp = int(np.ceil(pbar_r[i] * (1 + 12 * CV) / h)) + 1
+        pd_ = _gamma_pmf(dbar_r[i], h, jd)
+        pp_ = _gamma_pmf(pbar_r[i], h, jp)
+        pmfs.append((np.convolve(pp_, pd_[::-1]), jd))   # offsets -jd..jp
+
+    def cont(V, k):
+        """C(x_i) = E[cost | W_k = x_i, continue]; stop k+1 increment."""
+        pmf, jd = pmfs[k]
+        jp = len(pmf) - 1 - jd
+        ext = np.concatenate([np.full(jd, V[0]), V, np.full(jp, E[k])])
+        return np.convolve(ext, pmf[::-1], mode="valid")
+
+    out = []
+    for menu in ("none", "ho", "ho+rs"):
+        V = np.zeros(G)                            # alive after stop m
+        for k in range(m - 1, 0, -1):              # decision after stop k
+            C = cont(V, k)
+            if menu == "none":
+                V = C
+            elif menu == "ho":
+                V = np.minimum(C, H[k - 1])
+            else:
+                V = np.minimum(np.minimum(C, H[k - 1]), R[k - 1] + C[i0])
+        C0 = cont(V, 0)
+        out.append(float(C0[i0]))
+    return tuple(out)
+
+
+EXACT_KEY = ["fb_tau", "thr_k", "thr2", "v2_lsm", "v2_act", "v2_cf",
+             "dp_n", "dp3_n", "dp_xl", "dp_xl3"]
+
+
+def _exact_job(path, gates):
+    D, Q, n, scale, dbar, pbar, res = load(path)
+    seed = rre.stable_seed(path.stem)
+    tr = scen(dbar, pbar, 1000, seed, rho=0.0)
+    te = scen(dbar, pbar, 20_000, seed + 99_991, rho=0.0)
+    xl = scen(dbar, pbar, 50_000, seed + 424_243, rho=0.0)
+    rows = []
+    for g in gates:
+        for route in res[g]["plan"]:
+            if not route:
+                continue
+            r = np.array(route)
+            B, H, E, R = route_setup(route, dbar, Q, D, scale, tr[1][:, r] - tr[0][:, r])
+            ex_none, ex_ho, ex_3 = exact_values(dbar[r], pbar[r], B, H, E, R)
+            out, _, _ = rre._eval_route_realistic(route, dbar, Q, D, scale, COSTS,
+                                                  tr[0], tr[1], te[0], te[1],
+                                                  xl[0], xl[1])
+            row = {"Instance": path.stem, "Plan": g, "m": len(route),
+                   "exact_none": ex_none, "exact_ho": ex_ho, "exact_3": ex_3,
+                   "none_rec": out["none"]["mean_cost"]}
+            for lbl in EXACT_KEY:
+                row[f"{lbl}_rec"] = out[lbl]["mean_cost"]
+            rows.append(row)
+    return rows
+
+
+def mode_exact(workers, max_n):
+    files = instances("Dethloff")[:max_n]
+    rows = run_pool(_exact_job, [(f, ["Det", "SAA"]) for f in files], workers)
+    pd.DataFrame(rows).to_csv(OUT / "exact.csv", index=False)
+
+
+MODES = {"exact": mode_exact, "dependence": mode_dependence, "shape": mode_shape,
          "daytype": mode_daytype, "fresh": mode_fresh, "budget": mode_budget,
          "timing": mode_timing, "pool": mode_pool, "regret": mode_regret,
          "synthetic": mode_synthetic}

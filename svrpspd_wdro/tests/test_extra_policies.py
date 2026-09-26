@@ -103,3 +103,45 @@ def test_cvar():
     x = np.arange(100, dtype=float)
     assert cvar(x, 0.95) == np.mean(np.arange(95, 100))
     assert cvar(x, 0.0) == x.mean()
+
+
+def test_oracle3_below_handoff_oracle_and_policies_per_day():
+    from core.costs import oracle_costs_general
+    from core.extra_policies import oracle3_costs
+    g, _ = _paths(N=2000, m=9, seed=3)
+    H, E, R = _prices(g.shape[1])
+    B = 2.0
+    o3 = oracle3_costs(g, B, H, E, R)
+    o_ho = oracle_costs_general(g, B, H, E)
+    assert np.all(o3 <= o_ho + 1e-9)
+    models = fit_lsm_actions(g[:1000], B, H, E, R)
+    st = simulate_actions(g, B, H, E, R, models)
+    assert np.all(o3 <= st["costs"] + 1e-9)
+
+
+def test_two_lever_disabled_is_reactive_and_tuning_helps():
+    from core.otr2 import fit_otr_peak
+    from core.extra_policies import (_costs_two_lever, tune_two_lever)
+    g, _ = _paths(N=2000, m=9, seed=4)
+    H, E, R = _prices(g.shape[1])
+    B = 2.0
+    pm = fit_otr_peak(g, B)
+    react = _simulate_costs_general(g, B, H * 1e9, E, None, tau=1.0,
+                                    prob_models=pm)[0]
+    off = _costs_two_lever(g, B, H, E, R, pm, 1.0, np.inf)[0]
+    assert np.allclose(off, react)
+    t, c = tune_two_lever(g, B, H, E, R, pm)
+    tuned = _costs_two_lever(g, B, H, E, R, pm, t, c)[0].mean()
+    assert tuned <= off.mean() + 1e-12
+
+
+def test_threshold_k_warm_start_not_worse_than_start():
+    from core.extra_policies import cuts_from_models
+    g, _ = _paths(N=2000, m=9, seed=5)
+    H, E, _ = _prices(g.shape[1])
+    B = 2.0
+    cm = fit_lsm_general(g, B, H, E)
+    start = cuts_from_models(g, B, cm, H)
+    c_start = _costs_threshold_k(g, B, H, E, start)[0].mean()
+    thr = fit_threshold_k(g, B, H, E, starts=[start])
+    assert _costs_threshold_k(g, B, H, E, thr)[0].mean() <= c_start + 1e-12

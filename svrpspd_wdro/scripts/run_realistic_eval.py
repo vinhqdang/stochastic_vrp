@@ -72,6 +72,7 @@ from core.costs import (
 from core.extra_policies import (
     fit_threshold_k, simulate_threshold_k, tune_rollout_theta,
     fit_dp_actions_cf, cvar, fit_lsm_actions_cf, simulate_actions_cf,
+    cuts_from_models, tune_two_lever, simulate_two_lever, oracle3_costs,
 )
 from dethloff_runner import (
     parse_dethloff, sample_demands, solve_instance,
@@ -99,9 +100,9 @@ def set_plans_dir(data_dir: str) -> None:
 
 POLICY_LABELS = ["none", "v1_end", "v1_myo", "fb_tau",
                  "pi1", "pi2", "pi3", "rollout", "restock",
-                 "thr_k", "ro_theta",
+                 "thr_k", "ro_theta", "thr2", "dp3_n",
                  "v2_lsm", "v2_act", "v2_cf", "dp_n", "dp_xl", "dp_xl3",
-                 "oracle"]
+                 "oracle", "oracle3"]
 
 N_XL = int(os.environ.get("SVRPSPD_N_XL", 50_000))  # near-exact DP anchor
 RHO_EXEC = os.environ.get("SVRPSPD_RHO")            # execution-day copula rho
@@ -210,9 +211,13 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     tfit["v2_lsm"] = time.perf_counter() - t0
 
     # position-dependent load thresholds, tuned by coordinate descent
+    # warm-started from the global threshold's and BATON-ho's boundaries, so
+    # that on the training days it is never worse than either
     t0 = time.perf_counter()
-    thr_k = fit_threshold_k(g_train, B, Hd("thr_k"), E)
-    tfit["thr_k"] = time.perf_counter() - t0
+    starts = [cuts_from_models(g_train, B, fb_models, tau_fb),
+              cuts_from_models(g_train, B, cm, Hd("thr_k"))]
+    thr_k = fit_threshold_k(g_train, B, Hd("thr_k"), E, starts=starts)
+    tfit["thr_k"] = time.perf_counter() - t0 + tfit["fb_tau"] + tfit["v2_lsm"]
 
     # plug-in DP benchmarks: equal data budget, and near-exact 50k anchor
     t0 = time.perf_counter()
@@ -246,6 +251,15 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     t0 = time.perf_counter()
     thr_rs = tune_restock(g_train, B, E, R)
     tfit["restock"] = time.perf_counter() - t0
+    # two-lever heuristic: handoff threshold + depot-return trigger, jointly tuned
+    t0 = time.perf_counter()
+    tau2, c2 = tune_two_lever(g_train, B, Hd("thr2"), E, R, fb_models)
+    tfit["thr2"] = time.perf_counter() - t0 + t_fb
+    # equal-data three-action plug-in DP (bins / fresh-start on the two halves)
+    t0 = time.perf_counter()
+    hN = g_train.shape[0] // 2
+    dp3n = fit_dp_actions_cf(g_train[:hN], B, Hd("dp3_n"), E, R, g_eval=g_train[hN:])
+    tfit["dp3_n"] = time.perf_counter() - t0
     # near-exact yardstick for the THREE-action problem (50k paths)
     t0 = time.perf_counter()
     # bins for C_k fitted on one half, state-conditional F_k(W_k) on the other
@@ -292,6 +306,12 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
     out["dp_xl"],  acts["dp_xl"]  = simulate_v2_general(g_test, B, Hd("dp_xl"), E, dp_xl, return_actions=True, H_bill=H)
     out["dp_xl3"], acts["dp_xl3"] = simulate_actions_cf(g_test, B, Hd("dp_xl3"), E, R, dp3, return_actions=True, H_bill=H)
     out["v2_cf"],  acts["v2_cf"]  = simulate_actions_cf(g_test, B, Hd("v2_cf"), E, R, cf, return_actions=True, H_bill=H)
+    out["thr2"],   acts["thr2"]   = simulate_two_lever(g_test, B, Hd("thr2"), E, R, fb_models, tau2, c2, return_actions=True, H_bill=H)
+    out["dp3_n"],  acts["dp3_n"]  = simulate_actions_cf(g_test, B, Hd("dp3_n"), E, R, dp3n, return_actions=True, H_bill=H)
+    o3 = oracle3_costs(g_test, B, H, E, R)
+    out["oracle3"] = {"mean_cost": float(o3.mean()), "costs": o3,
+                      "handoff_rate": 0.0, "fail_rate": 0.0, "complete_rate": 0.0}
+    acts["oracle3"] = np.zeros(g_test.shape[0], dtype=np.int8)
     out["thr_k"],  acts["thr_k"]  = simulate_threshold_k(g_test, B, Hd("thr_k"), E, thr_k, return_actions=True, H_bill=H)
     t0 = time.perf_counter()
     out["ro_theta"], acts["ro_theta"] = simulate_v2_general(g_test, B, theta * Hd("ro_theta"), E, ro_models, return_actions=True, H_bill=H)
@@ -305,7 +325,7 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
                      "fail_rate": float((orc_a == 2).mean()),
                      "complete_rate": float((orc_a == 0).mean())}
     acts["oracle"] = orc_a
-    tfit["none"] = tfit["oracle"] = 0.0
+    tfit["none"] = tfit["oracle"] = tfit["oracle3"] = 0.0
     tfit["_online_s"] = t_on
     return out, acts, tfit
 
@@ -403,7 +423,7 @@ def _run_instance(path, tlim, n_train, n_test, active_policies, reuse,
             if lbl != "none":
                 row[f"{lbl}_saving"] = round(
                     100.0 * (none_rec - rec) / max(none_rec, 1e-9), 2)
-            if lbl not in ("none", "oracle"):
+            if lbl not in ("none", "oracle", "oracle3"):
                 row[f"{lbl}_gap"] = round(
                     100.0 * (rec - orc_rec) / max(none_rec - orc_rec, 1e-9), 2)
             # tail risk of the plan's DAILY recourse bill, and the chance

@@ -3,12 +3,15 @@
 the number $N$ of training days per route (same test days throughout).
 thr.: label-corrected tuned threshold; DP$_N$: plug-in dynamic program
 at equal data; \textsc{Baton} with deployment selection. The last row
-gives the near-exact references (handoff-only / three-action).}
+gives the high-data reference programs (handoff-only / three-action).
+The $N = 10^3$ row re-draws the training days of a smaller instance set
+(Section~\ref{sec:budget}) and therefore differs from
+Tables~\ref{tab:grand} and~\ref{tab:large} by up to 0.3 points.}
 \label{tab:budget}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3.5pt}
-\begin{adjustbox}{max width=\textwidth}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{r ccc ccc ccc}
 \toprule
 & \multicolumn{3}{c}{Dethloff, \textsc{Det}} & \multicolumn{3}{c}{Dethloff, \textsc{SAA}} & \multicolumn{3}{c}{City, \textsc{Det}} \\ \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}

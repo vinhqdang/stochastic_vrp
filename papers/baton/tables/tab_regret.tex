@@ -11,12 +11,15 @@ reactive cost. $P(\sigma^0 < \sigma^\star)$: share of days on which the
 myopic rule hands off before the optimal one; containment: share of days
 with $\sigma^0 \le \sigma^\star$. Last column: excess cost of the tuned
 threshold over \textsc{Baton-ho}, both fitted on $10^3$ days (\% of
-reactive cost).}
+reactive cost). All columns pool the routes of a row (ratios of sums).
+On breach days the integrand $H_{\sigma^0} - L_{\sigma^0}$ of the bound
+can be negative (a handoff cheaper than the clairvoyant remainder), so
+the clean-day term can exceed the bound itself.}
 \label{tab:regret}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.4pt}
-\begin{adjustbox}{max width=\textwidth}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l cc ccc ccc c}
 \toprule
 & & & & & clean-day & & $\sigma^0 < \sigma^\star$, & & thr.\ $-$ \\

@@ -13,7 +13,7 @@ Computers & Operations Research, manuscript CAOR-D-26-01885 (see
 | `BatonProofs/` | Lean 4 + Mathlib machine-checked proofs of Propositions 1–4 (`lake build`; see its README for the theorem-by-theorem correspondence) |
 | `references.bib`, `VERIFY_CITATIONS.md` | bibliography and its verification log |
 | `title_page`, `cover_letter`, `declaration_of_interests`, `credit_author_statement`, `highlights.txt` | submission set |
-| `r1/response_letter.tex` / `.pdf` | point-by-point response to the reviews of revision 1 (cross-references and numbers come from `../main.aux` and `../tables/macros.tex`) |
+| `r1/response_letter.tex` / `.pdf` | point-by-point response to the reviews (revision 1) (cross-references and numbers come from `../main.aux` and `../tables/macros.tex`) |
 | `r1/portal_replies.md` | one reply per reviewer, to paste into the Elsevier portal |
 | `r1/main_diff.pdf` | revision 1 with changes marked against the submitted version |
 
@@ -31,11 +31,15 @@ python scripts/run_realistic_eval.py dir=data/CityUniform policies=Det out=resul
 python scripts/make_zero_pickup_variants.py
 python scripts/run_realistic_eval.py dir=data/CityZP25 policies=Det out=results_cityzp25_eval
 python scripts/run_realistic_eval.py dir=data/CityZP50 policies=Det out=results_cityzp50_eval
+python scripts/run_realistic_eval.py dir=data/City policies=SAA out=results_city_saa_eval
 bash scripts/run_cost_sensitivity.sh
 python scripts/run_realistic_eval.py policies=Det,SAA max=12 costs=F_standby:60 out=results_costsens_F_standby_60
+for x in 5 10 20 30; do
+  python scripts/run_realistic_eval.py policies=Det,SAA max=12 costs=F_return:$x out=results_costsens_F_return_$x
+done
 
-# revision experiments (Sections 4.4-4.7): results/r1/*.csv
-for m in synthetic regret fresh shape dependence daytype budget pool; do
+# revision experiments (Sections 4.4-4.7 and the appendix): results/r1/*.csv
+for m in synthetic regret fresh shape dependence exact daytype budget pool; do
   python scripts/run_baton_r1.py $m
 done
 python scripts/run_baton_r1.py timing workers=1

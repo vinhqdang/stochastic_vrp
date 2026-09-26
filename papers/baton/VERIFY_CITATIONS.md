@@ -73,3 +73,12 @@ All author lists in the .bib are complete (no "et al.").
 - [ ] `gounaris2016adaptive` — TS 50(4):1239-1260, DOI 10.1287/trsc.2014.0559
 - [ ] `ota2026scenario` — arXiv:2604.02496 (2026 preprint); check journal status at submission
 - [ ] `wang2026drone` — Transportation Letters 18(2):270-288; agent reported online 2025 / print 2026 — verify the volume year
+
+## Revision 1, round 2 (Crossref-verified 2026-09-26)
+- [x] `egloff2005monte` — AAP 15(2):1396-1432, DOI 10.1214/105051605000000043 (Crossref title/author/volume confirmed; pages from the journal site)
+- [x] `zanger2013quantitative` — Finance Stoch 17(3):503-534, DOI 10.1007/s00780-013-0204-9
+- [x] `serfozo1976monotone` — Math. Programming Studies 6:202-215, DOI 10.1007/BFb0120752
+- [x] `puterman1994markov` — Wiley, DOI 10.1002/9780470316887
+- [ ] `muller2002comparison` — Wiley 2002, ISBN 978-0-471-49446-1; no DOI located, verify publisher city
+- [x] `minis2011stochastic` — EJOR 213(1):37-51, DOI 10.1016/j.ejor.2011.03.011
+- [x] `tatarakis2009stochastic` — EJOR 197(2):557-571, DOI 10.1016/j.ejor.2008.07.006

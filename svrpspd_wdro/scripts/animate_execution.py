@@ -231,7 +231,7 @@ def animate(instance_stem="HANOI-100-1", policy="compare", scen_rank=0,
     trail_axes = []
     for ax, p, sim in zip(axes, policies, sims):
         _draw_static(ax, G, lonr, latr, xs, ys, lon[0], lat[0])
-        ax.set_title(f"{TITLES[p]} — realized cost ${sim['cost']:.1f}",
+        ax.set_title(f"{TITLES[p]} — realized cost {sim['cost']:.1f}",
                      fontsize=12, color=INK)
         d, = ax.plot([], [], marker="o", ms=13, color=VEH1, zorder=8,
                      mec="white", mew=1.2)
@@ -399,7 +399,7 @@ def animate_fleet(instance_stem="HANOI-200-1", scen_rank=0, fps=7,
     fleet_cost = sum(s["cost"] for s in sims)
     ax.set_title(f"{instance_stem} — {len(plan)} vehicles under BATON, one "
                  f"high-demand day: {n_ho} handoffs, {n_br} breaches, "
-                 f"fleet recourse ${fleet_cost:.0f}", fontsize=14, color=INK)
+                 f"fleet recourse {fleet_cost:.0f} currency units", fontsize=14, color=INK)
 
     dots, trails = [], []
     for ri in range(len(plan)):

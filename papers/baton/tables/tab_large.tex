@@ -1,30 +1,35 @@
-\begin{table}[t]
+\begin{sidewaystable}
 \caption{Large-scale benchmarks under the fleet cost model
-(Det-gate plans; saving \% vs.\ reactive, \emph{higher is better};
-the proposed policy is in bold; the last three columns are reference
-points). Salhi--Nagy instances carry 50--199 customers; the city
-instances (100--400 customers) place customers at real OSM shop
-locations on the road networks of Ho Chi Minh City, Hanoi, New York,
-Paris and Shanghai. The uniform twins use the same cities and demands
-with uniformly scattered customers; the deliver-only twins set the
-pickup of a random 25\% or 50\% of the customers to zero and are
-re-planned.}
+(\textsc{Det}-gate plans unless stated; saving \% vs.\ reactive,
+\emph{higher is better}; the best implementable policy of each row is in
+bold; columns as in Table~\ref{tab:grand}, the four columns after
+\textsc{Baton-cf} being reference points). Salhi--Nagy instances carry
+50--199 customers; the city instances (100--400 customers) place
+customers at real OSM shop locations on the road networks of Ho Chi Minh
+City, Hanoi, New York, Paris and Shanghai. The uniform twins use the
+same cities and demands with uniformly scattered customers; the
+deliver-only twins set the pickup of a random 25\% or 50\% of the
+customers to zero and are re-planned. Last column: \textsc{Baton} minus
+the strongest competitor of the row (named), mean over instances in
+percentage points with a 95\% paired bootstrap interval.}
 \label{tab:large}
 \centering
-\footnotesize
+\small
 \setlength{\tabcolsep}{3pt}
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{l r cccccccc}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l r cccccc ccc cccc l}
 \toprule
-Benchmark & $n$ & restock & thr. & thr.-$k$ & \textsc{Baton-ho} &
-\textsc{Baton} & DP$_{50\mathrm{k}}$ & DP$^3_{50\mathrm{k}}$ & oracle \\
+Benchmark & $n$ & restock & thr. & thr.-$k$ & two-lever & DP$_N$ & DP$^3_N$ &
+\textsc{Baton-ho} & \textsc{Baton} & \textsc{Baton-cf} &
+DP$_{50\mathrm{k}}$ & DP$^3_{50\mathrm{k}}$ & oracle-ho & oracle$^3$ &
+$\Delta$ vs.\ best competitor \\
 \midrule
-Salhi--Nagy & 14 & 26.5 & 37.4 & 42.2 & 42.3 & \textbf{53.0} & 42.8 & 54.0 & 48.8 \\
-City, real shops & 19 & 0.3 & 9.7 & 7.6 & 10.6 & \textbf{10.6} & 12.1 & 12.3 & 36.8 \\
-City, uniform & 9 & 0.1 & 11.7 & 9.7 & 11.7 & \textbf{11.8} & 12.9 & 13.1 & 35.2 \\
-City, 25\% deliver-only & 19 & -0.3 & 3.7 & 2.4 & 4.8 & \textbf{4.9} & 6.2 & 6.4 & 32.1 \\
-City, 50\% deliver-only & 19 & -0.5 & -1.5 & 3.3 & 3.1 & \textbf{3.1} & 6.8 & 6.7 & 38.3 \\
+Salhi--Nagy & 14 & 26.5 & 37.4 & 42.2 & 45.2 & 41.9 & 52.3 & 42.3 & 53.0 & \textbf{53.6} & 42.8 & 54.0 & 48.8 & 62.2 & +0.7 [+0.2, +1.2] (DP$^3_N$) \\
+City, real shops & 19 & 0.3 & 9.7 & 10.1 & 10.0 & 6.8 & 3.4 & 10.6 & 10.6 & \textbf{10.8} & 12.1 & 12.3 & 36.8 & 37.7 & +0.5 [+0.3, +0.7] (thr.-$k$) \\
+City, uniform & 9 & 0.1 & 11.7 & 11.3 & 11.5 & 8.5 & 5.3 & 11.7 & 11.8 & \textbf{12.1} & 12.9 & 13.1 & 35.2 & 36.4 & +0.1 [-0.7, +0.7] (roll.-$\theta$) \\
+City, 25\% deliver-only & 19 & -0.3 & 3.7 & 4.5 & 3.8 & 1.9 & 1.7 & 4.8 & 4.9 & \textbf{5.0} & 6.2 & 6.4 & 32.1 & 32.7 & +0.4 [+0.2, +0.6] (thr.-$k$) \\
+City, 50\% deliver-only & 19 & -0.5 & -1.5 & 0.1 & 1.8 & \textbf{3.1} & 2.1 & \textbf{3.1} & \textbf{3.1} & \textbf{3.1} & 6.8 & 6.7 & 38.3 & 39.0 & +0.0 [-6.9, +5.0] (DP$_N$) \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table}
+\end{sidewaystable}
