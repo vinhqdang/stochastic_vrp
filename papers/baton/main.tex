@@ -236,7 +236,12 @@ over-triggering is bounded by the cost of interventions on days that
 would have completed cleanly, plus any saving forgone by acting before a
 cheaper later opportunity (Proposition~\ref{prop:regret}); and the continuation
 value is monotone in the load (Proposition~\ref{prop:monotone}), which
-justifies a nonparametric monotone estimator. The third is a
+justifies a nonparametric monotone estimator. All four propositions are
+machine-checked in the Lean~4 proof assistant with the Mathlib library,
+and the formal proofs are released with the paper; the formalisation
+exposed a side condition of Proposition~\ref{prop:bias} (at least one
+decision epoch before the last stop) that the informal statement had
+left implicit. The third is a
 \emph{method} that is deliberately an adaptation rather than an
 invention: regression-based backward induction for optimal stopping
 \citep{longstaff2001valuing,tsitsiklis2001regression,clement2002analysis}
@@ -2239,6 +2244,11 @@ on packed plans and above all on pools shared by many plans. Where
 capacity is capped, deciding each route with a shadow price on the pool
 beats ignoring the cap, keeps the routes decoupled, and relies on the
 depot return as the fallback lever (\S\ref{sec:pool}).
+
+The structural results behind these findings do not rest on
+hand-checked algebra alone: Propositions~\ref{prop:bias}--\ref{prop:monotone}
+are verified in Lean~4, within the modelling abstractions listed at the
+start of \S\ref{sec:method}.
 
 \paragraph{Scope of the conclusions} Our managerial conclusions hold
 for the model we studied, and several features of real operations lie

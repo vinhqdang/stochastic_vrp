@@ -15,7 +15,8 @@
   spacing), `title_page.pdf`, `cover_letter.pdf` (addressed per venue),
   `declaration_of_interests.pdf`, `credit_author_statement.pdf`,
   `highlights.txt`.
-- Revision 1 files: `r1/response_letter.pdf` (point-by-point response),
+- Revision 1 files: `r1/cover_letter_r1.pdf` (cover letter to the editor),
+  `r1/response_letter.pdf` (point-by-point response),
   `r1/portal_replies.md` (one reply per reviewer comment, for the
   Elsevier portal), `r1/main_diff.pdf` (changes marked against the
   submitted version).

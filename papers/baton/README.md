@@ -13,6 +13,7 @@ Computers & Operations Research, manuscript CAOR-D-26-01885 (see
 | `BatonProofs/` | Lean 4 + Mathlib machine-checked proofs of Propositions 1–4 (`lake build`; see its README for the theorem-by-theorem correspondence) |
 | `references.bib`, `VERIFY_CITATIONS.md` | bibliography and its verification log |
 | `title_page`, `cover_letter`, `declaration_of_interests`, `credit_author_statement`, `highlights.txt` | submission set |
+| `r1/cover_letter_r1.tex` / `.pdf` | cover letter for revision 1 |
 | `r1/response_letter.tex` / `.pdf` | point-by-point response to the reviews (revision 1) (cross-references and numbers come from `../main.aux` and `../tables/macros.tex`) |
 | `r1/portal_replies.md` | one reply per reviewer, to paste into the Elsevier portal |
 | `r1/main_diff.pdf` | revision 1 with changes marked against the submitted version |
