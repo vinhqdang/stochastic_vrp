@@ -12,7 +12,8 @@ the day-factor law multiplies every demand of a day by a common
 lognormal factor (s.d.\ 0.25) on top of independent marginals.
 $\Delta$: \textsc{Baton} minus the strongest competitor of the row
 (named; \textsc{Baton} variants excluded), mean over instances with a
-95\% paired bootstrap interval. Shape test (both gates pooled): viol.\ is
+95\% paired bootstrap interval that re-selects the strongest competitor
+in every resample. Shape test (both gates pooled): viol.\ is
 the share of adjacent-bin pairs in which the unconstrained binned
 estimate of $\mathbb E[\text{future cost} \mid W_k]$, fitted on
 $5\times10^4$ paths per route with 25 bins, \emph{decreases}
@@ -30,15 +31,15 @@ injected into the middle bin.}
 & & & \multicolumn{7}{c}{saving \%} & & \multicolumn{3}{c}{shape test (\%)} \\ \cmidrule(lr){4-10}\cmidrule(lr){12-14}
 Demand law & gate & react. & thr.-$k$ & two-lever & \textsc{Baton-ho} & \textsc{Baton} & \textsc{Baton-cf} & DP$^3_{50\mathrm{k}}$ & oracle$^3$ & $\Delta$ [95\% CI] & viol. & pow.$_{10}$ & pow.$_{25}$ \\
 \midrule
-$\rho = 0$ & \textsc{Det} & 176.4 & 10.5 & 13.1 & 10.6 & \textbf{15.5} & 15.4 & 15.5 & 48.6 & +2.0 [+1.8, +2.1] (DP$^3_N$) & 0.2 & 51 & 82 \\
- & \textsc{SAA} & 2.8 & -11.9 & -8.3 & -8.0 & -0.1 & \textbf{0.2} & 7.4 & 65.3 & -0.1 [-4.5, +3.2] (DP$_N$) & & & \\
+$\rho = 0$ & \textsc{Det} & 176.4 & 10.5 & 13.1 & 10.6 & \textbf{15.5} & 15.4 & 15.5 & 48.6 & +2.0 [+1.5, +2.1] (DP$^3_N$) & 0.2 & 51 & 82 \\
+ & \textsc{SAA} & 2.8 & -11.9 & -8.3 & -8.0 & -0.1 & \textbf{0.2} & 7.4 & 65.3 & -0.1 [-4.6, +2.2] (DP$_N$) & & & \\
 $\rho = 0.3$ & \textsc{Det} & 180.2 & 19.1 & 20.2 & 19.3 & 21.9 & \textbf{22.5} & 22.7 & 47.6 & +1.2 [+0.9, +1.6] (DP$^3_N$) & 0.1 & 58 & 89 \\
  & \textsc{SAA} & 8.0 & 6.5 & 29.0 & 7.9 & 36.3 & \textbf{36.6} & 40.9 & 77.5 & +6.5 [+4.7, +8.4] (restock) & & & \\
 $\rho = 0.6$ (bench.) & \textsc{Det} & 179.2 & 26.0 & 26.5 & 26.1 & 27.9 & \textbf{29.2} & 29.5 & 47.2 & +0.0 [-0.4, +0.4] (DP$^3_N$) & 0.1 & 72 & 97 \\
- & \textsc{SAA} & 16.5 & 19.8 & 43.9 & 20.1 & 53.7 & \textbf{53.8} & 56.4 & 78.4 & +9.7 [+8.3, +11.3] (two-lever) & & & \\
+ & \textsc{SAA} & 16.5 & 19.8 & 43.9 & 20.1 & 53.7 & \textbf{53.8} & 56.4 & 78.4 & +9.7 [+8.2, +11.1] (two-lever) & & & \\
 $\rho = 0.9$ & \textsc{Det} & 177.5 & 34.0 & 33.8 & 34.1 & 35.4 & \textbf{37.6} & 38.0 & 47.0 & -1.1 [-1.6, -0.7] (DP$^3_N$) & 0.0 & 88 & 97 \\
  & \textsc{SAA} & 25.9 & 32.9 & 54.4 & 33.0 & 64.5 & \textbf{65.9} & 67.7 & 78.5 & +10.2 [+8.8, +11.6] (two-lever) & & & \\
-day factor, $\rho = 0$ & \textsc{Det} & 172.2 & 9.7 & 11.8 & 9.8 & \textbf{14.2} & \textbf{14.2} & 14.2 & 48.1 & +2.3 [+1.4, +3.5] (two-lever) & 0.6 & 47 & 78 \\
+day factor, $\rho = 0$ & \textsc{Det} & 172.2 & 9.7 & 11.8 & 9.8 & \textbf{14.2} & \textbf{14.2} & 14.2 & 48.1 & +2.3 [+1.4, +3.1] (two-lever) & 0.6 & 47 & 78 \\
  & \textsc{SAA} & 5.2 & -12.7 & -2.2 & -6.9 & 7.4 & \textbf{8.0} & 12.4 & 70.2 & +1.6 [-1.6, +4.9] (restock) & & & \\
 \bottomrule
 \end{tabular}

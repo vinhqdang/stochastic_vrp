@@ -185,9 +185,12 @@ adjacent bins in \shapeViolZero{} of pairs under independence, where
 monotonicity is a theorem and this rate measures the false-positive
 level of the test, in \shapeViolThree, \shapeViolSix{} and
 \shapeViolNine{} of pairs at $\rho = 0.3$, $0.6$ and $0.9$, and in
-\shapeViolDayfac{} under the day factor. The test has power: a dip of
-10\% (25\%) of the mean continuation cost injected into one bin is
-detected in \shapePowTenAll{} (\shapePowTwentyFiveAll) of the tests.
+\shapeViolDayfac{} under the day factor. The test found no significant
+violations beyond its false-positive level, but its power is limited: a
+dip of 10\% (25\%) of the mean continuation cost injected into one bin
+is detected in only \shapePowTenAll{} (\shapePowTwentyFiveAll) of the
+tests. The evidence is therefore consistent with a monotone continuation
+value, without proving it, and the manuscript says so.
 
 The main place where dependence matters is a finding we did not
 anticipate. It concerns the depot return: under dependence the value of
@@ -407,7 +410,12 @@ gate and against the strongest competitor, \BATON-ho and the high-data
 three-action program: the mean paired difference in saving with a 95\%
 bootstrap confidence interval, the number of instances won, the
 matched-pairs rank-biserial effect size, and a Holm-adjusted Wilcoxon
-test. Against the strongest competitor the advantage is
+test. Because the strongest competitor is chosen on the same instances,
+its interval re-selects the competitor in every bootstrap resample, and
+its $p$-value is the largest of the $p$-values against each candidate
+competitor (an intersection-union test), so the selection does not
+inflate the evidence; the same selection-aware interval is used in the
+robustness tables. Against the strongest competitor the advantage is
 \statConsDeltaMin--\statConsDeltaMax{} percentage points on the five
 conservative gates, every interval excluding zero; on the deterministic
 gate \BATON{} and the equal-data three-action program are tied
@@ -529,10 +537,12 @@ test), \shapeViolThree{} at $\rho = 0.3$, \shapeViolSix{} at $\rho =
 0.6$, \shapeViolNine{} at $\rho = 0.9$ and \shapeViolDayfac{} under the
 day factor. To show that the test is not blind, we injected a dip of
 10\% and of 25\% of the mean continuation cost into one bin; it is
-detected in \shapePowTenAll{} and \shapePowTwentyFiveAll{} of the tests.
-So the conditional expectation shows no dips of that size, and the
-isotonic restriction remains justified empirically where the theorem
-does not strictly apply. A \BATON{} variant keeps the highest saving
+detected in only \shapePowTenAll{} and \shapePowTwentyFiveAll{} of the
+tests. The test therefore finds no significant violations, but with
+limited power: small dips could go unnoticed. We read the result as
+consistent with a monotone continuation value, and the isotonic
+restriction as a reasonable approximation where the theorem does not
+strictly apply, rather than as a proof of monotonicity. A \BATON{} variant keeps the highest saving
 among implementable policies under all five laws. \BATON{} itself is
 tied with its strongest competitor in three of the ten law--gate rows and
 loses one, at $\rho = 0.9$ on \textsc{Det} plans, to the equal-data
@@ -755,6 +765,10 @@ would likely close part of the gap by learning a critic that plays the
 role of $\widehat C_k$. Attention- and graph-based architectures pay off
 when the state is a large combinatorial object, and would become
 relevant for partial handoffs or fleet-level coordination. We also
+state in the manuscript that our three seeds and two epoch budgets do not
+rule out that longer training, other hyper-parameters or another
+architecture would narrow the gap; sample efficiency is our
+interpretation for the architecture we tested. Finally, we
 retrained the RL baseline on a route bundle consistent with the current
 plans, on the same CPU as \BATON, and report its training time.
 \chg \sref{sec:learning}, paragraph after \tref{tab:rl}; related-work
@@ -937,13 +951,14 @@ policy observing only the past can anticipate, so its lead is large and
 unattainable. DP$_{50\mathrm{k}}$ is fitted on fifty times more data
 than \BATON. On the city instances the depot return rarely pays, so the
 comparison is between two handoff-only policies, and the gap
-(\svCityBaton{} against \svCityDp) is the finite-sample cost of
-estimating the stopping boundary from $10^3$ days instead of
-$5\times10^4$. The new data-budget experiment shows this directly
-(\tref{tab:budget}, \fref{fig:budget}): given 20{,}000 training days,
-\BATON{} saves \budCityLarge{} on the city instances, slightly more than
-DP$_{50\mathrm{k}}$ (\budCityDp; the binned program is an estimate, not
-an exact optimum). The oracle's lead, by contrast, does not shrink with
+(\svCityBaton{} against \svCityDp) is a gap to a reference that has
+fifty times more data and also a different estimator (binned means
+instead of isotonic regression), so it cannot be attributed to the data
+alone. The new data-budget experiment indicates that the amount of data
+accounts for most of it (\tref{tab:budget}, \fref{fig:budget}): given
+20{,}000 training days, \BATON{} saves \budCityLarge{} on the city
+instances, slightly more than DP$_{50\mathrm{k}}$ (\budCityDp; the
+binned program is an estimate, not an exact optimum). The oracle's lead, by contrast, does not shrink with
 data: it is the value of knowing the future.
 \chg \sref{sec:large}; \sref{sec:budget} with \tref{tab:budget} and
 \fref{fig:budget}; table captions.

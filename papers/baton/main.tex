@@ -1427,7 +1427,13 @@ separately ($n = 40$) rather than pooling them. For each comparison we
 report the mean paired difference in saving with a 95\% bootstrap
 confidence interval, the number of instances won, the matched-pairs
 rank-biserial effect size, and a two-sided Wilcoxon signed-rank test
-with Holm's correction across all comparisons of a table. Route-level
+with Holm's correction across all comparisons of a table. Where the
+comparator is ``the strongest competitor'', it is chosen by mean saving
+on the same instances; the reported interval then re-selects the
+comparator in every bootstrap resample, and the $p$-value is the largest
+of the $p$-values against each candidate competitor (an
+intersection-union test), so that the selection does not inflate the
+evidence. Route-level
 results for every policy, gate and instance are provided as
 supplementary data, and the tail of the daily plan-level bill is
 analysed separately.
@@ -1609,9 +1615,12 @@ breach risk comes from demand surprises at the next stop that no policy
 observing only the past can anticipate, which is why its lead is large
 (\svCityOrc{}). DP$_{50\mathrm{k}}$ is fitted on fifty times more data;
 with the return lever idle, the gap between it and \textsc{Baton}
-(\svCityDp{} against \svCityBaton{}) is the finite-sample cost of
-estimating the stopping boundary from $10^3$ days, and
-\S\ref{sec:budget} shows it closing as the history grows. The
+(\svCityDp{} against \svCityBaton{}) is a gap to a reference that has
+more data \emph{and} a different estimator (binned means instead of the
+isotonic fit), so it cannot be attributed to the data alone.
+\S\ref{sec:budget} shows that it closes, and reverses, when
+\textsc{Baton} is given a comparable history, which indicates that
+the amount of data accounts for most of it. The
 uniform-scatter twins behave the same way, with \textsc{Baton} and the
 cost-scaled rollout statistically tied ($\Delta = \lgCityUDelta$,
 \lgCityUDeltaCI).
@@ -1709,12 +1718,14 @@ two at the instance level: \textsc{Baton-ho} is better on
 \rlInstWin{} instances, by \rlInstDelta{} points of reactive cost on
 average (95\% bootstrap interval \rlInstCI; one-sided Wilcoxon test over
 the \rlNInst{} instances, \rlWinP).
-The seeds cluster closely and almost quadrupling the epochs barely
-moves the result, so the gap is not under-training; it is sample
-efficiency. A policy-gradient method must discover the value structure
-that the backward induction computes directly, and at a thousand paths
-per route the regression wins, at a small fraction of the compute
-(\S\ref{sec:budget}).
+The three seeds cluster closely and almost quadrupling the epochs barely
+moves the result. This does not rule out that longer training, other
+hyper-parameters or another architecture would do better, but for the
+architecture and budgets we tested it points to sample efficiency as the
+main reason for the gap: a policy-gradient method must discover the value
+structure that the backward induction computes directly, and at a
+thousand paths per route the regression does better, at a small fraction
+of the compute (\S\ref{sec:budget}).
 
 
 We have compared one learning architecture, and other architectures
@@ -1833,12 +1844,15 @@ given $W_k$ decreases significantly between adjacent bins in
 Proposition~\ref{prop:monotone} guarantees monotonicity, in
 \shapeViolThree, \shapeViolSix{} and \shapeViolNine{} of pairs at $\rho =
 0.3$, $0.6$ and $0.9$, and in \shapeViolDayfac{} under the day factor.
-The test is not blind: a dip of 10\% of the mean continuation cost
-injected into one bin is detected in \shapePowTenAll{} of the tests and
-a dip of 25\% in \shapePowTwentyFiveAll. The absence of violations
-therefore rules out dips of that size, though not arbitrarily small
-ones, and the isotonic restriction is justified empirically where the
-theorem does not strictly apply.
+The test found no significant violations beyond its false-positive
+level, but its power is limited: a dip of 10\% of the mean continuation
+cost injected into one bin is detected in only \shapePowTenAll{} of the
+tests, and a dip of 25\% in \shapePowTwentyFiveAll. Moderate dips of
+the size that would matter for the policy would usually be detected,
+while small ones could go unnoticed. The evidence is therefore
+consistent with, but does not prove, a monotone continuation value
+outside the setting of Proposition~\ref{prop:monotone}, and it supports
+the isotonic restriction as a reasonable approximation there.
 
 The two \textsc{SAA} rows are instructive. Under independence the
 \textsc{SAA} plans, calibrated for correlated demand, are so conservative
@@ -2062,8 +2076,10 @@ reaches \budDethSaaLarge{} at $2\times10^4$ days against
 slightly exceeds the binned references (\budCityLarge{} against
 \budCityDp{}), which are estimates themselves rather than exact optima.
 The gaps in Table~\ref{tab:grand} between \textsc{Baton} and the
-references are therefore the finite-sample cost of learning from a
-thousand days, not a structural shortfall of the policy. The clairvoyant
+references therefore shrink with the amount of data and do not point to a
+structural shortfall of the policy; since the references also use a
+different estimator, this experiment cannot attribute the gaps to data
+alone. The clairvoyant
 oracle's lead, by contrast, does not shrink with data: it is the value
 of knowing the future.
 

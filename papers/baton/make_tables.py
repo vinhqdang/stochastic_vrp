@@ -92,6 +92,32 @@ def _boot_ci(d, n=10_000):
     return np.quantile(m, 0.025), np.quantile(m, 0.975)
 
 
+def _ci(lo, hi):
+    """Interval text; two decimals when an end would round to zero."""
+    f = ".2f" if min(abs(lo), abs(hi)) < 0.05 else ".1f"
+    return f"[{lo:+{f}}, {hi:+{f}}]"
+
+
+def _sel_ci(frame, comps, ours="v2_act", n=10_000):
+    """Difference between `ours` and the strongest competitor, with the
+    competitor chosen by mean saving INSIDE every bootstrap resample, so
+    the interval accounts for selecting the comparator on the same
+    instances. Returns (point-selected competitor, point estimate, lo, hi,
+    intersection-union p): the largest two-sided Wilcoxon p-value against
+    any single competitor, a valid test of 'better than every competitor'
+    that needs no selection correction."""
+    comps = [c for c in comps if f"{c}_saving" in frame]
+    y = frame[f"{ours}_saving"].to_numpy(float)
+    X = np.column_stack([frame[f"{c}_saving"].to_numpy(float) for c in comps])
+    j = int(np.argmax(X.mean(axis=0)))
+    est = float(y.mean() - X[:, j].mean())
+    idx = np.random.default_rng(20260926).integers(0, len(y), (n, len(y)))
+    boot = y[idx].mean(axis=1) - X[idx].mean(axis=1).max(axis=1)
+    lo, hi = np.quantile(boot, [0.025, 0.975])
+    p_iu = max(_wilcox2(y - X[:, k]) for k in range(len(comps)))
+    return comps[j], est, float(lo), float(hi), p_iu
+
+
 def _rank_biserial(d):
     d = np.asarray(d, float)
     d = d[np.abs(d) > 1e-12]
@@ -253,15 +279,18 @@ Gate & """ + " & ".join(h for _, h in cols) + r""" \\
     body, pvals, cells = [], [], []
     for g in GATES:
         s_ = grand[grand.Plan == g]
-        best = max(COMPETITORS, key=lambda l: s_[f"{l}_saving"].mean())
+        best, est, slo, shi, p_iu = _sel_ci(s_, COMPETITORS)
         row = [g, best]
         for ref in (best, "v2_lsm", "dp_xl3"):
             d = (s_["v2_act_saving"] - s_[f"{ref}_saving"]).to_numpy()
             lo, hi = _boot_ci(d)
+            p_ = _wilcox2(d)
+            if ref == best:                      # selection-aware
+                lo, hi, p_ = slo, shi, p_iu
             wins = int((d > 1e-9).sum())
             ties = int((np.abs(d) <= 1e-9).sum())
             row.append((d.mean(), lo, hi, wins, ties, _rank_biserial(d)))
-            pvals.append(_wilcox2(d))
+            pvals.append(p_)
         cells.append(row)
     adj = _holm(pvals)
     NICE = {"pi1": r"$\pi_1$", "pi2": r"$\pi_2$", "pi3": r"$\pi_3$",
@@ -275,14 +304,20 @@ Gate & """ + " & ".join(h for _, h in cols) + r""" \\
             p = adj[3 * i + j]
             ptxt = (r"$<\!10^{-4}$" if p < 1e-4 else
                     r"$<\!10^{-3}$" if p < 1e-3 else f"{p:.3f}")
-            out.append(f"{mu:+.1f} [{lo:+.1f}, {hi:+.1f}] & {w} & {r:+.2f} & {ptxt}")
+            out.append(f"{mu:+.1f} {_ci(lo, hi)} & {w} & {r:+.2f} & {ptxt}")
         body.append(" & ".join(out) + r" \\")
     tab = r"""\begin{table}[t]
 \caption{Paired comparison of \textsc{Baton} with, in turn, the strongest
-competitor on each gate (the implementable policy other than the
-\textsc{Baton} variants with the highest mean saving in
-Table~\ref{tab:grand}), its handoff-only restriction, and the high-data
-three-action reference program. The experimental unit is the
+competitor on each gate, its handoff-only restriction, and the high-data
+three-action reference program. The strongest competitor is not fixed in
+advance: it is the implementable policy other than the \textsc{Baton}
+variants with the highest mean saving among the ten competitors of
+Table~\ref{tab:competitors} that were run on all gates. Because it is
+selected on the same instances, its interval re-selects the competitor
+in every bootstrap resample, and its $p$-value is the largest of the
+Wilcoxon $p$-values against the ten competitors taken one at a time (an
+intersection-union test of ``better than every competitor'', valid
+without a selection correction). The experimental unit is the
 instance ($n = 40$ per gate; the routes of a plan share their test days
 and are aggregated within the plan). $\Delta$: mean difference in saving
 (percentage points; positive favours \textsc{Baton}) with a 95\%
@@ -315,7 +350,7 @@ Gate & competitor & $\Delta$ [95\% CI] & W & $r$ & $p$
         mu, lo, hi, w, t, r = row[2]
         macros[f"stat{g}Comp"] = NICE[row[1]]
         macros[f"stat{g}Delta"] = f"{mu:+.1f}"
-        macros[f"stat{g}CI"] = f"[{lo:+.1f}, {hi:+.1f}]"
+        macros[f"stat{g}CI"] = _ci(lo, hi)
         macros[f"stat{g}Win"] = str(w)
         macros[f"stat{g}P"] = f"{adj[3 * i]:.2f}"
         mu, lo, hi, w, t, r = row[4]
@@ -409,10 +444,8 @@ if sn is not None and city is not None:
     def _delta(d):
         """BATON minus the strongest non-BATON competitor of the row, per
         instance, with a 95% bootstrap interval."""
-        best = max(LCOMP, key=lambda l: d[f"{l}_saving"].mean())
-        dd = (d.v2_act_saving - d[f"{best}_saving"]).to_numpy()
-        lo, hi = _boot_ci(dd)
-        return best, dd.mean(), lo, hi
+        best, est, lo, hi, _ = _sel_ci(d, LCOMP)
+        return best, est, lo, hi
 
     LNICE = {"restock": "restock", "fb_tau": "thr.", "thr_k": r"thr.-$k$",
              "thr2": "two-lever", "dp3_n": r"DP$^3_N$", "pi3": r"$\pi_3$",
@@ -427,7 +460,7 @@ if sn is not None and city is not None:
             vals.append(rf"\textbf{{{v}}}" if (l in IMPL and v == bv) else v)
         bc, mu, lo, hi = _delta(d)
         return (f"{name} & {len(d)} & " + " & ".join(vals) +
-                f" & {mu:+.1f} [{lo:+.1f}, {hi:+.1f}] ({LNICE[bc]})" + r" \\")
+                f" & {mu:+.1f} {_ci(lo, hi)} ({LNICE[bc]})" + r" \\")
     LROWS = [(r"Salhi--Nagy", sn, "Salhi"), (r"City, real shops", city, "City")]
     if cityu is not None:
         LROWS.append((r"City, uniform", cityu, "CityU"))
@@ -448,7 +481,7 @@ if sn is not None and city is not None:
     for nm, d, key in LROWS:
         bc, mu, lo, hi = _delta(d)
         macros[f"lg{key}Delta"] = f"{mu:+.1f}"
-        macros[f"lg{key}DeltaCI"] = f"[{lo:+.1f}, {hi:+.1f}]"
+        macros[f"lg{key}DeltaCI"] = _ci(lo, hi)
         macros[f"lg{key}Comp"] = LNICE[bc]
         macros[f"lg{key}Baton"] = _pct(d.v2_act_saving.mean())
         macros[f"lg{key}CompSv"] = _pct(d[f"{bc}_saving"].mean())
@@ -468,7 +501,8 @@ same cities and demands with uniformly scattered customers; the
 deliver-only twins set the pickup of a random 25\% or 50\% of the
 customers to zero and are re-planned. Last column: \textsc{Baton} minus
 the strongest competitor of the row (named), mean over instances in
-percentage points with a 95\% paired bootstrap interval.}
+percentage points with a 95\% paired bootstrap interval that re-selects
+the strongest competitor in every resample.}
 \label{tab:large}
 \centering
 \small
@@ -810,11 +844,10 @@ if dep is not None:
             for l in DC:
                 v = f"{d[f'{l}_saving'].mean():.1f}"
                 vals.append(rf"\textbf{{{v}}}" if (l in IMPL and v == bv) else v)
-            bc = max(DCOMP, key=lambda l: d[f"{l}_saving"].mean())
-            dd = (d.v2_act_saving - d[f"{bc}_saving"]).to_numpy()
-            lo, hi = _boot_ci(dd)
+            bc, dmu, lo, hi, _ = _sel_ci(d, DCOMP)
+            dd = np.array([dmu])
             if lo <= 0:
-                close.append((tag, pln, bc, dd.mean(), lo, hi))
+                close.append((tag, pln, bc, dmu, lo, hi))
             if first and shp is not None and (shp.rho == rho).any():
                 sh = shp[shp.rho == rho]
                 vr = f"{100 * sh.viol.sum() / max(sh.pairs.sum(), 1):.1f}"
@@ -827,7 +860,7 @@ if dep is not None:
                 vr = "& &" if not first else "-- & & "
             body.append(f"{disp if first else ''} & \\textsc{{{pln}}} & {d.none_rec.mean():.1f} & " +
                         " & ".join(vals) +
-                        f" & {dd.mean():+.1f} [{lo:+.1f}, {hi:+.1f}] ({DNICE[bc]}) & {vr} \\\\")
+                        f" & {dd.mean():+.1f} {_ci(lo, hi)} ({DNICE[bc]}) & {vr} \\\\")
             first = False
         nm = {"rho0": "RhoZero", "rho03": "RhoThree", "rho06": "RhoSix",
               "rho09": "RhoNine", "dayfac": "Dayfac"}[tag]
@@ -846,11 +879,10 @@ if dep is not None:
             macros[f"dep{nm}{k}Ratio"] = f"{100 * dd.v2_act_saving.mean() / dd.dp_xl3_saving.mean():.0f}\\%"
             if dd.none_rec.mean() >= 3.0:        # rows with something to save
                 RATIOS[f"dependence {tag} {pln}"] = dd.v2_act_saving.mean() / dd.dp_xl3_saving.mean()
-            bc = max(DCOMP, key=lambda l: dd[f"{l}_saving"].mean())
-            x = (dd.v2_act_saving - dd[f"{bc}_saving"]).to_numpy()
-            lo, hi = _boot_ci(x)
+            bc, xmu, lo, hi, _ = _sel_ci(dd, DCOMP)
+            x = np.array([xmu])
             macros[f"dep{nm}{k}Delta"] = f"{x.mean():+.1f}"
-            macros[f"dep{nm}{k}DeltaCI"] = f"[{lo:+.1f}, {hi:+.1f}]"
+            macros[f"dep{nm}{k}DeltaCI"] = _ci(lo, hi)
             macros[f"dep{nm}{k}Comp"] = DNICE[bc]
             macros[f"dep{nm}{k}CompSv"] = _pct(dd[f"{bc}_saving"].mean())
     macros["depNClose"] = str(len(close))
@@ -890,7 +922,8 @@ the day-factor law multiplies every demand of a day by a common
 lognormal factor (s.d.\ 0.25) on top of independent marginals.
 $\Delta$: \textsc{Baton} minus the strongest competitor of the row
 (named; \textsc{Baton} variants excluded), mean over instances with a
-95\% paired bootstrap interval. Shape test (both gates pooled): viol.\ is
+95\% paired bootstrap interval that re-selects the strongest competitor
+in every resample. Shape test (both gates pooled): viol.\ is
 the share of adjacent-bin pairs in which the unconstrained binned
 estimate of $\mathbb E[\text{future cost} \mid W_k]$, fitted on
 $5\times10^4$ paths per route with 25 bins, \emph{decreases}
@@ -1003,7 +1036,7 @@ if dty is not None:
     for nm, x in (("AwarePooled", (aw - po).to_numpy()), ("StalePooled", (st_ - po).to_numpy())):
         lo, hi = _boot_ci(x)
         macros[f"dt{nm}Delta"] = f"{x.mean():+.1f}"
-        macros[f"dt{nm}CI"] = f"[{lo:+.1f}, {hi:+.1f}]"
+        macros[f"dt{nm}CI"] = _ci(lo, hi)
     if "n_train" in dty:
         macros["dtNPromo"] = f"{dty[dty.train == 'promo'].n_train.mean():.0f}"
         macros["dtNNormal"] = f"{dty[dty.train == 'normal'].n_train.mean():.0f}"
@@ -1114,7 +1147,7 @@ if pl is not None and "shadow_rec" in pl:
                  f"{d0.naive_rec.mean():.1f}", f"{d0.shadow_rec.mean():.1f}",
                  f"{d1.naive_rec.mean():.1f}", f"{d1.shadow_rec.mean():.1f}",
                  f"{d1.ppuprice_rec.mean():.1f}", f"{d1.fallback_rec.mean():.1f}",
-                 f"{gain.mean():+.1f} [{lo:+.1f}, {hi:+.1f}]",
+                 f"{gain.mean():+.1f} {_ci(lo, hi)}",
                  f"{h1.mean():.1f}"] + [f"{x.S.mean():.1f}" for x in ss]
         body.append(" & ".join(cells) + r" \\")
         key = {"Dethloff": "Deth", "City": "City", "Metro": "Metro"}[fam] + \
