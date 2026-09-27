@@ -77,32 +77,46 @@ simultaneous pickup, delivery, and stochastic demands}
 \fi
 
 \begin{abstract}
-In simultaneous pickup-and-delivery routing, vehicle load evolves
-stochastically along the route, and a mid-route capacity breach
+In simultaneous pickup-and-delivery operations the load of a vehicle
+evolves stochastically along its route, and a mid-route capacity breach
 forces costly emergency recourse. Fleets hold two cheaper
 levers---handing the remaining route to a standby vehicle, or detouring
-to the depot to unload collected pickups---priced per stop from the
-route's geometry. We
-cast the choice of lever as a finite-horizon optimal-stopping problem
-and solve it with \textsc{Baton}, a regression-based backward induction
-that estimates per-stop continuation costs from historical demand with
-a monotone regression, a shape we prove holds. We show that endpoint-based risk labels are blind to
-mid-route peaks and that the myopic break-even threshold over-triggers,
-at a price bounded by the cost of needless interventions; the
-propositions are machine-checked in Lean. On the Dethloff benchmark
-under six planning regimes, \textsc{Baton} or its state-conditional
-variant has the lowest expected cost of the implementable policies
-compared, leading by \statConsDeltaMin--\statConsDeltaMax{} percentage
-points on the five conservative regimes and tied with an equal-data
-dynamic program on deterministic plans. It reaches \exDetShare{} of the
-exact optimum on deterministic plans under independent demand, and
-\ratioAllLo--\ratioAllHi{} of a high-data reference across benchmarks,
-lowest where breaches are rare. On the Salhi--Nagy benchmark and on new
-instances built on real road networks of five cities it leads or ties
-the strongest competitor; in the cities the depot return rarely pays.
-Because the return enlarges the action set, the policy can exceed the
-clairvoyant bound of the handoff-only class. It has no continuous tuning
-parameter and fits in milliseconds per route.
+to the depot to unload collected pickups---whose value depends on the
+vehicle's position and on prices built from the route's real geometry.
+We cast the choice of when to exercise which lever as a finite-horizon
+optimal-stopping problem and solve it with \textsc{Baton}, which adapts
+regression-based backward induction to this setting: it estimates
+per-stop continuation costs from historical demand scenarios with a
+monotone regression, a shape we prove the true continuation value
+satisfies, and intervenes when continuing becomes dearer than the
+cheapest recourse action. We show that endpoint-based risk labels are
+blind to mid-route peaks, that the myopic break-even threshold
+over-triggers relative to the optimal rule, and that the price of this
+over-triggering is bounded by the cost of interventions on days that
+would have completed cleanly and of acting before cheaper later
+opportunities. On the Dethloff benchmark under six planning regimes,
+\textsc{Baton} or its state-conditional variant has the lowest expected
+cost of the implementable policies compared---rule-based,
+position-dependent and two-lever thresholds, depot-return restocking,
+rollout and equal-data dynamic programming; a reinforcement-learning
+policy, compared on a separate set of routes, also trails it. Its
+margin is \statConsDeltaMin--\statConsDeltaMax{} percentage points on the
+five conservative regimes, while on deterministic plans an equal-data
+three-action dynamic program ties it. It reaches
+\ratioDpThreeLo--\ratioDpThreeHi{} of the saving of a high-data plug-in
+program on these regimes and, under independent demand, \exDetShare{}
+of the exact optimum on deterministic plans (\exSaaShare{} on slack
+ones); across all benchmarks and demand laws with a non-negligible
+reactive cost the share ranges from \ratioAllLo{} to \ratioAllHi, lowest
+where breaches are rare. On the Salhi--Nagy benchmark and on new instances built on the
+road networks and retail locations of five cities it leads or ties the
+strongest competitor; on the city instances the depot return rarely pays
+and the policy reduces to its handoff-only form. Because the depot return
+enlarges the action set, the policy can exceed the clairvoyant bound of
+the handoff-only class. The conclusions largely survive dependent
+demand, non-exchangeable days and a capacitated standby pool shared
+across routes. The policy has no continuous tuning parameter and fits in
+milliseconds per route.
 \end{abstract}
 
 \begin{keyword}
