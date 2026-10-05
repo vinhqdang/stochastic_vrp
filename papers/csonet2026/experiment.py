@@ -407,6 +407,53 @@ def run_robustness(seed=20260618, n=30, trials=20):
     return rows
 
 
+def solve_mip(p, d, w):
+    """General-purpose baseline: the subset formulation as a MIP, solved by
+    HiGHS (scipy.optimize.milp). Sites are taken in deadline order; by
+    Lemma 1 a set S is feasible iff for every i in S the total dispatch
+    time of the members of S up to and including i is at most d_i, i.e.
+    sum_{j<=i} p_j x_j + (P - d_i) x_i <= P for every i."""
+    import numpy as np
+    from scipy.optimize import Bounds, LinearConstraint, milp
+    p, d, w = _sorted(p, d, w)
+    n, P = len(p), sum(p)
+    if n == 0:
+        return 0
+    A = np.zeros((n, n))
+    for i in range(n):
+        A[i, : i + 1] = p[: i + 1]
+        A[i, i] += P - d[i]
+    res = milp(-np.array(w, dtype=float), integrality=np.ones(n),
+               bounds=Bounds(0, 1),
+               constraints=LinearConstraint(A, -np.inf, P))
+    return int(round(-res.fun))
+
+
+def run_mip(seed=20260704, trials=10):
+    """E5: exact DP versus a general-purpose MIP solver (HiGHS) on the
+    subset formulation: same optimum, very different cost."""
+    rng = random.Random(seed)
+    rows = []
+    for n in (20, 50, 100, 200):
+        td, tm, agree = [], [], 0
+        for _ in range(trials):
+            p, d, w = random_instance(n, rng)
+            t0 = time.perf_counter()
+            v, _ = solve_exact(p, d, w)
+            t1 = time.perf_counter()
+            vm = solve_mip(p, d, w)
+            t2 = time.perf_counter()
+            td.append(1000 * (t1 - t0))
+            tm.append(1000 * (t2 - t1))
+            agree += int(v == vm)
+        rows.append(dict(n=n, dp_ms=_mean(td), mip_ms=_mean(tm),
+                         max_mip_ms=max(tm), agree=agree, trials=trials))
+        print(f"E5 n={n:4d} DP={rows[-1]['dp_ms']:8.2f} ms "
+              f"MIP(HiGHS)={rows[-1]['mip_ms']:8.2f} ms "
+              f"(max {rows[-1]['max_mip_ms']:.0f}) agree={agree}/{trials}")
+    return rows
+
+
 def main():
     res = dict(accuracy=run_accuracy())
     print()
@@ -415,6 +462,8 @@ def main():
     res["runtime"] = run_runtime()
     print()
     res["robustness"] = run_robustness()
+    print()
+    res["mip"] = run_mip()
     with open("results_illustration.json", "w") as f:
         json.dump(res, f, indent=2)
 

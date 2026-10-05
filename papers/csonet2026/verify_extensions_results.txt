@@ -1,0 +1,33 @@
+== checks/check_item1.py (exit 0)
+small instances: 1600 (m=1:538, m=2:508, m=3:554; equal-p: 229); mismatches: 0
+  explicit permutation/assignment enumeration (n<=5) cross-checked on 208 instances
+  matroid axioms (hereditary + augmentation, all feasible-set pairs) verified on 1199/1199 instances (n<=6)
+large instances (n in 20..150, m in 1..60): 400; mismatches vs naive Hall-greedy: 0
+extension (vehicle start offsets a_v): 400 instances, mismatches 0
+== checks/check_item2.py (exit 0)
+PARTITION instances: 600 (YES 344, NO 256); reduction mismatches: 0
+closed-form feasibility criterion checked on 233768 subsets; mismatches: 0
+constant-weight (unit w) sanity: Moore-Hodgson vs exhaustive on 300 instances with d_i=H+p_i/2: mismatches 0
+== checks/check_item3.py (exit 0)
+random instances: 4400 (K=1: 257, K>1: 4143); violations: 0
+  min over K>1 instances of (x/W* - rho) = 1.101e-03  (>0 means strict bound held), min worst-maximiser/(rho W*) = 1.001211
+local-search adversary: 9000 evaluations, min (worst-maximiser ratio)/rho = 1.00023; violations: 0
+Adversarial families (exact arithmetic, algorithm output):
+  n=2 eps=1/2 y=n/eps=4.000: bound rho=0.80000 (case1 gives 0.80000, case2 gives 1.00000); family1 ratio (K=1000000) = 0.80000; family2 ratio (K=1000000) = 1.00000
+  n=3 eps=3/4 y=n/eps=4.000: bound rho=0.66667 (case1 gives 0.66667, case2 gives 0.80000); family1 ratio (K=3000000) = 0.66667; family2 ratio (K=3000000) = 0.80000
+  n=4 eps=1/2 y=n/eps=8.000: bound rho=0.72727 (case1 gives 0.72727, case2 gives 0.80000); family1 ratio (K=1000000) = 0.72727; family2 ratio (K=1000000) = 0.80000
+  n=5 eps=1/5 y=n/eps=25.000: bound rho=0.86207 (case1 gives 0.86207, case2 gives 0.89286); family1 ratio (K=1000000) = 0.86207; family2 ratio (K=1000000) = 0.89286
+  n=6 eps=1/3 y=n/eps=18.000: bound rho=0.78261 (case1 gives 0.78261, case2 gives 0.81818); family1 ratio (K=1000000) = 0.78261; family2 ratio (K=1000000) = 0.81818
+  n=3 eps=10/13 y=n/eps=3.900: bound rho=0.61224 (case1 gives 0.66102, case2 gives 0.61224); family1 ratio (K=10000000) = 0.66102; family2 ratio (K=10000000) = 0.61224
+  n=4 eps=4/7 y=n/eps=7.000: bound rho=0.70000 (case1 gives 0.70000, case2 gives 0.77778); family1 ratio (K=4000000) = 0.70000; family2 ratio (K=4000000) = 0.77778
+  n=5 eps=5/24 y=n/eps=24.000: bound rho=0.85714 (case1 gives 0.85714, case2 gives 0.88889); family1 ratio (K=5000000) = 0.85714; family2 ratio (K=5000000) = 0.88889
+family violations of strict bound: 0
+exact attainment example n=2, eps=40/59: K=20, x/W* = 40/59 = rho? True
+closed-form inequality grid: 11741 (n,eps) pairs, failures 0
+== checks/check_item4.py (exit 0)
+(a) g-lemma+case recursion: 800 instances, all (i,v) cells vs brute force: mismatches 0; literal indicator reading wrong on 713/800 instances
+(b) f-recursion with cases: 800 instances, all (i,t) cells vs brute force: mismatches 0; literal indicator reading (no -inf clause) wrong on 759/800
+(c) Lemma 1 with ties: 600 instances (376 with tied deadlines), 13864 subsets; mismatches 0
+(d) union-find (label array, size+compression) and paper-direction (compression only) vs naive: 1500 runs, mismatches 0; avg pointer steps/op for n=2e5 random: label+size 1.64, compression-only 2.10
+(e) Theorem 2 reduction: 700 Partition instances (351 odd A, 378 with a_i>A/2, 171 YES); mismatches 0
+ALL EXTENSION CHECKS PASSED
