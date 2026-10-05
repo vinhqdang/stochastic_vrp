@@ -1,45 +1,44 @@
 """case_study_campfire.py -- a real-world-grounded MWHED instance built
-from the 2018 Camp Fire (Butte County, California). Revised version.
+from the 2018 Camp Fire (Butte County, California). Revision 2.
 
-Every input is either a real, independently checkable quantity
-(coordinates, 2010 US Census populations) or derived by disclosed
-arithmetic from a cited source; two quantities are modeling ASSUMPTIONS
-(response speed -> round-trip time p_i; extrapolated deadlines for two
-sites). See main.tex Section 5.5.
+Every hazard time is now a DOCUMENTED clock time from NIST TN 2135
+(Maranghides et al., 2021); nothing is extrapolated. Quantities that are
+modelling assumptions (response speed -> round-trip time, time zero =
+initial dispatch, one event type per community) are listed below.
 
-What changed relative to the submitted version
-----------------------------------------------
-1. Deadline semantics. The model's on-time test is "round trip finished
-   by d_i" (the RETURN reading). The narrative of the paper is that a
-   crew must REACH a site before the hazard does, which is the ARRIVAL
-   reading: the crew is at site i after only a_i = p_i/2 of its p_i
-   occupancy, so the equivalent MWHED deadline is d_i' = d_i + p_i/2
-   (Remark 2 of the paper). The arrival reading is now primary; the
-   return reading is reported for comparison.
-2. Assumption-1 preprocessing (delete sites with p_i > d_i) is applied
-   before every algorithm, including the naive baseline.
-3. A stronger baseline (EDD with admission control) is reported.
-4. A Monte-Carlo sensitivity analysis over the uncertain inputs
-   (response speed, deadline error, dispatch delay).
-
-Sources
--------
-- Fire timeline anchors (Concow ~52 min, Paradise spot fires ~71 min after
-  the timeline's time zero): Maranghides et al. (2021), NIST TN 2135.
-- Ignition-point coordinates (PG&E Tower 27/222 near Pulga, CA) and site
-  coordinates / 2010 Census populations: Wikipedia articles citing the
-  U.S. Census Bureau; depot: general Oroville, CA coordinate.
+Documented events (all clock times from NIST TN 2135)
+-----------------------------------------------------
+- Concow    8 Nov 07:25  first structures burning / spot fires igniting
+                         (NIST p. xviii; Table 11)
+- Paradise  8 Nov 07:44  first spot fires arrive (NIST p. xviii; the
+                         detailed sections give 07:49 for the first 911
+                         call about a spot fire; both lie inside the
+                         sensitivity range below)
+- Magalia   8 Nov 08:40  spot fires in Old Magalia, the earliest-affected
+                         part of the community (NIST Table 32; most of
+                         Magalia burned much later)
+- Yankee Hill 9 Nov 08:40 fire "well established" and running through the
+                         community (NIST Table 31): about 26 h after
+                         ignition, so effectively unconstrained
+Time zero = 06:31 on 8 Nov, the initial dispatch time in NIST's dispatch
+log (the ignition estimate is ~06:20, the first 911 call 06:25).
+Census (2010) populations are the proxy weights; coordinates are the
+communities' published centroids; the depot (Oroville, CA) is a modelling
+choice.
 
 Assumptions (NOT measured facts)
 --------------------------------
-1. p_i = 2 * great-circle distance(depot, i) / speed; speeds 50 and
-   80 km/h (great-circle distance is a lower bound on road distance).
-2. d_i for Magalia and Yankee Hill: the average spread rate implied by
-   the two anchors, applied to straight-line distance from the ignition
-   point (an isotropic extrapolation; the real spread was wind-driven and
-   directional, which the sensitivity analysis below stresses).
-3. The crew may leave at time zero (no detection/dispatch delay); the
-   sensitivity analysis relaxes this.
+1. p_i = 2 * rho * great-circle distance(depot, i) / speed, rho = 1 in
+   the base case (great-circle is a lower bound on road distance);
+   speeds 50 and 80 km/h.
+2. The crew may leave at time zero; the sensitivity analysis adds a
+   departure delay.
+3. One event type per community is used as the hazard-arrival time, but
+   the events are not identical across communities (first structures
+   burning, first spot fires, spot fires in a part of the community,
+   fire well established).
+4. Arrival reading: a site is protected if the crew ARRIVES before the
+   event, so the MWHED deadline is d_i = h_i + p_i/2.
 
 Self-contained: imports nothing from BATON/TEMPO/PARCEL.
 """
@@ -63,8 +62,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * R * math.asin(math.sqrt(a))
 
 
-DEPOT = (39.5022, -121.5522)          # Oroville, CA area
-IGNITION = (39.81028, -121.43722)     # PG&E Tower 27/222 near Pulga, CA
+DEPOT = (39.5022, -121.5522)          # Oroville, CA area (modelling choice)
 
 SITES = {  # name: (lat, lon, 2010 census population)
     "Concow":      (39.73722, -121.51444, 710),
@@ -72,16 +70,22 @@ SITES = {  # name: (lat, lon, 2010 census population)
     "Magalia":     (39.833,   -121.583,   11310),
     "Yankee Hill": (39.70361, -121.52222, 333),
 }
-ANCHOR = {"Concow": 52.0, "Paradise": 71.0}   # minutes after time zero
+T0 = 6 * 60 + 31                       # 06:31 on 8 Nov: initial dispatch
+EVENT = {                              # clock minute of the documented event
+    "Concow":      7 * 60 + 25,
+    "Paradise":    7 * 60 + 44,
+    "Magalia":     8 * 60 + 40,
+    "Yankee Hill": 24 * 60 + 8 * 60 + 40,   # 9 Nov 08:40
+}
+HAZ = {n: EVENT[n] - T0 for n in EVENT}      # minutes after time zero
+ANCHOR = {"Concow": HAZ["Concow"], "Paradise": HAZ["Paradise"]}
 NAMES = list(SITES)
 
 
 def raw_inputs():
     dist_dep = {n: haversine_km(*DEPOT, *SITES[n][:2]) for n in NAMES}
-    dist_ign = {n: haversine_km(*IGNITION, *SITES[n][:2]) for n in NAMES}
-    rate = sum(dist_ign[n] / (ANCHOR[n] / 60) for n in ANCHOR) / len(ANCHOR)
-    d_min = {n: ANCHOR.get(n, 60 * dist_ign[n] / rate) for n in NAMES}
-    return dist_dep, d_min, rate
+    d_min = {n: float(HAZ[n]) for n in NAMES}
+    return dist_dep, d_min, None
 
 
 def instance(speed_kmh, semantics="arrival", d_scale=None, delay=0.0,
@@ -105,9 +109,8 @@ def instance(speed_kmh, semantics="arrival", d_scale=None, delay=0.0,
 
 
 def report():
-    dist_dep, d_min, rate = raw_inputs()
-    print(f"derived hazard spread rate = {rate:.2f} km/h; "
-          "extrapolated arrival minutes: "
+    dist_dep, d_min, _ = raw_inputs()
+    print("documented hazard minutes after time zero (06:31): "
           + ", ".join(f"{n}={d_min[n]:.0f}" for n in NAMES))
     for sem in ("arrival", "return"):
         for speed in (50, 80):
@@ -212,11 +215,59 @@ def tipping(speed):
     return base, hi
 
 
+def draw_inputs(rng, correlated):
+    speed = rng.uniform(40, 90)
+    if correlated:
+        common = rng.uniform(0.70, 1.30)
+        scale = {n: common * rng.uniform(0.95, 1.05) for n in NAMES}
+    else:
+        scale = {n: (rng.uniform(0.85, 1.15) if n in ANCHOR
+                     else rng.uniform(0.70, 1.30)) for n in NAMES}
+    return speed, scale, rng.uniform(0, 20)
+
+
+def run_plan(plan_names, speed, scale, delay, dist_dep, d_min):
+    """On-time weight of a fixed visiting sequence (sites visited in the
+    order of NAMES) under one draw; sites deleted by Assumption 1 are
+    skipped. Returns (weight, every planned site on time, optimum)."""
+    names, p, d, w = instance(speed, "arrival", scale, delay, dist_dep, d_min)
+    if not names:
+        return 0, False, 0
+    v, S = solve_exact(p, d, w)
+    idx = sorted(names.index(n) for n in plan_names if n in names)
+    c, got, ok = 0, 0, len(idx) == len(plan_names)
+    for i in idx:
+        c += p[i]
+        if c <= d[i]:
+            got += w[i]
+        else:
+            ok = False
+    return got, ok, v
+
+
+def sample_average_plan(correlated, seed=7, draws=2000):
+    """The subset of sites (visited in NAMES order) with the largest
+    average on-time weight over an independent training sample."""
+    rng = random.Random(seed)
+    dist_dep, d_min, _ = raw_inputs()
+    train = [draw_inputs(rng, correlated) for _ in range(draws)]
+    best, best_val = None, -1.0
+    for k in range(1, len(NAMES) + 1):
+        for sub in itertools.combinations(NAMES, k):
+            val = sum(run_plan(sub, sp, sc, de, dist_dep, d_min)[0]
+                      for sp, sc, de in train) / draws
+            if val > best_val:
+                best, best_val = list(sub), val
+    return best, best_val
+
+
 def sensitivity(draws=20000, seed=20260702, correlated=False):
     """Monte-Carlo over uncertain inputs under the arrival reading.
 
     Independent mode: speed ~ U[40, 90] km/h; anchored hazard minutes
-    scaled by U[0.85, 1.15], extrapolated ones by U[0.70, 1.30];
+    (Concow, Paradise) scaled by U[0.85, 1.15] and those of Magalia and
+    Yankee Hill, whose documented events are less sharply defined, by
+    U[0.70, 1.30];
     dispatch delay ~ U[0, 20] min. Correlated mode: ONE common factor
     U[0.70, 1.30] scales every hazard minute (a systematic bias of the
     fire model), plus an independent U[0.95, 1.05] per site.
@@ -241,8 +292,9 @@ def sensitivity(draws=20000, seed=20260702, correlated=False):
     nom_names, np_, nd, nw = instance(80, "arrival")
     nom_val, nom_set = solve_exact(np_, nd, nw)
     nominal_plan = [nom_names[i] for i in sorted(nom_set)]
+    saa_plan, saa_val = sample_average_plan(correlated)
     plans = {"nominal-optimal plan": nominal_plan,
-             "Paradise-only plan": ["Paradise"]}
+             "sample-average plan": saa_plan}
     sets = Counter()
     ret = {(k, m): [] for k in plans for m in ("fixed", "literal")}
     on_time = {k: 0 for k in plans}
@@ -251,14 +303,7 @@ def sensitivity(draws=20000, seed=20260702, correlated=False):
     route_share = {1.0: [], 1.3: []}
     total = sum(SITES[n][2] for n in NAMES)
     for _ in range(draws):
-        speed = rng.uniform(40, 90)
-        if correlated:
-            common = rng.uniform(0.70, 1.30)
-            scale = {n: common * rng.uniform(0.95, 1.05) for n in NAMES}
-        else:
-            scale = {n: (rng.uniform(0.85, 1.15) if n in ANCHOR
-                         else rng.uniform(0.70, 1.30)) for n in NAMES}
-        delay = rng.uniform(0, 20)
+        speed, scale, delay = draw_inputs(rng, correlated)
         for rho in route_full:
             rv, _ = route_optimum(speed, rho, scale, delay, dist_dep, d_min)
             route_full[rho] += rv == total
@@ -304,6 +349,8 @@ def sensitivity(draws=20000, seed=20260702, correlated=False):
           f"{mode} hazard-minute errors) ===")
     print(f"nominal plan (80 km/h, no delay): {nominal_plan}, "
           f"weight {nom_val:.0f}")
+    print(f"sample-average plan (best of all subsets on an independent "
+          f"2000-draw sample): {saa_plan}, mean weight {saa_val:.0f}")
     for s_, c in sets.most_common():
         print(f"  optimal set {s_:32s} {c / draws:6.1%} "
               f"(se {se(c / draws):.1%})")

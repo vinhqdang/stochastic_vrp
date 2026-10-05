@@ -1,85 +1,83 @@
-derived hazard spread rate = 13.12 km/h; extrapolated arrival minutes: Concow=52, Paradise=71, Magalia=58, Yankee Hill=64
+documented hazard minutes after time zero (06:31): Concow=54, Paradise=73, Magalia=129, Yankee Hill=1569
 
 === arrival reading, 50 km/h ===
-  Concow       p= 63 one-way= 31.5 d_arrival=  52 w=   710  [kept]
-  Paradise     p= 70 one-way= 35.0 d_arrival=  71 w= 26218  [kept]
-  Magalia      p= 89 one-way= 44.5 d_arrival=  58 w= 11310  [kept]
-  Yankee Hill  p= 54 one-way= 27.0 d_arrival=  64 w=   333  [kept]
-  Exact optimum     26218  ['Paradise']
-  FPTAS eps=0.1     26218  ['Paradise']
-  Greedy repair     26218  ['Paradise']
-  EDD with skip       710  ['Concow']
-  Naive EDD           710  ['Concow']
-
-=== arrival reading, 80 km/h ===
-  Concow       p= 39 one-way= 19.5 d_arrival=  52 w=   710  [kept]
-  Paradise     p= 44 one-way= 22.0 d_arrival=  71 w= 26218  [kept]
-  Magalia      p= 55 one-way= 27.5 d_arrival=  58 w= 11310  [kept]
-  Yankee Hill  p= 34 one-way= 17.0 d_arrival=  64 w=   333  [kept]
-  Exact optimum     26928  ['Concow', 'Paradise']
-  FPTAS eps=0.1     26928  ['Concow', 'Paradise']
-  Greedy repair     26218  ['Paradise']
-  EDD with skip      1043  ['Concow', 'Yankee Hill']
+  Concow       p= 63 one-way= 31.5 d_arrival=  54 w=   710  [kept]
+  Paradise     p= 70 one-way= 35.0 d_arrival=  73 w= 26218  [kept]
+  Magalia      p= 89 one-way= 44.5 d_arrival= 129 w= 11310  [kept]
+  Yankee Hill  p= 54 one-way= 27.0 d_arrival=1569 w=   333  [kept]
+  Exact optimum     37861  ['Paradise', 'Magalia', 'Yankee Hill']
+  FPTAS eps=0.1     37528  ['Paradise', 'Magalia']
+  Greedy repair     37861  ['Paradise', 'Magalia', 'Yankee Hill']
+  EDD with skip     12353  ['Concow', 'Magalia', 'Yankee Hill']
   Naive EDD          1043  ['Concow', 'Yankee Hill']
 
+=== arrival reading, 80 km/h ===
+  Concow       p= 39 one-way= 19.5 d_arrival=  54 w=   710  [kept]
+  Paradise     p= 44 one-way= 22.0 d_arrival=  73 w= 26218  [kept]
+  Magalia      p= 55 one-way= 27.5 d_arrival= 129 w= 11310  [kept]
+  Yankee Hill  p= 34 one-way= 17.0 d_arrival=1569 w=   333  [kept]
+  Exact optimum     38571  ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']
+  FPTAS eps=0.1     38238  ['Concow', 'Paradise', 'Magalia']
+  Greedy repair     38571  ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']
+  EDD with skip     38571  ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']
+  Naive EDD         38571  ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']
+
 === return reading, 50 km/h ===
-  Concow       p= 63 one-way= 31.5 d_arrival=  52 w=   710  [DELETED (p>d)]
-  Paradise     p= 70 one-way= 35.0 d_arrival=  71 w= 26218  [kept]
-  Magalia      p= 89 one-way= 44.5 d_arrival=  58 w= 11310  [DELETED (p>d)]
-  Yankee Hill  p= 54 one-way= 27.0 d_arrival=  64 w=   333  [kept]
-  Exact optimum     26218  ['Paradise']
+  Concow       p= 63 one-way= 31.5 d_arrival=  54 w=   710  [DELETED (p>d)]
+  Paradise     p= 70 one-way= 35.0 d_arrival=  73 w= 26218  [kept]
+  Magalia      p= 89 one-way= 44.5 d_arrival= 129 w= 11310  [kept]
+  Yankee Hill  p= 54 one-way= 27.0 d_arrival=1569 w=   333  [kept]
+  Exact optimum     26551  ['Paradise', 'Yankee Hill']
   FPTAS eps=0.1     26218  ['Paradise']
-  Greedy repair     26218  ['Paradise']
-  EDD with skip       333  ['Yankee Hill']
-  Naive EDD           333  ['Yankee Hill']
+  Greedy repair     26551  ['Paradise', 'Yankee Hill']
+  EDD with skip     26551  ['Paradise', 'Yankee Hill']
+  Naive EDD         26551  ['Paradise', 'Yankee Hill']
 
 === return reading, 80 km/h ===
-  Concow       p= 39 one-way= 19.5 d_arrival=  52 w=   710  [kept]
-  Paradise     p= 44 one-way= 22.0 d_arrival=  71 w= 26218  [kept]
-  Magalia      p= 55 one-way= 27.5 d_arrival=  58 w= 11310  [kept]
-  Yankee Hill  p= 34 one-way= 17.0 d_arrival=  64 w=   333  [kept]
-  Exact optimum     26218  ['Paradise']
-  FPTAS eps=0.1     26218  ['Paradise']
-  Greedy repair     26218  ['Paradise']
-  EDD with skip       710  ['Concow']
-  Naive EDD           710  ['Concow']
+  Concow       p= 39 one-way= 19.5 d_arrival=  54 w=   710  [kept]
+  Paradise     p= 44 one-way= 22.0 d_arrival=  73 w= 26218  [kept]
+  Magalia      p= 55 one-way= 27.5 d_arrival= 129 w= 11310  [kept]
+  Yankee Hill  p= 34 one-way= 17.0 d_arrival=1569 w=   333  [kept]
+  Exact optimum     37861  ['Paradise', 'Magalia', 'Yankee Hill']
+  FPTAS eps=0.1     37528  ['Paradise', 'Magalia']
+  Greedy repair     37861  ['Paradise', 'Magalia', 'Yankee Hill']
+  EDD with skip     12353  ['Concow', 'Magalia', 'Yankee Hill']
+  Naive EDD          1043  ['Concow', 'Yankee Hill']
 
 === Depot-spoke model vs chained route (arrival reading) ===
-  road factor 1.0, 50 km/h: spoke  26218 ['Paradise']   route  38571 ['Concow', 'Yankee Hill', 'Magalia', 'Paradise']   (total 38571)
-  road factor 1.0, 80 km/h: spoke  26928 ['Concow', 'Paradise']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
-  road factor 1.3, 50 km/h: spoke  26218 ['Paradise']   route  27261 ['Concow', 'Yankee Hill', 'Paradise']   (total 38571)
-  road factor 1.3, 80 km/h: spoke  26218 ['Paradise']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
-  road factor 1.6, 50 km/h: spoke  26218 ['Paradise']   route  27261 ['Yankee Hill', 'Concow', 'Paradise']   (total 38571)
-  road factor 1.6, 80 km/h: spoke  26218 ['Paradise']   route  38571 ['Concow', 'Yankee Hill', 'Magalia', 'Paradise']   (total 38571)
+  road factor 1.0, 50 km/h: spoke  37861 ['Paradise', 'Magalia', 'Yankee Hill']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
+  road factor 1.0, 80 km/h: spoke  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
+  road factor 1.3, 50 km/h: spoke  26551 ['Paradise', 'Yankee Hill']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
+  road factor 1.3, 80 km/h: spoke  37861 ['Paradise', 'Magalia', 'Yankee Hill']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
+  road factor 1.6, 50 km/h: spoke  26551 ['Paradise', 'Yankee Hill']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
+  road factor 1.6, 80 km/h: spoke  37861 ['Paradise', 'Magalia', 'Yankee Hill']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
 
-Tipping, 50 km/h: optimum ['Paradise']; Paradise leaves the optimum when its weight falls below 0.431 x 26218 = 11310 people
+Tipping, 50 km/h: optimum ['Magalia', 'Paradise', 'Yankee Hill']; Paradise leaves the optimum when its weight falls below 0.027 x 26218 = 710 people
 
-Tipping, 80 km/h: optimum ['Concow', 'Paradise']; Paradise leaves the optimum when its weight falls below 0.404 x 26218 = 10600 people
+Tipping, 80 km/h: optimum ['Concow', 'Magalia', 'Paradise', 'Yankee Hill']; Paradise stays in the optimum for every positive weight
 
 === Sensitivity (20000 draws, arrival reading, independent hazard-minute errors) ===
-nominal plan (80 km/h, no delay): ['Concow', 'Paradise'], weight 26928
-  optimal set Paradise                          64.8% (se 0.3%)
-  optimal set Concow+Paradise                   18.1% (se 0.3%)
-  optimal set Paradise+Yankee Hill              14.2% (se 0.2%)
-  optimal set Magalia+Paradise                   2.8% (se 0.1%)
-  optimal set Yankee Hill                        0.0% (se 0.0%)
-  optimal set Concow                             0.0% (se 0.0%)
+nominal plan (80 km/h, no delay): ['Concow', 'Paradise', 'Magalia', 'Yankee Hill'], weight 38571
+sample-average plan (best of all subsets on an independent 2000-draw sample): ['Paradise', 'Magalia', 'Yankee Hill'], mean weight 35537
+  optimal set Magalia+Paradise+Yankee Hill      63.1% (se 0.3%)
+  optimal set Paradise+Yankee Hill              20.7% (se 0.3%)
+  optimal set Concow+Magalia+Paradise+Yankee Hill  16.2% (se 0.3%)
+  optimal set Concow+Paradise+Yankee Hill        0.0% (se 0.0%)
   Paradise in optimal set:         100.0%
-  nominal-optimal plan   fully on time  20.9% (se 0.3%); retained, fixed route: mean 0.266 (se 0.003), 5th pct 0.027; literal route: mean 0.221 (se 0.003)
-  Paradise-only plan     fully on time 100.0% (se 0.0%); retained, fixed route: mean 0.985 (se 0.000), 5th pct 0.974; literal route: mean 0.985 (se 0.000)
-  chained-route optimum, road factor 1.0: all four protected in  72.5% of draws; mean protected share 0.934 (se 0.001)
-  chained-route optimum, road factor 1.3: all four protected in  43.9% of draws; mean protected share 0.836 (se 0.001)
+  nominal-optimal plan   fully on time  16.2% (se 0.3%); retained, fixed route: mean 0.319 (se 0.003), 5th pct 0.028; literal route: mean 0.289 (se 0.003)
+  sample-average plan    fully on time  79.3% (se 0.3%); retained, fixed route: mean 0.997 (se 0.000), 5th pct 0.982; literal route: mean 0.997 (se 0.000)
+  chained-route optimum, road factor 1.0: all four protected in  96.1% of draws; mean protected share 0.999 (se 0.000)
+  chained-route optimum, road factor 1.3: all four protected in  79.5% of draws; mean protected share 0.983 (se 0.001)
 
 === Sensitivity (20000 draws, arrival reading, correlated hazard-minute errors) ===
-nominal plan (80 km/h, no delay): ['Concow', 'Paradise'], weight 26928
-  optimal set Paradise                          65.2% (se 0.3%)
-  optimal set Concow+Paradise                   17.8% (se 0.3%)
-  optimal set Paradise+Yankee Hill               9.7% (se 0.2%)
-  optimal set Magalia+Paradise                   6.3% (se 0.2%)
-  optimal set Yankee Hill                        0.7% (se 0.1%)
-  optimal set (nothing reachable)                0.4% (se 0.0%)
-  Paradise in optimal set:          98.9%
-  nominal-optimal plan   fully on time  24.0% (se 0.3%); retained, fixed route: mean 0.324 (se 0.003), 5th pct 0.027; literal route: mean 0.242 (se 0.003)
-  Paradise-only plan     fully on time  98.9% (se 0.1%); retained, fixed route: mean 0.968 (se 0.001), 5th pct 0.699; literal route: mean 0.968 (se 0.001)
-  chained-route optimum, road factor 1.0: all four protected in  75.4% of draws; mean protected share 0.926 (se 0.001)
-  chained-route optimum, road factor 1.3: all four protected in  49.1% of draws; mean protected share 0.806 (se 0.002)
+nominal plan (80 km/h, no delay): ['Concow', 'Paradise', 'Magalia', 'Yankee Hill'], weight 38571
+sample-average plan (best of all subsets on an independent 2000-draw sample): ['Paradise', 'Magalia', 'Yankee Hill'], mean weight 35374
+  optimal set Magalia+Paradise+Yankee Hill      53.1% (se 0.4%)
+  optimal set Concow+Magalia+Paradise+Yankee Hill  26.0% (se 0.3%)
+  optimal set Paradise+Yankee Hill              20.2% (se 0.3%)
+  optimal set Magalia+Yankee Hill                0.8% (se 0.1%)
+  Paradise in optimal set:          99.2%
+  nominal-optimal plan   fully on time  26.0% (se 0.3%); retained, fixed route: mean 0.372 (se 0.003), 5th pct 0.028; literal route: mean 0.301 (se 0.003)
+  sample-average plan    fully on time  79.1% (se 0.3%); retained, fixed route: mean 0.995 (se 0.000), 5th pct 0.982; literal route: mean 0.988 (se 0.001)
+  chained-route optimum, road factor 1.0: all four protected in  92.2% of draws; mean protected share 0.993 (se 0.000)
+  chained-route optimum, road factor 1.3: all four protected in  77.3% of draws; mean protected share 0.953 (se 0.001)
