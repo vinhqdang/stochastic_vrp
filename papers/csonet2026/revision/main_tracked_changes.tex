@@ -1,0 +1,2851 @@
+%% CSoNet 2026 Journal Track submission (Journal of Combinatorial Optimization)
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL main_old.tex   Mon Oct  5 07:48:20 2026
+%DIF ADD main.tex       Mon Oct  5 07:48:20 2026
+%% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+
+\documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\theoremstyle{thmstyleone}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+%DIF 17a17
+\newtheorem{fact}{Fact} %DIF > 
+%DIF -------
+\theoremstyle{thmstyletwo}
+\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+\theoremstyle{thmstylethree}
+\newtheorem{example}{Example}
+
+\raggedbottom
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
+\providecommand{\DIFmodend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+\newcommand{\DIFscaledelfig}{0.5}
+%DIF HIGHLIGHTGRAPHICS PREAMBLE %DIF PREAMBLE
+\RequirePackage{settobox} %DIF PREAMBLE
+\RequirePackage{letltxmacro} %DIF PREAMBLE
+\newsavebox{\DIFdelgraphicsbox} %DIF PREAMBLE
+\newlength{\DIFdelgraphicswidth} %DIF PREAMBLE
+\newlength{\DIFdelgraphicsheight} %DIF PREAMBLE
+% store original definition of \includegraphics %DIF PREAMBLE
+\LetLtxMacro{\DIFOincludegraphics}{\includegraphics} %DIF PREAMBLE
+\newcommand{\DIFaddincludegraphics}[2][]{{\color{blue}\fbox{\DIFOincludegraphics[#1]{#2}}}} %DIF PREAMBLE
+\newcommand{\DIFdelincludegraphics}[2][]{% %DIF PREAMBLE
+\sbox{\DIFdelgraphicsbox}{\DIFOincludegraphics[#1]{#2}}% %DIF PREAMBLE
+\settoboxwidth{\DIFdelgraphicswidth}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\settoboxtotalheight{\DIFdelgraphicsheight}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\scalebox{\DIFscaledelfig}{% %DIF PREAMBLE
+\parbox[b]{\DIFdelgraphicswidth}{\usebox{\DIFdelgraphicsbox}\\[-\baselineskip] \rule{\DIFdelgraphicswidth}{0em}}\llap{\resizebox{\DIFdelgraphicswidth}{\DIFdelgraphicsheight}{% %DIF PREAMBLE
+\setlength{\unitlength}{\DIFdelgraphicswidth}% %DIF PREAMBLE
+\begin{picture}(1,1)% %DIF PREAMBLE
+\thicklines\linethickness{2pt} %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\framebox(1,1){}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\line( 1,1){1}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,1){\line(1,-1){1}}}% %DIF PREAMBLE
+\end{picture}% %DIF PREAMBLE
+}\hspace*{3pt}}} %DIF PREAMBLE
+} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbegin}{\DIFaddbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddend}{\DIFaddend} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbegin}{\DIFdelbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelend}{\DIFdelend} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbegin}{\DIFOaddbegin \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbegin}{\DIFOdelbegin \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+%DIF COLORLISTINGS PREAMBLE %DIF PREAMBLE
+\RequirePackage{listings} %DIF PREAMBLE
+\RequirePackage{color} %DIF PREAMBLE
+\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
+%DIF DIFCODE_UNDERLINE %DIF PREAMBLE
+  moredelim=[il][\color{red}\sout]{\%DIF\ <\ }, %DIF PREAMBLE
+  moredelim=[il][\color{blue}\uwave]{\%DIF\ >\ } %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
+	language=DIFcode, %DIF PREAMBLE
+	basicstyle=\ttfamily, %DIF PREAMBLE
+	columns=fullflexible, %DIF PREAMBLE
+	keepspaces=true %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim}{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim*}{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+\begin{document}
+
+\title[Minimum Weighted Hazard-Exposure Dispatch]{Minimum Weighted
+Hazard-Exposure Dispatch: Complexity, an Exact Algorithm, and an FPTAS}
+
+\author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+\author[2]{\fnm{Minh Ngoc} \sur{Dinh}}\email{minh.dinh@maeducation.com}
+\author[1]{\fnm{Hoang-Viet} \sur{Vu}}\email{30066555@st.buv.edu.vn}
+\author[3]{\fnm{Phuc-Son} \sur{Nguyen}}\email{son.np3393@ueh.edu.vn}
+
+\affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung
+Yen}, \country{Vietnam}}}
+\affil[2]{\orgname{Millennia Education}, \orgaddress{\city{Ho Chi Minh
+City}, \country{Vietnam}}}
+\affil[3]{\orgname{UEH University}, \orgaddress{\city{Ho Chi Minh
+City}, \country{Vietnam}}}
+
+\DIFdelbegin %DIFDELCMD < \abstract{We study a dispatch-scheduling problem arising when a single
+%DIFDELCMD < depot must send a vehicle or crew to a set of sites before a spreading
+%DIFDELCMD < hazard---a flood, wildfire, contamination plume, or growing congestion
+%DIFDELCMD < zone---reaches them. Each site has a fixed round-trip dispatch time, a
+%DIFDELCMD < deadline at which the hazard arrives, and a criticality weight; the
+%DIFDELCMD < objective is a dispatch order maximizing the total weight of sites
+%DIFDELCMD < reached before the hazard arrives. We call this problem Minimum
+%DIFDELCMD < Weighted Hazard-Exposure Dispatch (MWHED) and show it is exactly the
+%DIFDELCMD < classical single-machine problem of maximizing weighted on-time jobs,
+%DIFDELCMD < reparametrized in transportation terms. We prove MWHED is weakly
+%DIFDELCMD < NP-hard via a reduction showing its equal-deadline special case is
+%DIFDELCMD < exactly the 0/1 knapsack problem; give a pseudo-polynomial exact
+%DIFDELCMD < dynamic program from an earliest-deadline-first exchange argument;
+%DIFDELCMD < adapt value-scaling to obtain a fully polynomial-time approximation
+%DIFDELCMD < scheme; and identify a second tractable special case---equal dispatch
+%DIFDELCMD < times---solvable in $O(n\log n)$ time by a matroid greedy algorithm,
+%DIFDELCMD < showing hardness requires heterogeneity in both dispatch cost and
+%DIFDELCMD < criticality, not either alone. We further show the naive fallback of
+%DIFDELCMD < dispatching in deadline order with no reconsideration has unbounded
+%DIFDELCMD < worst-case loss, so an exact or near-exact algorithm is necessary, not
+%DIFDELCMD < merely convenient. Numerical experiments, robust across alternative
+%DIFDELCMD < weight and deadline distributions, confirm the approximation scheme
+%DIFDELCMD < tracks the true optimum as instance size grows, while the naive policy
+%DIFDELCMD < degrades. The results give planners exact and near-exact tools for a
+%DIFDELCMD < provably hard scheduling problem, and delineate which structural
+%DIFDELCMD < features of a dispatch network make hazard-exposure minimization
+%DIFDELCMD < tractable.}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \abstract{We study a dispatch-scheduling problem arising when a single
+depot must send a vehicle or crew to sites before a spreading hazard
+(flood, wildfire, contamination plume) reaches them. Each site has a
+round-trip dispatch time, a hazard-arrival deadline and a criticality
+weight; the objective is a dispatch order maximizing the total weight of
+sites served in time. We call this Minimum Weighted Hazard-Exposure
+Dispatch (MWHED) and show it is exactly the classical problem
+$1\|\sum w_jU_j$, so its basic picture is inherited from scheduling
+theory: weak NP-hardness (the equal-deadline case is 0/1 knapsack), a
+Lawler--Moore-type pseudo-polynomial dynamic program, and a value-scaling
+FPTAS. We present these in a self-contained form for the transportation
+audience and say precisely which are classical. The framing adds a
+classification: restricted to the instances in which some of the
+dispatch times, weights and deadlines are constant, the problem is
+polynomial exactly when dispatch times or weights are constant and
+weakly NP-hard otherwise, so heterogeneous deadlines alone never cause
+hardness; and a matroid-greedy algorithm for equal dispatch times that
+extends to any number of identical vehicles. Natural heuristics (deadline
+order with or without skipping, a weighted greedy repair) have unbounded
+worst-case ratio, and the FPTAS analysis is tight up to a factor
+$1-\epsilon^2$. A numerical study with active FPTAS rounding, verified
+against exhaustive search, and a Camp Fire case study with a sensitivity
+analysis complete the paper.}
+\DIFaddend 
+
+\keywords{combinatorial optimization, scheduling under deadlines,
+computational complexity, approximation algorithms, transportation
+networks, disaster response}
+
+\maketitle
+
+% ══════════════════════════════════════════════════════════════════
+\section{Introduction}\label{sec:intro}
+
+A recurring operational problem in infrastructure and emergency-response
+networks is deciding, from a single depot, in what order to dispatch a
+vehicle or crew to a set of sites that are each racing against a
+spreading hazard. A wildfire crew choosing which structures to defend
+before the fire front arrives, a utility company dispatching repair
+trucks to substations before a cascading outage propagates to them, and
+a flood-response team evacuating or servicing neighborhoods before
+rising water reaches them all face the same underlying decision: given
+a known rate at which a hazard is spreading, and a known cost of
+reaching each site from a common depot, in what order should sites be
+visited to save as much value as possible before the hazard reaches
+each one in turn?
+
+This decision is a scheduling problem, not merely a routing one. Once
+every visit is a self-contained round trip from a single depot---the
+standard topology for a technician, repair-crew, or single-vehicle
+emergency-response dispatch base---the cost of visiting a site does not
+depend on which site was visited immediately before it, only on the
+cumulative time already spent. The question is then purely one of
+\emph{order}: which sites to reach early, which to defer, and which to
+concede to the hazard, given that each site $i$ becomes ``exposed''
+once the cumulative dispatch time exceeds its known hazard-arrival
+deadline $d_i$, at a loss of $w_i$.
+
+The three motivating settings above share a further feature that makes
+the \emph{ordering} decision, rather than the underlying routing or
+hazard-forecasting problem, the right object of study. In each case,
+the hazard's own spread is typically produced by a separate, already
+well-developed forecasting step---a wildfire-spread simulator driven by
+fuel load, wind, and terrain; a cascading-failure model for a power
+network; a hydrological model for a flood plain---so that, by the time
+a dispatcher is choosing a visiting order, each site's arrival deadline
+$d_i$ is already a given input, not something to be modeled jointly
+with the dispatch decision. Similarly, the round-trip dispatch time
+$p_i$ is typically fixed by the depot's location and the local road or
+access network, and is known before dispatch begins. What remains
+undetermined, and squarely a combinatorial decision, is the
+\emph{order} in which a single crew or vehicle should visit sites once
+$p_i$ and $d_i$ are fixed---exactly the question MWHED isolates. This
+separation of concerns (forecast the hazard and fix the travel network
+first; optimize the dispatch order second) mirrors how the wildfire
+operations-research literature we discuss in Section~\ref{sec:related}
+is typically organized, and is what lets us give a complete
+complexity and algorithmic answer to the ordering question alone,
+rather than a heuristic for the joint problem.
+
+We formalize this as Minimum Weighted Hazard-Exposure Dispatch
+(MWHED)\DIFdelbegin \DIFdel{and give a complete complexity and algorithmic picture. Our
+contributions are:
+}%DIFDELCMD < 
+
+%DIFDELCMD < \begin{enumerate}
+%DIFDELCMD < \item %%%
+\DIFdel{We show MWHED is exactly }\DIFdelend \DIFaddbegin \DIFadd{. It is worth saying at the outset, and Section~\ref{sec:model}
+proves it, that MWHED is }\emph{\DIFadd{exactly}} \DIFaddend the classical single-machine
+\DIFdelbegin \DIFdel{scheduling
+problem }\DIFdelend \DIFaddbegin \DIFadd{problem $1\|\sum w_jU_j$ }\DIFaddend of maximizing the weighted number of on-time
+jobs\DIFdelbegin \DIFdel{, and prove it
+}\DIFdelend \DIFaddbegin \DIFadd{. Consequently the basic complexity picture (weak NP-hardness, a
+pseudo-polynomial dynamic program, an approximation scheme) is
+inherited from scheduling theory, and we do not claim a new algorithmic
+technique for the general problem. Our contributions are therefore of
+two kinds. The first is a self-contained development of the classical
+results in the transportation vocabulary, with complete proofs and a
+running example, aimed at a reader who would not otherwise connect a
+dispatch problem to $1\|\sum w_jU_j$:
+}\begin{enumerate}
+\item \DIFadd{MWHED }\DIFaddend is weakly NP-hard\DIFdelbegin \DIFdel{by an elementary, self-contained argument: the special case in which every site shares the same hazard deadline is }\emph{\DIFdel{exactly}} %DIFAUXCMD
+\DIFdelend \DIFaddbegin \DIFadd{, by a direct reduction from
+}\textsc{\DIFadd{Partition}} \DIFadd{that uses only the equal-deadline special case,
+which is exactly }\DIFaddend the 0/1 knapsack problem
+(Theorem~\ref{thm:hardness}).
+\item \DIFdelbegin \DIFdel{We give an }\DIFdelend \DIFaddbegin \DIFadd{An }\DIFaddend exact pseudo-polynomial dynamic program \DIFdelbegin \DIFdel{(Theorem~\ref{thm:dp}), derived directly }\DIFdelend \DIFaddbegin \DIFadd{derived }\DIFaddend from an
+earliest-deadline-first exchange argument \DIFdelbegin \DIFdel{that we prove from first
+principles rather than assert}\DIFdelend \DIFaddbegin \DIFadd{(Theorem~\ref{thm:dp}); this
+is the Lawler--Moore dynamic program \mbox{%DIFAUXCMD
+\citep{lawlermoore1969}}\hskip0pt%DIFAUXCMD
+}\DIFaddend .
+\item \DIFdelbegin \DIFdel{We adapt the classical }\DIFdelend \DIFaddbegin \DIFadd{A }\DIFaddend value-scaling \DIFdelbegin \DIFdel{technique to obtain a fully
+polynomial-time approximation scheme (FPTAS ) for MWHED
+}\DIFdelend \DIFaddbegin \DIFadd{FPTAS }\DIFaddend (Theorem~\ref{thm:fptas})\DIFdelbegin \DIFdel{, so that a solution within any desired factor
+$1-\epsilon$ of optimal is computable in time polynomial in the number
+of sites and $1/\epsilon$.
+}\DIFdelend \DIFaddbegin \DIFadd{; approximation
+schemes for this problem are classical \mbox{%DIFAUXCMD
+\citep{sahni1976,gensl1981}}\hskip0pt%DIFAUXCMD
+, and
+we present the construction together with a complete proof and an
+explicit treatment of the case in which the scaling is vacuous.
+}\end{enumerate}
+\DIFadd{The second kind is what we believe the transportation framing adds,
+and where we have tried to go beyond a relabelling:
+}\begin{enumerate}
+\setcounter{enumi}{3}
+\DIFaddend \item \DIFdelbegin \DIFdel{We identify a second special case---equal round-trip dispatch
+times, i.e., sites equidistant from the depot---that is solvable
+}\emph{\DIFdel{exactly}} %DIFAUXCMD
+\DIFdel{in $O(n \log n)$ time via a matroid greedy algorithm
+}\DIFdelend \DIFaddbegin \emph{\DIFadd{A complete classification by homogeneity}}
+\DIFaddend (Theorem~\DIFdelbegin \DIFdel{\ref{thm:equalp}), showing that heterogeneity in dispatch cost
+}\emph{\DIFdel{alone}} %DIFAUXCMD
+\DIFdel{does not cause hardness : it is the
+combination of
+heterogeneous dispatch cost and heterogeneous criticality, under a shared deadline structure, that does}\DIFdelend \DIFaddbegin \DIFadd{\ref{thm:classification}). For every restriction obtained by
+requiring some of the dispatch times, weights, and deadlines to be
+constant, MWHED is polynomial if dispatch times or weights are
+constant and weakly NP-hard otherwise; heterogeneity of the hazard
+deadlines never causes hardness by itself. Together with the
+equal-cost result below this turns the informal question ``which
+network structure makes dispatch easy'' into a precise statement}\DIFaddend .
+\item \DIFdelbegin \DIFdel{We show the natural fallback for a planner who declines to
+optimize at all---dispatching sites in increasing-deadline order and
+simply accepting whichever remain on time---has }\DIFdelend \emph{\DIFdelbegin \DIFdel{unbounded}%DIFDELCMD < \MBLOCKRIGHTBRACE
+%DIFDELCMD < %%%
+\DIFdel{worst-case loss relative to $W^\ast$ (Proposition~\ref{prop:naive}), so
+Theorems~\ref{thm:dp} and~\ref{thm:fptas} are not merely convenient but
+necessary for any }\DIFdelend \DIFaddbegin \DIFadd{Equal dispatch times, with identical vehicles}}
+\DIFadd{(Theorem~\ref{thm:equalp}). A matroid-greedy algorithm solves the
+equal-cost case in $O(n\log n)$ time for one vehicle and, by the same
+proof, for any number $m$ of identical vehicles. We prove the required
+matroid property from scratch rather than cite it. In particular, the
+equal-cost case does }\emph{\DIFadd{not}} \DIFadd{become hard when several vehicles are
+available (it does once release dates are added; Section~\ref{sec:disc-multi}).
+}\item \emph{\DIFadd{Worst-case results for natural heuristics}}
+\DIFadd{(Propositions~\ref{prop:naive}, \ref{prop:repair}, \ref{prop:tight}).
+Dispatching in deadline order, with or without skipping sites that
+would be late, and a weighted greedy repair all have unbounded
+}\DIFaddend worst-case \DIFdelbegin \DIFdel{guarantee at all. }\DIFdelend \DIFaddbegin \DIFadd{ratio; and the standard FPTAS analysis is tight up to a
+factor $1-\epsilon^2$. These results say that some form of
+reconsideration is needed for a guarantee; they do }\emph{\DIFadd{not}} \DIFadd{say that
+the dynamic program or the FPTAS is the only way to obtain one.
+}\DIFaddend \end{enumerate}
+\DIFdelbegin %DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Together, Theorems~\ref{thm:hardness} and~\ref{thm:equalp} give a sharp
+structural picture of where the difficulty in this problem lives, Theorems~\ref{thm:dp} and ~\ref{thm:fptas} give planners exact and provably near-exact tools for the general, hard case, and
+Proposition~\ref{prop:naive} shows those tools are not optional: the obvious do-nothing alternative can be made to fail arbitrarily badly.
+A
+numerical illustration in }\DIFdelend \DIFaddbegin \DIFadd{Finally, }\DIFaddend Section~\ref{sec:experiments} \DIFdelbegin \DIFdel{confirms the FPTAStracks the true optimum closely well before its worst-case
+guarantee requires, while a naive dispatch order (no optimization at
+all, just visiting sites in deadline order) degrades as instances grow}\DIFdelend \DIFaddbegin \DIFadd{reports a numerical study
+designed so that the FPTAS's rounding is verifiably active (with small
+weights it is vacuous, as Section~\ref{sec:acc} explains), together
+with exhaustive-search verification of every algorithm, and a
+real-wildfire case study with a sensitivity analysis over its uncertain
+inputs}\DIFaddend . To keep the argument
+concrete\DIFdelbegin \DIFdel{rather than purely symbolic}\DIFdelend , Sections~\ref{sec:model} and~\ref{sec:theory} carry a single
+four-site running example through \DIFdelbegin \DIFdel{every result}\DIFdelend \DIFaddbegin \DIFadd{the results}\DIFaddend , worked out by hand
+alongside each proof.
+
+The remainder of this paper is organized as follows.
+Section~\ref{sec:related} positions MWHED against the scheduling,
+real-time-systems, and disaster-response \DIFdelbegin \DIFdel{routing literatures }\DIFdelend \DIFaddbegin \DIFadd{literatures and states
+precisely what is classical}\DIFaddend . Section~\ref{sec:model} defines MWHED \DIFdelbegin \DIFdel{formally }\DIFdelend and
+establishes the earliest-deadline-first \DIFdelbegin \DIFdel{structural }\DIFdelend lemma every later result
+depends on. Section~\ref{sec:theory} proves the \DIFdelbegin \DIFdel{four theorems and the proposition
+}\DIFdelend \DIFaddbegin \DIFadd{results }\DIFaddend above.
+Section~\ref{sec:experiments} reports \DIFdelbegin \DIFdel{four complementary
+numerical experiments}\DIFdelend \DIFaddbegin \DIFadd{the numerical study and the case
+study}\DIFaddend . Section~\ref{sec:discussion} discusses \DIFdelbegin \DIFdel{three
+natural extensions }\DIFdelend \DIFaddbegin \DIFadd{extensions (several
+vehicles, a moving depot, and uncertain parameters) }\DIFaddend and precisely what
+each breaks in our analysis, and Section~\ref{sec:conclusion}
+concludes. Two appendices give an exhaustive hand-verification of the
+running example and a \DIFdelbegin \DIFdel{fully
+}\DIFdelend spelled-out derivation of the FPTAS \DIFdelbegin \DIFdel{'s approximation-ratio }\DIFdelend bound.
+
+% ══════════════════════════════════════════════════════════════════
+\section{Related work}\label{sec:related}
+
+\textbf{Scheduling with deadlines.} MWHED, once its transportation
+framing is stripped away, is the classical single-machine problem of
+maximizing the weighted number of on-time jobs, equivalently minimizing
+the weighted number of late jobs, $1\|\sum w_jU_j$ in the standard
+three-field notation \DIFaddbegin \DIFadd{(job $j$ has processing time $p_j$, due date $d_j$
+and weight $w_j$; $U_j=1$ if it is late)}\DIFaddend . \citet{moore1968} gives an
+$O(n\log n)$ algorithm for the \emph{unweighted} case
+($1\|\sum U_j$): process jobs in earliest-due-date order, and whenever
+the running schedule becomes infeasible, permanently discard the
+\DIFaddbegin \DIFadd{scheduled }\DIFaddend job with the largest processing time \DIFdelbegin \DIFdel{among those scheduled so far. This procedure is commonly called
+}\DIFdelend \DIFaddbegin \DIFadd{(}\DIFaddend the Moore--Hodgson
+algorithm\DIFdelbegin \DIFdel{. }\DIFdelend \DIFaddbegin \DIFadd{). For the weighted case, }\DIFaddend \citet{lawlermoore1969} give a
+\DIFdelbegin \DIFdel{general
+functional-equation (dynamic programming) technique for resource
+allocation and sequencing problems that specializes to a
+pseudo-polynomial algorithm for the weighted case; the classification
+of $1\|\sum w_jU_j$ itself as (weakly ) }\DIFdelend \DIFaddbegin \DIFadd{dynamic program over jobs in due-date order and total processing time
+that runs in $O(nP)$ time, $P=\sum_jp_j$; this is our
+Theorem~\ref{thm:dp}. The problem is weakly }\DIFaddend NP-hard\DIFdelbegin \DIFdel{is standard in the
+scheduling-complexity literature, surveyed by
+\mbox{%DIFAUXCMD
+\citet{lenstra1977}}\hskip0pt%DIFAUXCMD
+, and follows directly from the same reduction we
+give in Section~\ref{sec:theory}: }\DIFdelend \DIFaddbegin \DIFadd{, since }\DIFaddend an instance
+with a common due date is \DIFdelbegin \DIFdel{exactly }\DIFdelend a 0/1 knapsack instance, whose NP-hardness is
+classical \citep{gareyjohnson1979}\DIFdelbegin \DIFdel{. We are not aware of a prior statement of this
+reduction, or of }\DIFdelend \DIFaddbegin \DIFadd{; complexity surveys include
+\mbox{%DIFAUXCMD
+\citet{lenstra1977}}\hskip0pt%DIFAUXCMD
+. Approximation schemes are also classical:
+\mbox{%DIFAUXCMD
+\citet{sahni1976} }\hskip0pt%DIFAUXCMD
+gives rounding-based approximation algorithms for
+single-processor job sequencing with deadlines, which is the same
+problem, and \mbox{%DIFAUXCMD
+\citet{gensl1981} }\hskip0pt%DIFAUXCMD
+give a faster approximation algorithm for
+it. Our Theorem~\ref{thm:fptas} is therefore a re-derivation of a known
+type of result in our notation, not a new technique, and the same holds
+for the common-deadline hardness argument and }\DIFaddend the equal-processing-time
+\DIFdelbegin \DIFdel{tractable }\DIFdelend special case of Theorem~\ref{thm:equalp}, \DIFdelbegin \DIFdel{in transportation-network language}\DIFdelend \DIFaddbegin \DIFadd{which is the classical
+unit-time job sequencing with profits. What we are not aware of, and
+what Sections~\ref{sec:theory}--\ref{sec:experiments} add, is the
+classification of Theorem~\ref{thm:classification}, the extension to
+identical vehicles of Theorem~\ref{thm:equalp}, the heuristic lower
+bounds of Propositions~\ref{prop:naive}--\ref{prop:tight}, and the
+verified computational study}\DIFaddend .
+
+This classical scheduling problem remains an active research topic:
+\citet{hejl2022} give a refined pseudo-polynomial dynamic program for
+the practically important ``strongly correlated'' regime (where
+processing times and weights are close in value), and
+\citet{hermelin2024} improve the Lawler--Moore-style DP's running time
+via $(\max,+)$-convolution techniques---an algorithmic refinement
+orthogonal to, and compatible with, Theorem~\ref{thm:dp}'s DP.
+\citet{heegerhermelin2024} sharpen the \DIFdelbegin \DIFdel{complexity picturefurther}\DIFdelend \DIFaddbegin \DIFadd{parameterized picture}\DIFaddend ,
+proving $1\|\sum w_jU_j$ is $W[1]$-hard parameterized by \DIFdelbegin \DIFdel{either }\DIFdelend the number of
+distinct processing times \DIFdelbegin \DIFdel{or }\DIFdelend \DIFaddbegin \DIFadd{and also by }\DIFaddend the number of distinct weights\DIFdelbegin \DIFdel{in the instance---a result that, translated }\DIFdelend \DIFaddbegin \DIFadd{.
+Translated }\DIFaddend into MWHED's language\DIFdelbegin \DIFdel{,
+says that even a small }\DIFdelend \DIFaddbegin \DIFadd{: there is, unless $\mathrm{FPT}=W[1]$,
+no algorithm running in $f(k)\cdot\mathrm{poly}(n)$ time where $k$ is
+the }\DIFaddend number of distinct dispatch \DIFdelbegin \DIFdel{costs }\DIFdelend \DIFaddbegin \DIFadd{times (}\DIFaddend or criticality levels\DIFdelbegin \DIFdel{does not, by itself, guarantee tractability, sharpening
+the boundary Theorem~\ref{thm:equalp} and Remark~\ref{rem:hardness-boundary}
+draw between the fully-heterogeneous and equal-cost cases}\DIFdelend \DIFaddbegin \DIFadd{), so a
+small number of distinct values does not make the problem easy in the
+fixed-parameter sense. For a fixed $k$ the problem remains polynomial
+(a dynamic program over the counts of selected sites of each type has
+$n^{O(k)}$ states) and for $k=1$ it is the tractable case of
+Theorem~\ref{thm:equalp} (or Moore--Hodgson, for equal weights), so
+these results are consistent with, and refine, the boundary that
+Theorem~\ref{thm:classification} draws}\DIFaddend . On the
+heuristic side, \citet{antonov2026} give a data-driven (machine-learning-guided)
+heuristic for the same objective, a more sophisticated relative of the
+weighted greedy-repair heuristic we use as an empirical baseline in
+Section~\ref{sec:experiments}.
+
+\textbf{Real-time and deadline-driven systems.} Earliest-deadline-first
+ordering is also the central object of classical real-time scheduling
+theory, where \citet{liulayland1973} show that, for periodic tasks on
+a single processor, earliest-deadline-first achieves full processor
+utilization while any fixed-priority policy (such as rate-monotonic
+scheduling) cannot. That literature's EDF result and our
+Lemma~\ref{lem:edd} are structurally analogous---both establish that
+ordering by deadline is necessary and sufficient for a natural notion
+of feasibility---but the objectives differ fundamentally: real-time
+scheduling asks whether \emph{every} task can be met, a feasibility
+question with a clean necessary-and-sufficient utilization test,
+whereas MWHED presupposes infeasibility is unavoidable when dispatch
+costs are large relative to deadlines, and asks instead which
+\emph{weighted subset} of sites to sacrifice---the optimization
+question that drives Theorem~\ref{thm:hardness}'s hardness result and
+has no analogue in the feasibility-testing literature. It is worth
+noting why the two literatures' core feasibility results still agree
+despite this difference in objective: \citeauthor{liulayland1973}'s
+utilization test is a necessary-and-sufficient \emph{aggregate}
+condition (a single inequality over all tasks) precisely because their
+tasks recur periodically forever, so any transient slack evens out over
+a long enough horizon; MWHED's sites are each served at most once, so
+no such aggregate test can substitute for Lemma~\ref{lem:edd}'s
+site-by-site exchange argument, and no analogous single-inequality
+feasibility test exists for MWHED's one-shot dispatch problem---indeed,
+Theorem~\ref{thm:hardness} shows that even deciding the size of the
+best \emph{weighted} feasible subset, let alone a simple aggregate
+test for it, is NP-hard. More recent real-time scheduling work extends
+EDF-style analysis to richer task models: \citet{gunzel2022} give a
+unified schedulability test for self-suspending periodic tasks that
+recovers EDF (among other policies) as a special case, and
+\citet{wang2025} refine the schedulability analysis for that same
+self-suspending, EDF-like setting. Both retain the periodic,
+run-forever structure that makes an aggregate utilization test
+possible; MWHED's one-shot, single-visit-per-site structure is exactly
+what rules out an analogous test here.
+
+\textbf{Approximation.} The 0/1 knapsack problem admits a fully
+polynomial-time approximation scheme via scaling and rounding of item
+values, due to \citet{ibarrakim1975}; \DIFdelbegin \DIFdel{we adapt this technique directly
+to MWHED's dynamic program in }\DIFdelend \DIFaddbegin \DIFadd{the same technique applies to job
+sequencing with deadlines \mbox{%DIFAUXCMD
+\citep{sahni1976,gensl1981}}\hskip0pt%DIFAUXCMD
+, and
+}\DIFaddend Theorem~\ref{thm:fptas} \DIFdelbegin \DIFdel{. The adaptation
+is not entirely mechanical: knapsack 's FPTAS scales values and reuses
+a single time-indexed capacity constraint, whereas MWHED has }\DIFdelend \DIFaddbegin \DIFadd{is this construction written for MWHED. The one
+point at which the presentation differs from knapsack is that there is
+}\DIFaddend no single shared \DIFdelbegin \DIFdel{capacity---each site carries its own deadline---so }\DIFdelend \DIFaddbegin \DIFadd{capacity (each site has its own deadline), so }\DIFaddend the
+value-indexed \DIFdelbegin \DIFdel{dual table of Theorem~\ref{thm:fptas}'s proof must track
+}\DIFdelend \DIFaddbegin \DIFadd{table must test }\DIFaddend feasibility against each site's \DIFdelbegin \DIFdel{individual }\DIFdelend $d_i$\DIFdelbegin \DIFdel{rather than a single
+global bound}\DIFdelend \DIFaddbegin \DIFadd{;
+this is easy in deadline order}\DIFaddend , and the case split \DIFdelbegin \DIFdel{we make explicit }\DIFdelend in
+Appendix~\ref{app:fptas-detail} (\DIFdelbegin \DIFdel{between the scaling being vacuousor
+not) has no counterpart in the standard knapsack presentation, where
+$w_{\max}$ and $n$ play a comparatively simpler role}\DIFdelend \DIFaddbegin \DIFadd{whether the scaling is vacuous) is
+simply careful bookkeeping, not a new idea}\DIFaddend . The classical
+$O(n^3/\epsilon)$-style \DIFdelbegin \DIFdel{FPTAS we adapt }\DIFdelend \DIFaddbegin \DIFadd{scheme }\DIFaddend is not the fastest \DIFdelbegin \DIFdel{knapsack FPTAS
+known today: \mbox{%DIFAUXCMD
+\citet{jin2019} }\hskip0pt%DIFAUXCMD
+improve the running time via a more
+careful scaling scheme, }\DIFdelend \DIFaddbegin \DIFadd{known even for
+knapsack: \mbox{%DIFAUXCMD
+\citet{jin2019} }\hskip0pt%DIFAUXCMD
+}\DIFaddend and \citet{chen2025fptas} give \DIFdelbegin \DIFdel{a nearly
+quadratic-time FPTAS, $\tilde O(n + 1/\epsilon^2)$, that is conditionally
+near-optimal. We adapt the classical (rather than the fastest known)
+}\DIFdelend \DIFaddbegin \DIFadd{faster
+schemes, and \mbox{%DIFAUXCMD
+\citet{gensl1981} }\hskip0pt%DIFAUXCMD
+give a faster scheme for job sequencing
+with deadlines itself. We keep the classical }\DIFaddend construction because its
+\DIFdelbegin \DIFdel{case structure is what Theorem~\ref{thm:fptas}'s
+proof and Appendix~\ref{app:fptas-detail}'s derivation build on
+directly; porting the faster constructions to MWHED's per-site-deadline
+setting (rather than knapsack's single shared capacity) is a natural
+avenue for tightening Theorem~\ref{thm:fptas}'s runtime bound}\DIFdelend \DIFaddbegin \DIFadd{analysis is the cleanest and because Proposition~\ref{prop:tight} shows
+that analysis is tight}\DIFaddend .
+
+\textbf{Matroids and greedy algorithms.} The equal-processing-time
+special case of Theorem~\ref{thm:equalp} is an instance of the
+classical problem of scheduling unit-time jobs with deadlines to
+maximize total profit, whose feasible job sets form a matroid, on which
+a greedy algorithm is provably optimal; we follow the treatment in
+\citet{kortevygen2018}. This matroid structure is exactly what breaks
+once dispatch costs become heterogeneous, which is why
+Theorem~\ref{thm:equalp}'s greedy algorithm has no counterpart for
+general MWHED. Concretely, in the equal-deadline restriction (which
+Theorem~\ref{thm:hardness} identifies with 0/1 knapsack of capacity
+$D$), take three sites with dispatch times $2,1,5$ and a common
+deadline $D=5$: $\{3\}$ (the size-$5$ site alone) is feasible and
+already uses the entire capacity, while $\{1,2\}$ (total size $3$) is
+also feasible; but neither remaining site can be added to $\{3\}$ ($5+2$
+and $5+1$ both exceed $D=5$), so a feasible set of size $1$ fails to
+extend toward a feasible set of size $2$ by any element of the latter---precisely
+the matroid exchange property failing. This is why a single large,
+low-value commitment can block a strictly better pair of smaller
+commitments, and is the structural reason Theorem~\ref{thm:hardness}'s
+hardness survives even though the matroid case (Theorem~\ref{thm:equalp})
+is easy. Matroid algorithms themselves remain an active area:
+\citet{terao2025} give faster matroid partition algorithms, and
+\citet{ma2026} prove a greedy algorithm is simultaneously optimal and
+fair for a multiagent matroid-upgrading problem, reinforcing that
+``greedy is optimal on a matroid'' continues to be a productive
+template well beyond the classical setting Theorem~\ref{thm:equalp}
+uses.
+
+\textbf{Routing and dispatch under a spreading hazard.} Wildfire
+suppression is the application area where the ``race a spreading
+hazard'' structure has been studied most directly in the operations
+research literature, and it illustrates the point at which our
+abstraction departs from that literature's usual level of detail.
+\citet{harris2023} model fire spread via a minimum-travel-time
+principle---the fire's arrival time at any point is governed by the
+fastest path a flame front can take through spatially varying
+fuel and terrain, akin to a shortest-path computation over a
+continuous landscape---and decompose the resulting joint
+suppression-and-routing decision via logic-based Benders decomposition,
+trading exact fire-spread geometry against tractable large-scale
+optimization. \citet{avci2024} extend this style of problem to multiple
+heterogeneous resource types (e.g., ground crews and aircraft with
+different suppression capabilities and travel speeds), which multiplies
+the routing decision's combinatorial complexity without changing its
+underlying deadline structure. \citet{alvelos2025} go further, jointly
+optimizing dispatching, the positioning of resources in anticipation of
+the fire's advance, and their routing, in a single integrated model.
+More recently, \citet{granda2025} give a mathematical programming
+formulation for wildfire suppression resource allocation, and, closest
+in spirit to our own complexity results, \citet{delazeri2026} prove
+NP-completeness for a landscape-graph model of wildfire suppression
+resource allocation, alongside a competitive mixed-integer program and
+a physics-grounded (Rothermel fire-spread model) instance generator---an
+independent hardness result in essentially our application domain,
+though for a differently structured (graph-based, simultaneous
+multi-resource) model than MWHED's single-vehicle dispatch-ordering
+question. Two recent systematic reviews position the broader
+literature: \citet{tezcan2025} survey optimization approaches to
+forest-fire suppression, and \citet{rostamian2026} review 177 papers on
+wildfire management optimization under uncertainty and complexity,
+both confirming that pure complexity-theoretic characterizations of a
+dispatch-ordering subproblem---as opposed to joint suppression,
+positioning, and routing models---remain rare in this literature.
+Across all of these, the fire's own spatial spread is modeled in detail
+and coupled tightly to the routing and positioning decisions; MWHED
+instead abstracts the hazard's spread into a per-site deadline (a
+natural reduction once the hazard's spread model is fixed and known, as
+is standard once a fire, flood, or contamination-plume simulator has
+produced arrival-time estimates for each site) and asks the sharper
+question of what
+complexity and algorithmic guarantees are available for the resulting
+pure dispatch-\emph{ordering} decision. To our knowledge, no prior work
+in this literature establishes the knapsack-equivalence hardness
+result, the exact dynamic program, the FPTAS, or the equal-cost
+tractable case we give here.
+
+\textbf{Positioning.} MWHED \DIFdelbegin \DIFdel{sits at the intersection of these four
+literatures without duplicating any of them: it }\DIFdelend inherits its complexity classification from
+\DIFdelbegin \DIFdel{classical scheduling theory
+, both the founding
+results and their recent refinements
+(\mbox{%DIFAUXCMD
+\citealp{moore1968,lawlermoore1969,lenstra1977,hejl2022,hermelin2024,heegerhermelin2024,antonov2026}}\hskip0pt%DIFAUXCMD
+}\DIFdelend \DIFaddbegin \DIFadd{scheduling theory
+(\mbox{%DIFAUXCMD
+\citealp{moore1968,lawlermoore1969,lenstra1977,sahni1976,gensl1981,hejl2022,hermelin2024,heegerhermelin2024,antonov2026}}\hskip0pt%DIFAUXCMD
+}\DIFaddend ),
+its algorithmic toolkit from knapsack approximation and matroid theory
+\DIFdelbegin \DIFdel{,
+including recent speedups
+}\DIFdelend (\citealp{ibarrakim1975,kortevygen2018,jin2019,chen2025fptas,terao2025,ma2026}),
+its deadline-ordering intuition from real-time systems
+(\citealp{liulayland1973,gunzel2022,wang2025}), and its \DIFdelbegin \DIFdel{motivating
+application }\DIFdelend \DIFaddbegin \DIFadd{motivation }\DIFaddend from
+disaster-response operations research
+(\citealp{harris2023,avci2024,alvelos2025,granda2025,delazeri2026,tezcan2025,rostamian2026})\DIFdelbegin \DIFdel{,
+but the specific problem --- and every result we prove about it --- is
+new. }\DIFdelend \DIFaddbegin \DIFadd{.
+Its theoretical results are, with the exceptions listed above, classical
+ones restated in transportation language; }\DIFaddend Table~\ref{tab:summary} in
+Section~\ref{sec:theory} \DIFdelbegin \DIFdel{summarizes how each of our five main
+results maps onto this classification. The overall }\DIFdelend \DIFaddbegin \DIFadd{marks which. We believe the }\DIFaddend pattern---a
+transportation reparametrization of a classical scheduling problem \DIFdelbegin \DIFdel{,
+whose
+hardness, exact algorithm, and approximation scheme all follow
+by directly adapting standard techniques, while a natural structural
+restriction (equal dispatch cost) recovers tractability---is, we
+believe, a template that could apply to other
+transportation-network
+problems with a similar }\DIFdelend \DIFaddbegin \DIFadd{whose
+tractability boundary has a network interpretation---applies to other
+}\DIFaddend deadline-driven \DIFdelbegin \DIFdel{structure, not only to the
+specific hazard-dispatch motivation we use here}\DIFdelend \DIFaddbegin \DIFadd{transportation problems}\DIFaddend ; Section~\ref{sec:discussion}
+discusses \DIFdelbegin \DIFdel{three such extensionsconcretely}\DIFdelend \DIFaddbegin \DIFadd{extensions}\DIFaddend .
+
+% ══════════════════════════════════════════════════════════════════
+\section{Model}\label{sec:model}
+
+\begin{definition}[Minimum Weighted Hazard-Exposure Dispatch]\label{def:mwhed}
+An instance of MWHED consists of $n$ sites $1,\dots,n$ and a depot. Each
+site $i$ has a round-trip dispatch time $p_i \in \mathbb Z_{>0}$ (the
+time to travel from the depot to site $i$ and back, or more generally
+the time the depot's single vehicle or crew is occupied while serving
+site $i$), a hazard-arrival deadline $d_i \in \mathbb Z_{>0}$ (the known
+time at which a spreading hazard reaches site $i$), and a criticality
+weight $w_i \in \mathbb Z_{>0}$. A \emph{dispatch order} is a
+permutation $\sigma$ of $\{1,\dots,n\}$; the \emph{completion time} of
+site $\sigma(k)$ is $C_{\sigma(k)}(\sigma) := \sum_{j=1}^k
+p_{\sigma(j)}$, and site $i$ is \emph{on time} under $\sigma$ if $C_i(\sigma)
+\le d_i$, otherwise \emph{exposed}. The objective is to choose $\sigma$
+maximizing the total on-time weight
+\begin{equation}\label{eq:objective}
+W(\sigma) := \sum_{i=1}^n w_i \cdot \mathbb 1\bigl[C_i(\sigma) \le
+d_i\bigr].
+\end{equation}
+\end{definition}
+
+Table~\ref{tab:notation} collects the notation introduced in this
+definition and used throughout the rest of the paper, for reference.
+
+\begin{table}[h]
+\caption{Notation used throughout the paper.}\label{tab:notation}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$n$ & number of sites \\
+$p_i$ & round-trip dispatch time for site $i$ \\
+$d_i$ & hazard-arrival deadline for site $i$ \\
+$w_i$ & criticality weight for site $i$ \\
+$\sigma$ & a dispatch order (permutation of sites) \\
+$C_i(\sigma)$ & completion time of site $i$ under order $\sigma$ \\
+$W(\sigma)$ & total on-time weight of order $\sigma$, Eq.~\eqref{eq:objective} \\
+$W^\ast$ & the optimal (maximum) value of $W(\sigma)$ \\
+$S$ & a subset of sites dispatched on time \\
+$P$ & $\sum_{i=1}^n p_i$, the total dispatch time (Theorem~\ref{thm:dp}) \\
+$f(i,t)$ & exact DP table: max weight using sites $1..i$, time exactly $t$ \\
+$\epsilon$ & FPTAS accuracy parameter, $\epsilon\in(0,1)$ (Theorem~\ref{thm:fptas}) \\
+$K$ & FPTAS weight-scaling factor \\
+$w_i'$ & scaled weight, $\lfloor w_i/K\rfloor$ \\
+$g(i,v)$ & FPTAS's value-indexed dual DP table \\
+$D_i$ & latest feasible dispatch position, equal-cost case, $\lfloor d_i/p\rfloor$ \\
+\DIFaddbeginFL \DIFaddFL{$m$ }& \DIFaddFL{number of identical vehicles (MWHED-$m$, Section~\ref{sec:equalp}) }\\
+\DIFaddendFL \bottomrule
+\end{tabular}
+\end{table}
+
+Because every visit returns to the depot before the next dispatch
+begins, $p_i$ does not depend on which site precedes or follows site
+$i$ in the order---the defining structural feature that distinguishes
+MWHED from a routing problem and places it in the scheduling family.
+Minimizing total \emph{exposure cost} $\sum_i w_i(1 - \mathbb
+1[C_i(\sigma)\le d_i])$ is equivalent to maximizing $W(\sigma)$, since
+$\sum_i w_i$ is a constant of the instance; we work with the
+maximization form throughout.
+
+\begin{assumption}[Individually feasible sites]\label{as:feasible}
+Every site satisfies $p_i \le d_i$.
+\end{assumption}
+
+This is without loss of generality: a site with $p_i > d_i$ cannot be
+on time under any dispatch order, even served first, so it can be
+deleted from the instance in a preprocessing pass without changing the
+optimal value achievable on the remaining sites. One immediate
+consequence we use later: the single highest-weight site, dispatched
+alone, is itself a feasible subset, so $W^\ast \ge w_{\max} := \max_i
+w_i$.
+
+\DIFaddbegin \begin{remark}[Return and arrival readings of the deadline]\label{rem:reading}
+\DIFadd{Definition~\ref{def:mwhed} counts a site as on time when the vehicle's
+}\emph{\DIFadd{completion}} \DIFadd{of the whole $p_i$-long occupancy---the round trip,
+including the return---happens by $d_i$ (the }\emph{\DIFadd{return reading}}\DIFadd{).
+When what matters is that the vehicle }\emph{\DIFadd{arrive}} \DIFadd{at the site before
+the hazard does, only the outbound part $a_i\le p_i$ of the occupancy
+must fit: site $i$ is protected iff $C_i-p_i+a_i\le d_i^{\mathrm{haz}}$,
+where $d_i^{\mathrm{haz}}$ is the hazard-arrival time. This is the same
+test with deadline $d_i:=d_i^{\mathrm{haz}}+(p_i-a_i)$, which for a
+symmetric trip is $d_i^{\mathrm{haz}}+p_i/2$. Hence the }\emph{\DIFadd{arrival
+reading}} \DIFadd{is an instance of Definition~\ref{def:mwhed} with shifted
+deadlines, and every result below applies to it unchanged; only the
+input $d_i$ differs. The two readings can give different answers on the
+same data, so a practitioner must state which one the hazard-arrival
+times refer to; Section~\ref{sec:campfire} uses the arrival reading.
+}\end{remark}
+
+\DIFaddend The following lemma is the structural fact both the dynamic program of
+Section~\ref{sec:theory} and the tractability results depend on. It is
+the transportation-scheduling analogue of the classical fact that
+earliest-due-date order minimizes maximum lateness on a single machine.
+
+\begin{lemma}[Earliest-deadline-first feasibility]\label{lem:edd}
+Fix a subset $S \subseteq \{1,\dots,n\}$. There exists a dispatch order
+under which every site in $S$ is on time if and only if, when the sites
+of $S$ are dispatched first (before any site outside $S$) in order of
+increasing deadline $d_i$, every site in $S$ is on time.
+\end{lemma}
+
+\begin{proof}
+Sufficiency is immediate: the stated order is one such dispatch order.
+For necessity, suppose $S$ is feasible under some order $\sigma$ (every
+site of $S$ on time). We transform $\sigma$ into the stated order by two
+kinds of exchanges, each of which preserves feasibility of $S$.
+
+First, suppose some site $j \notin S$ precedes some site $i \in S$ in
+$\sigma$. Moving $j$ to immediately after the last element of $S$
+(and shifting the intervening sites earlier by $p_j$) strictly decreases
+the completion time of every site of $S$ that came after $j$, and
+leaves the completion time of every site of $S$ that came before $j$
+unchanged; it therefore preserves feasibility of every site in $S$, and
+after repeating this for every $j \notin S$ that precedes some element
+of $S$, all of $S$ forms a prefix of the schedule.
+
+Second, with $S$ now a prefix, suppose two adjacent sites $i, i' \in S$
+appear in the order with $i$ immediately before $i'$, yet $d_i >
+d_{i'}$---the later-deadline site is scheduled first. Let $t_0$ be the
+cumulative dispatch time immediately before this pair is served
+(unaffected by how the pair is internally ordered, since it depends
+only on the sites preceding them). Under the current order, $i$
+completes at $t_0+p_i$ and $i'$ completes at $t_0+p_i+p_{i'}$; since
+the order is feasible for $S$, in particular $t_0+p_i+p_{i'} \le
+d_{i'}$. Swap the pair so that $i'$ precedes $i$: every other site in
+$S$ still finishes at the same time as before, $i'$ now completes at
+$t_0+p_{i'}$, and $i$ now completes at $t_0+p_{i'}+p_i$---the same
+total as before, since the pair's combined processing time is
+unchanged by reordering it. Because $p_i>0$, $t_0+p_{i'} <
+t_0+p_i+p_{i'} \le d_{i'}$, so $i'$ remains on time; and
+$t_0+p_i+p_{i'} \le d_{i'} < d_i$, so $i$ remains on time as well.
+Repeating this adjacent-transposition argument (a bubble sort on the
+prefix) sorts $S$ into increasing-$d_i$ order without ever violating a
+previously-satisfied deadline.
+\end{proof}
+
+Lemma~\ref{lem:edd} lets us restrict attention, without loss of
+generality, to dispatch orders that serve some subset $S$ first, in
+increasing-deadline order, followed by the remaining (necessarily
+exposed) sites in any order; the optimization problem becomes that of
+choosing $S$ to maximize $\sum_{i\in S} w_i$ subject to the feasibility
+condition of Lemma~\ref{lem:edd}.
+
+\begin{example}[A running illustration]\label{ex:running}
+Throughout this section we illustrate each result on a single small
+instance: four sites with round-trip dispatch times $p=(2,3,1,4)$,
+hazard deadlines $d=(4,6,2,9)$, and criticality weights $w=(5,8,3,10)$,
+all satisfying Assumption~\ref{as:feasible}. Sorting by increasing
+deadline gives the order $3,1,2,4$ (deadlines $2,4,6,9$);
+Lemma~\ref{lem:edd} says we may restrict to dispatch orders that serve
+some subset $S$ first, in exactly this relative order.
+
+Dispatching every site in this order---the naive policy of simply
+visiting sites earliest-deadline-first, with no further
+optimization---gives completion times $1,3,6,10$ for sites $3,1,2,4$
+respectively; the first three are on time, but site $4$, with deadline
+$9$, arrives at cumulative time $10$ and is exposed, losing its full
+weight $w_4=10$. This naive order captures only $w_3+w_1+w_2 =
+3+5+8=16$ of the total weight $26$.
+
+The optimal choice of $S$ is instead $\{1,2,4\}$, excluding site $3$:
+dispatched in deadline order $1,2,4$, completion times are $2,5,9$,
+each on time, for a total on-time weight of $W^\ast = 5+8+10=23$---
+strictly better than the naive $16$, by deliberately sacrificing site
+$3$ (deadline $2$, weight only $3$) to make room for the far more
+valuable site $4$. No dispatch order can do better, as
+Example~\ref{ex:dp}'s dynamic program table confirms exhaustively. This
+gap between naive earliest-deadline dispatch and the true optimum is
+\DIFdelbegin \DIFdel{exactly the phenomenon }\DIFdelend \DIFaddbegin \DIFadd{what }\DIFaddend Section~\ref{sec:experiments} \DIFdelbegin \DIFdel{'s numerical study
+documents at scale}\DIFdelend \DIFaddbegin \DIFadd{measures on random instances}\DIFaddend .
+\end{example}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/running_example_schematic.pdf}
+\caption{A schematic illustration of Example~\ref{ex:running}. Site
+positions are laid out at a radius proportional to each site's
+round-trip dispatch time $p_i$, purely for visual spacing---this is an
+abstract schematic of the instance, not a real road network or a
+geographic map (MWHED's theory is instance-agnostic and this paper
+uses no real-world coordinate data). Marker size is proportional to
+criticality weight $w_i$; green markers and arrows show the optimal
+dispatch $S^\ast=\{1,2,4\}$ and each site's completion time; the gray
+marker is site $3$, sacrificed to make room for the higher-value site
+$4$.}\label{fig:running-example}
+\end{figure}
+
+% ══════════════════════════════════════════════════════════════════
+\section{Complexity and algorithms}\label{sec:theory}
+
+Table~\ref{tab:summary} previews \DIFdelbegin \DIFdel{how the five }\DIFdelend \DIFaddbegin \DIFadd{the }\DIFaddend results of this section \DIFdelbegin \DIFdel{fit together, before we state and prove each in turn}\DIFdelend \DIFaddbegin \DIFadd{and marks
+which are classical (stated here in transportation language, with
+complete proofs) and which we believe are new}\DIFaddend .
+
+\begin{table}[h]
+\caption{Summary of this section's results. $n$ is the number of
+sites, $P=\sum_i p_i$, and $\epsilon\in(0,1)$ is the FPTAS's accuracy
+parameter.}\label{tab:summary}
+\small
+\DIFdelbeginFL %DIFDELCMD < \begin{tabular}{@{}p{2.7cm}p{3.2cm}p{2.2cm}p{2.6cm}@{}}
+%DIFDELCMD < %%%
+\DIFdelendFL \DIFaddbeginFL \begin{tabular}{@{}p{2.55cm}p{2.5cm}p{1.45cm}p{1.5cm}p{1.75cm}@{}}
+\DIFaddendFL \toprule
+Setting & Status & Result & Runtime \DIFaddbeginFL & \DIFaddFL{Origin }\DIFaddendFL \\
+\midrule
+General \DIFdelbeginFL \DIFdelFL{instance }\DIFdelendFL & weakly NP-hard & Thm.~\ref{thm:hardness} & --- \DIFaddbeginFL & \DIFaddFL{classical }\DIFaddendFL \\
+General \DIFdelbeginFL \DIFdelFL{instance }\DIFdelendFL & solved exactly & Thm.~\ref{thm:dp} & $O(nP)$ \DIFaddbeginFL & \DIFaddFL{Lawler--Moore }\DIFaddendFL \\
+General \DIFdelbeginFL \DIFdelFL{instance }\DIFdelendFL & $(1-\epsilon)$\DIFdelbeginFL \DIFdelFL{-approximated }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{-approx. }\DIFaddendFL & Thm.~\ref{thm:fptas} & $O(n^3/\epsilon)$ \DIFaddbeginFL & \DIFaddFL{classical type }\DIFaddendFL \\
+Equal deadlines \DIFdelbeginFL \DIFdelFL{($d_i{=}D$) }\DIFdelendFL & weakly NP-hard ($=$ knapsack) & Thm.~\ref{thm:hardness} & --- \DIFaddbeginFL & \DIFaddFL{classical }\DIFaddendFL \\
+Equal \DIFdelbeginFL \DIFdelFL{cost ($p_i{=}p$}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{weights }& \DIFaddFL{solved exactly }& \DIFaddFL{Thm.~\ref{thm:classification}(a}\DIFaddendFL ) & \DIFaddbeginFL \DIFaddFL{$O(n\log n)$ }& \DIFaddFL{Moore }\\
+\DIFaddFL{Equal cost, $m=1$ }& \DIFaddendFL solved exactly & Thm.~\ref{thm:equalp} & $O(n\log n)$ \DIFaddbeginFL & \DIFaddFL{classical }\\
+\DIFaddFL{Equal cost, $m\ge2$ identical vehicles }& \DIFaddFL{solved exactly }& \DIFaddFL{Thm.~\ref{thm:equalp} }& \DIFaddFL{$O(n\log n)$ }& \DIFaddFL{new (proof) }\\
+\DIFaddFL{Which of $p,w,d$ are constant }& \DIFaddFL{polynomial iff $p$ or $w$ constant }& \DIFaddFL{Thm.~\ref{thm:classification} }& \DIFaddFL{--- }& \DIFaddFL{new framing }\DIFaddendFL \\
+Naive EDD, \DIFdelbeginFL \DIFdelFL{no repair }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{EDD with skipping }\DIFaddendFL & unbounded \DIFdelbeginFL \DIFdelFL{worst-case }\DIFdelendFL ratio & Prop.~\ref{prop:naive} & $O(n\log n)$ \DIFaddbeginFL & \DIFaddFL{new }\\
+\DIFaddFL{Weighted greedy repair }& \DIFaddFL{unbounded ratio }& \DIFaddFL{Prop.~\ref{prop:repair} }& \DIFaddFL{--- }& \DIFaddFL{new }\\
+\DIFaddFL{FPTAS analysis }& \DIFaddFL{tight to $1-\epsilon^2$ }& \DIFaddFL{Prop.~\ref{prop:tight} }& \DIFaddFL{--- }& \DIFaddFL{new }\DIFaddendFL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardness}
+
+\DIFaddbegin \DIFadd{We first isolate the one fact about completion times on which the
+hardness argument rests. Recall that, by the defining property of MWHED,
+the occupancy $p_i$ of the vehicle at site $i$ does not depend on which
+site was served before it.
+}
+
+\begin{fact}[Feasibility under a common deadline]\label{lem:common}
+\DIFadd{Suppose $d_i=D$ for every site, and let $S\subseteq\{1,\dots,n\}$. There
+is a dispatch order under which every site of $S$ is on time if and only
+if $\sum_{i\in S}p_i\le D$.
+}\end{fact}
+
+\begin{proof}
+\DIFadd{By Lemma~\ref{lem:edd} we may serve the sites of $S$ first, in any order
+(all deadlines are equal, so the earliest-deadline-first order is
+arbitrary among them). The vehicle is never idle and the occupancies
+are fixed numbers, so the $k$-th site served completes at the partial
+sum of the first $k$ occupancies, and the }\emph{\DIFadd{last}} \DIFadd{site of $S$
+completes at the sum $T(S):=\sum_{i\in S}p_i$ of }\emph{\DIFadd{all}} \DIFadd{of their
+occupancies, whatever the order. This is the only additivity used: it is
+a statement about the completion time of the last site, not about every
+site's completion time being additive.
+}
+
+\DIFadd{($\Rightarrow$) If every site of $S$ is on time, then in particular the
+last one is, so $T(S)\le D$. ($\Leftarrow$) If $T(S)\le D$, then every
+site of $S$ completes at a partial sum of positive numbers adding up to
+$T(S)$, hence at some time $\le T(S)\le D$, so every site is on time.
+}\end{proof}
+
+\DIFaddend \begin{theorem}[NP-hardness of MWHED]\label{thm:hardness}
+MWHED is NP-hard. This holds even \DIFdelbegin \DIFdel{restricted to instances in which
+}\DIFdelend \DIFaddbegin \DIFadd{when }\DIFaddend every site shares a common
+hazard deadline, \DIFdelbegin \DIFdel{$d_i = D$ }\DIFdelend \DIFaddbegin \DIFadd{$d_i=D$ }\DIFaddend for all $i$\DIFaddbegin \DIFadd{, and even when $w_i=p_i$ for all
+$i$. Precisely, the decision problem ``is $W^\ast\ge k$?'' is
+NP-complete}\DIFaddend .
+\end{theorem}
+
+\begin{proof}
+\DIFdelbegin \DIFdel{Consider the restriction $d_i = D$ }\DIFdelend \DIFaddbegin \DIFadd{Membership in NP is clear: a dispatch order is a certificate and
+$W(\sigma)$ is computed in $O(n)$ time. For hardness we reduce from
+}\textsc{\DIFadd{Partition}} \DIFadd{\mbox{%DIFAUXCMD
+\citep{gareyjohnson1979}}\hskip0pt%DIFAUXCMD
+: given positive integers
+$a_1,\dots,a_n$ with $A:=\sum_ia_i$ even, decide whether some
+$S\subseteq\{1,\dots,n\}$ has $\sum_{i\in S}a_i=A/2$. If some $a_i>A/2$
+the answer is no and we output a fixed no-instance, so assume
+$a_i\le A/2$ }\DIFaddend for all $i$. \DIFdelbegin \DIFdel{By
+Lemma~\ref{lem:edd}, a subset }\DIFdelend \DIFaddbegin \DIFadd{Build the MWHED instance with
+}\[
+\DIFadd{p_i=w_i=a_i,\qquad d_i=D:=A/2\qquad (i=1,\dots,n),
+}\]
+\DIFadd{which satisfies Assumption~\ref{as:feasible} and is built in polynomial
+time. By Fact~\ref{lem:common} a set }\DIFaddend $S$ \DIFdelbegin \DIFdel{is feasible }\DIFdelend \DIFaddbegin \DIFadd{can be served entirely on
+time iff $\sum_{i\in S}a_i\le A/2$, and then its on-time weight is
+$\sum_{i\in S}w_i=\sum_{i\in S}a_i$. Since only the sites of a feasible
+set can be on time, $W^\ast=\max\{\sum_{i\in S}a_i:\ \sum_{i\in S}a_i\le
+A/2\}\le A/2$, with equality }\DIFaddend if and only if \DIFdelbegin \DIFdel{, dispatched
+in any order (deadlines being tied, the earliest-deadline-first
+condition is
+vacuous), every site in $S$ completes by $D$; since
+completion times along a fixed set are additive, this holds exactly
+when $\sum_{i\in S} p_i \le D$.
+The optimization problem
+}\[
+\DIFdel{\max_{S \subseteq \{1,\dots,n\}} \ \sum_{i\in S} w_i \quad \text{s.t.} \quad
+\sum_{i \in S} p_i \le D
+}\]%DIFAUXCMD
+\DIFdel{is precisely }\DIFdelend \DIFaddbegin \DIFadd{some subset sums to exactly
+$A/2$. Thus $W^\ast\ge A/2$ holds iff the }\textsc{\DIFadd{Partition}} \DIFadd{instance is
+a yes-instance.
+}\end{proof}
+
+\DIFadd{With general weights the common-deadline restriction is exactly }\DIFaddend the 0/1
+knapsack problem \DIFdelbegin \DIFdel{, with $p_i$ the item sizes , $w_i$
+the item values , and $D$ the capacity . The (decision version of the) 0/1
+knapsack problem is NP-complete \mbox{%DIFAUXCMD
+\citep{gareyjohnson1979}}\hskip0pt%DIFAUXCMD
+, by
+a
+polynomial reduction from PARTITION. Hence MWHED restricted to a common
+deadline is NP-hard, and since this is a special case of the
+general
+problem, MWHED itself is NP-hard. }%DIFDELCMD < \end{proof}
+%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Theorem~\ref{thm:hardness}'s reduction is deliberately the simplest one
+available}\DIFdelend \DIFaddbegin \DIFadd{with sizes $p_i$, values $w_i$ and capacity $D$, by
+Fact~\ref{lem:common}; this is why the equal-deadline case is the
+natural source of hardness, and why the dynamic program of the next
+subsection (which is pseudo-polynomial) shows that the hardness is only
+}\emph{\DIFadd{weak}}\DIFadd{. The reduction deliberately uses the simplest possible
+structure}\DIFaddend : it isolates \DIFdelbegin \emph{\DIFdel{exactly}} %DIFAUXCMD
+\DIFdel{the source of hardness, namely
+}\DIFdelend heterogeneous dispatch costs weighed against
+heterogeneous criticality under a shared time budget \DIFdelbegin \DIFdel{, and reduces the question of
+what other
+structure might rescue tractability to what Theorem~\ref{thm:equalp}
+answers}\DIFdelend \DIFaddbegin \DIFadd{as the source of
+difficulty, and Theorem~\ref{thm:classification} shows that this is the
+only one}\DIFaddend .
+
+\begin{example}[The running example under a common deadline]\label{ex:knapsack}
+Suppose the four sites of Example~\ref{ex:running} were instead all
+assigned the same hazard deadline $D=6$ (same dispatch times and
+weights). By \DIFdelbegin \DIFdel{Theorem~\ref{thm:hardness}'s reduction }\DIFdelend \DIFaddbegin \DIFadd{Fact~\ref{lem:common} }\DIFaddend this is exactly a $0/1$ knapsack
+instance with capacity $6$, item sizes $p=(2,3,1,4)$, and item values
+$w=(5,8,3,10)$. Checking every subset whose total dispatch time is at
+most $6$, the best is $\{1,2,3\}$, costing $2+3+1=6$ and worth
+$5+8+3=16$; keeping the single most valuable site instead does worse
+within the same budget---$\{1,4\}$ costs $6$ but is worth only $15$, and
+$\{3,4\}$ costs $5$ but is worth only $13$. Which sites to sacrifice to
+make room, by weight against size, cannot be read off from either
+quantity alone; this trade-off is exactly the source of MWHED's
+hardness.
+\end{example}
+
+\subsection{An exact pseudo-polynomial algorithm}
+
+\begin{theorem}[Exact dynamic program]\label{thm:dp}
+MWHED can be solved exactly in $O(n \cdot P)$ time and space, where
+$P := \sum_{i=1}^n p_i$.
+\end{theorem}
+
+\begin{proof}
+Relabel sites so that $d_1 \le d_2 \le \dots \le d_n$ (Lemma~\ref{lem:edd}
+justifies working in this order). Define, for $i = 0,\dots,n$ and $t =
+0,\dots,P$,
+\[
+f(i,t) := \text{the maximum value of } \sum_{j \in S} w_j \text{ over }
+S \subseteq \{1,\dots,i\} \text{ with } \sum_{j\in S} p_j = t \text{ and
+$S$ feasible.}
+\]
+(feasible meaning: dispatching $S$ in increasing-deadline order, every
+member is on time). Set $f(0,0) = 0$ and $f(0,t) = -\infty$ for $t > 0$.
+For $i \ge 1$,
+\begin{equation}\label{eq:dp}
+f(i,t) = \max\Bigl(f(i-1,t),\ \bigl[t \le d_i\bigr]\cdot\bigl(f(i-1,t-p_i)
++ w_i\bigr)\Bigr),
+\end{equation}
+where the second term is taken as $-\infty$ if $t < p_i$ or $t > d_i$.
+
+We verify \eqref{eq:dp} by induction on $i$. The first term corresponds
+to excluding site $i$ from $S$. For the second term, suppose $S'
+\subseteq \{1,\dots,i-1\}$ achieves $f(i-1, t-p_i)$ and is feasible;
+appending site $i$ after all of $S'$ (site $i$ has the largest deadline
+among $\{1,\dots,i\}$, so this is consistent with increasing-deadline
+order) does not change the completion time of any member of $S'$, so
+$S'$'s feasibility is preserved, and site $i$'s own completion time is
+exactly $t = (t - p_i) + p_i$, on time precisely when $t \le d_i$.
+Conversely, any feasible $S \subseteq \{1,\dots,i\}$ with $i \in S$ and
+total time $t$ restricts, by the same argument, to a feasible $S
+\setminus \{i\} \subseteq \{1,\dots,i-1\}$ with total time $t - p_i$
+achieving at least $f(i,t) - w_i$ at index $i-1$; hence $f(i-1,t-p_i)
+\ge f(i,t) - w_i$, giving the reverse inequality and confirming
+\eqref{eq:dp} computes exactly $f(i,t)$.
+
+The optimal value is $\max_{t=0}^{P} f(n,t)$, and the achieving subset
+is recovered by standard DP backtracking. The table has $O(n\cdot P)$
+entries, each computed in $O(1)$ time from~\eqref{eq:dp}, giving
+$O(nP)$ total time and space.
+\end{proof}
+
+Theorem~\ref{thm:dp} is pseudo-polynomial, not polynomial: $P$ can be
+exponential in the input's bit length. This is consistent with
+Theorem~\ref{thm:hardness}\DIFdelbegin \DIFdel{'s reduction from knapsack, which is itself
+}\DIFdelend \DIFaddbegin \DIFadd{, whose hard instances need large numbers
+(the problem is }\DIFaddend only weakly NP-hard\DIFaddbegin \DIFadd{)}\DIFaddend .
+
+\DIFaddbegin \begin{remark}[Relation to Lawler--Moore]\label{rem:lawlermoore}
+\DIFadd{This is the Lawler--Moore dynamic program \mbox{%DIFAUXCMD
+\citep{lawlermoore1969} }\hskip0pt%DIFAUXCMD
+for
+$1\|\sum w_jU_j$: jobs in due-date order, state equal to the total
+processing time of the jobs accepted so far, and the single test
+$t\le d_i$ for an accepted job. We do not claim it as new. What the
+proof above adds is a self-contained derivation from the
+earliest-deadline-first lemma in the notation of the dispatch problem.
+Refinements of the $O(nP)$ bound exist (see
+Section~\ref{sec:related}); they apply verbatim to MWHED.
+}\end{remark}
+
+\DIFaddend \begin{example}[The dynamic program on the running instance]\label{ex:dp}
+Table~\ref{tab:dpwalkthrough} traces $f(i,t)$ for
+Example~\ref{ex:running}, relabeled in increasing-deadline order
+$3,1,2,4$ so that index $i=1$ is site $3$, $i=2$ is site $1$, $i=3$ is
+site $2$, and $i=4$ is site $4$, matching the order Lemma~\ref{lem:edd}
+fixes. Reading the last row, the largest finite entry is $f(4,9)=23$;
+backtracking \eqref{eq:dp} from this cell recovers exactly $S^\ast =
+\{1,2,4\}$ in the original site labels, matching
+Example~\ref{ex:running}. A dash marks \DIFdelbegin \DIFdel{$t > d_i$ for the site just
+added at row $i$: once the cumulative time needed to include that site would already exceed }\DIFdelend \DIFaddbegin \DIFadd{$-\infty$: either the time $t$ cannot be reached by any
+feasible subset of the first $i$ sites (for instance $f(1,2)$: site $3$
+alone costs $1$), or including site $i$ at that column would violate }\DIFaddend its
+own deadline \DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{$t\le d_i$ (for instance $f(4,10)$, since $d_4=9$); in the
+latter case }\DIFaddend the recursion can only carry the previous row's value
+forward\DIFdelbegin \DIFdel{, never improve on it, at that column
+and every column beyond it in the same row}\DIFdelend .
+\end{example}
+
+\begin{table}[h]
+\caption{The dynamic program's table $f(i,t)$ for
+Example~\ref{ex:running} ($i=1$: site 3, $p=1,d=2,w=3$; $i=2$: site 1,
+$p=2,d=4,w=5$; $i=3$: site 2, $p=3,d=6,w=8$; $i=4$: site 4, $p=4,d=9,
+w=10$). A dash marks $-\infty$ (infeasible or unreachable at that
+cell).}\label{tab:dpwalkthrough}
+\begin{tabular}{@{}lccccccccccc@{}}
+\toprule
+$t$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\
+\midrule
+$f(0,t)$ & 0 & -- & -- & -- & -- & -- & -- & -- & -- & -- & --\\
+$f(1,t)$ & 0 & 3 & -- & -- & -- & -- & -- & -- & -- & -- & --\\
+$f(2,t)$ & 0 & 3 & 5 & 8 & -- & -- & -- & -- & -- & -- & --\\
+$f(3,t)$ & 0 & 3 & 5 & 8 & 11 & 13 & 16 & -- & -- & -- & --\\
+$f(4,t)$ & 0 & 3 & 5 & 8 & 11 & 13 & 16 & 18 & 21 & \textbf{23} & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Algorithm~\ref{alg:exact} states Theorem~\ref{thm:dp}'s construction
+explicitly, including the backtracking step used to recover an
+achieving subset $S^\ast$, not merely its value.
+
+\begin{algorithm}
+\caption{Exact dynamic program for MWHED (Theorem~\ref{thm:dp})}\label{alg:exact}
+\begin{algorithmic}[1]
+\Require sites \DIFdelbegin \DIFdel{$1,\dots,n$ with $d_1 \le d_2 \le \dots \le d_n$ (relabeled per Lemma~\ref{lem:edd}), }\DIFdelend \DIFaddbegin \DIFadd{with }\DIFaddend dispatch times $p_i$, \DIFaddbegin \DIFadd{deadlines $d_i$, }\DIFaddend weights $w_i$
+\Ensure optimal on-time weight $W^\ast$ and an achieving subset $S^\ast$
+\State \DIFaddbegin \DIFadd{delete every site with $p_i > d_i$ (Assumption~\ref{as:feasible}); relabel the rest so $d_1 \le \dots \le d_n$ (Lemma~\ref{lem:edd})
+}\State \DIFaddend $P \gets \sum_{i=1}^n p_i$
+\State $f[0][0] \gets 0$; \ $f[0][t] \gets -\infty$ for $t=1,\dots,P$
+\For{$i = 1,\dots,n$}
+  \For{$t = 0,\dots,P$}
+    \State $f[i][t] \gets f[i-1][t]$ \Comment{exclude site $i$}
+    \If{$t \ge p_i$ \textbf{and} $t \le d_i$ \textbf{and} $f[i-1][t-p_i] > -\infty$}
+      \If{$f[i-1][t-p_i] + w_i > f[i][t]$}
+        \State $f[i][t] \gets f[i-1][t-p_i] + w_i$
+        \State $\mathit{choice}[i][t] \gets \textsc{true}$ \Comment{site $i$ included to reach this value}
+      \EndIf
+    \EndIf
+  \EndFor
+\EndFor
+\State $t^\ast \gets \arg\max_{t \in \{0,\dots,P\}} f[n][t]$; \ $W^\ast \gets f[n][t^\ast]$
+\State $S^\ast \gets \emptyset$; \ $t \gets t^\ast$
+\For{$i = n,\dots,1$} \Comment{backtrack}
+  \If{$\mathit{choice}[i][t]$}
+    \State $S^\ast \gets S^\ast \cup \{i\}$; \ $t \gets t - p_i$
+  \EndIf
+\EndFor
+\State \Return $W^\ast$, $S^\ast$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{A fully polynomial-time approximation scheme}
+
+\begin{theorem}[FPTAS]\label{thm:fptas}
+For every $\epsilon \in (0,1)$, a dispatch order $\sigma$ with
+$W(\sigma) \ge (1-\epsilon) \cdot W^\ast$ (where $W^\ast$ is the true
+optimum) can be computed in time polynomial in $n$ and $1/\epsilon$.
+\end{theorem}
+
+\begin{proof}
+We adapt the standard value-scaling technique used for the 0/1 knapsack
+FPTAS \citep{ibarrakim1975} to the dynamic program of
+Theorem~\ref{thm:dp}. Fix $\epsilon \in (0,1)$ and let $w_{\max} :=
+\max_i w_i$. Define the scaling factor $K := \max(1, \epsilon\, w_{\max}
+/ n)$ and scaled weights $w_i' := \lfloor w_i / K \rfloor$, so that
+$w_i' \le n/\epsilon$ for every $i$ and hence $\sum_i w_i' \le n^2 /
+\epsilon$.
+
+Run the dynamic program of Theorem~\ref{thm:dp}, but in its
+\emph{value-indexed} dual form: for $i = 0,\dots,n$ and $v =
+0,\dots,\lfloor n^2/\epsilon\rfloor$, let
+\DIFdelbegin \[
+\DIFdel{g(i,v) := \text{the minimum total dispatch time } \sum_{j\in S} p_j
+\text{ over feasible } S \subseteq \{1,\dots,i\} \text{ with }
+\sum_{j\in S} w_j' = v,
+}\]%DIFAUXCMD
+\DIFdelend \DIFaddbegin \begin{multline*}
+\DIFadd{g(i,v) := \text{the minimum total dispatch time } \sum_{j\in S} p_j}\\
+\DIFadd{\text{ over feasible } S \subseteq \{1,\dots,i\} \text{ with }
+\sum_{j\in S} w_j' = v,
+}\end{multline*}\DIFaddend 
+with the same feasibility notion and the same recursion structure as
+\eqref{eq:dp}, transposed to track minimum time for a target scaled
+value rather than maximum value for a target time; the recursion is
+\[
+g(i,v) = \min\Bigl(g(i-1,v),\ \bigl[g(i-1,v-w_i') + p_i \le d_i\bigr]
+\cdot \bigl(g(i-1,v-w_i') + p_i\bigr)\Bigr),
+\]
+by the same argument as in Theorem~\ref{thm:dp}'s proof, with the roles
+of the time and value axes exchanged. This table has $O(n \cdot
+n^2/\epsilon) = O(n^3/\epsilon)$ entries, each computed in $O(1)$ time,
+so the whole computation runs in time polynomial in $n$ and $1/\epsilon$.
+
+Let $\hat S$ be the feasible subset of largest scaled value $v$ with
+$g(n,v) < \infty$, and let $S^\ast$ be the true optimal subset (value
+$W^\ast = \sum_{i\in S^\ast} w_i$). We consider two cases, according to
+which argument of $K=\max(1,\epsilon w_{\max}/n)$ attains the maximum.
+
+\emph{Case $\epsilon w_{\max}/n < 1$.} Then $K=1$, so $w_i' = \lfloor
+w_i \rfloor = w_i$ for every $i$ (the $w_i$ are integers by
+Definition~\ref{def:mwhed}): the scaling is vacuous, the dynamic
+program above is exactly Theorem~\ref{thm:dp}'s dynamic program, and it
+returns $\hat S = S^\ast$, so $W(\hat S) = W^\ast \ge (1-\epsilon)
+W^\ast$ trivially (as $\epsilon \in (0,1)$ and $W^\ast \ge 0$).
+
+\emph{Case $\epsilon w_{\max}/n \ge 1$.} Then $K = \epsilon w_{\max}/n$
+exactly (not merely an upper bound), so $Kn = \epsilon w_{\max}$
+exactly. Since $w_i' \le w_i/K$, we have $\sum_{i \in S^\ast} w_i' \ge
+\sum_{i\in S^\ast}(w_i/K - 1) \ge W^\ast/K - n$, and $S^\ast$ is itself
+a feasible subset achieving this scaled value or better, so the
+returned $\hat S$ satisfies $\sum_{i \in \hat S} w_i' \ge W^\ast/K - n$.
+Converting back, since $w_i \le K(w_i' + 1)$,
+\begin{align*}
+W(\hat S) = \sum_{i\in \hat S} w_i
+&\ \ge\ K \sum_{i \in \hat S} w_i'
+\ \ge\ K\Bigl(\frac{W^\ast}{K} - n\Bigr) = W^\ast - Kn \\
+&\ =\ W^\ast - \epsilon\, w_{\max}
+\ \ge\ W^\ast - \epsilon\, W^\ast = (1-\epsilon) W^\ast,
+\end{align*}
+using $Kn = \epsilon w_{\max}$ (this case) and $w_{\max} \le W^\ast$
+(Assumption~\ref{as:feasible}). Either case gives $W(\hat S) \ge
+(1-\epsilon)W^\ast$.
+\end{proof}
+
+\begin{example}[The FPTAS on the running instance]\label{ex:fptas}
+Apply Theorem~\ref{thm:fptas} to Example~\ref{ex:running} with a
+deliberately loose $\epsilon = 0.5$. The scaling factor is $K =
+\max(1,\, 0.5 \cdot 10/4) = 1.25$, and the scaled weights are $w' =
+(\lfloor 5/1.25\rfloor, \lfloor 8/1.25\rfloor, \lfloor 3/1.25\rfloor,
+\lfloor 10/1.25\rfloor) = (4,6,2,8)$. Re-running the dynamic program on
+these scaled weights (tracking minimum dispatch time per scaled value,
+as in the proof) again selects $S=\{1,2,4\}$, recovering the true
+optimum $W^\ast=23$ exactly---comfortably inside the guaranteed bound
+$(1-\epsilon)W^\ast = 11.5$. \DIFdelbegin \DIFdel{This mirrors Section~\ref{sec:experiments}'s
+finding at scale: the FPTAS's worst-case bound is rarely tight in
+practice, even at a loose $\epsilon$}\DIFdelend \DIFaddbegin \DIFadd{Here the
+scaling is active ($K>1$) yet harmless; Section~\ref{sec:scaling} shows
+that this is typical of random instances, while
+Proposition~\ref{prop:tight} gives instances on which the guarantee is
+nearly attained}\DIFaddend .
+\end{example}
+
+Algorithm~\ref{alg:fptas} states the FPTAS's value-indexed construction
+explicitly. It has exactly the same shape as Algorithm~\ref{alg:exact},
+with the roles of the time axis and the (scaled) value axis exchanged,
+which is why its table size no longer depends on $P$.
+
+\begin{algorithm}
+\caption{FPTAS for MWHED (Theorem~\ref{thm:fptas})}\label{alg:fptas}
+\begin{algorithmic}[1]
+\Require sites \DIFdelbegin \DIFdel{$1,\dots,n$ with $d_1\le\dots\le d_n$, }\DIFdelend \DIFaddbegin \DIFadd{with }\DIFaddend dispatch times $p_i$, \DIFaddbegin \DIFadd{deadlines $d_i$, }\DIFaddend weights $w_i$, accuracy $\epsilon\in(0,1)$
+\Ensure a dispatch order with on-time weight $\ge (1-\epsilon)W^\ast$
+\State \DIFaddbegin \DIFadd{delete every site with $p_i > d_i$; relabel so $d_1\le\dots\le d_n$
+}\State \DIFaddend $w_{\max} \gets \max_i w_i$; \ $K \gets \max(1,\, \epsilon\, w_{\max}/n)$
+\State $w_i' \gets \lfloor w_i/K \rfloor$ for $i=1,\dots,n$; \ $V \gets \sum_{i=1}^n w_i'$
+\State $g[0][0] \gets 0$; \ $g[0][v] \gets +\infty$ for $v=1,\dots,V$
+\For{$i = 1,\dots,n$}
+  \For{$v = 0,\dots,V$}
+    \State $g[i][v] \gets g[i-1][v]$ \Comment{exclude site $i$}
+    \If{$v \ge w_i'$ \textbf{and} $g[i-1][v-w_i'] < +\infty$ \textbf{and} $g[i-1][v-w_i'] + p_i \le d_i$}
+      \If{$g[i-1][v-w_i'] + p_i < g[i][v]$}
+        \State $g[i][v] \gets g[i-1][v-w_i'] + p_i$
+        \State $\mathit{choice}[i][v] \gets \textsc{true}$
+      \EndIf
+    \EndIf
+  \EndFor
+\EndFor
+\State $v^\ast \gets \max\{v : g[n][v] < +\infty\}$
+\State $\hat S \gets \emptyset$; \ $v \gets v^\ast$
+\For{$i = n,\dots,1$} \Comment{backtrack, as in Algorithm~\ref{alg:exact}}
+  \If{$\mathit{choice}[i][v]$}
+    \State $\hat S \gets \hat S \cup \{i\}$; \ $v \gets v - w_i'$
+  \EndIf
+\EndFor
+\State \Return $\hat S$, dispatched in increasing-deadline order
+\end{algorithmic}
+\end{algorithm}
+
+\DIFdelbegin %DIFDELCMD < \subsection{A second tractable special case}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \begin{remark}[Zero-scaled sites and an optional completion step]\label{rem:completion}
+\DIFadd{When $K>1$ a site with $w_i<K$ has scaled weight $w_i'=0$ and, because
+Algorithm~\ref{alg:fptas} minimizes dispatch time for each scaled value,
+such a site is never selected. The bound of Theorem~\ref{thm:fptas}
+accounts for the weight so lost (at most $K$ per site), and
+Proposition~\ref{prop:tight} shows the loss can approach $\epsilon$ of
+the optimum. A natural post-processing step, which cannot decrease the
+returned weight and so preserves Theorem~\ref{thm:fptas}, is to
+re-insert rejected sites in decreasing order of weight while the set
+stays feasible (checkable in $O(n)$ by Lemma~\ref{lem:edd}); we use it
+as the ``completed'' variant in Section~\ref{sec:scaling}.
+}\end{remark}
+
+\subsection{A second tractable special case: equal dispatch times}\label{sec:equalp}
+\DIFaddend 
+
+Theorem~\ref{thm:hardness} shows that heterogeneous dispatch costs,
+weighed against heterogeneous criticality under a shared deadline,
+already suffice for hardness. The next result shows \DIFaddbegin \DIFadd{that }\DIFaddend the reverse
+axis---heterogeneous deadlines under a shared dispatch cost---does not.
+\DIFaddbegin \DIFadd{We state it for $m\ge1$ identical vehicles. In }\emph{\DIFadd{MWHED-$m$}} \DIFadd{each of
+$m$ vehicles, all starting at the depot at time $0$, serves a sequence
+of round trips; each site is served by at most one vehicle, takes the
+occupancy $p_i$ regardless of the vehicle, and is on time if its
+completion time on its vehicle is at most $d_i$. MWHED-$1$ is MWHED.
+}\DIFaddend 
+
+\DIFdelbegin %DIFDELCMD < \begin{theorem}[Equal dispatch cost is tractable]%%%
+\DIFdelend \DIFaddbegin \DIFadd{For readers who do not work with matroids we recall the notions used.
+A }\emph{\DIFadd{matroid}} \DIFadd{on a finite ground set $E$ is a family $\mathcal I$ of
+}\emph{\DIFadd{independent}} \DIFadd{subsets of $E$ with (i) $\emptyset\in\mathcal I$;
+(ii) if $B\in\mathcal I$ and $A\subseteq B$ then $A\in\mathcal I$; and
+(iii) the }\emph{\DIFadd{augmentation property}}\DIFadd{: if $A,B\in\mathcal I$ and
+$|A|<|B|$, then $A\cup\{x\}\in\mathcal I$ for some $x\in B\setminus A$.
+The }\emph{\DIFadd{greedy algorithm}} \DIFadd{considers the elements of $E$ in order of
+non-increasing weight and keeps an element if the set kept so far plus
+that element is still independent. The }\emph{\DIFadd{transversal matroid}} \DIFadd{of a
+bipartite graph has as independent sets the subsets of one side that can
+be matched into the other side; it is used here with sites on one side
+and (vehicle, position) }\emph{\DIFadd{slots}} \DIFadd{on the other. We prove the matroid
+property we need directly rather than cite it. A }\emph{\DIFadd{union--find}}
+\DIFadd{(disjoint-set) structure maintains a partition of $\{0,1,\dots,n\}$ under
+}\textsc{\DIFadd{find}}\DIFadd{, which returns the representative of a block, and
+}\textsc{\DIFadd{union}}\DIFadd{, which merges two blocks; with path compression a
+sequence of $n$ operations costs $O(n\,\alpha(n))$ time
+\mbox{%DIFAUXCMD
+\citep{kortevygen2018}}\hskip0pt%DIFAUXCMD
+, where $\alpha$ is the inverse Ackermann
+function, which grows more slowly than any iterated logarithm and is at
+most $4$ for every input size that can occur in practice.
+}
+
+\begin{theorem}[Equal dispatch cost is tractable, for any number of identical vehicles]\DIFaddend \label{thm:equalp}
+If \DIFdelbegin \DIFdel{$p_i = p$ for all }\DIFdelend \DIFaddbegin \DIFadd{$p_i=p$ for all }\DIFaddend $i$\DIFdelbegin \DIFdel{(all sites equidistant from the depot }\DIFdelend , \DIFdelbegin \DIFdel{in
+round-trip dispatch time ), MWHED }\DIFdelend \DIFaddbegin \DIFadd{MWHED-$m$ }\DIFaddend is solvable exactly in \DIFdelbegin \DIFdel{$O(n \log n)$
+time }\DIFdelend \DIFaddbegin \DIFadd{$O(n\log n)$
+time for every $m\ge1$. In particular this holds for MWHED
+($m=1$)}\DIFaddend .
+\end{theorem}
+
+\begin{proof}
+\DIFdelbegin \DIFdel{With equal dispatch costs, the $k$}\DIFdelend \DIFaddbegin \emph{\DIFadd{Step 1: positions and slots.}} \DIFadd{Delete sites with $p>d_i$
+(Assumption~\ref{as:feasible}) and put $D_i:=\min(\lfloor d_i/p\rfloor,n)\ge1$.
+On any vehicle the site served $j$}\DIFaddend -th \DIFdelbegin \DIFdel{dispatched site (whichever it is) }\DIFdelend completes at time \DIFdelbegin \DIFdel{$kp$, regardless of order. Assigning a site to
+``dispatch position '' $k$ is therefore feasible for that site if and only if $kp \le d_i$, i.e., $k \le \lfloor d_i/p \rfloor =: D_i$.
+The problem becomes: choose an injective assignmentof a subset of
+sites to positions $1,\dots,n$, each site $i$ assigned to a position at
+most $D_i$, maximizing the total weight of assigned sites }\DIFdelend \DIFaddbegin \DIFadd{$jp$, so it is
+on time iff $j\le D_i$. A set $S$ of sites is }\emph{\DIFadd{feasible}} \DIFadd{if all its
+sites can be served on time. Call $(v,j)$ the slot of vehicle $v$ at
+position $j$. Then $S$ is feasible iff its sites can be assigned to
+distinct slots with each site $i$ at a position $\le D_i$: given a
+schedule, assign each site to the slot it occupies; conversely, given
+such an assignment, serve on each vehicle its assigned sites in
+position order, shifting them to consecutive positions $1,2,\dots$,
+which only lowers positions.
+}
+
+\emph{\DIFadd{Step 2: a counting criterion.}} \DIFadd{For a set $S$ and $k=1,\dots,n$ let
+$N_S(k):=|\{i\in S:D_i\le k\}|$. We claim $S$ is feasible iff
+$N_S(k)\le mk$ for all $k$. ($\Rightarrow$) The $N_S(k)$ sites with
+$D_i\le k$ need distinct slots at positions $\le k$, and there are $mk$
+such slots. ($\Leftarrow$) Order $S$ by non-decreasing $D$ as
+$s_1,\dots,s_t$ and give $s_r$ the slot at position $\lceil r/m\rceil$
+(filling $m$ vehicles at each position in turn). It is on time iff
+$\lceil r/m\rceil\le D_{s_r}$; and $r\le N_S(D_{s_r})\le mD_{s_r}$, so
+$r/m\le D_{s_r}$ and, $D_{s_r}$ being an integer,
+$\lceil r/m\rceil\le D_{s_r}$}\DIFaddend .
+\DIFdelbegin \DIFdel{This is the
+classical problem of scheduling unit-time jobs with deadlines to maximize total profit. The family of subsets that admit such a feasible
+assignment forms a matroid (the transversal matroid of the bipartite
+feasibility relation between sites and positions) }\DIFdelend \DIFaddbegin 
+
+\emph{\DIFadd{Step 3: the feasible sets form a matroid.}} \DIFadd{Properties (i) and (ii)
+are clear from the criterion. For (iii) let $A,B$ be feasible with
+$|A|<|B|$. Let $k$ be the largest integer in $\{0,\dots,n\}$ with
+$N_B(k)\le N_A(k)$ (with $N(0):=0$, so $k$ exists); as
+$N_B(n)=|B|>|A|=N_A(n)$ we have $k<n$, and by maximality
+$N_B(j)\ge N_A(j)+1$ for all $j>k$. Subtracting $N_B(k)\le N_A(k)$
+from $N_B(k+1)\ge N_A(k+1)+1$ shows that $B$ has more sites with
+$D=k+1$ than $A$ has, so some $x\in B\setminus A$ has $D_x=k+1$. Adding
+$x$ to $A$ leaves $N(j)$ unchanged for $j\le k$ and raises it by one for
+$j\ge k+1$, where $N_A(j)+1\le N_B(j)\le mj$ since $B$ is feasible. By
+Step 2}\DIFaddend , \DIFaddbegin \DIFadd{$A\cup\{x\}$ is feasible.
+}
+
+\emph{\DIFadd{Step 4: greedy is optimal.}} \DIFadd{Let $G=\{g_1,\dots,g_r\}$ be the
+set the greedy algorithm returns (weights $w_{g_1}\ge\dots\ge w_{g_r}$,
+ties broken by index), and let $O=\{o_1,\dots,o_s\}$ be any feasible set
+with $w_{o_1}\ge\dots\ge w_{o_s}$. $G$ is maximal feasible, so
+augmentation gives $s\le r$. We claim $w_{g_k}\ge w_{o_k}$ for all
+$k\le s$, which proves $w(G)\ge w(O)$. Suppose $w_{g_k}<w_{o_k}$ for some
+$k$. Apply augmentation to $A=\{g_1,\dots,g_{k-1}\}$ }\DIFaddend and
+\DIFdelbegin \DIFdel{on any matroid, the greedy algorithm---here: sort }\DIFdelend \DIFaddbegin \DIFadd{$B=\{o_1,\dots,o_k\}$: some $o_j\in B\setminus A$ makes $A\cup\{o_j\}$
+feasible, and $w_{o_j}\ge w_{o_k}>w_{g_k}$. The greedy algorithm
+examined $o_j$ before $g_k$, when its kept set was a subset of $A$; by
+property (ii) that set plus $o_j$ was feasible, so greedy kept $o_j$,
+i.e.\ $o_j\in G$ and, being examined before $g_k$, $o_j\in A$---a
+contradiction.
+}
+
+\emph{\DIFadd{Step 5: implementation.}} \DIFadd{Sort the }\DIFaddend sites by decreasing \DIFdelbegin \DIFdel{$w_i$,
+and assign
+each in turn to the latest available position
+$k \le D_i$, or leave it
+unassigned if noneis available---returns a maximum-weight independent
+set , i. e. , an optimal solution \mbox{%DIFAUXCMD
+\citep[Ch.~13]{kortevygen2018}}\hskip0pt%DIFAUXCMD
+. Sorting
+takes $O(n \log n)$ time, and maintaining the set of available
+positions under repeated ``find andremove the latest available
+position $\le D_i$'' queries can be implemented with a }\DIFdelend \DIFaddbegin \DIFadd{weight,
+$O(n\log n)$. Maintain for each position $q\in\{1,\dots,n\}$ its number
+of free slots, initially $m$, and a }\DIFaddend union--find \DIFdelbegin \DIFdel{structure in $O(n \alpha(n))$ additional time, giving $O(n \log n)$
+overall}\DIFdelend \DIFaddbegin \DIFadd{structure over
+$\{0,\dots,n\}$ in which }\textsc{\DIFadd{find}}\DIFadd{$(q)$ is the largest position
+$\le q$ with a free slot (or $0$ if none): when position $q$ has no free
+slot left, merge it into $q-1$. To process site $i$, let
+$q:=\textsc{find}(D_i)$; if $q\ge1$ keep $i$ and use one slot of $q$,
+otherwise discard $i$. This is Algorithm~\ref{alg:matroid}. It keeps
+$i$ exactly when the kept set plus $i$ is feasible. If $q\ge1$ the
+construction itself exhibits a feasible assignment. If $q=0$, let $q^\ast$
+be the largest $q\ge D_i$ such that all slots at positions $1,\dots,q$
+are full. Every kept site occupying a slot at a position $\le q^\ast$ has
+$D\le q^\ast$: a kept site with $D>q^\ast$ would have been given the
+latest free slot at a position $\le D$, and position $q^\ast+1$ was free
+then (it is free now), so it would sit above $q^\ast$. Hence the kept
+set has $N(q^\ast)\ge mq^\ast$ and, since $D_i\le q^\ast$, adding $i$
+violates Step 2's criterion. The union--find operations cost
+$O(n\alpha(n))$, so the total is $O(n\log n)$}\DIFaddend .
+\end{proof}
+
+\begin{example}[The matroid greedy on an equal-cost instance]\label{ex:matroid}
+Consider four sites all at the same round-trip distance $p=2$ from the
+depot, with deadlines $d=(3,3,5,9)$ and weights $w=(9,4,7,6)$, so the
+latest feasible dispatch position for each site is $D_i = \lfloor
+d_i/p\rfloor = (1,1,2,4)$. \DIFdelbegin \DIFdel{Sorted }\DIFdelend \DIFaddbegin \DIFadd{With one vehicle ($m=1$), sorted }\DIFaddend by
+decreasing weight, the greedy order is site $1$ ($w=9$), site $3$
+($w=7$), site $4$ ($w=6$), site $2$ ($w=4$). Site $1$ takes position
+$1$\DIFdelbegin \DIFdel{(its only option)}\DIFdelend ; site $3$ takes position $2$; site $4$ takes position $4$; site $2$
+needs a position $\le 1$, but position $1$ is already taken, so \DIFdelbegin \DIFdel{site $2$ }\DIFdelend \DIFaddbegin \DIFadd{it }\DIFaddend is
+left unassigned. The greedy solution dispatches sites $1,3,4$ for a
+total weight of $9+7+6=22$\DIFdelbegin \DIFdel{, sacrificing only the lowest-weight site whose
+deadline conflicts with a higher-weight site's---exhaustive }\DIFdelend \DIFaddbegin \DIFadd{; exhaustive }\DIFaddend search over all $16$ subsets
+confirms $22$ is \DIFdelbegin \DIFdel{indeed optimal. }\DIFdelend \DIFaddbegin \DIFadd{optimal. With two vehicles ($m=2$) position $1$ has two
+slots, so site $2$ also fits: all four sites are served, for $26$
+(vehicle~A serves site $1$ then site $3$, completing at $2$ and $4$;
+vehicle~B serves site $2$ then site $4$, completing at $2$ and $4$).
+}\DIFaddend \end{example}
+
+\begin{algorithm}
+\DIFdelbegin %DIFDELCMD < \caption{Matroid greedy for equal-cost MWHED (Theorem~\ref{thm:equalp})}%%%
+\DIFdelend \DIFaddbegin \caption{Matroid greedy for equal-cost MWHED-$m$ (Theorem~\ref{thm:equalp})}\DIFaddend \label{alg:matroid}
+\begin{algorithmic}[1]
+\Require sites \DIFdelbegin \DIFdel{$1,\dots,n$}\DIFdelend \DIFaddbegin \DIFadd{with deadlines $d_i$ and weights $w_i$}\DIFaddend , common dispatch time $p$, \DIFdelbegin \DIFdel{deadlines $d_i$, weights $w_i$
+}\DIFdelend \DIFaddbegin \DIFadd{number of identical vehicles $m$
+}\DIFaddend \Ensure an optimal on-time subset $S^\ast$
+\State \DIFdelbegin \DIFdel{$D_i \gets \lfloor d_i/p \rfloor$ for $i=1,\dots,n$ }%DIFDELCMD < \Comment{latest feasible position for site $i$}
+%DIFDELCMD < \State %%%
+\DIFdel{sort sites into order $\pi_1,\dots,\pi_n$ with $w_{\pi_1} \ge w_{\pi_2} \ge \dots \ge w_{\pi_n}$
+}\DIFdelend \DIFaddbegin \DIFadd{delete sites with $p>d_i$; $D_i \gets \min(\lfloor d_i/p \rfloor,n)$ }\Comment{latest feasible position}
+\DIFaddend \State \DIFdelbegin \DIFdel{$\mathit{available} \gets \{1,\dots,n\}$}\DIFdelend \DIFaddbegin \DIFadd{$\mathit{free}[q]\gets m$ for $q=1,\dots,n$}\DIFaddend ; \ \DIFdelbegin \DIFdel{$S^\ast \gets \emptyset$
+}%DIFDELCMD < \For{$k = 1,\dots,n$}
+%DIFDELCMD <   \State %%%
+\DIFdel{$i \gets \pi_k$
+  }%DIFDELCMD < \If{$\exists$ position $q \in \mathit{available}$ with $q \le D_i$}
+%DIFDELCMD <     %%%
+\DIFdelend \DIFaddbegin \DIFadd{$\textsc{find}$ over $\{0,\dots,n\}$: every $q$ its own block; \ $S^\ast\gets\emptyset$
+}\For{each site $i$ in order of non-increasing $w_i$}
+  \DIFaddend \State \DIFdelbegin \DIFdel{$q^\ast \gets \max\{q \in \mathit{available} : q \le D_i\}$ }%DIFDELCMD < \Comment{latest such position}
+%DIFDELCMD <     %%%
+\DIFdelend \DIFaddbegin \DIFadd{$q \gets \textsc{find}(D_i)$ }\Comment{largest position $\le D_i$ with a free slot, or $0$}
+  \If{$q\ge1$}
+    \DIFaddend \State \DIFdelbegin \DIFdel{$S^\ast \gets S^\ast \cup \{i\}$}\DIFdelend \DIFaddbegin \DIFadd{$S^\ast\gets S^\ast\cup\{i\}$}\DIFaddend ; \ \DIFdelbegin \DIFdel{$\mathit{available} \gets \mathit{available} \setminus \{q^\ast\}$
+  }\DIFdelend \DIFaddbegin \DIFadd{$\mathit{free}[q]\gets\mathit{free}[q]-1$
+    }\If{$\mathit{free}[q]=0$} \State \textsc{\DIFadd{union}}\DIFadd{$(q,q-1)$ }\Comment{$q$ is now represented by $q-1$} \EndIf
+  \DIFaddend \EndIf
+\EndFor
+\State \Return $S^\ast$, dispatched in increasing-deadline order \DIFaddbegin \DIFadd{(on one vehicle) or position order (on $m$)
+}\DIFaddend \end{algorithmic}
+\end{algorithm}
+
+\begin{remark}\label{rem:hardness-boundary}
+Theorems~\ref{thm:hardness} and~\ref{thm:equalp} \DIFdelbegin \DIFdel{together }\DIFdelend show that neither
+heterogeneous dispatch cost nor heterogeneous deadlines alone is
+responsible for MWHED's hardness\DIFdelbegin \DIFdel{: it is specifically the interaction
+between heterogeneous dispatch cost }\emph{\DIFdel{and}} %DIFAUXCMD
+\DIFdel{heterogeneous
+criticality, competing under a shared deadline structure, that produces
+a knapsack-hard problem}\DIFdelend \DIFaddbegin \DIFadd{; Theorem~\ref{thm:classification}
+below makes this exact}\DIFaddend . A dispatch network in which every site is
+equally far from the depot---a plausible approximation for, e.g., a
+ring of substations around a central facility, or short-radius urban
+service territories---remains exactly solvable regardless of how
+heterogeneous the sites' hazard deadlines or criticalities are\DIFaddbegin \DIFadd{, and
+regardless of the number of identical vehicles}\DIFaddend .
+\end{remark}
+
+\DIFdelbegin %DIFDELCMD < \subsection{The cost of not optimizing}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \subsection{The cost of not reconsidering}
+\DIFaddend 
+
+Theorems~\ref{thm:dp} and~\ref{thm:fptas} give planners exact and
+near-exact tools, but a planner \DIFdelbegin \DIFdel{who instead falls back on the simplest conceivable heuristic---dispatch }\DIFdelend \DIFaddbegin \DIFadd{might instead fall back on a simple
+rule. The simplest is to dispatch }\DIFaddend sites in increasing-deadline order and
+simply accept whichever happen to still be on time, never skipping a
+site to make room for a later, more valuable \DIFdelbegin \DIFdel{one---receives no
+guaranteeat all}\DIFdelend \DIFaddbegin \DIFadd{one (}\emph{\DIFadd{naive EDD}}\DIFadd{; a
+site that is already late still consumes its dispatch time). A slightly
+smarter rule skips a site that would arrive late (}\emph{\DIFadd{EDD with
+skipping}}\DIFadd{). Neither has any guarantee}\DIFaddend .
+
+\DIFdelbegin %DIFDELCMD < \begin{proposition}[Naive earliest-deadline dispatch has unbounded worst-case ratio]%%%
+\DIFdelend \DIFaddbegin \begin{proposition}[Deadline-order dispatch has unbounded worst-case ratio]\DIFaddend \label{prop:naive}
+For every $r \in (0,1)$ there is an MWHED instance, satisfying
+Assumption~\ref{as:feasible}, on which \DIFdelbegin \DIFdel{the naive policy's }\DIFdelend \DIFaddbegin \DIFadd{both naive EDD and EDD with
+skipping obtain }\DIFaddend on-time weight \DIFdelbegin \DIFdel{is }\DIFdelend strictly less than $r \cdot W^\ast$.
+\end{proposition}
+
+\begin{proof}
+Fix $r \in (0,1)$ and choose an integer $W > 1/r$. Consider the
+two-site instance with $p = (1, 2)$, $d = (1, 2)$, $w = (1, W)$; both
+sites satisfy Assumption~\ref{as:feasible} ($p_i = d_i$). Since
+$d_1 < d_2$, \DIFdelbegin \DIFdel{the naive policy dispatches }\DIFdelend \DIFaddbegin \DIFadd{both rules dispatch }\DIFaddend site $1$ first, completing at time
+$1 \le d_1$ (on time, weight $1$)\DIFdelbegin \DIFdel{, then site }\DIFdelend \DIFaddbegin \DIFadd{. Site }\DIFaddend $2$ \DIFdelbegin \DIFdel{, completing }\DIFdelend \DIFaddbegin \DIFadd{would then complete }\DIFaddend at time
+$1+2=3 > d_2=2$\DIFdelbegin \DIFdel{(exposed, losing weight $W$); its }\DIFdelend \DIFaddbegin \DIFadd{: naive EDD serves it anyway and it is exposed, and EDD
+with skipping discards it; either way the }\DIFaddend total is $1$. Dispatching site
+$2$ alone \DIFdelbegin \DIFdel{instead }\DIFdelend completes it at time $2 \le d_2$, \DIFdelbegin \DIFdel{on time, }\DIFdelend for weight $W$; \DIFdelbegin \DIFdel{this is feasible and, since $W > 1 \ge$
+the value of any subset not containing site $2$, it }\DIFdelend \DIFaddbegin \DIFadd{since $W>1$
+this }\DIFaddend is optimal, so $W^\ast = W$. The \DIFdelbegin \DIFdel{naive policy's ratio is therefore }\DIFdelend \DIFaddbegin \DIFadd{ratio is }\DIFaddend $1/W < r$.
+\DIFdelbegin %DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdelend \end{proof}
+
+\DIFdelbegin \DIFdel{Proposition~\ref{prop:naive} is not merely a
+boundary case: the two
+sites here differ only by a factor of
+two in
+dispatch time,
+yet the naive policy's loss can be made arbitrarily large by scaling $W$ alone.
+No fixed constant-factor guaranteeis possible for a policy that never
+reconsiders an early, }\DIFdelend \DIFaddbegin \DIFadd{The loss comes from never giving up an early, }\DIFaddend low-value \DIFdelbegin \DIFdel{commitment against a later,
+}\DIFdelend \DIFaddbegin \DIFadd{commitment for a
+later, }\DIFaddend high-value \DIFdelbegin \DIFdel{one---exactly the reconsideration that Theorem~\ref{thm:dp}'s dynamic program and }\DIFdelend \DIFaddbegin \DIFadd{one; skipping doomed sites removes only the waste of
+serving a site that is already late. It is natural to ask whether a
+local repair rule avoids the problem. The weighted generalization of
+Moore--Hodgson's rule used as a heuristic in
+Section~\ref{sec:experiments}---process sites in deadline order and,
+whenever the running schedule becomes infeasible, discard the scheduled
+site of smallest weight-to-time ratio---does very well on random
+instances, but it too has no guarantee.
+}
+
+\begin{algorithm}
+\caption{Weighted greedy repair (heuristic; no guarantee)}\label{alg:repair}
+\begin{algorithmic}[1]
+\Require \DIFadd{sites with $d_1\le\dots\le d_n$ (after deleting sites with $p_i>d_i$), dispatch times $p_i$, weights $w_i$
+}\Ensure \DIFadd{a feasible on-time subset $\mathit{kept}$ (not necessarily optimal)
+}\State \DIFadd{$\mathit{kept} \gets \emptyset$; \ $\mathit{total} \gets 0$
+}\For{$i = 1,\dots,n$}
+  \State \DIFadd{$\mathit{kept} \gets \mathit{kept} \cup \{i\}$; \ $\mathit{total} \gets \mathit{total} + p_i$
+  }\While{$\mathit{total} > d_i$ \textbf{and} $\mathit{kept} \ne \emptyset$}
+    \State \DIFadd{$j \gets \arg\min_{j' \in \mathit{kept}} w_{j'}/p_{j'}$ }\Comment{smallest weight-to-time ratio}
+    \State \DIFadd{$\mathit{kept} \gets \mathit{kept} \setminus \{j\}$; \ $\mathit{total} \gets \mathit{total} - p_j$
+  }\EndWhile
+\EndFor
+\State \Return \DIFadd{$\mathit{kept}$, dispatched in increasing-deadline order
+}\end{algorithmic}
+\end{algorithm}
+
+\DIFadd{Its output is always feasible, by the same inductive argument as for the
+unweighted algorithm: removing a site can only shorten the completion
+time of every site that remains.
+}
+
+\begin{proposition}[Weighted greedy repair has unbounded worst-case ratio]\label{prop:repair}
+\DIFadd{For every integer $k\ge2$ the two-site instance $p=(1,k)$, $d=(1,k)$,
+$w=(2,2k-1)$ satisfies Assumption~\ref{as:feasible} and the weighted
+greedy repair of Algorithm~\ref{alg:repair} returns on-time weight $2$,
+while $W^\ast=2k-1$; the ratio $2/(2k-1)\to0$.
+}\end{proposition}
+
+\begin{proof}
+\DIFadd{The algorithm keeps site $1$ (total $1\le d_1$). On adding site $2$ the
+total becomes $1+k>d_2=k$, so it discards the kept site of smallest
+ratio $w_j/p_j$: site $1$ has ratio $2$ and site $2$ has ratio
+$(2k-1)/k<2$, so site $2$ is discarded and the result is $\{1\}$ with
+weight $2$. Site $2$ alone completes at $k\le d_2$, so $W^\ast\ge2k-1$,
+and the two sites cannot both be on time, so $W^\ast=2k-1$ for $k\ge2$.
+}\end{proof}
+
+\DIFadd{These two propositions say that some form of reconsideration governed
+by the weights }\emph{\DIFadd{and}} \DIFadd{the dispatch times is needed for any
+worst-case guarantee. They do not say that the dynamic program or the
+FPTAS is the only way to obtain one: other polynomial algorithms with
+guarantees may exist, and we do not claim otherwise.
+}
+
+\subsection{Further structural results}\label{sec:structure}
+
+\paragraph{\DIFadd{Tightness of the FPTAS analysis.}} \DIFadd{The proof of
+}\DIFaddend Theorem~\ref{thm:fptas} \DIFdelbegin \DIFdel{'s FPTAS perform, }\DIFdelend \DIFaddbegin \DIFadd{loses at most $Kn=\epsilon w_{\max}$ and then
+bounds this by $\epsilon W^\ast$. The next result shows this is nearly
+the truth for Algorithm~\ref{alg:fptas} as stated.
+}
+
+\begin{proposition}[Tightness of the value-scaling analysis]\label{prop:tight}
+\DIFadd{Let $\epsilon\in(0,1)$, let $n\ge2$ and let $M\ge 2n/\epsilon$ be an
+integer. There is an instance with $n$ sites, satisfying
+Assumption~\ref{as:feasible}, on which Algorithm~\ref{alg:fptas}
+returns weight $M$ while
+$W^\ast = M+(n-1)(\lceil K\rceil-1)$ with $K=\epsilon M/n$. Hence its
+ratio is at most
+$\bigl(1+\epsilon\tfrac{n-1}{n}-\tfrac{n-1}{M}\bigr)^{-1}$, which tends to
+$1/(1+\epsilon)$ as $n,M\to\infty$. Theorem~\ref{thm:fptas} guarantees
+$1-\epsilon$, and $\frac{1/(1+\epsilon)}{1-\epsilon}=\frac{1}{1-\epsilon^2}$,
+so the guarantee is tight up to a factor $1-\epsilon^2$.
+}\end{proposition}
+
+\begin{proof}
+\DIFadd{Take $p_i=1$ }\DIFaddend and \DIFdelbegin \DIFdel{that Example~\ref{ex:running}
+already previewed at a modest scale.
+Section~\ref{sec:experiments}
+confirms the same qualitative gap persists, if less extremely, on
+random instances of
+realistic size. }\DIFdelend \DIFaddbegin \DIFadd{$d_i=n$ for all $i$, $w_1=M$, and $w_i=\lceil K\rceil-1
+\ (\ge1)$ for $i\ge2$. All $n$ sites can be served (total time $n$,
+every deadline $n$), so $W^\ast=M+(n-1)(\lceil K\rceil-1)$. The scaling
+factor is $K=\epsilon M/n\ge2>1$, site $1$ has scaled weight
+$\lfloor n/\epsilon\rfloor$, and every other site has $w_i<K$, hence
+scaled weight $0$. Algorithm~\ref{alg:fptas} minimizes the dispatch time
+for each scaled value, so it never selects a zero-scaled site (adding it
+only increases the time at an unchanged value) and returns $\{1\}$, of
+weight $M$. Finally $\lceil K\rceil-1\ge K-1$ gives the stated bound.
+}\end{proof}
+\DIFaddend 
+
+%DIF <  ══════════════════════════════════════════════════════════════════
+\DIFdelbegin %DIFDELCMD < \section{Numerical illustration}\label{sec:experiments}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \DIFadd{The optional completion step of Remark~\ref{rem:completion} repairs this
+family completely, which is why we report both variants in
+Section~\ref{sec:scaling}.
+}\DIFaddend 
+
+\DIFdelbegin \DIFdel{We illustrate Theorems~\ref{thm:dp} and~\ref{thm:fptas} and Proposition~\ref{prop:naive} in five complementary experiments: an
+accuracy comparison across four algorithms on synthetic instances ; a
+runtime comparison isolating the pseudo-polynomial (}\DIFdelend \DIFaddbegin \paragraph{\DIFadd{Which heterogeneity causes hardness?}} \DIFadd{Theorems~\ref{thm:hardness}
+and~\ref{thm:equalp} and Moore's algorithm together settle the
+complexity of every restriction obtained by making some of the three
+data vectors constant. For $T\subseteq\{p,w,d\}$ let $\mathcal C_T$ be
+the class of MWHED instances in which each vector named in $T$ is
+constant ($p_i=p$, $w_i=w$, $d_i=D$ for all $i$).
+}
+
+\begin{theorem}[Classification by homogeneity]\label{thm:classification}
+\DIFadd{Let $T\subseteq\{p,w,d\}$.
+}\begin{enumerate}
+\item[\DIFadd{(a)}] \DIFadd{If $p\in T$ or $w\in T$, MWHED restricted to $\mathcal C_T$
+is solvable in $O(n\log n)$ time.
+}\item[\DIFadd{(b)}] \DIFadd{If $T\subseteq\{d\}$, MWHED restricted to $\mathcal C_T$ is
+weakly NP-hard; in particular it is NP-hard for $T=\{d\}$.
+}\end{enumerate}
+\DIFadd{Thus an MWHED restriction is polynomial exactly when the dispatch times
+or the weights are constant, and constancy of the deadlines never
+helps.
+}\end{theorem}
+
+\begin{proof}
+\DIFadd{(a) If $p\in T$, apply Theorem~\ref{thm:equalp} with $m=1$. If $w\in T$,
+all sites have the same weight $w$, so maximizing on-time weight means
+maximizing the }\emph{\DIFadd{number}} \DIFadd{of on-time sites, which is the problem
+$1\|\sum U_j$ solved in $O(n\log n)$ time by Moore's algorithm
+\mbox{%DIFAUXCMD
+\citep{moore1968}}\hskip0pt%DIFAUXCMD
+. (b) $\mathcal C_{\{d\}}\supseteq$ the instances of
+Theorem~\ref{thm:hardness}, so it is NP-hard, and it is weakly NP-hard
+because }\DIFaddend Theorem~\ref{thm:dp} \DIFdelbegin \DIFdel{)
+versus truly polynomial (Theorem~\ref{thm:fptas})dependence on the instance's numerical magnitude; a sensitivity sweep over }\DIFdelend \DIFaddbegin \DIFadd{solves it in pseudo-polynomial time;
+$\mathcal C_\emptyset$ contains $\mathcal C_{\{d\}}$.
+}\end{proof}
+
+\DIFadd{The classification is elementary once Theorems~\ref{thm:hardness}
+and~\ref{thm:equalp} are available; its value is interpretive. Hardness
+needs }\emph{\DIFadd{two independent}} \DIFadd{sources of heterogeneity, in the dispatch
+time }\emph{\DIFadd{and}} \DIFadd{in the criticality, which compete for the shared time
+budget; heterogeneity in the hazard deadlines, the part of the instance
+produced by the hazard model, plays no role. In network terms: if every
+site is equally far from the depot, or every site is equally critical,
+the dispatch problem is easy however the hazard spreads.
+}
+
+%DIF >  ══════════════════════════════════════════════════════════════════
+\section{Numerical study}\label{sec:experiments}
+
+\DIFadd{The study has four purposes: to check every algorithm against an
+independent exhaustive search (Section~\ref{sec:verify}); to compare the
+algorithms and the heuristics of Section~\ref{sec:theory} across
+instance sizes and generators, and to show, in a regime where }\DIFaddend the
+FPTAS's \DIFdelbegin \DIFdel{accuracy parameter }\DIFdelend \DIFaddbegin \DIFadd{rounding is genuinely active, how its accuracy and cost behave
+as }\DIFaddend $\epsilon$ \DIFdelbegin \DIFdel{; a robustness check repeating the
+accuracy comparison under two alternative synthetic instance-generation
+regimes; and
+, finally, a small instance built directly from public
+records of }\DIFdelend \DIFaddbegin \DIFadd{shrinks (Sections~\ref{sec:acc}--\ref{sec:robust}); and
+to illustrate the model on }\DIFaddend a real wildfire\DIFaddbegin \DIFadd{, with a sensitivity analysis
+over its uncertain inputs }\DIFaddend (Section~\ref{sec:campfire})\DIFdelbegin \DIFdel{, to confirm
+the synthetic findings are not an artifact of how the synthetic
+instances are generated}\DIFdelend \DIFaddbegin \DIFadd{. All code is
+self-contained and deterministic given its seeds (see the Data
+Availability statement); every table below is regenerated by
+}\texttt{\DIFadd{python3 experiment.py}} \DIFadd{(about 15 seconds) and
+}\texttt{\DIFadd{python3 case\_study\_campfire.py}}\DIFadd{.
+}
+
+\subsection{Verification against exhaustive search}\label{sec:verify}
+
+\DIFadd{Before any performance claim we verify the implementations
+(}\texttt{\DIFadd{verify\_small.py}}\DIFadd{). (i) On $400$ random instances with $n\le7$
+the dynamic program's optimum equals the optimum over }\emph{\DIFadd{all}} \DIFadd{$n!$
+dispatch orders, which checks Lemma~\ref{lem:edd} and
+Theorem~\ref{thm:dp} from the definition. (ii) On $1{,}500$ random
+instances with $n\le14$ (a third of them with weights up to $10^6$ and
+all with individually infeasible sites left in) the dynamic program
+equals the best feasible subset found by enumeration, and the FPTAS
+returns a feasible set of weight at least $(1-\epsilon)W^\ast$ for
+$\epsilon\in\{0.5,0.2,0.05\}$, with and without the completion step, with
+no violation in $4{,}500$ runs ($2{,}923$ of which had active scaling).
+(iii) The equal-cost greedy of Algorithm~\ref{alg:matroid} equals the
+dynamic program on $300$ instances for $m=1$, and equals exhaustive
+search over all assignments to $m=2,3$ vehicles on the instances with
+$n\le7$. (iv) Proposition~\ref{prop:repair}'s ratio $2/(2k-1)$ is
+reproduced for $k=3,10,100$}\DIFaddend .
+
+\subsection{Accuracy across instance sizes}\DIFaddbegin \label{sec:acc}
+\DIFaddend 
+
+For \DIFdelbegin \DIFdel{$n \in \{10,15,20,25,30,50,75,100\}$ we generate 20 }\DIFdelend \DIFaddbegin \DIFadd{$n \in \{10,15,20,25,30,50,75,100,200,400\}$ we generate $50$
+}\DIFaddend random instances each ($p_i$ uniform on $\{1,\dots,20\}$, $w_i$ uniform
+on $\{1,\dots,100\}$, $d_i$ uniform on $\{1,\dots,\sum_i p_i\}$\DIFdelbegin \DIFdel{),
+and
+compare four algorithms}\DIFdelend \DIFaddbegin \DIFadd{,
+individually infeasible sites deleted as in
+Assumption~\ref{as:feasible}) and compare}\DIFaddend : the true optimum
+\DIFdelbegin \DIFdel{via }\DIFdelend \DIFaddbegin \DIFadd{(}\DIFaddend Theorem~\ref{thm:dp}\DIFdelbegin \DIFdel{'s
+exact dynamic program}\DIFdelend \DIFaddbegin \DIFadd{)}\DIFaddend ; the FPTAS \DIFdelbegin \DIFdel{of Theorem~\ref{thm:fptas} at $\epsilon \in \{0.1,0.2\}$,
+implemented exactly }\DIFdelend \DIFaddbegin \DIFadd{at $\epsilon\in\{0.1,0.2\}$,
+implemented }\DIFaddend as in the proof\DIFdelbegin \DIFdel{(the
+value-indexed dual DP, not a shortcut); a weighted Moore--Hodgson-style
+greedy repair
+heuristic (dispatch in earliest-deadline order, and
+whenever the running schedule becomes infeasible, repeatedly drop the
+scheduled site with the smallest weight-to-time ratio until feasible
+again---a natural, always-feasible heuristic generalizing
+\mbox{%DIFAUXCMD
+\citeauthor{moore1968}}\hskip0pt%DIFAUXCMD
+'s unweighted rule, for which we claim no
+approximation guarantee}\DIFdelend \DIFaddbegin \DIFadd{; the weighted greedy repair
+(Algorithm~\ref{alg:repair}}\DIFaddend ); and \DIFdelbegin \DIFdel{the naive
+baseline of
+}\DIFdelend \DIFaddbegin \DIFadd{two deadline-order baselines, naive
+EDD and EDD with skipping (}\DIFaddend Proposition~\ref{prop:naive}\DIFdelbegin \DIFdel{(dispatch in earliest-deadline order,
+simply keep whichever sites happen to still be on time, with no
+repair at all)}\DIFdelend \DIFaddbegin \DIFadd{). Naive EDD
+keeps dispatching to sites that are already late, so it is a weak
+anchor; EDD with skipping is the fairer simple baseline}\DIFaddend .
+Table~\ref{tab:illustration} reports \DIFdelbegin \DIFdel{the ratio of each
+method's on-time weight to the true optimum, averaged over the 20
+instances at each size. Algorithm~\ref{alg:repair} states the greedy
+repair heuristic precisely; feasibility of its output is guaranteed by
+the same inductive argument used for the unweighted Moore--Hodgson
+algorithm (each repair step can only shorten, never lengthen, the
+completion time of every remaining scheduled site), but---unlike
+Algorithms~\ref{alg:exact}--\ref{alg:matroid}---we prove no
+approximation ratio for it; it is included as a realistic,
+easy-to-implement point of comparison, not as a fifth theorem}\DIFdelend \DIFaddbegin \DIFadd{mean ratios to the optimum, and
+Figure~\ref{fig:accuracy} plots them}\DIFaddend .
+
+\DIFdelbegin %DIFDELCMD < \begin{algorithm}
+%DIFDELCMD < \caption{Weighted greedy repair (heuristic; no proven guarantee)}\label{alg:repair}
+%DIFDELCMD < \begin{algorithmic}[1]
+%DIFDELCMD < \Require %%%
+\DIFdel{sites $1,\dots,n$ with $d_1\le\dots\le d_n$, dispatch times $p_i$, weights $w_i$
+}%DIFDELCMD < \Ensure %%%
+\DIFdel{a feasible on-time subset $\mathit{kept}$ (not necessarily optimal)
+}%DIFDELCMD < \State %%%
+\DIFdel{$\mathit{kept} \gets \emptyset$; \ $\mathit{total} \gets 0$
+}%DIFDELCMD < \For{$i = 1,\dots,n$}
+%DIFDELCMD <   \State %%%
+\DIFdel{$\mathit{kept} \gets \mathit{kept} \cup \{i\}$; \ $\mathit{total} \gets \mathit{total} + p_i$
+  }%DIFDELCMD < \While{$\mathit{total} > d_i$ \textbf{and} $\mathit{kept} \ne \emptyset$}
+%DIFDELCMD <     \State %%%
+\DIFdel{$j \gets \arg\min_{j' \in \mathit{kept}} w_{j'}/p_{j'}$ }%DIFDELCMD < \Comment{smallest weight-to-time ratio}
+%DIFDELCMD <     \State %%%
+\DIFdel{$\mathit{kept} \gets \mathit{kept} \setminus \{j\}$; \ $\mathit{total} \gets \mathit{total} - p_j$
+  }%DIFDELCMD < \EndWhile
+%DIFDELCMD < \EndFor
+%DIFDELCMD < \State \Return %%%
+\DIFdel{$\mathit{kept}$, dispatched in increasing-deadline order
+}%DIFDELCMD < \end{algorithmic}
+%DIFDELCMD < \end{algorithm}
+%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdelend \begin{table}[h]
+\DIFdelbeginFL %DIFDELCMD < \caption{Mean ratio to the true optimum, by instance size ($n$), over
+%DIFDELCMD < 20 random instances per row. ``M--H style'' is the weighted
+%DIFDELCMD < Moore--Hodgson-style greedy repair heuristic.}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{Mean ratio to the true optimum, by instance size $n$, over $50$
+random instances per column (weights $\le100$). The last three rows give
+the worst ratio over the $50$ instances for greedy repair and for naive
+EDD, and the share of instances on which the FPTAS's scaling factor was
+$K=1$ (no rounding at all), for $\epsilon=0.2$ and $\epsilon=0.1$.}\DIFaddendFL \label{tab:illustration}
+\small
+\DIFdelbeginFL %DIFDELCMD < \begin{tabular}{@{}lcccccccc@{}}
+%DIFDELCMD < %%%
+\DIFdelendFL \DIFaddbeginFL \begin{tabular}{@{}lcccccc@{}}
+\DIFaddendFL \toprule
+$n$ & 10 & \DIFdelbeginFL \DIFdelFL{15 }%DIFDELCMD < & %%%
+\DIFdelendFL 20 & \DIFdelbeginFL \DIFdelFL{25 }%DIFDELCMD < & %%%
+\DIFdelFL{30 }%DIFDELCMD < & %%%
+\DIFdelendFL 50 & \DIFdelbeginFL \DIFdelFL{75 }%DIFDELCMD < & %%%
+\DIFdelendFL 100 \DIFaddbeginFL & \DIFaddFL{200 }& \DIFaddFL{400 }\DIFaddendFL \\
+\midrule
+FPTAS ($\epsilon=0.2$) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \DIFdelbeginFL %DIFDELCMD < & %%%
+\DIFdelFL{1.000 }%DIFDELCMD < & %%%
+\DIFdelFL{1.000 }\DIFdelendFL \\
+FPTAS ($\epsilon=0.1$) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \DIFdelbeginFL %DIFDELCMD < & %%%
+\DIFdelFL{1.000 }%DIFDELCMD < & %%%
+\DIFdelFL{1.000 }\DIFdelendFL \\
+Greedy repair \DIFdelbeginFL \DIFdelFL{(M--H style) }\DIFdelendFL & 0.993 & \DIFdelbeginFL \DIFdelFL{0.997 }%DIFDELCMD < & %%%
+\DIFdelendFL 0.996 & \DIFdelbeginFL \DIFdelFL{0.993 }%DIFDELCMD < & %%%
+\DIFdelFL{0.997 }%DIFDELCMD < & %%%
+\DIFdelFL{0.998 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.999 }\DIFaddendFL & 0.999 & 0.999 \DIFaddbeginFL & \DIFaddFL{1.000 }\\
+\DIFaddFL{EDD with skipping }& \DIFaddFL{0.933 }& \DIFaddFL{0.941 }& \DIFaddFL{0.954 }& \DIFaddFL{0.972 }& \DIFaddFL{0.981 }& \DIFaddFL{0.983 }\DIFaddendFL \\
+Naive EDD \DIFdelbeginFL \DIFdelFL{(no repair ) }\DIFdelendFL & \DIFdelbeginFL \DIFdelFL{0.380 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.714 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.343 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.653 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.622 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.595 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.369 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.573 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.323 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.669 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.482 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.583 }\\
+\midrule
+\DIFaddFL{worst ratio, greedy repair }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.515 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.929 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.439 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.963 }& \DIFaddFL{0.976 }& \DIFaddFL{0.992 }& \DIFaddFL{0.995 }& \DIFaddFL{0.999 }\\
+\DIFaddFL{worst ratio, naive EDD }& \DIFaddFL{0.065 }& \DIFaddFL{0.132 }& \DIFaddFL{0.032 }& \DIFaddFL{0.110 }& \DIFaddFL{0.027 }& \DIFaddFL{0.034 }\\
+\DIFaddFL{share with $K=1$, $\epsilon=0.2$ / $0.1$ }& \DIFaddFL{0/.54 }& \DIFaddFL{.60/1 }& \DIFaddFL{1/1 }& \DIFaddFL{1/1 }& \DIFaddFL{1/1 }& \DIFaddFL{1/1 }\DIFaddendFL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/accuracy_vs_n.pdf}
+\DIFdelbeginFL %DIFDELCMD < \caption{Table~\ref{tab:illustration} plotted: mean ratio to the true
+%DIFDELCMD < optimum against instance size $n$. The FPTAS and greedy-repair curves
+%DIFDELCMD < sit on top of each other at $1.0$; naive EDD fluctuates with no
+%DIFDELCMD < trend of improving as $n$ grows, exactly as
+%DIFDELCMD < Proposition~\ref{prop:naive} predicts.}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{Table~\ref{tab:illustration} plotted. The FPTAS and greedy
+repair sit at $1.0$; EDD with skipping improves slowly with $n$; naive
+EDD fluctuates around $0.6$ with no trend and, on individual instances,
+captures only a few percent of the optimum.}\DIFaddendFL \label{fig:accuracy}
+\end{figure}
+
+\DIFdelbegin \DIFdel{At both approximation levels tested, the }\DIFdelend \DIFaddbegin \DIFadd{The }\DIFaddend FPTAS recovers the \DIFdelbegin \DIFdel{true
+optimum on essentially every one of the 160 random instances (mean
+ratio rounds to $1.000$ throughout), far outperforming its }\DIFdelend \DIFaddbegin \DIFadd{optimum on every instance, but this is
+}\emph{\DIFadd{not}} \DIFadd{evidence about the approximation scheme. With weights at most
+$100$ the scaling factor $K=\max(1,\epsilon w_{\max}/n)$ equals $1$ for
+$\epsilon=0.1$ at every $n\ge15$ and for $\epsilon=0.2$ at every
+$n\ge25$ (last row of Table~\ref{tab:illustration}), so no rounding
+takes place and the FPTAS coincides with the exact value-indexed
+dynamic program; a ratio of $1.000$ is then guaranteed, not
+informative. The next subsection therefore uses weights large enough
+that the rounding is active. Among the heuristics, the greedy repair
+captures $99.3$--$100\%$ of the optimum on average but has a worst
+ratio of $0.93$ at $n=10$, consistent with its having no guarantee
+(Proposition~\ref{prop:repair}); naive EDD shows no trend with $n$, as
+a rule that never reconsiders would not, though a }\DIFaddend worst-case \DIFdelbegin \DIFdel{$(1-\epsilon)$ guarantee, consistent with the well-documented empirical
+looseness of knapsack-style FPTAS }\DIFdelend \DIFaddbegin \DIFadd{result such
+as Proposition~\ref{prop:naive} does not by itself predict average
+behavior on random instances.
+}
+
+\subsection{The FPTAS with active scaling}\label{sec:scaling}
+
+\DIFadd{We now take weights up to $10^6$ with $p_i\le20$, so that the
+time-indexed exact dynamic program stays cheap (its table depends on
+$P$, not on the weights) and serves as the reference, while the
+FPTAS's scale factor $K$ is in the hundreds to thousands. Three
+families are used, with $n=100$ and $30$ instances per $\epsilon$ for
+the first two. }\emph{\DIFadd{Random:}} \DIFadd{weights uniform on $\{1,\dots,10^6\}$.
+}\emph{\DIFadd{Strongly correlated:}} \DIFadd{a common deadline and $w_i=1000p_i+500$ with
+$p_i$ up to $1000$, the hard family for knapsack-type schemes
+(\mbox{%DIFAUXCMD
+\citealp{hejl2022} }\hskip0pt%DIFAUXCMD
+study this regime for exact algorithms).
+}\emph{\DIFadd{Adversarial:}} \DIFadd{the family of Proposition~\ref{prop:tight}, with
+one dominant site and $n-1$ sites just below the scaling granule. For
+each, Table~\ref{tab:scaling} reports the worst ratio over the instances
+for Algorithm~\ref{alg:fptas} as stated and, for the adversarial family,
+with the completion step of Remark~\ref{rem:completion}.
+}
+
+\begin{table}[h]
+\caption{FPTAS accuracy with active scaling ($n=100$, $p_i\le20$ or as
+stated). Entries are the \emph{worst} ratio to the optimum over the
+instances of each family ($30$ per $\epsilon$ for the first two). ``Share $<1$''
+is the fraction of random instances on which the FPTAS was not exactly
+optimal. Every entry respects the guarantee $1-\epsilon$.}\label{tab:scaling}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\DIFaddFL{$\epsilon$ }& \DIFaddFL{$1-\epsilon$ }& \DIFaddFL{Random }& \DIFaddFL{Share $<1$ }& \DIFaddFL{Str.\ corr. }& \DIFaddFL{Adversarial }& \DIFaddFL{Adv.\ + completion }\\
+\midrule
+\DIFaddFL{0.50 }& \DIFaddFL{0.50 }& \DIFaddFL{0.9998 }& \DIFaddFL{0.30 }& \DIFaddFL{0.9993 }& \DIFaddFL{0.669 }& \DIFaddFL{1.000 }\\
+\DIFaddFL{0.30 }& \DIFaddFL{0.70 }& \DIFaddFL{0.99996 }& \DIFaddFL{0.10 }& \DIFaddFL{0.9994 }& \DIFaddFL{0.771 }& \DIFaddFL{1.000 }\\
+\DIFaddFL{0.20 }& \DIFaddFL{0.80 }& \DIFaddFL{0.99996 }& \DIFaddFL{0.10 }& \DIFaddFL{0.9994 }& \DIFaddFL{0.835 }& \DIFaddFL{1.000 }\\
+\DIFaddFL{0.10 }& \DIFaddFL{0.90 }& \DIFaddFL{0.99999 }& \DIFaddFL{0.03 }& \DIFaddFL{0.9996 }& \DIFaddFL{0.910 }& \DIFaddFL{1.000 }\\
+\DIFaddFL{0.05 }& \DIFaddFL{0.95 }& \DIFaddFL{1.00000 }& \DIFaddFL{0.00 }& \DIFaddFL{0.9996 }& \DIFaddFL{0.953 }& \DIFaddFL{1.000 }\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{Cost of the FPTAS as $\epsilon$ shrinks (random weights up to
+$10^6$, $n=100$): mean scaling factor $K$, mean number of dynamic-program
+cells, and mean wall-clock time. A value-indexed exact table would need
+about $5\times10^{7}$ columns per row at these weights, against the
+$10^{4}$--$10^{5}$ used here.}\label{tab:epscost}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\DIFaddFL{$\epsilon$ }& \DIFaddFL{0.50 }& \DIFaddFL{0.30 }& \DIFaddFL{0.20 }& \DIFaddFL{0.10 }& \DIFaddFL{0.05 }\\
+\midrule
+\DIFaddFL{mean $K$ }& \DIFaddFL{4}{\DIFaddFL{,}}\DIFaddFL{996 }& \DIFaddFL{2}{\DIFaddFL{,}}\DIFaddFL{997 }& \DIFaddFL{1}{\DIFaddFL{,}}\DIFaddFL{998 }& \DIFaddFL{999 }& \DIFaddFL{500 }\\
+\DIFaddFL{cells ($\times10^6$) }& \DIFaddFL{0.99 }& \DIFaddFL{1.65 }& \DIFaddFL{2.47 }& \DIFaddFL{4.95 }& \DIFaddFL{9.90 }\\
+\DIFaddFL{time (ms) }& \DIFaddFL{3.4 }& \DIFaddFL{4.9 }& \DIFaddFL{6.7 }& \DIFaddFL{14.4 }& \DIFaddFL{33.1 }\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/epsilon_sensitivity.pdf}
+\caption{Tables~\ref{tab:scaling} and~\ref{tab:epscost} plotted. Left:
+the worst ratio on the adversarial family tracks the guarantee
+$1-\epsilon$ (it stays above it and, as Proposition~\ref{prop:tight}
+shows, approaches $1/(1+\epsilon)$); on random instances the FPTAS is
+essentially exact, and the completion step makes the adversarial
+family exact. Right: cost grows in proportion to $1/\epsilon$, as the
+$O(n^3/\epsilon)$ bound says.}\label{fig:epsilon}
+\end{figure}
+
+\DIFadd{Two things are visible. First, on random and on strongly correlated
+instances the FPTAS is nearly exact even at $\epsilon=0.5$ (worst ratio
+$0.9993$), far above its guarantee: the bound $\epsilon w_{\max}$
+charges every selected site a full rounding error $K$ and compares the
+total to $w_{\max}$, whereas on these instances the optimum contains
+many sites and $W^\ast\gg w_{\max}$. This is why the ratio is close to
+$1$, and it is the answer to the question of why accuracy is near $1$ in
+all earlier tables. Second, the guarantee is }\emph{\DIFadd{not}} \DIFadd{vacuous: on the
+adversarial family, which Proposition~\ref{prop:tight} shows is the
+worst case, the ratio falls to $0.669$ at $\epsilon=0.5$ and follows
+the guarantee as $\epsilon$ shrinks, so a planner who needs a }\DIFaddend worst-case
+\DIFdelbegin \DIFdel{bounds
+\mbox{%DIFAUXCMD
+\citep{ibarrakim1975}}\hskip0pt%DIFAUXCMD
+: the scaling construction is designed to
+guarantee the worst case, not
+to describe the typical one. The greedy
+repair heuristic, despite carrying no proven guarantee, is a
+substantial practical improvement over doing nothing---capturing
+99.3--99.9\% of the optimum---because reconsidering even a single
+locally-worst commitment when infeasibility first arises already
+recovers most of the value a full optimization would. The naive EDD baseline, which never reconsiders anything, captures only
+32--62\% of the
+optimal on-time weight and shows no trend of improving
+with
+instance size, exactly as Proposition~\ref{prop:naive} predicts:
+its worst-case ratio does not shrink with $n$, it is simply unbounded
+below on adversarial instances and highly variable on random ones}\DIFdelend \DIFaddbegin \DIFadd{bound cannot do better than $\epsilon$-dependent cost. The inexpensive
+completion step removes this failure on the family. Cost grows in
+proportion to $1/\epsilon$ (Table~\ref{tab:epscost}), as predicted, and
+is independent of $P$ (next subsection)}\DIFaddend .
+
+\DIFdelbegin %DIFDELCMD < \subsection{Runtime: pseudo-polynomial versus polynomial in practice}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \subsection{Runtime: time-indexed versus value-indexed}\label{sec:runtime}
+\DIFaddend 
+
+Theorem~\ref{thm:dp}'s \DIFdelbegin \DIFdel{exact DP }\DIFdelend \DIFaddbegin \DIFadd{dynamic program }\DIFaddend runs in $O(nP)$ time, \DIFdelbegin \DIFdel{where $P=\sum_i
+p_i$ can be }\DIFdelend \DIFaddbegin \DIFadd{with
+$P=\sum_ip_i$ }\DIFaddend exponential in the input's bit length; \DIFdelbegin \DIFdel{Theorem~\ref{thm:fptas}'s FPTAS runs in time polynomial in $n$ and $1/\epsilon$, independent of
+}\DIFdelend \DIFaddbegin \DIFadd{the FPTAS's table
+does not depend on }\DIFaddend $P$. To see this\DIFdelbegin \DIFdel{gap empirically rather than only asymptotically, we
+}\DIFdelend \DIFaddbegin \DIFadd{, }\DIFaddend fix $n=40$\DIFdelbegin \DIFdel{and }\DIFdelend \DIFaddbegin \DIFadd{, }\DIFaddend $\epsilon=0.1$\DIFdelbegin \DIFdel{and }\DIFdelend \DIFaddbegin \DIFadd{, draw
+weights up to $10^6$ (so the scaling is active at every setting), }\DIFaddend vary
+the range $p_{\max}$ from which \DIFdelbegin \DIFdel{processing }\DIFdelend \DIFaddbegin \DIFadd{dispatch }\DIFaddend times are drawn\DIFdelbegin \DIFdel{(so $P$ grows roughly linearly with
+$p_{\max}$), timing }\DIFdelend \DIFaddbegin \DIFadd{, and time }\DIFaddend both
+algorithms on \DIFdelbegin \DIFdel{5 }\DIFdelend \DIFaddbegin \DIFadd{$5$ }\DIFaddend random instances per setting.
+\DIFdelbegin \DIFdel{Table~\ref{tab:runtime} reports the mean wall-clock time.
+}\DIFdelend 
+
+\begin{table}[h]
+\DIFdelbeginFL %DIFDELCMD < \caption{Mean wall-clock time (milliseconds), $n=40$, $\epsilon=0.1$,
+%DIFDELCMD < over 5 random instances per row, as the processing-time range
+%DIFDELCMD < $p_{\max}$ grows (so $P=\sum_i p_i$ grows roughly proportionally).}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{Mean wall-clock time (milliseconds), $n=40$, $\epsilon=0.1$,
+weights up to $10^6$, over 5 random instances per row, as $p_{\max}$
+grows (so $P$ grows roughly proportionally).}\DIFaddendFL \label{tab:runtime}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+$p_{\max}$ & 50 & 200 & 800 & 3{,}200 & 12{,}800 \\
+\midrule
+Exact DP (Theorem~\ref{thm:dp}) & \DIFdelbeginFL \DIFdelFL{4.7 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.75 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{16.8 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.93 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{65.3 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{2.75 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{275.7 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{9.16 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{1137.9 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{55.1 }\DIFaddendFL \\
+FPTAS (Theorem~\ref{thm:fptas}) & \DIFdelbeginFL \DIFdelFL{8.3 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{1.18 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{8.4 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{1.07 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{7.8 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{1.17 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{7.7 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{1.13 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{7.6 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{1.64 }\DIFaddendFL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.68\textwidth]{figures/runtime_scaling.pdf}
+\DIFdelbeginFL %DIFDELCMD < \caption{Table~\ref{tab:runtime} plotted on log-log axes: the exact
+%DIFDELCMD < DP's pseudo-polynomial $O(nP)$ dependence on $p_{\max}$ is visibly
+%DIFDELCMD < linear, while the FPTAS's $O(n^3/\epsilon)$ runtime---independent of
+%DIFDELCMD < $p_{\max}$---stays flat.}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{Table~\ref{tab:runtime} on log-log axes: the exact DP's time
+grows with $p_{\max}$ (roughly linearly or slightly faster once the
+fixed overhead is exceeded), while the FPTAS's stays flat.}\DIFaddendFL \label{fig:runtime}
+\end{figure}
+
+The exact \DIFdelbegin \DIFdel{DP's runtime grows essentially linearly with $p_{\max}$, as
+its $O(nP)$ bound predicts, increasing roughly $240$}\DIFdelend \DIFaddbegin \DIFadd{dynamic program grows about $74$}\DIFaddend -fold as $p_{\max}$ \DIFdelbegin \DIFdel{increases }\DIFdelend \DIFaddbegin \DIFadd{grows
+}\DIFaddend $256$-fold \DIFdelbegin \DIFdel{; the FPTAS 's runtime stays flat , within
+measurement noise, across the same range, since its table size
+$O(n^3/\epsilon)$ never depends on $P$ at all}\DIFdelend \DIFaddbegin \DIFadd{(the smallest settings are dominated by fixed overhead),
+whereas the FPTAS is flat up to noise}\DIFaddend .
+At the smallest $p_{\max}$ \DIFdelbegin \DIFdel{tested here the exact DP is actually }\DIFdelend \DIFaddbegin \DIFadd{the exact program is }\DIFaddend faster in absolute
+terms, \DIFdelbegin \DIFdel{since its (pseudo-polynomial but small) table is cheaper than
+the FPTAS's fixed $O(n^3/\epsilon)$ overhead---a }\DIFdelend \DIFaddbegin \DIFadd{a }\DIFaddend reminder that an \DIFdelbegin \DIFdel{FPTAS's asymptotic advantage only pays off once the
+instance's
+}\DIFdelend \DIFaddbegin \DIFadd{approximation scheme pays off only when the
+}\DIFaddend numerical magnitude is large\DIFdelbegin \DIFdel{enough, exactly the regime
+Theorem~\ref{thm:hardness}'s weak-NP-hardness result says the exact DP
+cannot handle efficiently.
+}%DIFDELCMD < 
+
+%DIFDELCMD < \subsection{Sensitivity to the accuracy parameter}
+%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Theorem~\ref{thm:fptas}'s table has $O(n^3/\epsilon)$ entries, so
+shrinking $\epsilon$ should, in principle, grow both the accuracy and
+the running time of the FPTAS. We fix $n=30$ and sweep $\epsilon \in
+\{0.5, 0.3, 0.2, 0.1, 0.05, 0.01\}$ on the same 20 random instances at
+each value, reporting the mean ratio to the true optimum and the mean
+wall-clock time in Table~\ref{tab:epsilon}.
+}%DIFDELCMD < 
+
+%DIFDELCMD < \begin{table}[h]
+%DIFDELCMD < \caption{FPTAS accuracy and runtime as $\epsilon$ shrinks, $n=30$, mean
+%DIFDELCMD < over the same 20 random instances at each $\epsilon$.}\label{tab:epsilon}
+%DIFDELCMD < \begin{tabular}{@{}lcccccc@{}}
+%DIFDELCMD < \toprule
+%DIFDELCMD < %%%
+\DIFdelFL{$\epsilon$ }%DIFDELCMD < & %%%
+\DIFdelFL{0.50 }%DIFDELCMD < & %%%
+\DIFdelFL{0.30 }%DIFDELCMD < & %%%
+\DIFdelFL{0.20 }%DIFDELCMD < & %%%
+\DIFdelFL{0.10 }%DIFDELCMD < & %%%
+\DIFdelFL{0.05 }%DIFDELCMD < & %%%
+\DIFdelFL{0.01 }%DIFDELCMD < \\
+%DIFDELCMD < \midrule
+%DIFDELCMD < %%%
+\DIFdelFL{Mean ratio to optimum }%DIFDELCMD < & %%%
+\DIFdelFL{0.9999 }%DIFDELCMD < & %%%
+\DIFdelFL{1.0000 }%DIFDELCMD < & %%%
+\DIFdelFL{1.0000 }%DIFDELCMD < & %%%
+\DIFdelFL{1.0000 }%DIFDELCMD < & %%%
+\DIFdelFL{1.0000 }%DIFDELCMD < & %%%
+\DIFdelFL{1.0000 }%DIFDELCMD < \\
+%DIFDELCMD < %%%
+\DIFdelFL{Mean time (ms) }%DIFDELCMD < & %%%
+\DIFdelFL{2.5 }%DIFDELCMD < & %%%
+\DIFdelFL{3.9 }%DIFDELCMD < & %%%
+\DIFdelFL{3.9 }%DIFDELCMD < & %%%
+\DIFdelFL{3.8 }%DIFDELCMD < & %%%
+\DIFdelFL{4.2 }%DIFDELCMD < & %%%
+\DIFdelFL{3.8 }%DIFDELCMD < \\
+%DIFDELCMD < \bottomrule
+%DIFDELCMD < \end{tabular}
+%DIFDELCMD < \end{table}
+%DIFDELCMD < 
+
+%DIFDELCMD < \begin{figure}[h]
+%DIFDELCMD < \centering
+%DIFDELCMD < \includegraphics[width=0.95\textwidth]{figures/epsilon_sensitivity.pdf}
+%DIFDELCMD < \caption{Table~\ref{tab:epsilon} plotted: accuracy (left) is
+%DIFDELCMD < essentially flat at $1.0$ across the entire tested range of
+%DIFDELCMD < $\epsilon$, while runtime (right) grows only mildly as $\epsilon$
+%DIFDELCMD < shrinks two orders of magnitude---both axes with $\epsilon$
+%DIFDELCMD < decreasing left to right.}\label{fig:epsilon}
+%DIFDELCMD < \end{figure}
+%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Even at the loosest setting tested, $\epsilon=0.5$ (a $50\%$ worst-case
+loss allowed), the FPTAS already recovers $99.99\%$ of the optimum on
+average, and by $\epsilon=0.3$ it matches the optimum on every instance
+in this sample; consistent with Example~\ref{ex:fptas} and
+Section~\ref{sec:experiments}'s accuracy table, the worst-case bound
+$(1-\epsilon)W^\ast$ is a safety margin that is rarely approached in
+practice, not a description of typical behavior. The runtime grows only
+mildly over this range at $n=30$ (a two-order-of-magnitude shrinkage in
+$\epsilon$, from $0.5$ to $0.01$, produces roughly a $50\%$ increase in
+running time, not the $50\times$ the $O(n^3/\epsilon)$ bound alone
+would suggest as an upper bound), because the table's row dimension is
+capped by $\sum_i w_i'$, which grows sub-linearly in $1/\epsilon$ once
+the scaled weights $w_i' = \lfloor w_i/K\rfloor$ saturate at small
+integer values; the
+$O(n^3/\epsilon)$ bound is a worst-case ceiling; on these instances the effective table is considerably smaller}\DIFdelend \DIFaddbegin \DIFadd{. We stress that this comparison is between
+a time-indexed and a value-indexed table, and that the dependence on the
+weights has simply moved: a value-indexed }\emph{\DIFadd{exact}} \DIFadd{program would
+depend on $\sum_iw_i$ in the same way}\DIFaddend .
+
+\subsection{Robustness to the instance-generation regime}\DIFaddbegin \label{sec:robust}
+\DIFaddend 
+
+\DIFdelbegin \DIFdel{The accuracy comparison of Section~\ref{sec:experiments}.1 uses
+uniformly distributed weights and a deadline horizon spanning the full
+range $[1,\sum_i p_i]$. }\DIFdelend To check that \DIFdelbegin \DIFdel{its qualitative pattern }\DIFdelend \DIFaddbegin \DIFadd{the pattern of Table~\ref{tab:illustration} }\DIFaddend is not an
+artifact of \DIFdelbegin \DIFdel{that specific choice, }\DIFdelend \DIFaddbegin \DIFadd{the generator }\DIFaddend we repeat the comparison at $n=30$ \DIFdelbegin \DIFdel{under two different regimes: }\DIFdelend \DIFaddbegin \DIFadd{($20$
+instances each) under }\DIFaddend heavy-tailed weights (\DIFdelbegin \DIFdel{drawn from an
+exponentialdistribution rather than uniform, so a few sites are far
+more critical than the rest}\DIFdelend \DIFaddbegin \DIFadd{exponential, mean $20$}\DIFaddend ) and
+tight deadlines (the \DIFdelbegin \DIFdel{deadline }\DIFdelend horizon narrowed to \DIFdelbegin \DIFdel{$0.5\sum_i p_i$, so on average only about half the sites
+can be served regardless of order).
+Table~\ref{tab:robustness} reports
+the same three ratios as before under each regime.
+}\DIFdelend \DIFaddbegin \DIFadd{$0.5\sum_ip_i$).
+}\DIFaddend 
+
+\begin{table}[h]
+\DIFdelbeginFL %DIFDELCMD < \caption{Mean ratio to the true optimum under two alternative
+%DIFDELCMD < instance-generation regimes, $n=30$, 20 random instances per
+%DIFDELCMD < row.}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{Mean ratio to the true optimum under two alternative
+instance-generation regimes, $n=30$, 20 random instances per row.
+``Repair'' is the greedy repair of Algorithm~\ref{alg:repair}; ``Skip'' is
+EDD with skipping; the FPTAS uses $\epsilon=0.1$.}\DIFaddendFL \label{tab:robustness}
+\DIFdelbeginFL %DIFDELCMD < \begin{tabular}{@{}lccc@{}}
+%DIFDELCMD < %%%
+\DIFdelendFL \DIFaddbeginFL \begin{tabular}{@{}lcccc@{}}
+\DIFaddendFL \toprule
+Regime & FPTAS \DIFdelbeginFL \DIFdelFL{($\epsilon{=}0.1$) }\DIFdelendFL & Repair \DIFdelbeginFL \DIFdelFL{(M--H) }\DIFdelendFL \DIFaddbeginFL & \DIFaddFL{Skip }\DIFaddendFL & Naive EDD \\
+\midrule
+Heavy-tailed weights & 1.000 & \DIFdelbeginFL \DIFdelFL{0.998 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.999 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{0.274 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.944 }& \DIFaddFL{0.537 }\DIFaddendFL \\
+Tight deadlines ($0.5\times$ horizon) & 1.000 & 0.988 & \DIFdelbeginFL \DIFdelFL{0.026 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{0.799 }& \DIFaddFL{0.125 }\DIFaddendFL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \DIFdelbegin \DIFdel{FPTAS and the greedy repair heuristic are essentially unaffected :
+both continue to recover almost all of the optimum, confirming that
+Section~\ref{sec:experiments}.1's pattern is not an artifact of uniform
+weights or a loose deadline horizon. The naive EDD baseline, by
+contrast, gets }\emph{\DIFdel{worse}} %DIFAUXCMD
+\DIFdel{under both regimes---down to $2.6\%$ of
+optimum under tight deadlines---which is exactly what
+Proposition~\ref{prop:naive} predicts: tightening deadlinesor
+increasing weight heterogeneity both widen the gap between the single
+early commitment naive EDD makes and the value it forecloses, since
+}\DIFdelend \DIFaddbegin \DIFadd{greedy repair is essentially unaffected and EDD with skipping
+degrades under tight deadlines, where }\DIFaddend there is less slack to absorb a
+poor early \DIFdelbegin \DIFdel{choice and more value
+concentrated in whichever sites get displaced by it .
+}\DIFdelend \DIFaddbegin \DIFadd{commitment; naive EDD collapses to $12.5\%$ of the optimum,
+largely because it also wastes time on sites that are already late.
+(As in Section~\ref{sec:acc}, the FPTAS entries are $1.000$ partly
+because the scaling is vacuous at weights $\le100$.)
+}\DIFaddend 
+
+\subsection{A real-world illustration: the 2018 Camp Fire}\label{sec:campfire}
+
+The instances above are synthetic by \DIFdelbegin \DIFdel{design---MWHED }\DIFdelend \DIFaddbegin \DIFadd{design: MWHED }\DIFaddend is a new problem with
+no \DIFdelbegin \DIFdel{existing }\DIFdelend benchmark set, and the \DIFdelbegin \DIFdel{robustness check just given
+specifically needs controllable distributional properties that only a
+generator, not a single fixed dataset, can provide}\DIFdelend \DIFaddbegin \DIFadd{experiments need controllable distributions}\DIFaddend .
+To ground the model's scale \DIFdelbegin \DIFdel{and behavior }\DIFdelend in a real event \DIFdelbegin \DIFdel{, we also }\DIFdelend \DIFaddbegin \DIFadd{we }\DIFaddend build one small instance
+\DIFdelbegin \DIFdel{directly }\DIFdelend from public records of the 2018 Camp Fire (Butte County, California), the
+deadliest wildfire in California history (85 fatalities, over 18,000
+structures destroyed). We \DIFdelbegin \DIFdel{emphasize which
+numbers below are real measurements and which are }\DIFdelend \DIFaddbegin \DIFadd{separate real measurements from }\DIFaddend disclosed
+modeling assumptions, \DIFdelbegin \DIFdel{rather than blending the two silently}\DIFdelend \DIFaddbegin \DIFadd{and we present the case as an }\emph{\DIFadd{illustration of
+the model and its sensitivity}}\DIFadd{, not as an operational recommendation}\DIFaddend .
+
+\textbf{Real inputs.} The fire's ignition point (a PG\&E transmission
+tower near Pulga, CA) and its progression timeline---in particular, fire
+reaching Concow approximately $52$ minutes after \DIFdelbegin \DIFdel{ignition}\DIFdelend \DIFaddbegin \DIFadd{the time zero of the
+timeline}\DIFaddend , and spot fires igniting in Paradise approximately $71$
+minutes after \DIFdelbegin \DIFdel{ignition---are as documented in }\DIFdelend \DIFaddbegin \DIFadd{it---are taken from }\DIFaddend a National Institute of Standards and
+Technology forensic reconstruction \citep{nist2021campfire}. We take
+four real, named communities threatened by the fire (Concow, Paradise,
+Magalia, and Yankee Hill, Butte County) with their real geographic
+coordinates and 2010 U.S.\ Census populations (the census immediately
+preceding the fire, used as a proxy criticality weight $w_i$; later
+counts reflect the \DIFdelbegin \DIFdel{fire's }\DIFdelend aftermath, not the population at risk). A real
+regional fire-agency depot (Oroville, CA) anchors the dispatch side.
+
+\textbf{Disclosed modeling assumptions.} \DIFdelbegin \DIFdel{Two quantities are not
+directly measured. First, }\DIFdelend \DIFaddbegin \DIFadd{(i) }\DIFaddend $p_i$ is \DIFdelbegin \DIFdel{computed from }\DIFdelend \DIFaddbegin \DIFadd{twice }\DIFaddend the real
+great-circle distance between the depot and \DIFdelbegin \DIFdel{each site (a real }\DIFdelend \DIFaddbegin \DIFadd{site $i$ (a }\DIFaddend lower bound on
+\DIFdelbegin \DIFdel{true
+}\DIFdelend road distance) divided by an assumed average response speed; we report
+\DIFdelbegin \DIFdel{results at two illustrative speeds, }\DIFdelend $50$~km/h (conservative, winding mountain roads) and $80$~km/h
+(\DIFdelbegin \DIFdel{an optimistichighway-speed upper
+bound). Second, }\DIFdelend \DIFaddbegin \DIFadd{optimistic). (ii) }\DIFaddend Magalia and Yankee Hill have no \DIFdelbegin \DIFdel{directly documented fire-arrival }\DIFdelend \DIFaddbegin \DIFadd{documented arrival
+}\DIFaddend timestamp in the source\DIFdelbegin \DIFdel{we use}\DIFdelend , so their \DIFdelbegin \DIFdel{deadlines $d_i$
+}\DIFdelend \DIFaddbegin \DIFadd{arrival times }\DIFaddend are extrapolated: \DIFdelbegin \DIFdel{we compute the
+real fire-spread }\DIFdelend \DIFaddbegin \DIFadd{the
+spread }\DIFaddend rate implied by Concow's and Paradise's real \DIFdelbegin \DIFdel{distance-from-ignition and real documented }\DIFdelend \DIFaddbegin \DIFadd{distance from
+ignition and real }\DIFaddend arrival time ($12.1$ and $14.2$~km/h\DIFdelbegin \DIFdel{respectively, averaging
+}\DIFdelend \DIFaddbegin \DIFadd{, average
+}\DIFaddend $13.1$~km/h) \DIFdelbegin \DIFdel{, then apply this averaged rate to Magalia's and Yankee
+Hill's own real }\DIFdelend \DIFaddbegin \DIFadd{is applied to their own straight-line }\DIFaddend distance from the
+ignition point\DIFdelbegin \DIFdel{. Table~\ref{tab:campfire}
+reports the resulting instance and Table~\ref{tab:campfire-results} the outcome of running Algorithms~\ref{alg:exact}--\ref{alg:repair}
+unmodified on it (code and full source citations:
+}\texttt{\DIFdel{case\_study\_campfire.py}}%DIFAUXCMD
+\DIFdel{) }\DIFdelend \DIFaddbegin \DIFadd{; this extrapolation is isotropic, whereas the real spread
+was wind-driven and directional. (iii) The crew can leave at the time
+zero of the timeline, with no detection or dispatch delay. (iv) The
+}\emph{\DIFadd{arrival reading}} \DIFadd{of Remark~\ref{rem:reading} is used: a site is
+protected if the crew }\emph{\DIFadd{arrives}} \DIFadd{before the fire, so the MWHED
+deadline is $d_i=d_i^{\mathrm{haz}}+p_i/2$. Table~\ref{tab:campfire}
+gives the instance}\DIFaddend .
+
+\begin{table}[h]
+\DIFdelbeginFL %DIFDELCMD < \caption{The Camp Fire instance. $p_i$ (round-trip dispatch minutes
+%DIFDELCMD < from the Oroville depot) is shown at both response-speed assumptions;
+%DIFDELCMD < $d_i$ (minutes after ignition) is documented for Concow and Paradise,
+%DIFDELCMD < extrapolated for the other two (see text); $w_i$ is 2010 census
+%DIFDELCMD < population.}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{The Camp Fire instance. $p_i$ is the round-trip occupancy from
+the Oroville depot at the two response speeds; $d^{\mathrm{haz}}$ is the
+fire-arrival minute (documented for Concow and Paradise, extrapolated
+for the others); the MWHED deadline under the arrival reading is
+$d_i=d^{\mathrm{haz}}+p_i/2$ (rounded), shown for both speeds; $w_i$ is
+the 2010 census population.}\DIFaddendFL \label{tab:campfire}
+\small
+\DIFdelbeginFL %DIFDELCMD < \begin{tabular}{@{}lcccc@{}}
+%DIFDELCMD < %%%
+\DIFdelendFL \DIFaddbeginFL \begin{tabular}{@{}lccccccc@{}}
+\DIFaddendFL \toprule
+Site & $p_i$ (50\DIFdelbeginFL \DIFdelFL{km/h}\DIFdelendFL ) & $p_i$ (80\DIFdelbeginFL \DIFdelFL{km/h}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{) }& \DIFaddFL{$d^{\mathrm{haz}}$ }& \DIFaddFL{$d_i$ (50}\DIFaddendFL ) & $d_i$ \DIFaddbeginFL \DIFaddFL{(80) }\DIFaddendFL & $w_i$ \\
+\midrule
+Concow & 63 & 39 & 52 & \DIFaddbeginFL \DIFaddFL{84 }& \DIFaddFL{72 }& \DIFaddendFL 710 \\
+Magalia & 89 & 55 & 58 & \DIFaddbeginFL \DIFaddFL{102 }& \DIFaddFL{86 }& \DIFaddendFL 11{,}310 \\
+Yankee Hill & 54 & 34 & 64 & \DIFaddbeginFL \DIFaddFL{91 }& \DIFaddFL{81 }& \DIFaddendFL 333 \\
+Paradise & 70 & 44 & 71 & \DIFaddbeginFL \DIFaddFL{106 }& \DIFaddFL{93 }& \DIFaddendFL 26{,}218 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/campfire_map.pdf}
+\DIFdelbeginFL %DIFDELCMD < \caption{The real geography behind Table~\ref{tab:campfire}: the
+%DIFDELCMD < depot, the fire's real ignition point, and the four real communities,
+%DIFDELCMD < plotted from their real coordinates (dotted lines show each
+%DIFDELCMD < community's real distance from the ignition point, the basis for the
+%DIFDELCMD < documented and extrapolated $d_i$ values). The solid arrow is the
+%DIFDELCMD < optimal dispatch, in both response-speed scenarios: straight to
+%DIFDELCMD < Paradise, bypassing every other community.}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{The real geography behind Table~\ref{tab:campfire}: the depot,
+the fire's ignition point, and the four communities, plotted from their
+real coordinates (dotted lines: each community's real distance from the
+ignition point, the basis for the documented and extrapolated arrival
+times). The solid arrow, dispatch to Paradise, is in the optimum at both
+response speeds; at $80$~km/h the optimum also serves Concow, first
+(dashed arrow).}\DIFaddendFL \label{fig:campfire-map}
+\end{figure}
+
+\begin{table}[h]
+\DIFdelbeginFL %DIFDELCMD < \caption{Outcome of each algorithm on the Camp Fire instance, at both
+%DIFDELCMD < response-speed assumptions.}%%%
+\DIFdelendFL \DIFaddbeginFL \caption{On-time weight (population) of each algorithm on the Camp Fire
+instance, arrival reading; the sites served are in parentheses.}\DIFaddendFL \label{tab:campfire-results}
+\DIFaddbeginFL \small
+\DIFaddendFL \begin{tabular}{@{}lcc@{}}
+\toprule
+ & $50$~km/h & $80$~km/h \\
+\midrule
+Exact optimum (Thm.~\ref{thm:dp}) & \DIFdelbeginFL \DIFdelFL{$26{,}218$ }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{26}{\DIFaddFL{,}}\DIFaddFL{218 }\DIFaddendFL (Paradise) & \DIFdelbeginFL \DIFdelFL{$26{,}218$ (}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{26}{\DIFaddFL{,}}\DIFaddFL{928 (Concow, }\DIFaddendFL Paradise) \\
+FPTAS, $\epsilon=0.1$ (Thm.~\ref{thm:fptas}) & \DIFdelbeginFL \DIFdelFL{$26{,}218$ }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{26}{\DIFaddFL{,}}\DIFaddFL{218 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{$26{,}218$ }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{26}{\DIFaddFL{,}}\DIFaddFL{928 }\DIFaddendFL \\
+Greedy repair \DIFdelbeginFL \DIFdelFL{(M--H style) }\DIFdelendFL & \DIFdelbeginFL \DIFdelFL{$26{,}218$ }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{26}{\DIFaddFL{,}}\DIFaddFL{218 }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{$26{,}218$ }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{26}{\DIFaddFL{,}}\DIFaddFL{218 (Paradise) }\\
+\DIFaddFL{EDD with skipping }& \DIFaddFL{710 (Concow) }& \DIFaddFL{1}{\DIFaddFL{,}}\DIFaddFL{043 (Concow, Yankee Hill) }\DIFaddendFL \\
+Naive EDD \DIFdelbeginFL \DIFdelFL{(no repair) }\DIFdelendFL & \DIFdelbeginFL \DIFdelFL{$0$ }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{710 (Concow) }\DIFaddendFL & \DIFdelbeginFL \DIFdelFL{$710$ (Concow}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{1}{\DIFaddFL{,}}\DIFaddFL{043 (Concow, Yankee Hill}\DIFaddendFL ) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\DIFdelbegin \DIFdel{At the conservative }\DIFdelend \DIFaddbegin \textbf{\DIFadd{Results.}} \DIFadd{At }\DIFaddend $50$~km/h \DIFdelbegin \DIFdel{response speed, Concow and Magalia are
+individually infeasible---even dispatched first and alone, a crew from
+the Oroville depot cannot reach them before the fire does, a sobering
+but real reflection of how far this fire's actual spread outran any
+single-vehicle response. The optimal policy recognizes this
+immediately and }\DIFdelend \DIFaddbegin \DIFadd{the optimum }\DIFaddend sends the crew \DIFdelbegin \DIFdel{directly }\DIFdelend \DIFaddbegin \DIFadd{straight }\DIFaddend to
+Paradise, \DIFdelbegin \DIFdel{saving all
+}\DIFdelend \DIFaddbegin \DIFadd{protecting its weight of }\DIFaddend $26{,}218$\DIFdelbegin \DIFdel{people at risk there; naive earliest-deadline dispatch, recall, tries Concow and Magalia first }\emph{\DIFdel{because}} %DIFAUXCMD
+\DIFdel{their deadlines
+are earlier, exhausts the time budget on two sites it can never
+reach, and arrives }\DIFdelend \DIFaddbegin \DIFadd{; any detour first, even the
+shortest, uses time Paradise's deadline cannot absorb. Deadline-order
+rules go to Concow first because its deadline is earlier, protect only
+its $710$ residents, and arrive }\DIFaddend at Paradise too late\DIFdelbegin \DIFdel{to help anyone---an
+on-the-nose illustration of Proposition~\ref{prop:naive}'s unbounded
+worst-case loss, not a constructed adversarial example. At the more
+optimistic $80$}\DIFdelend \DIFaddbegin \DIFadd{. At $80$~km/h the
+shorter trips leave room to serve Concow }\emph{\DIFadd{and then}} \DIFadd{Paradise, for
+$26{,}928$; the weighted greedy repair misses the Concow detour and
+returns $26{,}218$, $2.6\%$ less than the optimum, so even on this
+four-site instance a heuristic with no guarantee is not exact, while the
+FPTAS and the exact program agree. Under the stricter }\emph{\DIFadd{return
+reading}} \DIFadd{(the crew must be back before the fire arrives) the answer
+changes: at $50$}\DIFaddend ~km/h \DIFdelbegin \DIFdel{speed all four sites are individually reachable, yet the optimal policy }\DIFdelend \DIFaddbegin \DIFadd{Concow and Magalia are individually infeasible
+(round trips of $63$ and $89$ minutes against arrival minutes $52$ and
+$58$), although the crew would }\DIFaddend \emph{\DIFdelbegin \DIFdel{still}\DIFdelend \DIFaddbegin \DIFadd{reach}\DIFaddend } \DIFdelbegin \DIFdel{goes straight to Paradise alone rather than visiting Concow, Magalia, or Yankee Hill first: any
+detour through the
+smaller communities consumes time Paradise's
+deadline cannot absorb. Naive EDD, dispatching earliest-deadline-first
+regardless, manages to save only Concow 's $710$ residents and misses
+Paradise entirely. Both the exact DP and the FPTAS recover the true
+optimum }\DIFdelend \DIFaddbegin \DIFadd{them in $31.5$ and
+$44.5$ minutes; the optimum is Paradise alone at both speeds. This is
+why Remark~\ref{rem:reading} asks the user to state the reading.
+}
+
+\textbf{\DIFadd{Sensitivity to the uncertain inputs.}} \DIFadd{The inputs are uncertain
+in several ways: the response speed, the arrival minutes (documented
+ones carry reconstruction error, extrapolated ones more), and the
+dispatch delay. We draw $5{,}000$ scenarios with speed uniform on
+$[40,90]$ km/h, arrival minutes scaled by independent factors uniform
+on $[0.85,1.15]$ (documented sites) or $[0.70,1.30]$ (extrapolated
+sites), and a departure delay uniform on $[0,20]$ minutes, and solve each
+exactly. Paradise is in the optimum in $100\%$ of the draws; the optimal
+set is Paradise alone in $65.3\%$, Concow with Paradise in $18.4\%$,
+Yankee Hill with Paradise in $13.9\%$ and Magalia with Paradise }\DIFaddend in
+\DIFdelbegin \DIFdel{every case}\DIFdelend \DIFaddbegin \DIFadd{$2.3\%$. The plan that is optimal for the nominal $80$~km/h instance
+(Concow, then Paradise) is fully on time in only $20.7\%$ of the draws
+and retains on average $26.6\%$ of the drawn optimum (fifth percentile
+$2.7\%$), because a delay or a slower road lets the Concow detour make
+Paradise late. The simpler plan ``Paradise only'' is on time in all
+draws and retains $98.6\%$ of the drawn optimum on average (fifth
+percentile $97.4\%$). The nominal optimum is therefore brittle}\DIFaddend , and the
+\DIFdelbegin \DIFdel{greedy repair heuristic matches them
+here as well.
+This single real }\DIFdelend \DIFaddbegin \DIFadd{brittleness comes from adding a low-weight site ahead of a dominant one;
+this is the kind of effect that a model with uncertain parameters should
+capture (Section~\ref{sec:disc-stochastic}).
+}
+
+\DIFadd{This single }\DIFaddend instance cannot substitute for the synthetic \DIFdelbegin \DIFdel{sweep}\DIFdelend \DIFaddbegin \DIFadd{study}\DIFaddend 's
+statistical evidence, \DIFdelbegin \DIFdel{but it shows the same
+qualitative pattern is not a synthetic-data artifact, and the $50$~km/h scenario's already-infeasible sites are exactly the kind of
+situation Section~\ref{sec:disc-multi}'s discussion of multiple
+vehicles is motivated by: a single depot's single crew has a hard
+limit on what it can save, regardless of how it is scheduled}\DIFdelend \DIFaddbegin \DIFadd{and its outputs depend on the assumptions above;
+its role is to show the model, the algorithms, and the reading and
+uncertainty issues on real geography}\DIFaddend .
+
+% ══════════════════════════════════════════════════════════════════
+\section{Discussion and extensions}\label{sec:discussion}
+
+The results of Section~\ref{sec:theory} settle the single-depot,
+single-vehicle, deterministic-deadline case completely. Three natural
+directions relax one assumption at a time; we discuss, for each, what
+carries over from our analysis and what specifically breaks, rather
+than simply listing them as unexplored future work.
+
+\subsection{Multiple depots or vehicles}\label{sec:disc-multi}
+
+Suppose $m>1$ vehicles are available, each \DIFdelbegin \DIFdel{able to serve a disjoint
+subset of
+sites, still under the same round-trip dispatch-time and
+deadline structure. Call this }\DIFdelend \DIFaddbegin \DIFadd{serving its own sequence of
+round trips, as in }\DIFaddend MWHED-$m$ \DIFdelbegin \DIFdel{(MWHED itself is MWHED-$1$) .
+Two facts are immediate.
+First, }\DIFdelend \DIFaddbegin \DIFadd{of Section~\ref{sec:equalp}. Four facts
+describe what changes.
+}
+
+\emph{\DIFadd{Hardness persists for every fixed $m$.}} \DIFadd{Take a common-deadline
+instance with deadline $D$ and total weight $\Omega=\sum_iw_i$ (the
+hard instances of Theorem~\ref{thm:hardness}) and add $m-1$ ``blocker''
+sites with $p=d=D$ and weight $\Omega+1$. A blocker occupies a vehicle
+for all of $[0,D]$: if anything is served on that vehicle before it, the
+blocker is late, and if anything is served after it, that site is late.
+So each served blocker uses a vehicle exclusively, dropping a blocker
+costs $\Omega+1$ and can free a vehicle worth at most $\Omega$, and an
+optimum serves all $m-1$ blockers and solves the original instance on the
+one remaining vehicle. Hence }\DIFaddend MWHED-$m$ is NP-hard for every fixed \DIFdelbegin \DIFdel{$m\ge 1$: the $m=1$ instance embeds into any MWHED-}\DIFdelend $m$\DIFdelbegin \DIFdel{instance by
+adding $m-1$ vehicles with no sites to serve, so Theorem~\ref{thm:hardness}'s
+hardness persists.Second, }\DIFdelend \DIFaddbegin \DIFadd{.
+(Simply adding idle vehicles to an instance would not do: extra vehicles
+can serve sites, which changes the problem.)
+}
+
+\emph{\DIFadd{The exact dynamic program grows with $m$.}} \DIFaddend Theorem~\ref{thm:dp}'s
+\DIFdelbegin \DIFdel{dynamic program does
+}\emph{\DIFdel{not}} %DIFAUXCMD
+\DIFdel{extend at the same complexity: the natural generalization
+tracks a completion-time state per vehicle}\DIFdelend \DIFaddbegin \DIFadd{recursion extends by tracking a completion time per vehicle. Assign sites
+in deadline order (Lemma~\ref{lem:edd}, applied on each vehicle) and let
+$f(i,t_1,\dots,t_m)$ be the maximum on-time weight using sites
+$1,\dots,i$ when vehicle $k$ has accumulated exactly $t_k$ occupancy;
+site $i$ may be appended to any vehicle $k$ with $t_k\le d_i$}\DIFaddend ,
+\DIFdelbegin \DIFdel{giving a table of size
+$O(n \cdot P^m)$ rather than $O(nP)$---pseudo-polynomial }\DIFdelend \DIFaddbegin \begin{multline*}
+\DIFadd{f(i,t_1,\dots,t_m)=\max\Bigl(f(i-1,t_1,\dots,t_m),}\\
+\DIFadd{\max_{k:\,p_i\le t_k\le d_i}
+\bigl(f(i-1,t_1,\dots,t_k-p_i,\dots,t_m)+w_i\bigr)\Bigr).
+}\end{multline*}
+\DIFadd{The table has $O(nP^m)$ cells, pseudo-polynomial }\DIFaddend for fixed $m$ \DIFdelbegin \DIFdel{,
+}\DIFdelend but with
+an exponent that grows with the number of vehicles\DIFdelbegin \DIFdel{, not merely
+a constant-factor slowdown. Whether a smarter exact algorithm avoids
+this blow-up, or whether the $m^{\text{th}}$ power is
+unavoidable , is open ; this connects MWHED-$m$ to }\DIFdelend \DIFaddbegin \DIFadd{. Whether this is
+unavoidable is open here; }\DIFaddend the parallel-machine scheduling literature
+\DIFdelbegin \DIFdel{'s own maximum-weighted-on-time-jobs problem , whose
+complexity landscape beyond a single machine is }\DIFdelend \DIFaddbegin \DIFadd{treats the problem as }\DIFaddend considerably less settled than the single-machine
+case \DIFdelbegin \DIFdel{we resolve here
+\mbox{%DIFAUXCMD
+\citep{lenstra1977}}\hskip0pt%DIFAUXCMD
+. Recent evidence confirms this: \mbox{%DIFAUXCMD
+\citet{heegermolter2025}
+}\hskip0pt%DIFAUXCMD
+show that even the parallel-machine analogue of our }\emph{\DIFdel{tractable}}
+%DIFAUXCMD
+\DIFdel{equal-cost special case---identical processing times across identical
+machines, $P|r_j, p_j{=}p|\sum w_jU_j$---is already NP-hard, and $W[2]$-hard
+parameterized by the number of machines, once release dates are
+allowed. Translated into our setting, this suggests that
+Theorem~\ref{thm:equalp}'s tractability for MWHED-$1$ is unlikely to
+survive as cleanly into MWHED-}\DIFdelend \DIFaddbegin \DIFadd{\mbox{%DIFAUXCMD
+\citep{lenstra1977}}\hskip0pt%DIFAUXCMD
+. We conjecture, but have not verified, that
+value-scaling extends to an }\DIFaddend $m$\DIFdelbegin \DIFdel{for $m\ge 2$, even restricted to the
+equal-dispatch-cost case---the multi-vehicle relaxation appears to cost more than just an exponent in the DP's table size.
+We conjecture the FPTAS of Theorem~\ref{thm:fptas}
+extends to }\DIFdelend \DIFaddbegin \DIFadd{-dimensional state.
+}
+
+\emph{\DIFadd{Equal dispatch times stay tractable.}} \DIFadd{Theorem~\ref{thm:equalp}
+solves }\DIFaddend MWHED-$m$ \DIFdelbegin \DIFdel{for fixed $m$ via the same value-scaling idea
+applied to an }\DIFdelend \DIFaddbegin \DIFadd{with equal dispatch times in $O(n\log n)$ time for
+every }\DIFaddend $m$\DIFdelbegin \DIFdel{-dimensional state (the scaled-weight axis is untouched }\DIFdelend \DIFaddbegin \DIFadd{. This is the multi-vehicle analogue of the single-vehicle
+special case and holds without release dates.
+}
+
+\emph{\DIFadd{Release dates break it.}} \DIFadd{\mbox{%DIFAUXCMD
+\citet{heegermolter2025} }\hskip0pt%DIFAUXCMD
+show that the
+unweighted parallel-machine problem with identical processing times
+}\emph{\DIFadd{and release dates}}\DIFadd{, $P|r_j,p_j{=}p|\sum U_j$, is NP-hard and
+$W[2]$-hard parameterized }\DIFaddend by the number of \DIFdelbegin \DIFdel{vehicles), but we have
+not verified this in detail and do not claim it as a result here.
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{To see concretely where the $P^m$ term comes from: assign sites to
+vehicles greedily by deadline as in Lemma~\ref{lem:edd}, but now track, for each vehicle $k=1,\dots,m$, its own cumulative dispatch time
+$t_k$. The natural generalization of $f(i,t)$ in Theorem~\ref{thm:dp}'s
+proof becomes $f(i, t_1,\dots,t_m)$: the
+maximum on-time weight
+achievable using sites $1,\dots,i$, where vehicle $k$ has accumulated
+exactly $t_k$ dispatch time . Site $i$ can be assigned to whichever
+vehicle $k$ currently has $t_k + p_i \le d_i$, giving the recursion
+}\begin{align*}
+\DIFdel{f(i, t_1,\dots,t_m) = \max\Bigl(}&\DIFdel{f(i-1,t_1,\dots,t_m),}\\
+&\DIFdel{\max_{k :\, t_k \ge p_i,\, t_k \le d_i} \bigl(f(i-1, t_1,\dots,t_k -
+p_i,\dots,t_m) + w_i\bigr)\Bigr),
+}\end{align*}%DIFAUXCMD
+\DIFdel{a direct generalization of \eqref{eq:dp} with $m$ time axes instead of
+one. Since each axis ranges over $0,\dots,P$, the table has
+$O(P^m)$ cells per site, $O(nP^m)$ overall---exactly the blow-up
+claimed above, and the reason a genuinely new idea, not just a bigger
+table, would be needed to bring MWHED-$m$'s exact algorithm back to a
+complexity independent of $m$ in the exponent}\DIFdelend \DIFaddbegin \DIFadd{machines. Release dates have
+no counterpart in MWHED as defined here, since every vehicle is at the
+depot at time $0$ and every site can be served from the start. They
+would arise if sites become reachable, or crews available, only at given
+times (for instance, a road cleared by a firebreak). The equal-cost
+tractability is therefore robust to adding vehicles but not to adding
+release dates, and extending the model in that direction is a natural
+open problem}\DIFaddend .
+
+\subsection{A relocating depot or growing-radius hazard}\label{sec:disc-relocate}
+
+Definition~\ref{def:mwhed} takes each site's round-trip dispatch time
+$p_i$ as a fixed constant, appropriate when the depot is stationary. If
+the depot itself can relocate between dispatches---a mobile command
+post following a fire line, for instance---$p_i$ becomes a function of
+the depot's current position, which in turn depends on the dispatch
+order already chosen. Lemma~\ref{lem:edd}'s exchange argument relies
+critically on $p_i$ being order-independent (Section~\ref{sec:model}'s
+observation that every visit is a self-contained round trip); with a
+relocating depot this fails, and the problem acquires genuine routing
+structure on top of its scheduling structure. We expect this variant to
+be at least as hard as MWHED (it contains MWHED as the special case of
+a depot that chooses not to move) and likely strictly harder, since the
+order in which sites are visited now affects future dispatch costs, not
+just which deadlines are met.
+
+It is worth being precise about what ``growing-radius hazard'' does
+and does not already mean for a \emph{stationary} depot, since the two
+relaxations named in this subsection's title are not the same
+complication. If the hazard simply expands outward from a fixed origin
+at a fixed, known rate, its arrival time at each site is already fully
+captured by the deadline $d_i$ in Definition~\ref{def:mwhed}---this is
+exactly the reduction described in Section~\ref{sec:intro}, and
+requires no extension to our model at all. The genuine second
+relaxation, distinct from a relocating depot, arises if the spreading
+hazard itself degrades the road or access network the depot's vehicle
+uses---for instance, a wildfire making a route impassable once it
+crosses that route, or rising floodwater cutting off a bridge---so that
+$p_i$ is not merely unknown but a function of \emph{when} site $i$ is
+reached, since a later attempt may have to detour around
+hazard-affected infrastructure that an earlier attempt would not have.
+This again breaks Lemma~\ref{lem:edd}'s order-independence assumption,
+but through the road network's degradation rather than the depot's own
+movement, and the two effects would compound if both are present
+simultaneously.
+
+\DIFdelbegin %DIFDELCMD < \subsection{Uncertain hazard arrival times}%%%
+\DIFdelend \DIFaddbegin \subsection{Uncertain parameters}\DIFaddend \label{sec:disc-stochastic}
+
+Definition~\ref{def:mwhed} takes \DIFdelbegin \DIFdel{each deadline }\DIFdelend \DIFaddbegin \DIFadd{the dispatch times $p_i$, the
+deadlines }\DIFaddend $d_i$ \DIFaddbegin \DIFadd{and the weights $w_i$ }\DIFaddend as known exactly. \DIFdelbegin \DIFdel{If $d_i$ is instead a random variable (as it would be if derived from a stochastic hazard-spread simulation), the natural analogue replaces the
+hard feasibility indicator $\mathbb 1[C_i(\sigma)\le d_i]$ in
+\eqref{eq:objective} with $\Pr[C_i(\sigma) \le d_i]$, turning MWHED into
+a chance-constrained or expected-value scheduling problem. Lemma~\ref{lem:edd}'s
+proof does not survive this change unmodified: the exchange argument
+compares two fixed completion times against two fixed deadlines, and with random deadlines the ordering that maximizes }\DIFdelend \DIFaddbegin \DIFadd{In practice
+each is an estimate: arrival times come from a fire-spread, flood or
+plume simulator and carry its forecast error; occupancies depend on road
+conditions that the hazard itself may degrade; weights are proxies for
+population or asset exposure. The optimal solutions and the structural
+statements above are conditional on these inputs, and the case study of
+Section~\ref{sec:campfire} shows that the nominal optimum can be brittle
+under plausible perturbations. We discuss three ways to model the
+uncertainty, and which of our results survive each.
+}
+
+\emph{\DIFadd{Scenario-based (stochastic) models.}} \DIFadd{Let uncertain parameters
+take values $\xi_s=(p^s,d^s,w^s)$ with probabilities $\pi_s$ for
+$s=1,\dots,S$, and let the dispatch order $\sigma$ be chosen before the
+scenario is revealed. The natural objective is the }\DIFaddend expected on-time
+weight \DIFdelbegin \DIFdel{need not sort sites by any single deterministic statistic of
+$d_i$,
+for the same reason that earliest-due-date sequencing is not
+generally optimal under stochastic due dates in the classical
+scheduling literature}\DIFdelend \DIFaddbegin \DIFadd{$\sum_s\pi_s\sum_iw_i^s\,\mathbb 1[C_i^s(\sigma)\le d_i^s]$,
+which for $S=1$ is MWHED and is therefore NP-hard. Lemma~\ref{lem:edd}
+holds scenario by scenario but not simultaneously: no single order sorts
+all scenarios' deadlines, and the exchange argument fails}\DIFaddend . A small
+example \DIFdelbegin \DIFdel{makes this concrete: two }\DIFdelend \DIFaddbegin \DIFadd{shows that sorting by expected deadline can be nearly twice as
+bad as the optimum. Two }\DIFaddend sites with $p=1$\DIFdelbegin \DIFdel{each, }\DIFdelend \DIFaddbegin \DIFadd{: }\DIFaddend site $A$ with $w_A=1$ and
+\DIFdelbegin \DIFdel{a deterministic deadline $d_A=2$}\DIFdelend \DIFaddbegin \DIFadd{deadline $2$}\DIFaddend , and site $B$ with $w_B=10$ and a random deadline \DIFdelbegin \DIFdel{$d_B=1$ or $d_B=100$, each }\DIFdelend \DIFaddbegin \DIFadd{equal to
+$1$ or $100$ }\DIFaddend with probability $\tfrac12$ \DIFdelbegin \DIFdel{, so $\mathbb E[d_B]=50.5 >
+\mathbb E[d_A]=2$. Sorting by increasing $\mathbb E[d_i]$ dispatches
+}\DIFdelend \DIFaddbegin \DIFadd{each, so $\mathbb E[d_B]=50.5>
+\mathbb E[d_A]=2$. Serving }\DIFaddend $A$ first \DIFdelbegin \DIFdel{: $A$ completes at $1\le 2$ (always on time) , and $B$
+completes at $2$, on time only when $d_B=100$, giving expected value
+$1 + 10\cdot\tfrac12 = 6$. Dispatching }\DIFdelend \DIFaddbegin \DIFadd{(the expected-deadline order) gives
+$1+10\cdot\tfrac12=6$; serving }\DIFaddend $B$ \DIFdelbegin \DIFdel{first instead: }\DIFdelend \DIFaddbegin \DIFadd{first gives $10+1=11$, because }\DIFaddend $B$\DIFdelbegin \DIFdel{completes
+at $1$, on time whenever $d_B\ge 1$, which holds for }\emph{\DIFdel{both}}
+%DIFAUXCMD
+\DIFdel{possible values of $d_B$, and $A$ completes at $2\le 2$, always on
+time, giving expected value $10 + 1 = 11$---nearly double, by visiting
+the site with the }\emph{\DIFdel{larger}} %DIFAUXCMD
+\DIFdel{expected deadline first , because $d_B$}\DIFdelend 's
+tight realization \DIFdelbegin \DIFdel{($d_B=1$) is only avoidable }\DIFdelend \DIFaddbegin \DIFadd{is avoidable only }\DIFaddend by acting immediately\DIFdelbegin \DIFdel{,
+information the expected value alone discards. This would couple
+MWHED to exactly the
+kind of sequential-decision and statistical
+monitoring questions studied elsewhere in the stochastic
+vehicle-routing literature, rather than to a direct generalization of Theorems~\ref{thm:dp}--\ref{thm:fptas}}\DIFdelend \DIFaddbegin \DIFadd{. This is the
+setting of two-stage stochastic programming, in which a first-stage plan
+is evaluated against scenario-dependent recourse; evacuation planning
+under uncertain demand and network damage
+\mbox{%DIFAUXCMD
+\citep{wang2020evac} }\hskip0pt%DIFAUXCMD
+and facility location under disruptions
+\mbox{%DIFAUXCMD
+\citep{koca2023} }\hskip0pt%DIFAUXCMD
+are close relatives in the disaster-response
+literature. A sample-average formulation of the expected-weight
+objective is a mixed-integer program whose combinatorial core is
+MWHED with scenario-dependent deadlines; a Benders-type decomposition by
+scenario is natural, and exploiting Lemma~\ref{lem:edd} within a scenario
+to generate cuts is, we believe, a promising direction that we have not
+pursued.
+}
+
+\emph{\DIFadd{Robust feasibility.}} \DIFadd{Feasibility of a set of sites is monotone in
+the parameters: it is preserved when $d_i$ increases or $p_i$
+decreases. A set that is on time for }\emph{\DIFadd{every}} \DIFadd{realization in a box
+$[p_i^-,p_i^+]\times[d_i^-,d_i^+]$ is therefore exactly a feasible set
+of the MWHED instance $(p^+,d^-,w)$, and every result above applies to
+that worst-case instance. This is cheap but conservative; in the case
+study the worst corner of the sampled ranges (slow roads, early arrival,
+a $20$-minute delay) makes even Paradise individually infeasible, so
+instance-wise robustness would return nothing. Chance-constrained or
+scenario-averaged objectives are the useful formulations there.
+}
+
+\emph{\DIFadd{Calibration and sensitivity.}} \DIFadd{Because the inputs are data-driven,
+reporting how the optimum moves with them, as in
+Section~\ref{sec:campfire}, is part of using the model. The case study
+suggests a practical rule that scenario models would formalize: when one
+site dominates the weight, protect it first and add other sites only if
+they remain feasible under the plausible range of delays}\DIFaddend .
+
+% ══════════════════════════════════════════════════════════════════
+\section{Conclusion}\label{sec:conclusion}
+
+We have \DIFdelbegin \DIFdel{given a complete complexity and algorithmic characterization of
+}\DIFdelend \DIFaddbegin \DIFadd{studied }\DIFaddend Minimum Weighted Hazard-Exposure Dispatch, a scheduling
+problem that arises \DIFdelbegin \DIFdel{naturally }\DIFdelend whenever a single depot must choose a dispatch order
+against a spreading hazard with \DIFdelbegin \DIFdel{known, }\DIFdelend site-specific arrival deadlines. The
+problem is exactly the classical weighted on-time-jobs \DIFdelbegin \DIFdel{scheduling
+problem
+}\DIFdelend \DIFaddbegin \DIFadd{problem
+$1\|\sum w_jU_j$ }\DIFaddend in transportation language\DIFdelbegin \DIFdel{, and is weakly NP-hard already in
+its simplest heterogeneous case (}\DIFdelend \DIFaddbegin \DIFadd{; consequently its weak
+NP-hardness (already at }\DIFaddend equal deadlines, \DIFdelbegin \DIFdel{Theorem
+\ref{thm:hardness}); an exact }\DIFdelend \DIFaddbegin \DIFadd{by a direct reduction from
+}\textsc{\DIFadd{Partition}}\DIFadd{), the }\DIFaddend pseudo-polynomial dynamic program\DIFdelbegin \DIFdel{(Theorem~\ref{thm:dp}) and an FPTAS }\DIFdelend \DIFaddbegin \DIFadd{, and the
+approximation scheme are classical, and we have presented them with
+complete proofs rather than as new techniques. What we believe the
+transportation framing adds is a precise account of }\emph{\DIFadd{which
+heterogeneity makes dispatch hard}}\DIFadd{: the problem is polynomial exactly
+when the dispatch times or the weights are constant and weakly NP-hard
+otherwise }\DIFaddend (Theorem~\DIFdelbegin \DIFdel{\ref{thm:fptas})give
+planners exact and provably near-exact tools regardless; and a second, structurally distinct special case---equal dispatch cost, Theorem
+\ref{thm:equalp}---remains }\DIFdelend \DIFaddbegin \DIFadd{\ref{thm:classification}), heterogeneous hazard
+deadlines never cause hardness, and the equal-dispatch-time case remains
+}\DIFaddend exactly solvable in \DIFdelbegin \DIFdel{near-linear time ,
+delineating precisely which combination of network heterogeneity
+causes the difficulty. These guarantees are not merely convenient: the
+natural do-nothing fallback of dispatching sites in deadline order with no reconsideration has }\DIFdelend \DIFaddbegin \DIFadd{$O(n\log n)$ time for any number of identical
+vehicles (Theorem~\ref{thm:equalp}), though not once release dates are
+added. Natural heuristics---deadline order with or without skipping, and
+a weighted greedy repair---have }\DIFaddend unbounded worst-case \DIFdelbegin \DIFdel{loss relative to the
+optimum (Proposition~\ref{prop:naive}), so some form of optimization is necessary for any performance guarantee at all, and our numerical
+illustration confirms this qualitative gap persists }\DIFdelend \DIFaddbegin \DIFadd{ratio, so a
+guarantee requires a rule that reconsiders earlier commitments in light
+of both weights and dispatch times; the dynamic program and the FPTAS
+are two such rules, not the only ones. The FPTAS's analysis is tight to
+within a factor $1-\epsilon^2$, although }\DIFaddend on random instances \DIFdelbegin \DIFdel{of realistic size, alongside a weighted Moore--Hodgson-style
+greedy repair heuristic that---while carrying no proven guarantee---
+recovers substantially more of the optimum than doing nothing at all}\DIFdelend \DIFaddbegin \DIFadd{it is
+essentially exact; this is only visible once the instance's weights are
+large enough for its rounding to be active}\DIFaddend .
+
+\DIFdelbegin \DIFdel{Section~\ref{sec:discussion} examines three natural relaxations---multiple
+depots or vehicles, a relocating depot, and uncertain hazard-arrival
+times---identifying precisely which part of our analysis (the exchange argument, the
+dynamic program's state space, or both) each
+relaxation breaks, rather than leaving them as an unexamined list. }%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{More broadly, MWHED is a small, self-contained illustration of a pattern that recurs across combinatorial optimization: a
+transportation-network reparametrization of }\DIFdelend \DIFaddbegin \DIFadd{The numerical study and the case study carry two lessons beyond the
+theorems. The reading of the deadline (the crew must arrive before the
+hazard, or return before it) changes the answer on the same data and
+must be stated. And the optimum of a model with estimated inputs can be
+brittle: on the Camp Fire instance the nominal optimum serves a small
+site ahead of the dominant one and fails under modest delays, whereas
+protecting the dominant site first is robust. Section~\ref{sec:discussion}
+discusses how scenario-based and robust formulations would capture this,
+and which parts of the analysis survive: Lemma~\ref{lem:edd} holds
+within a scenario but not across scenarios, which is what makes the
+stochastic version a genuinely different problem. Natural next steps are
+a stochastic or chance-constrained MWHED with a decomposition that uses
+the earliest-deadline lemma within scenarios, release dates and
+heterogeneous vehicles, and }\DIFaddend a \DIFdelbegin \DIFdel{decades-old scheduling
+problem reveals both that the classical hardness and algorithmic
+machinery transfer over essentially unchanged (Theorems~\ref{thm:hardness}--\ref{thm:fptas}), and that the specific structural question of which restriction
+restores tractability (Theorem~\ref{thm:equalp}) has a clean,
+network-interpretable answer---sites equidistant from the depot---that
+was not visible in the original scheduling formulation's language of
+abstract jobs and machines. We see thisas the paper's main
+methodological contribution alongside its specific results: reframing
+a classical scheduling question in transportation terms did not just
+relabel it, it surfaced a distinction (dispatch-cost heterogeneity
+versus deadline heterogeneity) that determines tractability, and that
+distinction is exactly what Section~\ref{sec:discussion}'s three
+extensions each perturb in a different way}\DIFdelend \DIFaddbegin \DIFadd{relocating depot}\DIFaddend .
+
+\begin{appendices}
+
+\section{Exhaustive verification of the running example}\label{app:exhaustive}
+
+Examples~\ref{ex:running}--\ref{ex:matroid} rely on
+Example~\ref{ex:running}'s instance being small enough to check by
+exhaustive search, not only by the dynamic program itself. Since
+Lemma~\ref{lem:edd} lets us restrict to dispatching each candidate
+subset $S$ in increasing-deadline order, Table~\ref{tab:exhaustive}
+lists all $2^4=16$ subsets of Example~\ref{ex:running}'s four sites
+($p=(2,3,1,4)$, $d=(4,6,2,9)$, $w=(5,8,3,10)$), each dispatched in that
+order, together with its total dispatch time and feasibility. Every
+feasible subset's weight is at most $23$, and $\{1,2,4\}$ attains it,
+confirming $W^\ast=23$ independently of Algorithm~\ref{alg:exact}.
+
+\begin{table}[h]
+\caption{All $16$ subsets of Example~\ref{ex:running}'s running
+instance, dispatched in increasing-deadline order. ``Sum $p$'' is the
+subset's total dispatch time; a subset is feasible iff every member
+completes on time in this order (Lemma~\ref{lem:edd}).}\label{tab:exhaustive}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Subset $S$ & Order & Sum $p$ & Feasible? \quad $W(S)$ \\
+\midrule
+$\emptyset$ & --- & 0 & yes \quad 0 \\
+$\{1\}$ & 1 & 2 & yes \quad 5 \\
+$\{2\}$ & 2 & 3 & yes \quad 8 \\
+$\{3\}$ & 3 & 1 & yes \quad 3 \\
+$\{4\}$ & 4 & 4 & yes \quad 10 \\
+$\{1,2\}$ & 1,2 & 5 & yes \quad 13 \\
+$\{1,3\}$ & 3,1 & 3 & yes \quad 8 \\
+$\{1,4\}$ & 1,4 & 6 & yes \quad 15 \\
+$\{2,3\}$ & 3,2 & 4 & yes \quad 11 \\
+$\{2,4\}$ & 2,4 & 7 & yes \quad 18 \\
+$\{3,4\}$ & 3,4 & 5 & yes \quad 13 \\
+$\{1,2,3\}$ & 3,1,2 & 6 & yes \quad 16 \\
+$\{1,2,4\}$ & 1,2,4 & 9 & yes \quad \textbf{23} \\
+$\{1,3,4\}$ & 3,1,4 & 7 & yes \quad 18 \\
+$\{2,3,4\}$ & 3,2,4 & 8 & yes \quad 21 \\
+$\{1,2,3,4\}$ & 3,1,2,4 & 10 & no (site 4 completes at $10>d_4{=}9$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Only the full set $\{1,2,3,4\}$ is infeasible, and it is infeasible for
+exactly the reason Example~\ref{ex:running} describes: dispatching all
+four sites, even in the best possible (deadline) order, makes site $4$
+complete one time unit after its deadline. Every other subset is
+feasible, so the optimization reduces to choosing, among the $15$
+feasible subsets, the one of largest weight---which Table~\ref{tab:exhaustive}
+confirms is $\{1,2,4\}$, at $W=23$, exactly matching
+Example~\ref{ex:running}, Example~\ref{ex:dp}'s dynamic-program table,
+and Example~\ref{ex:fptas}'s FPTAS instantiation.
+
+\section{Detailed derivation of the FPTAS's approximation ratio}\label{app:fptas-detail}
+
+Theorem~\ref{thm:fptas}'s proof compresses the approximation-ratio
+derivation into a single chain of inequalities. We spell out each step
+separately here, for a reader who wants to check the bound without
+re-deriving it.
+
+Recall the setup: $w_{\max} = \max_i w_i$, $K = \max(1, \epsilon
+w_{\max}/n)$, $w_i' = \lfloor w_i/K \rfloor$, $S^\ast$ is the true
+optimal subset with $W^\ast = \sum_{i \in S^\ast} w_i$, and $\hat S$ is
+the subset the FPTAS returns (the feasible subset of largest scaled
+value $v$ with $g(n,v)<\infty$). As in the main proof, we split on
+which argument of $K=\max(1,\epsilon w_{\max}/n)$ attains the maximum;
+the case below covers the case $\epsilon w_{\max}/n < 1$ (where the
+scaling is vacuous and $\hat S = S^\ast$ exactly) in one line, and
+spells out the remaining case in full.
+
+\textbf{Vacuous-scaling case, $\epsilon w_{\max}/n < 1$.} Then $K=1$,
+so $w_i' = \lfloor w_i \rfloor = w_i$ (the $w_i$ are already integers),
+the value-indexed dynamic program is identical to Theorem~\ref{thm:dp}'s
+program, and it returns $\hat S = S^\ast$, so $W(\hat S) = W^\ast \ge
+(1-\epsilon)W^\ast$ immediately, since $\epsilon \in (0,1)$.
+
+The remaining steps assume $\epsilon w_{\max}/n \ge 1$, so that $K =
+\epsilon w_{\max}/n$ \emph{exactly} (not merely as an upper bound) ---
+this exact equality, rather than an inequality, is what Step 5 below
+needs, and is the reason the case split above is necessary rather than
+cosmetic.
+
+\textbf{Step 1: relating $w_i$ and $w_i'$.} By definition of the floor
+function, $w_i' \le w_i/K < w_i' + 1$, so
+\begin{equation}\label{eq:app-step1}
+K w_i' \ \le\ w_i \ <\ K(w_i'+1).
+\end{equation}
+The right-hand inequality of \eqref{eq:app-step1}, rearranged, gives
+$w_i \le K(w_i'+1)$, used in Step 4 below; the left-hand inequality
+gives $w_i' \le w_i/K$, used in Step 2.
+
+\textbf{Step 2: $S^\ast$'s scaled value is close to $W^\ast/K$.}
+Summing the left-hand inequality of \eqref{eq:app-step1}'s consequence
+$w_i' \le w_i/K$ is the wrong direction for a lower bound on $\sum_{i\in
+S^\ast} w_i'$, so instead we use $w_i/K - 1 < w_i'$ (from $w_i/K < w_i'
++ 1$, i.e. the same right-hand inequality of \eqref{eq:app-step1}
+divided by $K$ and rearranged), summed over $S^\ast$:
+\begin{equation}\label{eq:app-step2}
+\sum_{i \in S^\ast} w_i' \ >\ \sum_{i \in S^\ast}\Bigl(\frac{w_i}{K} -
+1\Bigr) \ =\ \frac{W^\ast}{K} - |S^\ast| \ \ge\ \frac{W^\ast}{K} - n.
+\end{equation}
+
+\textbf{Step 3: the FPTAS's returned value is at least as good as
+$S^\ast$'s scaled value.} $S^\ast$ is itself a feasible subset (it is
+feasible by definition, being the true optimum), so it attains some
+scaled value $\sum_{i\in S^\ast} w_i' =: v_0$ with $g(n,v_0) < \infty$.
+Since $\hat S$ is defined as the feasible subset of \emph{largest}
+scaled value among all $v$ with $g(n,v)<\infty$, its scaled value is at
+least $v_0$:
+\begin{equation}\label{eq:app-step3}
+\sum_{i \in \hat S} w_i' \ \ge\ \sum_{i \in S^\ast} w_i' \ \overset{\eqref{eq:app-step2}}{>}\ \frac{W^\ast}{K} - n.
+\end{equation}
+
+\textbf{Step 4: converting $\hat S$'s scaled value back to true
+weight.} Using the right-hand inequality of \eqref{eq:app-step1}
+($w_i \le K(w_i'+1)$) would overcount by $Kn$ if applied termwise and
+summed; instead we directly lower-bound $\hat S$'s true weight using
+the \emph{left}-hand inequality of \eqref{eq:app-step1} ($K w_i' \le
+w_i$), summed over $\hat S$, combined with \eqref{eq:app-step3}:
+\begin{equation}\label{eq:app-step4}
+W(\hat S) = \sum_{i \in \hat S} w_i \ \ge\ K \sum_{i\in \hat S} w_i' \
+\overset{\eqref{eq:app-step3}}{>}\ K\Bigl(\frac{W^\ast}{K} - n\Bigr) =
+W^\ast - Kn.
+\end{equation}
+
+\textbf{Step 5: $Kn$ equals $\epsilon w_{\max}$ exactly.} In this case
+$K = \epsilon w_{\max}/n$ exactly (established above), so
+\begin{equation}\label{eq:app-step5}
+Kn \ =\ \epsilon\, w_{\max}.
+\end{equation}
+This is an equality, not merely a bound---the reason the case split
+matters: in the vacuous-scaling case $K$ can instead exceed $\epsilon
+w_{\max}/n$ (since $K=1$ there), which is exactly why that case is
+handled separately rather than folded into this one.
+
+\textbf{Step 6: bounding $w_{\max}$ by $W^\ast$.} By
+Assumption~\ref{as:feasible}, the single highest-weight site is
+individually feasible ($p_i \le d_i$), so dispatching it alone is a
+feasible subset of value $w_{\max}$; since $W^\ast$ is the optimum over
+\emph{all} feasible subsets, $w_{\max} \le W^\ast$.
+
+\textbf{Combining Steps 4--6:}
+\[
+W(\hat S) \ >\ W^\ast - Kn \ =\ W^\ast - \epsilon\, w_{\max} \ \ge\
+W^\ast - \epsilon W^\ast \ =\ (1-\epsilon) W^\ast,
+\]
+which gives $W(\hat S) > (1-\epsilon)W^\ast$ in this case, and
+$W(\hat S) = W^\ast$ in the vacuous-scaling case; either way,
+$W(\hat S) \ge (1-\epsilon)W^\ast$, matching Theorem~\ref{thm:fptas}.
+
+\end{appendices}
+
+\backmatter
+
+\section*{Statements and Declarations}
+
+\subsection*{Funding}
+The authors declare that no funds, grants, or other support were
+received during the preparation of this manuscript.
+
+\subsection*{Competing Interests}
+The authors have no relevant financial or non-financial interests to
+disclose.
+
+\subsection*{Author Contributions}
+Q.V.D.\ conceived the problem and developed the theoretical results
+(the hardness reduction, the exact dynamic program, the FPTAS, the
+matroid-greedy special case, and the naive-policy lower bound).
+H.V.V.\ implemented the algorithms, ran the numerical experiments and
+the real-world case study, and produced the figures. M.N.D.\ conducted
+the literature review and helped position the work relative to prior
+scheduling and disaster-response research. P.S.N.\ designed the
+real-world case study and its practical interpretation. Q.V.D.\ wrote
+the first draft of the manuscript, and all authors commented on
+previous versions, reviewed, and approved the final manuscript.
+
+\subsection*{Data Availability}
+The synthetic instance generators\DIFdelbegin \DIFdel{and all code used to produce every table }\DIFdelend \DIFaddbegin \DIFadd{, all algorithms, the exhaustive-search
+verification, and the scripts that regenerate every table and figure }\DIFaddend in
+Section~\ref{sec:experiments} \DIFaddbegin \DIFadd{(}\texttt{\DIFadd{experiment.py}}\DIFadd{,
+}\texttt{\DIFadd{verify\_small.py}}\DIFadd{, }\texttt{\DIFadd{case\_study\_campfire.py}}\DIFadd{, and the
+scripts in }\texttt{\DIFadd{figures/}}\DIFadd{) }\DIFaddend are included with this submission and are
+self-contained \DIFdelbegin \DIFdel{, except for
+}\DIFdelend \DIFaddbegin \DIFadd{and deterministic given their random seeds. The
+real-world instance of }\DIFaddend Section~\ref{sec:campfire} \DIFdelbegin \DIFdel{'s real-world instance, whose inputs are
+public-domain }\DIFdelend \DIFaddbegin \DIFadd{is derived from
+public }\DIFaddend figures (a NIST technical report and U.S.\ Census data, both
+cited in the text) rather than data collected by the authors; the
+script that derives \DIFdelbegin \DIFdel{the instance from those public }\DIFdelend \DIFaddbegin \DIFadd{it from those }\DIFaddend figures and reproduces
+Tables~\ref{tab:campfire} and~\ref{tab:campfire-results} \DIFaddbegin \DIFadd{and the
+sensitivity analysis }\DIFaddend is also included\DIFdelbegin \DIFdel{with this submission}\DIFdelend .
+
+\subsection*{Use of Large Language Models}
+An AI coding assistant (Claude, Anthropic) was used to assist with
+LaTeX formatting and to run the numerical illustration code reported in
+Section~\ref{sec:experiments}. All theorem statements, proofs, and the
+manuscript text were authored, verified, and are taken responsibility
+for by the authors.
+
+\bibliography{references}
+
+\end{document}
