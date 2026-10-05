@@ -1,0 +1,394 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage[round]{natbib}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+\newcommand{\rev}[1]{\par\medskip\noindent\textbf{#1}\par}
+\newenvironment{comment}{\par\medskip\begin{quote}\small\itshape}{\end{quote}}
+\newcommand{\reply}{\noindent\textbf{Response.}\ }
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Response to the reviewers}\\[0.3em]
+Manuscript: \emph{Minimum Weighted Hazard-Exposure Dispatch: Complexity,
+an Exact Algorithm, and an FPTAS}\\
+Journal of Combinatorial Optimization --- major revision
+\end{center}
+
+Dear Editor and Reviewers,
+
+Thank you for the careful reading and the constructive reports. We
+revised the manuscript substantially. Reviewer~1's central objection,
+that the theoretical results follow from the classical theory of
+$1\|\sum w_jU_j$, is correct, and we have rewritten the abstract,
+introduction, related work and summary table to say so plainly, to cite
+the classical sources for each result, and to separate what is classical
+from what we believe is new. Reviewer~1's question about the FPTAS
+exposed a real weakness in our experiments (the FPTAS's rounding was
+inactive in most of them), which we explain and fix. Reviewer~2's
+requests for a clearer hardness proof, a self-contained proof of
+Theorem~5, a shorter positioning section and a discussion of parameter
+uncertainty are all addressed.
+
+While revising we also found and corrected several errors of our own,
+which we list in Section~\ref{sec:own}. Theorem numbers~2--5 and
+Proposition~6 are unchanged; new results are Proposition~7,
+Proposition~8 and Theorem~9, and a new ``Fact~1'' used in the proof of
+Theorem~2. All numerical tables were regenerated.
+
+\section*{Summary of the main changes}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+\item \textbf{Positioning and novelty} (abstract, Sections~1, 2, 4,
+Table~2, conclusion): the results that are classical are labelled as
+such, with the classical references added (Sahni 1976; Gens and Levner
+1981; the Lawler--Moore dynamic program is identified with Theorem~3).
+\item \textbf{New or sharpened results} (Section~4): a classification of
+MWHED restrictions by which of $p,w,d$ are constant (Theorem~9);
+Theorem~5 now covers $m$ identical vehicles and has a complete,
+self-contained proof; unbounded worst-case ratio of deadline-order
+dispatch with and without skipping (Proposition~6) and of the weighted
+greedy repair (Proposition~7); tightness of the FPTAS analysis up to a
+factor $1-\epsilon^2$ (Proposition~8).
+\item \textbf{Hardness proof} (Theorem~2): rewritten as a direct
+reduction from \textsc{Partition} with an explicit lemma (Fact~1) on
+feasibility under a common deadline.
+\item \textbf{Experiments} (Section~5): redesigned, with
+exhaustive-search verification, instance sizes to $n=400$, a stronger
+baseline, FPTAS experiments in which rounding is active, and an
+adversarial family.
+\item \textbf{Case study} (Section~5.6): deadline semantics clarified
+(Remark~1), results recomputed, sensitivity analysis added.
+\item \textbf{Discussion} (Section~6): the multi-vehicle subsection is
+corrected, and parameter uncertainty is treated in a new subsection with
+the two suggested references.
+\end{enumerate}
+
+\section{Reviewer 1}
+
+\begin{comment}
+While the manuscript is technically correct and generally well
+presented, the level of novelty of the theoretical contributions is not
+sufficiently convincing. [\dots] most of the main theoretical results
+appear to follow from well-known results in the scheduling literature.
+[\dots] Consequently, the manuscript does not clearly establish new
+complexity results, new algorithmic techniques, or substantially new
+structural properties beyond those already known for the equivalent
+scheduling formulation.
+\end{comment}
+
+\reply We agree. The manuscript proves that MWHED is
+$1\|\sum w_jU_j$ and the general results follow from it. We have not
+tried to argue otherwise. Concretely:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item The abstract and the introduction (Section~1) now say that the
+basic complexity picture is inherited from scheduling theory and that we
+claim no new technique for the general problem. The contributions are
+split into two lists: a self-contained development of the classical
+results in transportation language (Theorems~2--4), and what we believe
+the framing adds (Theorems~5 and~9, Propositions~6--8).
+\item Section~2 now states, for each of Theorems~2--5, which classical
+result it is: Theorem~3 is the Lawler--Moore dynamic program, Theorem~4
+is the classical value-scaling scheme for job sequencing with deadlines
+(we added \citealt{sahni1976} and \citealt{gensl1981}, which we had
+missed), Theorem~5 for one vehicle is classical unit-time job sequencing
+with profits, and the hardness argument is the knapsack equivalence.
+The sentence in the earlier Section~2 suggesting that the FPTAS
+adaptation was ``not entirely mechanical'' has been removed, since that
+overstated the point.
+\item Table~2 (the summary table) has a new column giving the origin of each result
+(classical / Lawler--Moore / Moore / new).
+\item We removed the claim in the abstract, introduction and
+conclusion that the dynamic program and the FPTAS are ``necessary'' for
+any guarantee. Proposition~6 shows only that deadline-order dispatch has
+no guarantee; it does not show that other polynomial algorithms with
+guarantees cannot exist, and the text now says so.
+\end{itemize}
+
+\begin{comment}
+1. Could the authors identify a new structural property?
+\end{comment}
+
+\reply We identify the following, with the caveat that each is
+elementary once the equivalence is in place; we present them as modest
+additions, not as deep results.
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item \textbf{Theorem~9 (classification by homogeneity).} For every
+restriction obtained by making some of the dispatch times $p$, weights
+$w$ and deadlines $d$ constant, MWHED is polynomial if $p$ or $w$ is
+constant and weakly NP-hard otherwise (already when only $d$ is
+constant). In particular heterogeneous hazard deadlines never cause
+hardness. This turns the informal question of which network structure
+makes dispatch hard into a precise statement, and it is consistent with
+the parameterized results of \citet{heegerhermelin2024}, which we now
+discuss accurately (see Section~\ref{sec:own}).
+\item \textbf{Theorem~5 for $m$ identical vehicles.} The equal-cost
+matroid greedy extends to any number of identical vehicles, with a
+complete proof (slots at each position, a counting criterion for
+feasibility, the augmentation property, optimality of the greedy, and a
+union--find implementation whose correctness we prove). The submitted
+discussion suggested that the equal-cost case would become hard with
+several vehicles; that inference was wrong (see Section~\ref{sec:own}).
+Release dates, which the cited hardness result of
+\citet{heegermolter2025} needs, are what break tractability.
+\item \textbf{Propositions~6--8.} Deadline-order dispatch with and
+without skipping, and the weighted greedy repair, have unbounded
+worst-case ratio, and the standard FPTAS analysis is tight up to a factor
+$1-\epsilon^2$ (the adversarial family also explains empirically why the
+FPTAS is nearly exact on random instances, see below).
+\end{itemize}
+
+\begin{comment}
+2. The manuscript repeatedly states the dynamic program and FPTAS as
+major contributions. However, the relationship between these algorithms
+and classical Lawler-Moore-type methods is not discussed in sufficient
+detail. Are the algorithmic contributions truly different from known
+scheduling algorithms?
+\end{comment}
+
+\reply No. Theorem~3's dynamic program is the Lawler--Moore dynamic
+program (jobs in due-date order, state equal to the accepted processing
+time, one test per accepted job); Remark~2 (after Theorem~3) says so and
+describes exactly what our proof adds (a derivation from the
+earliest-deadline-first lemma in the notation of the dispatch problem).
+Theorem~4 is the classical value-scaling scheme, which Sahni (1976) and
+Gens and Levner (1981) developed for job sequencing with deadlines;
+Section~2 (``Scheduling with deadlines'' and ``Approximation'') now
+states this, notes that faster schemes are known, and explains why we
+keep the classical construction (its analysis is the cleanest, and
+Proposition~8 shows it is tight). We no longer present either algorithm
+as a major contribution; they are presented as a self-contained
+treatment for a transportation audience.
+
+\begin{comment}
+3. Why does FPTAS = 1000 always appears in every table? Could the
+authors strengthen the empirical evaluation?
+\end{comment}
+
+\reply This was a genuine weakness. The reason is that, with weights at
+most $100$, the scaling factor $K=\max(1,\epsilon w_{\max}/n)$ equals
+$1$ in almost all of our runs, so no rounding took place and the
+``FPTAS'' coincided with the exact value-indexed dynamic program. A
+ratio of $1.000$ was therefore guaranteed and said nothing about the
+approximation scheme. We now state this explicitly (Section~5.2, last row of
+Table~4: the share of instances with $K=1$) and have redesigned the
+study (Section~5; every table was regenerated):
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item \textbf{Verification} (Section~5.1): every algorithm is checked
+against exhaustive search, including all $n!$ dispatch orders for
+$n\le7$ (400 instances), best-feasible-subset enumeration for $n\le14$
+(1,500 instances, one third with weights up to $10^6$, with the FPTAS
+guarantee checked in $4{,}500$ runs of which $2{,}923$ had active
+scaling), and exhaustive search over vehicle assignments for the
+equal-cost algorithm with $m=2,3$. There were no violations.
+\item \textbf{Accuracy across sizes} (Section~5.2): $n$ up to $400$, $50$
+instances per size (previously $\le100$ and $20$), worst-case ratios
+reported as well as means, and a stronger baseline, EDD with skipping,
+in addition to naive EDD.
+\item \textbf{FPTAS with active scaling} (Section~5.3, Tables~5--6,
+Figure~3): weights up to $10^6$ (so $K$ is in the hundreds to
+thousands), a strongly correlated family, and the adversarial family of
+Proposition~8. Findings: on random and strongly correlated instances the
+FPTAS is nearly exact (worst ratio $0.9993$ even at $\epsilon=0.5$)
+because the bound $\epsilon w_{\max}$ is pessimistic when the optimum
+contains many sites; on the adversarial family the ratio falls to
+$0.669$ at $\epsilon=0.5$ and follows the guarantee as $\epsilon$
+shrinks, so the guarantee is not vacuous. A simple completion step
+(re-insert rejected sites greedily) repairs the family completely.
+\item \textbf{Runtime} (Section~5.4): re-run with active scaling.
+\end{itemize}
+
+We chose not to report this as ``FPTAS $=1$'' evidence at all, and
+the text says explicitly that the earlier tables should not be read as
+evidence about the scheme.
+
+\section{Reviewer 2}
+
+\begin{comment}
+3. The part of MWHED's positioning in page 6 is comprehensible,
+nevertheless it could be rephrased better by shorter arguments.
+\end{comment}
+
+\reply The ``Positioning'' paragraph (Section~2) has been cut by roughly half; it now lists the four literatures it draws on
+and refers to Table~2 for which results are classical.
+
+\begin{comment}
+1. Theorem 2 on NP-hardness of MWHED might require a bit efforts to get
+full clarity. In the 3rd line from the bottom of page 9, don't you think
+that the fact ``completion times along a fixed set are additive'' is too
+strong? What fixed sets should we use here? [\dots] The authors should
+explain about additivity of special sets [\dots] since it is not obvious
+by default, feasibility condition does not explicitly implies
+additivity. [\dots] the above condition ($\diamondsuit$)
+$\sum_{i\in S}p_i\le D$ is crucial to relate your formulation to a 0/1
+knapsack instance.
+\end{comment}
+
+\reply Thank you; the sentence was imprecise. We replaced it by an
+explicit statement, \textbf{Fact~1} (Section~4.1), with a proof:
+\emph{if all deadlines equal $D$, a set $S$ of sites can all be served on
+time iff $\sum_{i\in S}p_i\le D$}, which is exactly your condition
+($\diamondsuit$). The ``fixed set'' is an arbitrary subset $S$. The only
+additivity used is that the \emph{last} site served from $S$ completes
+at the sum of all of $S$'s occupancies, because the vehicle is never idle
+and each $p_i$ does not depend on the predecessor (the defining property
+of MWHED); this gives necessity. For sufficiency every completion time is
+a partial sum of positive numbers and so is at most the total. The
+proof of Theorem~2 now cites Fact~1, and the knapsack correspondence for
+general weights is stated after the theorem.
+
+\begin{comment}
+2. [\dots] your claim on ``NP-complete of the 0/1 knapsack problem''
+comes from polynomial reduction of PARTITION (one of the six popular
+graph-based NP-complete problems [\dots]). This is a solidly smart
+argument, if the above concern is clearly elucidated. Otherwise, a
+graph-based pure proof for Theorem 2 possibly might give better insights
+(ref. Delazeri and Ritt (2026)).
+\end{comment}
+
+\reply We removed the dependence on the knapsack citation: Theorem~2 now
+gives a \emph{direct} polynomial reduction from \textsc{Partition} to
+MWHED ($p_i=w_i=a_i$, $d_i=A/2$), so that the proof is self-contained
+and also shows hardness when $w_i=p_i$; membership in NP is added. A
+small remark on terminology: \textsc{Partition} is one of the six basic
+NP-complete problems in Garey and Johnson but it is a number problem,
+not a graph problem (the graph-based members of that list are Vertex
+Cover, Clique and Hamiltonian Circuit). We did not give a graph-based
+proof: MWHED has no graph structure once each visit is a round trip from
+the depot, so there is no natural graph on which to base one.
+\citet{delazeri2026} prove NP-completeness for a different, graph-based
+model of wildfire suppression with simultaneous resources; Section~2
+says so.
+
+\begin{comment}
+3. [\dots] the authors would elucidate more explicitly Theorem 5's
+proof. In particular, would you remind readers the concepts (a)
+transversal matroid, union-find structure, and (b) the related notation
+$\alpha(n)$?
+\end{comment}
+
+\reply Section~4.4 now opens with a paragraph recalling the notions
+used: matroid and its three axioms, the greedy algorithm, the
+transversal matroid (sites against (vehicle, position) slots), and the
+union--find structure with path compression, with $\alpha$ defined as
+the inverse Ackermann function. The proof is rewritten in five steps:
+(1) positions and slots; (2) a counting criterion for feasibility,
+$N_S(k)\le mk$ for all $k$; (3) a direct proof that the feasible sets
+satisfy the matroid augmentation property (so the transversal-matroid
+fact is proved, not cited); (4) a short proof that the greedy algorithm
+is optimal on any matroid; (5) the union--find implementation, with a
+proof that it accepts a site exactly when the kept set plus that site is
+feasible. Algorithm~3 is rewritten accordingly, and Example~5 now also
+shows $m=2$ vehicles.
+
+\begin{comment}
+4. [\dots] do we agree that the problem of MWHED is obviously
+data-driven, the proofs and optimal solutions obtained depend on both
+accurate formulation and precise calibration of model parameters, upon
+uncertainty? To some extent, would formulation of uncertainty [\dots]
+(at not just variable level but also at parameter one) be considered in
+next studies, where stochastic programming might be a potential
+approach? Kindly, e.g. refer to problems of evacuation planning under
+unsafe contexts and facility location under disruptive events (FLDE),
+ref. [1, 2].
+\end{comment}
+
+\reply We agree. Section~6.3 (now ``Uncertain parameters'') was
+rewritten to cover uncertainty in $p_i$, $d_i$ and $w_i$, not only in
+the deadlines. It discusses (i) scenario-based and two-stage stochastic
+formulations and which of our results survive (the earliest-deadline
+lemma holds scenario by scenario but not simultaneously; a worked
+example shows that sorting by expected deadline can be nearly twice as
+bad as optimal), citing your two references \citep{wang2020evac,koca2023}
+(we verified both: Computers \& Industrial Engineering 145, 106458, and
+183, 109484; the database lists a single author for the second); (ii) a
+robust-feasibility observation (feasibility is monotone in the
+parameters, so a set that is on time for every realization in a box is a
+feasible set of one MWHED instance, which also shows that full
+robustness is too conservative in our case study); and (iii) calibration
+and sensitivity analysis. In addition, the case study (Section~5.6) now
+includes a Monte-Carlo sensitivity analysis over response speed, arrival
+times and departure delay, which shows that the nominal-optimal plan is
+brittle (fully on time in $20.7\%$ of $5{,}000$ draws) while the simpler
+plan ``serve Paradise only'' is robust. Stochastic programming for
+MWHED itself is listed as the main direction for future work; we have
+not attempted a solution method for it here.
+
+\section{Errors of our own corrected in this revision}\label{sec:own}
+
+In the course of revising we re-checked the manuscript and the code and
+found the following, which we correct and disclose.
+
+\begin{enumerate}[leftmargin=*,itemsep=3pt]
+\item \textbf{Case study: deadline semantics.} The model's on-time test
+counts the completion of the whole round trip (the ``return reading''),
+but the narrative and the abstract speak of reaching the site before the
+hazard (the ``arrival reading''). The submitted case study used the
+return reading while describing arrival, and consequently claimed that
+Concow and Magalia could not be reached at $50$~km/h although the crew
+arrives after $31.5$ and $44.5$ minutes against fire-arrival minutes $52$
+and $58$. Remark~1 now makes the two readings precise (the arrival
+reading is an instance of MWHED with deadlines $d_i^{\mathrm{haz}}+p_i/2$)
+and the case study uses it. The results change: at $80$~km/h the optimum
+is Concow then Paradise ($26{,}928$), not Paradise alone. The return
+reading is reported for comparison.
+\item \textbf{Case study: baselines and wording.} Individually
+infeasible sites are now deleted before every algorithm, including the
+naive baseline (the submitted ``naive $=0$'' result used sites that
+violate Assumption~1, so it did not illustrate Proposition~6). Statements
+that the optimum ``saves'' a given number of people were replaced by the
+on-time weight (population) of the sites served.
+\item \textbf{Naive baseline.} Our naive EDD baseline kept dispatching to
+sites that were already late, which made it a weak anchor; we added EDD
+with skipping.
+\item \textbf{Heeger--Hermelin.} The submitted text said that a small
+number of distinct dispatch costs ``does not guarantee tractability''. The
+result is $W[1]$-hardness in that parameter (no $f(k)\mathrm{poly}(n)$
+algorithm), while for fixed $k$ the problem is polynomial; the text now
+says this.
+\item \textbf{Multiple vehicles.} The claim that the $m=1$ instance
+``embeds'' by adding idle vehicles was wrong (extra vehicles can serve
+sites); we now use blocker sites. The inference from
+\citet{heegermolter2025} that the equal-cost case becomes hard with
+several vehicles was also wrong, because that result requires release
+dates, which MWHED does not have; Theorem~5 now shows tractability for
+every $m$.
+\item \textbf{Implementation.} The FPTAS guarantee relies on
+Assumption~1 (so that $w_{\max}\le W^\ast$), which the code did not
+enforce; both algorithms now delete infeasible sites first, and the code
+was rewritten and checked against exhaustive search.
+\item Minor: the dash convention in the dynamic-program example table was
+described incorrectly; the explanation of why the FPTAS runtime was flat
+in $\epsilon$ cited saturating weights, whereas the cause was $K=1$. Both
+are fixed.
+\end{enumerate}
+
+We believe the revised manuscript is considerably stronger and more
+honest about what is and is not new, and we thank the reviewers for the
+comments that led to these changes.
+
+\bigskip
+\noindent Sincerely,\\
+The authors
+
+\bibliographystyle{plainnat}
+\begin{thebibliography}{9}
+\bibitem[Delazeri and Ritt(2026)]{delazeri2026} G.~Delazeri, M.~Ritt. Wildfire Suppression: Complexity, Models, and Instances. arXiv:2603.29865, 2026.
+\bibitem[Gens and Levner(1981)]{gensl1981} G.~V. Gens, E.~V. Levner. Fast approximation algorithm for job sequencing with deadlines. \emph{Discrete Applied Mathematics} 3:313--318, 1981.
+\bibitem[Heeger and Hermelin(2024)]{heegerhermelin2024} K.~Heeger, D.~Hermelin. Minimizing the weighted number of tardy jobs is W[1]-hard. ESA 2024.
+\bibitem[Heeger and Molter(2025)]{heegermolter2025} K.~Heeger, H.~Molter. Minimizing the number of tardy jobs with uniform processing times on parallel machines. STACS 2025.
+\bibitem[Koca(2023)]{koca2023} E.~Koca. Two-stage stochastic facility location problem with disruptions and restricted shortages. \emph{Computers \& Industrial Engineering} 183:109484, 2023.
+\bibitem[Sahni(1976)]{sahni1976} S.~K. Sahni. Algorithms for scheduling independent tasks. \emph{Journal of the ACM} 23(1):116--127, 1976.
+\bibitem[Wang(2020)]{wang2020evac} L.~Wang. A two-stage stochastic programming framework for evacuation planning in disaster responses. \emph{Computers \& Industrial Engineering} 145:106458, 2020.
+\end{thebibliography}
+
+\end{document}

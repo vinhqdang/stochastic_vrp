@@ -4,39 +4,45 @@
 CSoNet 2026's Journal Track. Track D ("Transportation and
 infrastructure networks") is the suggested conference-abstract track.
 
-**Status:** prepared, NOT YET SUBMITTED. Submission is a manual step
-the author takes at https://www.editorialmanager.com/joco (journal)
-and https://meteor.springer.com/CSoNet2026 (conference abstract, per
-the Journal Track's dual-submission rule) — see `STATUS.md`.
+**Status:** submitted to JOCO; **major revision requested** (reviews
+received 2026-10-05); the revised manuscript and the response to
+reviewers are prepared in this directory — see `STATUS.md` for the
+submission record and the revision log.
 
 ## Files
 
 - `main.tex` / `main.pdf` — the manuscript (Springer `sn-jnl` class,
   `sn-mathphys-ay` style: author-year citations, as JOCO requires).
-  32 pages: 4 theorems + 1 proposition, full pseudocode for all four
-  algorithms, a running numerical example threaded through every
-  result, 5 figures (a schematic of the running example, three plots
-  of the synthetic experiments, and a real-geography map for the case
-  study), a "Discussion and extensions" section, two appendices
-  (exhaustive hand-verification of the running example; a fully
-  spelled-out FPTAS approximation-ratio derivation), and a real-world
-  case study (Section 5.5). Builds clean: `pdflatex main && bibtex main
-  && pdflatex main && pdflatex main`.
+  Revised version: 38 pages, Theorems 2-5 and 9, Propositions 6-8,
+  full pseudocode for all algorithms, a running example, 5 figures,
+  a "Discussion and extensions" section, two appendices, a redesigned
+  numerical study (Section 5) and a revised Camp Fire case study
+  (Section 5.6). Builds clean: `pdflatex main && bibtex main && pdflatex
+  main && pdflatex main`. For the journal's revision upload send only
+  the editable sources (`main.tex`, `references.bib`, `figures/`, the
+  class files), not the PDF.
+- `response_to_reviewers.tex` — point-by-point response to the two
+  reviewers, including a list of errors of our own that the revision
+  corrected; compile with `pdflatex` twice (+ `bibtex`).
+- `verify_small.py` / `verify_small_results.txt` — exhaustive-search
+  verification of every algorithm and of Theorems 5-6 claims
+  (`python3 verify_small.py`, ~10 s).
 - `references.bib` — 26 citations, all verified against live
   publisher/DOI/arXiv records before use, spanning 1968–2026 (four
   2026 papers included).
-- `experiment.py` — self-contained numerical experiments on synthetic
-  instances: the exact DP, the FPTAS (implemented as the value-indexed
-  dual DP from the proof, not a shortcut), a weighted
-  Moore–Hodgson-style greedy repair heuristic, and the naive EDD
-  baseline, across four experiments (accuracy vs. instance size,
-  runtime scaling, epsilon sensitivity, robustness to alternative
-  instance-generation regimes). Regenerate every synthetic table with
-  `python3 experiment.py`.
+- `experiment.py` — the algorithms (exact DP, FPTAS with optional
+  completion step, equal-cost matroid greedy for m vehicles, greedy
+  repair, EDD baselines) and the numerical study: E1 accuracy vs n
+  (weights <= 100; the FPTAS scaling is vacuous there, and the share is
+  recorded), E2 FPTAS with active scaling (large weights, strongly
+  correlated, adversarial family), E3 runtime, E4 robustness.
+  Regenerate every table with `python3 experiment.py` (~15 s; needs
+  numpy).
 - `results_illustration.json` — the synthetic experiments' raw output.
 - `case_study_campfire.py` / `case_study_campfire_results.txt` — a
   real-world MWHED instance built from public records of the 2018
-  Camp Fire (NIST fire-progression timeline, real community
+  Camp Fire (revised: arrival-reading deadlines, preprocessing, a
+  Monte-Carlo sensitivity analysis) (NIST fire-progression timeline, real community
   coordinates and 2010 Census populations); every disclosed modeling
   assumption (response speed, deadline extrapolation for two sites) is
   documented in the script's docstring and in main.tex

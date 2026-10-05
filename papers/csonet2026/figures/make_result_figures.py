@@ -1,7 +1,6 @@
-"""Generates Figures 2-4: plots of the numerical results already
-computed and verified by experiment.py (results_illustration.json).
-This script only visualizes existing, verified numbers -- it does not
-compute anything new.
+"""Generates Figures 2-4: plots of the numerical results computed by
+experiment.py (results_illustration.json). This script only visualizes
+those numbers -- it does not compute anything new.
 
 Colors are the validated categorical palette (blue/green/orange/red),
 each series also distinguished by marker and line style so the figures
@@ -37,7 +36,7 @@ def fig_runtime_scaling():
     ax.set_yscale("log")
     ax.set_xlabel(r"$p_{\max}$ (processing-time range)")
     ax.set_ylabel("mean wall-clock time (ms)")
-    ax.set_title("Exact DP vs. FPTAS runtime, $n=40$, $\\epsilon=0.1$")
+    ax.set_title("Exact DP vs. FPTAS runtime, $n=40$, $\\epsilon=0.1$,\nweights up to $10^6$ (scaling active)")
     ax.legend(frameon=False, loc="upper left")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -51,26 +50,26 @@ def fig_runtime_scaling():
 def fig_accuracy_vs_n():
     acc = results["accuracy"]
     ns = sorted(int(k) for k in acc.keys())
-    fptas02 = [acc[str(n)]["fptas02_ratio"] for n in ns]
-    fptas01 = [acc[str(n)]["fptas01_ratio"] for n in ns]
-    repair = [acc[str(n)]["repair_ratio"] for n in ns]
-    naive = [acc[str(n)]["naive_ratio"] for n in ns]
-
-    fig, ax = plt.subplots(figsize=(5.6, 3.8))
-    ax.plot(ns, fptas02, color=BLUE, marker="o", markersize=5,
-            linewidth=2, linestyle="-", label=r"FPTAS ($\epsilon=0.2$)")
-    ax.plot(ns, fptas01, color=GREEN, marker="^", markersize=5,
-            linewidth=2, linestyle="-.", label=r"FPTAS ($\epsilon=0.1$)")
-    ax.plot(ns, repair, color=ORANGE, marker="s", markersize=5,
-            linewidth=2, linestyle="--", label="Greedy repair (M--H style)")
-    ax.plot(ns, naive, color=RED, marker="D", markersize=5,
-            linewidth=2, linestyle=":", label="Naive EDD (no repair)")
+    series = [
+        ("fptas01", r"FPTAS ($\epsilon=0.1$)", BLUE, "o", "-"),
+        ("repair", "Greedy repair (M--H style)", ORANGE, "s", "--"),
+        ("edd_skip", "EDD with skipping", GREEN, "^", "-."),
+        ("naive", "Naive EDD (no repair)", RED, "D", ":"),
+    ]
+    fig, ax = plt.subplots(figsize=(5.8, 3.9))
+    for key, label, color, marker, ls in series:
+        ax.plot(ns, [acc[str(n)][key] for n in ns], color=color,
+                marker=marker, markersize=5, linewidth=2, linestyle=ls,
+                label=label)
+    ax.set_xscale("log")
+    ax.set_xticks([10, 20, 50, 100, 200, 400])
+    ax.set_xticklabels(["10", "20", "50", "100", "200", "400"])
     ax.set_xlabel("$n$ (number of sites)")
     ax.set_ylabel("mean ratio to true optimum")
-    ax.set_ylim(0, 1.08)
-    ax.set_title("Accuracy across instance sizes")
+    ax.set_ylim(0.4, 1.04)
+    ax.set_title("Accuracy across instance sizes (weights $\\leq 100$)")
     ax.legend(frameon=True, facecolor="white", edgecolor="none",
-              framealpha=0.95, loc="upper right", fontsize=8.5)
+              framealpha=0.95, loc="center right", bbox_to_anchor=(1.0, 0.68), fontsize=8.5)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.grid(True, axis="y", alpha=0.25)
@@ -81,35 +80,50 @@ def fig_accuracy_vs_n():
 
 
 def fig_epsilon_sensitivity():
-    rows = results["epsilon_sensitivity"]
-    eps = [r["eps"] for r in rows]
-    ratio = [r["mean_ratio"] for r in rows]
-    time_ms = [r["mean_ms"] for r in rows]
+    rows = results["scaling_active"]
+    eps = sorted({r["eps"] for r in rows})
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.6, 3.4))
+    def pick(regime, n, key):
+        return [next(r[key] for r in rows if r["regime"] == regime
+                     and r["n"] == n and r["eps"] == e) for e in eps]
 
-    ax1.plot(eps, ratio, color=BLUE, marker="o", markersize=6,
-             linewidth=2, linestyle="-")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.8, 3.5))
+    ax1.plot(eps, [1 - e for e in eps], color="black", linestyle=":",
+             linewidth=1.6, label=r"guarantee $1-\epsilon$")
+    ax1.plot(eps, pick("adversarial (sub-K sites)", 100, "mean_ratio"),
+             color=RED, marker="D", markersize=5, linewidth=2,
+             label="adversarial family")
+    ax1.plot(eps, pick("adversarial (sub-K sites)", 100, "mean_ratio_completed"),
+             color=GREEN, marker="^", markersize=5, linewidth=2,
+             linestyle="-.", label="adversarial, with completion")
+    ax1.plot(eps, pick("uniform weights <= 10^6", 100, "min_ratio"),
+             color=BLUE, marker="o", markersize=5, linewidth=2,
+             linestyle="--", label=r"random, $w\leq10^6$ (worst of 30)")
     ax1.set_xlabel(r"$\epsilon$")
-    ax1.set_ylabel("mean ratio to optimum")
-    ax1.set_ylim(0.995, 1.001)
+    ax1.set_ylabel("ratio to optimum")
+    ax1.set_ylim(0.4, 1.03)
     ax1.invert_xaxis()
-    ax1.set_title("Accuracy")
+    ax1.set_title("Accuracy ($n=100$)")
+    ax1.legend(frameon=False, fontsize=7.5, loc="lower left")
     ax1.spines["top"].set_visible(False)
     ax1.spines["right"].set_visible(False)
     ax1.grid(True, axis="y", alpha=0.25)
 
-    ax2.plot(eps, time_ms, color=ORANGE, marker="s", markersize=6,
-             linewidth=2, linestyle="--")
+    cells = pick("uniform weights <= 10^6", 100, "mean_cells")
+    ms = pick("uniform weights <= 10^6", 100, "mean_ms")
+    ax2.plot(eps, [c / 1e6 for c in cells], color=ORANGE, marker="s",
+             markersize=6, linewidth=2, linestyle="--", label="table cells ($10^6$)")
     ax2.set_xlabel(r"$\epsilon$")
-    ax2.set_ylabel("mean time (ms)")
+    ax2.set_ylabel("DP table cells ($\\times10^6$)", color=ORANGE)
     ax2.invert_xaxis()
-    ax2.set_title("Runtime")
-    ax2.spines["top"].set_visible(False)
-    ax2.spines["right"].set_visible(False)
+    ax3 = ax2.twinx()
+    ax3.plot(eps, ms, color=BLUE, marker="o", markersize=5, linewidth=2,
+             label="time (ms)")
+    ax3.set_ylabel("mean time (ms)", color=BLUE)
+    ax2.set_title("Cost ($n=100$, random $w\\leq10^6$)")
+    for ax in (ax2, ax3):
+        ax.spines["top"].set_visible(False)
     ax2.grid(True, axis="y", alpha=0.25)
-
-    fig.suptitle(r"FPTAS sensitivity to $\epsilon$, $n=30$", y=1.03)
     fig.tight_layout()
     fig.savefig("epsilon_sensitivity.pdf", bbox_inches="tight")
     fig.savefig("epsilon_sensitivity.png", dpi=200, bbox_inches="tight")

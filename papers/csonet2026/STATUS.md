@@ -20,6 +20,25 @@
     submitted, **submission ID 374764**. Listed only Quang-Vinh Dang
     as author; a request to Meteor support to add the three co-authors
     is the author's outstanding action.
+- **Review round 1 (2026-10-05): MAJOR REVISION.** Reviewer 1: novelty
+  (results follow from 1||sum w_j U_j), relation to Lawler-Moore, and
+  why FPTAS = 1.000 in every table. Reviewer 2: clarity of the Theorem 2
+  additivity step, self-contained proof of Theorem 5, shorter
+  positioning, and parameter uncertainty (refs: Wang 2020; Koca 2023).
+  **Revised manuscript and `response_to_reviewers.tex` prepared**
+  (not yet uploaded — upload editable sources only, no PDF). Changes
+  verified: all algorithms agree with exhaustive search
+  (`verify_small.py`); experiments regenerated; manuscript builds clean
+  at 38 pages. Own errors corrected and disclosed in the response
+  letter: Camp Fire deadline semantics (return vs arrival reading; the
+  80 km/h optimum is now Concow+Paradise), naive baseline strawman,
+  Heeger-Hermelin wording, the multi-vehicle embedding and the
+  Heeger-Molter inference (needs release dates; equal-cost m-vehicle is
+  polynomial), FPTAS scaling vacuous (K=1) in the original experiments.
+  **Open item for the author:** the NIST anchor minutes (Concow 52,
+  Paradise 71 after the timeline's time zero) were inherited from the
+  submitted version and could not be re-verified against TN 2135 from
+  this environment; confirm before resubmitting.
 - **Policy:** treat as frozen — **do not modify** except for
   editor-requested fixes like the one above, same convention as
   `papers/baton/STATUS.md`. Record any further editorial exchange here.
@@ -33,7 +52,7 @@
   All four appear on `main.tex`'s title page, in the "Author
   Contributions" declaration, and across `cover_letter.md`,
   `title_page.md`, and `conference_abstract_submission.md`.
-- Submission set: `main.pdf` (manuscript, 32 pages: 4 theorems, 1
+- Original submission set (superseded by the revision above): `main.pdf` (manuscript, 32 pages: 4 theorems, 1
   proposition, full pseudocode, a running numerical example, 5 figures
   (schematic of the running example, 3 plots of the synthetic
   experiments, a real-geography map of the case study), 4 numerical

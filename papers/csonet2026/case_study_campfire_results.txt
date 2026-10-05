@@ -1,20 +1,57 @@
-=== Response speed = 50 km/h (derived hazard spread rate = 13.12 km/h) ===
-  Concow       p= 63 d= 52 w=   710  [INFEASIBLE ALONE]
-  Magalia      p= 89 d= 58 w= 11310  [INFEASIBLE ALONE]
-  Yankee Hill  p= 54 d= 64 w=   333  [OK]
-  Paradise     p= 70 d= 71 w= 26218  [OK]
-  Exact optimum   W* =    26218  dispatched = ['Paradise']
-  Naive EDD          =        0  dispatched = []
-  Greedy repair      =    26218  dispatched = ['Paradise']
-  FPTAS (eps=0.1)    =    26218  dispatched = ['Paradise']
+derived hazard spread rate = 13.12 km/h; extrapolated arrival minutes: Concow=52, Paradise=71, Magalia=58, Yankee Hill=64
 
-=== Response speed = 80 km/h (derived hazard spread rate = 13.12 km/h) ===
-  Concow       p= 39 d= 52 w=   710  [OK]
-  Magalia      p= 55 d= 58 w= 11310  [OK]
-  Yankee Hill  p= 34 d= 64 w=   333  [OK]
-  Paradise     p= 44 d= 71 w= 26218  [OK]
-  Exact optimum   W* =    26218  dispatched = ['Paradise']
-  Naive EDD          =      710  dispatched = ['Concow']
-  Greedy repair      =    26218  dispatched = ['Paradise']
-  FPTAS (eps=0.1)    =    26218  dispatched = ['Paradise']
+=== arrival reading, 50 km/h ===
+  Concow       p= 63 one-way= 31.5 d_arrival=  52 w=   710  [kept]
+  Paradise     p= 70 one-way= 35.0 d_arrival=  71 w= 26218  [kept]
+  Magalia      p= 89 one-way= 44.5 d_arrival=  58 w= 11310  [kept]
+  Yankee Hill  p= 54 one-way= 27.0 d_arrival=  64 w=   333  [kept]
+  Exact optimum     26218  ['Paradise']
+  FPTAS eps=0.1     26218  ['Paradise']
+  Greedy repair     26218  ['Paradise']
+  EDD with skip       710  ['Concow']
+  Naive EDD           710  ['Concow']
 
+=== arrival reading, 80 km/h ===
+  Concow       p= 39 one-way= 19.5 d_arrival=  52 w=   710  [kept]
+  Paradise     p= 44 one-way= 22.0 d_arrival=  71 w= 26218  [kept]
+  Magalia      p= 55 one-way= 27.5 d_arrival=  58 w= 11310  [kept]
+  Yankee Hill  p= 34 one-way= 17.0 d_arrival=  64 w=   333  [kept]
+  Exact optimum     26928  ['Concow', 'Paradise']
+  FPTAS eps=0.1     26928  ['Concow', 'Paradise']
+  Greedy repair     26218  ['Paradise']
+  EDD with skip      1043  ['Concow', 'Yankee Hill']
+  Naive EDD          1043  ['Concow', 'Yankee Hill']
+
+=== return reading, 50 km/h ===
+  Concow       p= 63 one-way= 31.5 d_arrival=  52 w=   710  [DELETED (p>d)]
+  Paradise     p= 70 one-way= 35.0 d_arrival=  71 w= 26218  [kept]
+  Magalia      p= 89 one-way= 44.5 d_arrival=  58 w= 11310  [DELETED (p>d)]
+  Yankee Hill  p= 54 one-way= 27.0 d_arrival=  64 w=   333  [kept]
+  Exact optimum     26218  ['Paradise']
+  FPTAS eps=0.1     26218  ['Paradise']
+  Greedy repair     26218  ['Paradise']
+  EDD with skip       333  ['Yankee Hill']
+  Naive EDD           333  ['Yankee Hill']
+
+=== return reading, 80 km/h ===
+  Concow       p= 39 one-way= 19.5 d_arrival=  52 w=   710  [kept]
+  Paradise     p= 44 one-way= 22.0 d_arrival=  71 w= 26218  [kept]
+  Magalia      p= 55 one-way= 27.5 d_arrival=  58 w= 11310  [kept]
+  Yankee Hill  p= 34 one-way= 17.0 d_arrival=  64 w=   333  [kept]
+  Exact optimum     26218  ['Paradise']
+  FPTAS eps=0.1     26218  ['Paradise']
+  Greedy repair     26218  ['Paradise']
+  EDD with skip       710  ['Concow']
+  Naive EDD           710  ['Concow']
+
+=== Sensitivity (5000 draws, arrival reading) ===
+nominal plan (80 km/h, no delay): ['Concow', 'Paradise'], weight 26928
+  optimal set Paradise                          65.3%
+  optimal set Concow+Paradise                   18.4%
+  optimal set Paradise+Yankee Hill              13.9%
+  optimal set Magalia+Paradise                   2.3%
+  optimal set Yankee Hill                        0.0%
+  optimal set Concow                             0.0%
+  Paradise in optimal set:         100.0%
+  nominal-optimal plan   fully on time  20.7%; share of drawn optimum retained: mean 0.266, 5th pct 0.027
+  Paradise-only plan     fully on time 100.0%; share of drawn optimum retained: mean 0.986, 5th pct 0.974

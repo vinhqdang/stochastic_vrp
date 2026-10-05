@@ -51,7 +51,7 @@ same plan cache). Spec: `papers/tempo/PROJECT.md`. Code: `svrpspd_wdro/ev/`.
 its STATUS.md); revisions only when the decision arrives.
 
 ### Paper 3 — CSoNet 2026 / JOCO combinatorial-scheduling paper
-### (papers/csonet2026/, SUBMITTED to JOCO)
+### (papers/csonet2026/, MAJOR REVISION at JOCO)
 
 A standalone, independent combinatorial-optimization theory paper:
 Minimum Weighted Hazard-Exposure Dispatch (MWHED), a single-machine
@@ -156,8 +156,9 @@ arrives; a referee could raise it. BATON is frozen, so do not act now.
 - `papers/baton/` — C&OR manuscript (frozen; tables ONLY via its
   `make_tables.py`, never hand-edit `tables/*`).
 - `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
-- `papers/csonet2026/` — paper 3, **SUBMITTED** to JOCO's Editorial
-  Manager; treat as frozen except for editor-requested fixes.
+- `papers/csonet2026/` — paper 3, under **major revision** at JOCO
+  (revised manuscript + response letter prepared 2026-10-05); edits
+  only in service of the editor's/reviewers' requests.
 - `papers/wrnf/` — paper 4, **ABANDONED (scooped)**; kept as a
   documented negative result. Do not resume — see its PROJECT.md banner.
 - `papers/eclair/` — paper 5 (ECLAIR), **ACTIVE and open for edits**;

@@ -16,35 +16,31 @@ Dispatch
 
 **Abstract:**
 
-We study a dispatch-scheduling problem arising when a single depot
-must send a vehicle or crew to a set of sites before a spreading
-hazard—a flood, wildfire, contamination plume, or growing congestion
-zone—reaches them. Each site has a fixed round-trip dispatch time, a
-deadline at which the hazard arrives, and a criticality weight; the
-objective is a dispatch order maximizing the total weight of sites
-reached before the hazard arrives. We call this problem Minimum
-Weighted Hazard-Exposure Dispatch (MWHED) and show it is exactly the
-classical single-machine problem of maximizing weighted on-time jobs,
-reparametrized in transportation terms. We prove MWHED is weakly
-NP-hard via a reduction showing its equal-deadline special case is
-exactly the 0/1 knapsack problem; give a pseudo-polynomial exact
-dynamic program from an earliest-deadline-first exchange argument;
-adapt value-scaling to obtain a fully polynomial-time approximation
-scheme; and identify a second tractable special case—equal dispatch
-times—solvable in $O(n\log n)$ time by a matroid greedy algorithm,
-showing hardness requires heterogeneity in both dispatch cost and
-criticality, not either alone. We further show the naive fallback of
-dispatching in deadline order with no reconsideration has unbounded
-worst-case loss, so an exact or near-exact algorithm is necessary, not
-merely convenient. Numerical experiments, robust across alternative
-weight and deadline distributions, confirm the approximation scheme
-tracks the true optimum as instance size grows, while the naive policy
-degrades. The results give planners exact and near-exact tools for a
-provably hard scheduling problem, and delineate which structural
-features of a dispatch network make hazard-exposure minimization
-tractable.
+We study a dispatch-scheduling problem arising when a single
+depot must send a vehicle or crew to sites before a spreading hazard
+(flood, wildfire, contamination plume) reaches them. Each site has a
+round-trip dispatch time, a hazard-arrival deadline and a criticality
+weight; the objective is a dispatch order maximizing the total weight of
+sites served in time. We call this Minimum Weighted Hazard-Exposure
+Dispatch (MWHED) and show it is exactly the classical problem
+$1‖\sum w_jU_j$, so its basic picture is inherited from scheduling
+theory: weak NP-hardness (the equal-deadline case is 0/1 knapsack), a
+Lawler–Moore-type pseudo-polynomial dynamic program, and a value-scaling
+FPTAS. We present these in a self-contained form for the transportation
+audience and say precisely which are classical. The framing adds a
+classification: restricted to the instances in which some of the
+dispatch times, weights and deadlines are constant, the problem is
+polynomial exactly when dispatch times or weights are constant and
+weakly NP-hard otherwise, so heterogeneous deadlines alone never cause
+hardness; and a matroid-greedy algorithm for equal dispatch times that
+extends to any number of identical vehicles. Natural heuristics (deadline
+order with or without skipping, a weighted greedy repair) have unbounded
+worst-case ratio, and the FPTAS analysis is tight up to a factor
+$1-\epsilon^2$. A numerical study with active FPTAS rounding, verified
+against exhaustive search, and a Camp Fire case study with a sensitivity
+analysis complete the paper.
 
-(250 words, within JOCO's 150–250 word limit.)
+(Revised abstract, 229 words, within JOCO's 150–250 word limit.)
 
 **Keywords:** combinatorial optimization; scheduling under deadlines;
 computational complexity; approximation algorithms; transportation

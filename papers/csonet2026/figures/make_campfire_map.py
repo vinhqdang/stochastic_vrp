@@ -25,7 +25,7 @@ IGNITION = (39.81028, -121.43722, "Ignition point\n(PG&E Tower 27/222)")
 
 # name: (lat, lon, population, dispatched_to)
 SITES = {
-    "Concow":      (39.73722, -121.51444, 710, False),
+    "Concow":      (39.73722, -121.51444, 710, True),
     "Paradise":    (39.75972, -121.62194, 26218, True),
     "Magalia":     (39.833,   -121.583,   11310, False),
     "Yankee Hill": (39.70361, -121.52222, 333, False),
@@ -65,11 +65,16 @@ for name, (lat, lon, pop, dispatched) in SITES.items():
     ax.plot([ix, sx], [iy, sy], color=RED, linestyle=":", linewidth=1.2,
             alpha=0.6, zorder=1)
 
-# Dispatch arrow: depot -> Paradise (the optimal choice in both scenarios)
+# Dispatch arrows (arrival reading): depot -> Paradise in both speed
+# scenarios; at 80 km/h the optimum also serves Concow, first.
 px, py = to_km(SITES["Paradise"][0], SITES["Paradise"][1], origin_lat, origin_lon)
 ax.annotate("", xy=(px, py), xytext=(dx, dy),
             arrowprops=dict(arrowstyle="-|>", color=GREEN, lw=2.4,
                             shrinkA=14, shrinkB=16))
+cx, cy = to_km(SITES["Concow"][0], SITES["Concow"][1], origin_lat, origin_lon)
+ax.annotate("", xy=(cx, cy), xytext=(dx, dy),
+            arrowprops=dict(arrowstyle="-|>", color=GREEN, lw=1.6,
+                            linestyle="--", shrinkA=14, shrinkB=16))
 
 label_offsets = {
     "Concow": (16, 8),
@@ -104,7 +109,7 @@ ax.set_xlim(min(xs_all) - 6, max(xs_all) + 8)
 ax.set_ylim(min(ys_all) - 5, max(ys_all) + 7)
 
 legend_handles = [
-    mpatches.Patch(color=GREEN, label="dispatched (optimal choice, both scenarios)"),
+    mpatches.Patch(color=GREEN, label="in the optimum (solid arrow: both speeds;\ndashed: Concow, only at 80 km/h)"),
     mpatches.Patch(color=GRAY, label="not dispatched"),
     plt.Line2D([0], [0], color=RED, linestyle=":", label="real distance from ignition point"),
 ]

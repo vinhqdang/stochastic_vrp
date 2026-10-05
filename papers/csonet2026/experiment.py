@@ -1,29 +1,35 @@
-"""experiment.py -- numerical illustration for the MWHED paper.
+"""experiment.py -- algorithms and numerical study for the MWHED paper
+(revised version).
 
-Compares four algorithms on random instances of Minimum Weighted
-Hazard-Exposure Dispatch (MWHED):
-  exact    -- the pseudo-polynomial DP of Theorem 2 (exact optimum)
-  fptas    -- the value-scaled FPTAS of Theorem 3, at a given epsilon
-  repair   -- a weighted Moore-Hodgson-style greedy: dispatch in
-              earliest-deadline-first order, and whenever the running
-              schedule becomes infeasible, repeatedly drop the
-              currently-scheduled site with the smallest weight/time
-              ratio until feasible again (a heuristic generalization of
-              Moore and Hodgson's unweighted largest-processing-time
-              removal rule; feasibility of the returned schedule is
-              guaranteed by the same inductive argument as the
-              unweighted case, but -- unlike Theorems 2/3 -- no
-              optimality or approximation ratio is claimed for it)
-  edd      -- naive baseline: dispatch in earliest-deadline-first order,
-              count whichever sites happen to still be on time (no
-              reconsideration at all -- the "do nothing clever" anchor
-              of Proposition 5)
+Algorithms (all take sites in non-decreasing deadline order, after the
+Assumption-1 preprocessing in `preprocess`):
+  solve_exact        -- Theorem 3's time-indexed DP (exact optimum)
+  solve_fptas        -- Theorem 4's value-scaled FPTAS, implemented as in
+                        the proof (value-indexed dual DP); optional
+                        `complete=True` adds the post-processing step of
+                        Section 5.3 (greedily re-insert rejected sites)
+  solve_equal_cost   -- Theorem 5's matroid greedy (union-find), for any
+                        number m of identical vehicles (Theorem 6)
+  solve_greedy_repair-- weighted Moore-Hodgson-style repair heuristic
+                        (no guarantee; unbounded ratio, Proposition 7)
+  solve_edd_naive    -- EDD with no reconsideration: every site is
+                        dispatched in deadline order, late sites still
+                        consume time (Proposition 8's baseline)
+  solve_edd_skip     -- EDD with admission control: a site that would
+                        miss its deadline is skipped (a stronger, still
+                        guarantee-free baseline)
 
-Also times exact-DP vs FPTAS as the processing-time range grows, to
-illustrate the pseudo-polynomial-vs-polynomial gap of Theorems 2 and 3
-in practice, not just asymptotically.
+Numerical study (run `python3 experiment.py`; ~2-4 minutes):
+  E1  accuracy vs n on the original generator (weights <= 100). NOTE: in
+      this regime the FPTAS scaling factor is K = 1 for most settings
+      (no rounding at all); the share is recorded and reported.
+  E2  FPTAS with scaling ACTIVE: large weights, strongly correlated
+      instances, and an adversarial "many sub-K sites" family.
+  E3  runtime of the time-indexed exact DP vs the FPTAS as the
+      processing-time range grows (weights up to 1e6, scaling active).
+  E4  robustness of E1 to heavy-tailed weights and tight deadlines.
 
-Self-contained, does not import anything from the BATON/TEMPO codebase.
+Self-contained; imports nothing from the BATON/TEMPO/PARCEL codebases.
 """
 from __future__ import annotations
 
@@ -32,94 +38,129 @@ import math
 import random
 import time
 
+import numpy as np
 
+
+# --------------------------------------------------------------- helpers
+def preprocess(p, d, w):
+    """Assumption 1: delete sites with p_i > d_i; return the remaining
+    sites sorted by non-decreasing deadline, plus the original indices."""
+    keep = [i for i in range(len(p)) if p[i] <= d[i]]
+    keep.sort(key=lambda i: (d[i], i))
+    return ([p[i] for i in keep], [d[i] for i in keep],
+            [w[i] for i in keep], keep)
+
+
+def edd_feasible(subset, p, d):
+    """Is `subset` (indices into deadline-sorted arrays) feasible?"""
+    c = 0
+    for i in sorted(subset):
+        c += p[i]
+        if c > d[i]:
+            return False
+    return True
+
+
+# ------------------------------------------------------------- algorithms
 def solve_exact(p, d, w):
-    """Theorem 2's DP. Sites pre-sorted by increasing deadline. Returns
-    (optimal on-time weight, achieving subset as a set of indices)."""
+    """Theorem 3: time-indexed DP, O(nP). Returns (value, subset)."""
     n = len(p)
+    if n == 0:
+        return 0.0, set()
     P = sum(p)
-    NEG = float("-inf")
-    f = [NEG] * (P + 1)
+    NEG = -np.inf
+    f = np.full(P + 1, NEG)
     f[0] = 0.0
-    choice = [[False] * (P + 1) for _ in range(n)]
+    choice = np.zeros((n, P + 1), dtype=bool)
+    ts = np.arange(P + 1)
     for i in range(n):
-        new_f = list(f)
-        for t in range(P, p[i] - 1, -1):
-            if f[t - p[i]] > NEG and t <= d[i]:
-                cand = f[t - p[i]] + w[i]
-                if cand > new_f[t]:
-                    new_f[t] = cand
-                    choice[i][t] = True
-        f = new_f
-    best_t = max(range(P + 1), key=lambda t: f[t])
-    best_val = f[best_t]
-    included = set()
-    t = best_t
+        pi = p[i]
+        cand = f[:P + 1 - pi] + w[i]
+        ok = (cand > f[pi:]) & (ts[pi:] <= d[i]) & np.isfinite(f[:P + 1 - pi])
+        newf = f.copy()
+        newf[pi:] = np.where(ok, cand, f[pi:])
+        choice[i, pi:] = ok
+        f = newf
+    t = int(np.argmax(f))
+    best = float(f[t])
+    inc = set()
     for i in range(n - 1, -1, -1):
-        if choice[i][t]:
-            included.add(i)
+        if choice[i, t]:
+            inc.add(i)
             t -= p[i]
-    return best_val, included
+    return best, inc
 
 
-def solve_fptas(p, d, w, eps):
-    """Theorem 3's FPTAS, implemented exactly as in the proof: scale
-    weights by K = max(1, eps*max(w)/n), then run the VALUE-INDEXED dual
-    DP g(i,v) = min dispatch time to reach scaled value v using a
-    feasible subset of sites 1..i (Theorem 3's recursion), whose table
-    has size O(n * sum(w')) = O(n^3/eps) -- independent of the
-    processing-time sum P, unlike Theorem 2's time-indexed table.
-    Reports the TRUE (unscaled) weight of the returned subset."""
+def solve_fptas(p, d, w, eps, complete=False, info=None):
+    """Theorem 4: scale weights by K = max(1, eps*max(w)/n), run the
+    value-indexed dual DP g(i, v) = min dispatch time reaching scaled
+    value v with a feasible subset of sites 1..i. Returns the TRUE
+    (unscaled) weight of the returned subset. If `complete`, rejected
+    sites are greedily re-inserted (heaviest first) while the set stays
+    feasible; this can only increase the returned weight."""
     n = len(p)
+    if n == 0:
+        return 0.0, set()
     wmax = max(w)
     K = max(1.0, eps * wmax / n)
-    wprime = [math.floor(wi / K) for wi in w]
-    Vmax = sum(wprime)
-    INF = float("inf")
-    g = [INF] * (Vmax + 1)
-    g[0] = 0
-    choice = [[False] * (Vmax + 1) for _ in range(n)]
+    wp = [int(math.floor(x / K)) for x in w]
+    V = sum(wp)
+    INF = np.inf
+    g = np.full(V + 1, INF)
+    g[0] = 0.0
+    choice = np.zeros((n, V + 1), dtype=bool)
     for i in range(n):
-        new_g = list(g)
-        wi = wprime[i]
-        for v in range(Vmax, wi - 1, -1):
-            if g[v - wi] < INF:
-                cand = g[v - wi] + p[i]
-                if cand <= d[i] and cand < new_g[v]:
-                    new_g[v] = cand
-                    choice[i][v] = True
-        g = new_g
-    best_v = max((v for v in range(Vmax + 1) if g[v] < INF), default=0)
-    included = set()
-    v = best_v
+        wi = wp[i]
+        if wi == 0:
+            continue
+        cand = g[:V + 1 - wi] + p[i]
+        ok = (cand <= d[i]) & (cand < g[wi:])
+        newg = g.copy()
+        newg[wi:] = np.where(ok, cand, g[wi:])
+        choice[i, wi:] = ok
+        g = newg
+    finite = np.where(np.isfinite(g))[0]
+    v = int(finite.max())
+    inc = set()
     for i in range(n - 1, -1, -1):
-        if choice[i][v]:
-            included.add(i)
-            v -= wprime[i]
-    true_val = sum(w[i] for i in included)
-    return true_val, included
+        if choice[i, v]:
+            inc.add(i)
+            v -= wp[i]
+    if complete:
+        for i in sorted(set(range(n)) - inc, key=lambda j: -w[j]):
+            if edd_feasible(inc | {i}, p, d):
+                inc.add(i)
+    if info is not None:
+        info.update(K=K, scaling_active=(K > 1.0), cells=n * (V + 1))
+    return float(sum(w[i] for i in inc)), inc
 
 
 def solve_edd_naive(p, d, w):
-    """Baseline: dispatch in EDD order, no optimization -- just see who
-    happens to still be on time under the resulting schedule."""
-    n = len(p)
     c = 0
     val = 0.0
-    included = set()
-    for i in range(n):
+    inc = set()
+    for i in range(len(p)):
         c += p[i]
         if c <= d[i]:
             val += w[i]
-            included.add(i)
-    return val, included
+            inc.add(i)
+    return val, inc
+
+
+def solve_edd_skip(p, d, w):
+    c = 0
+    val = 0.0
+    inc = set()
+    for i in range(len(p)):
+        if c + p[i] <= d[i]:
+            c += p[i]
+            val += w[i]
+            inc.add(i)
+    return val, inc
 
 
 def solve_greedy_repair(p, d, w):
-    """Weighted Moore-Hodgson-style greedy repair (see module docstring).
-    Sites pre-sorted by increasing deadline, as required for the
-    running-total feasibility argument to apply."""
-    kept = []  # indices, in EDD order
+    kept = []
     total = 0
     for i in range(len(p)):
         kept.append(i)
@@ -128,199 +169,254 @@ def solve_greedy_repair(p, d, w):
             worst = min(kept, key=lambda j: w[j] / p[j])
             kept.remove(worst)
             total -= p[worst]
-    val = sum(w[i] for i in kept)
-    return val, set(kept)
+    return float(sum(w[i] for i in kept)), set(kept)
 
 
-def random_instance(n, rng, p_max=20, w_max=100, horizon_mult=0.6):
+def solve_equal_cost(d, w, p, m=1):
+    """Theorems 5/6. All dispatch times equal p; m identical vehicles.
+    Sort by decreasing weight; give each site the latest free slot at a
+    position <= D_i = floor(d_i/p) (m slots per position), found with a
+    union-find over positions. Returns (value, subset of indices)."""
+    n = len(d)
+    D = [min(di // p, n) for di in d]
+    parent = list(range(n + 1))
+    cap = [m] * (n + 1)
+
+    def find(q):
+        root = q
+        while parent[root] != root:
+            root = parent[root]
+        while parent[q] != root:
+            parent[q], q = root, parent[q]
+        return root
+
+    inc = set()
+    val = 0.0
+    for i in sorted(range(n), key=lambda j: -w[j]):
+        q = find(D[i])
+        if q >= 1:
+            inc.add(i)
+            val += w[i]
+            cap[q] -= 1
+            if cap[q] == 0:
+                parent[q] = q - 1
+    return val, inc
+
+
+# ------------------------------------------------------------- generators
+def _sorted(p, d, w):
+    idx = sorted(range(len(p)), key=lambda i: d[i])
+    return [p[i] for i in idx], [d[i] for i in idx], [w[i] for i in idx]
+
+
+def random_instance(n, rng, p_max=20, w_max=100, horizon_frac=1.0,
+                    weight="uniform"):
     p = [rng.randint(1, p_max) for _ in range(n)]
-    w = [rng.randint(1, w_max) for _ in range(n)]
-    total_p = sum(p)
-    d_raw = [rng.randint(1, total_p) for _ in range(n)]
-    idx = sorted(range(n), key=lambda i: d_raw[i])
-    p2 = [p[i] for i in idx]
-    w2 = [w[i] for i in idx]
-    d2 = [d_raw[i] for i in idx]
-    return p2, d2, w2
+    if weight == "uniform":
+        w = [rng.randint(1, w_max) for _ in range(n)]
+    elif weight == "heavy":
+        w = [max(1, int(rng.expovariate(1 / 20))) for _ in range(n)]
+    else:
+        raise ValueError(weight)
+    horizon = max(1, int(horizon_frac * sum(p)))
+    d = [rng.randint(1, horizon) for _ in range(n)]
+    return preprocess(p, d, w)[:3]
 
 
-def random_instance_heavytail(n, rng, p_max=20):
-    """Like random_instance, but weights are drawn from a heavy-tailed
-    (exponential) distribution instead of uniform, to check that the
-    accuracy comparison is not an artifact of uniform weights."""
-    p = [rng.randint(1, p_max) for _ in range(n)]
-    w = [max(1, int(rng.expovariate(1 / 20))) for _ in range(n)]
-    total_p = sum(p)
-    d_raw = [rng.randint(1, total_p) for _ in range(n)]
-    idx = sorted(range(n), key=lambda i: d_raw[i])
-    p2 = [p[i] for i in idx]
-    w2 = [w[i] for i in idx]
-    d2 = [d_raw[i] for i in idx]
-    return p2, d2, w2
+def correlated_instance(n, rng, p_max=1000, horizon_frac=0.5):
+    """Strongly correlated knapsack-style instance: w_i = 1000*p_i + 500,
+    common deadline; the hard family for knapsack-type FPTASs."""
+    p = [rng.randint(p_max // 10, p_max) for _ in range(n)]
+    w = [1000 * x + 500 for x in p]
+    D = max(1, int(horizon_frac * sum(p)))
+    d = [D] * n
+    return preprocess(p, d, w)[:3]
 
 
-def random_instance_tight_deadlines(n, rng, p_max=20, w_max=100, horizon_frac=0.5):
-    """Like random_instance, but deadlines are drawn from a narrower
-    horizon (horizon_frac * sum(p)) instead of the full [1, sum(p)]
-    range, producing more tightly constrained (harder) instances."""
-    p = [rng.randint(1, p_max) for _ in range(n)]
-    w = [rng.randint(1, w_max) for _ in range(n)]
-    total_p = sum(p)
-    horizon = max(1, int(horizon_frac * total_p))
-    d_raw = [rng.randint(1, horizon) for _ in range(n)]
-    idx = sorted(range(n), key=lambda i: d_raw[i])
-    p2 = [p[i] for i in idx]
-    w2 = [w[i] for i in idx]
-    d2 = [d_raw[i] for i in idx]
-    return p2, d2, w2
+def stress_instance(n, eps, M=10 ** 6):
+    """One dominant site (weight M) plus n-1 sites each just below the
+    scaling granule K = eps*M/n, so each rounds to scaled weight 0. All
+    sites fit together; the FPTAS (without completion) discards every
+    sub-K site, losing nearly eps*M of weight."""
+    K = eps * M / n
+    small = max(1, int(math.ceil(K)) - 1)
+    p = [1] * n
+    w = [M] + [small] * (n - 1)
+    d = [n] * n
+    return preprocess(p, d, w)[:3]
 
 
-def run_robustness_check():
-    """Repeats the accuracy comparison under two instance-generation
-    regimes that depart from the base uniform/loose-horizon generator,
-    to check the accuracy table's qualitative pattern is not an
-    artifact of that specific choice."""
-    rng = random.Random(20260618)
-    n = 30
-    trials = 20
-    regimes = [
-        ("heavy-tailed weights", lambda: random_instance_heavytail(n, rng)),
-        ("tight deadlines (0.5x horizon)", lambda: random_instance_tight_deadlines(n, rng)),
-    ]
-    rows = []
-    for label, gen in regimes:
-        ratios = {"fptas": [], "repair": [], "naive": []}
-        for _ in range(trials):
-            p, d, w = gen()
+# ------------------------------------------------------------ experiments
+def _mean(x):
+    return sum(x) / len(x)
+
+
+E1_SIZES = (10, 15, 20, 25, 30, 50, 75, 100, 200, 400)
+E1_TRIALS = 50
+
+
+def run_accuracy(seed=20260615):
+    rng = random.Random(seed)
+    out = {}
+    for n in E1_SIZES:
+        r = {k: [] for k in ("f02", "f01", "rep", "skip", "naive")}
+        k1 = {"f02": 0, "f01": 0}
+        for _ in range(E1_TRIALS):
+            p, d, w = random_instance(n, rng)
             opt, _ = solve_exact(p, d, w)
-            f, _ = solve_fptas(p, d, w, 0.1)
-            rep, _ = solve_greedy_repair(p, d, w)
-            nv, _ = solve_edd_naive(p, d, w)
-            if opt > 0:
-                ratios["fptas"].append(f / opt)
-                ratios["repair"].append(rep / opt)
-                ratios["naive"].append(nv / opt)
-        row = dict(regime=label,
-                   fptas_ratio=sum(ratios["fptas"]) / len(ratios["fptas"]),
-                   repair_ratio=sum(ratios["repair"]) / len(ratios["repair"]),
-                   naive_ratio=sum(ratios["naive"]) / len(ratios["naive"]))
-        rows.append(row)
-        print(f"{label:32s}  FPTAS/OPT={row['fptas_ratio']:.4f}  "
-             f"Repair/OPT={row['repair_ratio']:.4f}  "
-             f"Naive/OPT={row['naive_ratio']:.4f}")
+            for key, eps in (("f02", 0.2), ("f01", 0.1)):
+                info = {}
+                v, _ = solve_fptas(p, d, w, eps, info=info)
+                k1[key] += (not info["scaling_active"])
+                r[key].append(v / opt)
+            r["rep"].append(solve_greedy_repair(p, d, w)[0] / opt)
+            r["skip"].append(solve_edd_skip(p, d, w)[0] / opt)
+            r["naive"].append(solve_edd_naive(p, d, w)[0] / opt)
+        out[n] = dict(fptas02=_mean(r["f02"]), fptas01=_mean(r["f01"]),
+                      repair=_mean(r["rep"]), edd_skip=_mean(r["skip"]),
+                      naive=_mean(r["naive"]),
+                      fptas01_min=min(r["f01"]), repair_min=min(r["rep"]),
+                      naive_min=min(r["naive"]), trials=E1_TRIALS,
+                      share_unscaled_eps02=k1["f02"] / E1_TRIALS,
+                      share_unscaled_eps01=k1["f01"] / E1_TRIALS)
+        print(f"E1 n={n:3d} FPTAS.2={out[n]['fptas02']:.3f} "
+              f"FPTAS.1={out[n]['fptas01']:.3f} repair={out[n]['repair']:.3f} "
+              f"EDD-skip={out[n]['edd_skip']:.3f} naive={out[n]['naive']:.3f} "
+              f"unscaled(.2/.1)={out[n]['share_unscaled_eps02']:.2f}/"
+              f"{out[n]['share_unscaled_eps01']:.2f}")
+    return out
+
+
+EPS_GRID = (0.5, 0.3, 0.2, 0.1, 0.05)
+
+
+def run_scaling_active(seed=20260620, sizes=(50, 100), trials=30):
+    """E2: FPTAS accuracy/size/time where scaling is genuinely active."""
+    rows = []
+    for n in sizes:
+        rows += _scaling_active_n(random.Random(seed + n), n, trials)
     return rows
 
 
-def run_accuracy_illustration():
-    rng = random.Random(20260615)
+def _scaling_active_n(rng, n, trials):
+    regimes = {
+        "uniform weights <= 10^6": lambda: random_instance(n, rng, w_max=10 ** 6),
+        "strongly correlated": lambda: correlated_instance(n, rng),
+    }
     rows = []
-    for n in (10, 15, 20, 25, 30, 50, 75, 100):
-        for trial in range(20):
-            p, d, w = random_instance(n, rng)
-            opt, _ = solve_exact(p, d, w)
-            f2, _ = solve_fptas(p, d, w, 0.2)
-            f1, _ = solve_fptas(p, d, w, 0.1)
-            rep, _ = solve_greedy_repair(p, d, w)
-            naive, _ = solve_edd_naive(p, d, w)
-            rows.append(dict(n=n, trial=trial, opt=opt,
-                             fptas_eps02=f2, fptas_eps01=f1,
-                             repair=rep, naive=naive))
+    for name, gen in regimes.items():
+        insts = [gen() for _ in range(trials)]
+        opts = [solve_exact(*x)[0] for x in insts]
+        for eps in EPS_GRID:
+            rs, rc, Ks, cells, ts = [], [], [], [], []
+            sub = 0
+            for (p, d, w), opt in zip(insts, opts):
+                info = {}
+                t0 = time.perf_counter()
+                v, _ = solve_fptas(p, d, w, eps, info=info)
+                ts.append(1000 * (time.perf_counter() - t0))
+                vc, _ = solve_fptas(p, d, w, eps, complete=True)
+                rs.append(v / opt)
+                sub += v < opt
+                rc.append(vc / opt)
+                Ks.append(info["K"])
+                cells.append(info["cells"])
+            rows.append(dict(regime=name, n=n, eps=eps, guarantee=1 - eps,
+                             mean_ratio=_mean(rs), min_ratio=min(rs),
+                             mean_ratio_completed=_mean(rc),
+                             min_ratio_completed=min(rc),
+                             share_suboptimal=sub / trials,
+                             mean_K=_mean(Ks), mean_cells=_mean(cells),
+                             mean_ms=_mean(ts)))
+            r = rows[-1]
+            print(f"E2 n={n} {name:24s} eps={eps:4.2f} mean={r['mean_ratio']:.5f} "
+                  f"min={r['min_ratio']:.5f} (>= {1 - eps:.2f}) "
+                  f"completed-min={r['min_ratio_completed']:.5f} "
+                  f"K={r['mean_K']:.0f} cells={r['mean_cells']:.0f} "
+                  f"{r['mean_ms']:.1f}ms")
+    # adversarial family (deterministic)
+    for eps in EPS_GRID:
+        p, d, w = stress_instance(n, eps)
+        opt, _ = solve_exact(p, d, w)
+        v, _ = solve_fptas(p, d, w, eps)
+        vc, _ = solve_fptas(p, d, w, eps, complete=True)
+        rows.append(dict(regime="adversarial (sub-K sites)", n=n, eps=eps,
+                         guarantee=1 - eps, mean_ratio=v / opt,
+                         min_ratio=v / opt, mean_ratio_completed=vc / opt,
+                         min_ratio_completed=vc / opt, share_suboptimal=1.0,
+                         mean_K=max(1.0, eps * max(w) / n), mean_cells=0,
+                         mean_ms=0.0))
+        print(f"E2 n={n} adversarial eps={eps:4.2f} ratio={v / opt:.4f} "
+              f"(>= {1 - eps:.2f})  completed={vc / opt:.4f}")
+    return rows
 
-    summary = {}
-    for n in (10, 15, 20, 25, 30, 50, 75, 100):
-        sub = [r for r in rows if r["n"] == n]
-        opt_mean = sum(r["opt"] for r in sub) / len(sub)
-        ratio02 = sum(r["fptas_eps02"] / r["opt"] for r in sub if r["opt"] > 0) / len(sub)
-        ratio01 = sum(r["fptas_eps01"] / r["opt"] for r in sub if r["opt"] > 0) / len(sub)
-        ratio_repair = sum(r["repair"] / r["opt"] for r in sub if r["opt"] > 0) / len(sub)
-        ratio_naive = sum(r["naive"] / r["opt"] for r in sub if r["opt"] > 0) / len(sub)
-        summary[n] = dict(opt_mean=opt_mean, fptas02_ratio=ratio02,
-                          fptas01_ratio=ratio01, repair_ratio=ratio_repair,
-                          naive_ratio=ratio_naive)
-        print(f"n={n:3d}  opt={opt_mean:8.1f}  "
-             f"FPTAS(eps=0.2)/OPT={ratio02:.3f}  "
-             f"FPTAS(eps=0.1)/OPT={ratio01:.3f}  "
-             f"Repair/OPT={ratio_repair:.3f}  "
-             f"EDD-naive/OPT={ratio_naive:.3f}")
-    return summary
 
-
-def run_runtime_comparison():
-    """Times exact DP vs FPTAS as the processing-time range p_max grows,
-    at fixed n, to show the pseudo-polynomial (Theorem 2) vs polynomial
-    (Theorem 3) gap in wall-clock terms, not just in the exponent of the
-    complexity bound."""
-    rng = random.Random(20260616)
-    n = 40
+def run_runtime(seed=20260616, n=40, eps=0.1, trials=5):
+    """E3: exact (time-indexed) vs FPTAS as p_max grows; weights up to
+    10^6 so the FPTAS scaling is active (K > 1) throughout."""
+    rng = random.Random(seed)
     rows = []
     for p_max in (50, 200, 800, 3200, 12800):
-        times_exact = []
-        times_fptas = []
-        for trial in range(5):
-            p, d, w = random_instance(n, rng, p_max=p_max)
+        te, tf, act = [], [], []
+        for _ in range(trials):
+            p, d, w = random_instance(n, rng, p_max=p_max, w_max=10 ** 6)
             t0 = time.perf_counter()
             solve_exact(p, d, w)
             t1 = time.perf_counter()
-            solve_fptas(p, d, w, 0.1)
+            info = {}
+            solve_fptas(p, d, w, eps, info=info)
             t2 = time.perf_counter()
-            times_exact.append(t1 - t0)
-            times_fptas.append(t2 - t1)
-        row = dict(p_max=p_max,
-                   exact_ms=1000 * sum(times_exact) / len(times_exact),
-                   fptas_ms=1000 * sum(times_fptas) / len(times_fptas))
-        rows.append(row)
-        print(f"p_max={p_max:6d}  exact={row['exact_ms']:9.2f} ms  "
-             f"FPTAS(eps=0.1)={row['fptas_ms']:7.2f} ms")
+            te.append(1000 * (t1 - t0))
+            tf.append(1000 * (t2 - t1))
+            act.append(info["scaling_active"])
+        rows.append(dict(p_max=p_max, exact_ms=_mean(te), fptas_ms=_mean(tf),
+                         scaling_active=all(act)))
+        print(f"E3 p_max={p_max:6d} exact={rows[-1]['exact_ms']:9.2f} ms "
+              f"FPTAS={rows[-1]['fptas_ms']:7.2f} ms active={all(act)}")
     return rows
 
 
-def run_epsilon_sensitivity():
-    """Sweeps epsilon at a fixed instance size to show how the FPTAS's
-    accuracy ratio and table-size (hence runtime) scale as epsilon
-    shrinks, complementing the fixed-epsilon accuracy table."""
-    rng = random.Random(20260617)
-    n = 30
-    eps_values = (0.5, 0.3, 0.2, 0.1, 0.05, 0.01)
-    trials = 20
-    instances = [random_instance(n, rng) for _ in range(trials)]
+def run_robustness(seed=20260618, n=30, trials=20):
+    """E4: E1's comparison under heavy-tailed weights / tight deadlines."""
+    rng = random.Random(seed)
+    regimes = [
+        ("heavy-tailed weights",
+         lambda: random_instance(n, rng, weight="heavy")),
+        ("tight deadlines (0.5x horizon)",
+         lambda: random_instance(n, rng, horizon_frac=0.5)),
+    ]
     rows = []
-    for eps in eps_values:
-        ratios = []
-        times_ms = []
-        for (p, d, w) in instances:
+    for label, gen in regimes:
+        r = {k: [] for k in ("f", "rep", "skip", "naive")}
+        for _ in range(trials):
+            p, d, w = gen()
             opt, _ = solve_exact(p, d, w)
-            t0 = time.perf_counter()
-            val, _ = solve_fptas(p, d, w, eps)
-            t1 = time.perf_counter()
-            if opt > 0:
-                ratios.append(val / opt)
-            times_ms.append(1000 * (t1 - t0))
-        row = dict(eps=eps,
-                   mean_ratio=sum(ratios) / len(ratios),
-                   mean_ms=sum(times_ms) / len(times_ms))
-        rows.append(row)
-        print(f"eps={eps:5.2f}  mean_ratio={row['mean_ratio']:.4f}  "
-             f"mean_time={row['mean_ms']:7.2f} ms")
+            if opt <= 0:
+                continue
+            r["f"].append(solve_fptas(p, d, w, 0.1)[0] / opt)
+            r["rep"].append(solve_greedy_repair(p, d, w)[0] / opt)
+            r["skip"].append(solve_edd_skip(p, d, w)[0] / opt)
+            r["naive"].append(solve_edd_naive(p, d, w)[0] / opt)
+        rows.append(dict(regime=label, fptas=_mean(r["f"]),
+                         repair=_mean(r["rep"]), edd_skip=_mean(r["skip"]),
+                         naive=_mean(r["naive"])))
+        print(f"E4 {label:32s} FPTAS={rows[-1]['fptas']:.3f} "
+              f"repair={rows[-1]['repair']:.3f} "
+              f"EDD-skip={rows[-1]['edd_skip']:.3f} "
+              f"naive={rows[-1]['naive']:.3f}")
     return rows
 
 
 def main():
-    print("=== Accuracy illustration (Table 1) ===")
-    summary = run_accuracy_illustration()
+    res = dict(accuracy=run_accuracy())
     print()
-    print("=== Runtime comparison, exact DP vs FPTAS (Table 2) ===")
-    runtime_rows = run_runtime_comparison()
+    res["scaling_active"] = run_scaling_active()
     print()
-    print("=== Epsilon sensitivity, FPTAS (Table 3) ===")
-    eps_rows = run_epsilon_sensitivity()
+    res["runtime"] = run_runtime()
     print()
-    print("=== Robustness to instance-generation regime (Table 4) ===")
-    robustness_rows = run_robustness_check()
-
+    res["robustness"] = run_robustness()
     with open("results_illustration.json", "w") as f:
-        json.dump(dict(accuracy=summary, runtime=runtime_rows,
-                       epsilon_sensitivity=eps_rows,
-                       robustness=robustness_rows), f, indent=2)
+        json.dump(res, f, indent=2)
 
 
 if __name__ == "__main__":

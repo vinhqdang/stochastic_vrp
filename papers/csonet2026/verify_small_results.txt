@@ -1,0 +1,10 @@
+A  permutations vs DP:                 400/400 agree
+B  DP vs best feasible subset:         1500/1500 agree
+B  FPTAS >= (1-eps)OPT and feasible:   violations = 0 (2923 runs had active scaling)
+B  completion step never hurts:        violations = 0
+C  equal-cost greedy vs DP (m=1):      300/300 agree
+C  equal-cost greedy vs exhaustive m=2,3: mismatches = 0
+D  greedy repair on family, k=  3: ratio 0.40000 = 2/(2k-1) = 0.40000
+D  greedy repair on family, k= 10: ratio 0.10526 = 2/(2k-1) = 0.10526
+D  greedy repair on family, k=100: ratio 0.01005 = 2/(2k-1) = 0.01005
+ALL CHECKS PASSED
