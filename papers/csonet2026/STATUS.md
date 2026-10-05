@@ -26,6 +26,9 @@
   additivity step, self-contained proof of Theorem 5, shorter
   positioning, and parameter uncertainty (refs: Wang 2020; Koca 2023).
   **Revised manuscript and `response_to_reviewers.tex` prepared**
+  (2026-10-05: also machine-checked in Lean 4, `MwhedProofs/`, and a
+  latexdiff tracked-changes PDF in `revision/`; neither is part of the
+  journal upload unless the author decides to cite the Lean library)
   (not yet uploaded — upload editable sources only, no PDF). Changes
   verified: all algorithms agree with exhaustive search
   (`verify_small.py`); experiments regenerated; manuscript builds clean

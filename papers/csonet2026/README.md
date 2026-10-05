@@ -21,6 +21,12 @@ submission record and the revision log.
   main && pdflatex main`. For the journal's revision upload send only
   the editable sources (`main.tex`, `references.bib`, `figures/`, the
   class files), not the PDF.
+- `MwhedProofs/` — Lean 4 + Mathlib formalisation of the theory
+  (Lemma 1, Theorems 2–5, Propositions 6–8, examples, hardness part of
+  Theorem 9); `lake build`, no `sorry`; see its README for the
+  paper↔Lean table and what is not formalised.
+- `revision/` — latexdiff tracked-changes manuscript vs the submitted
+  version.
 - `response_to_reviewers.tex` — point-by-point response to the two
   reviewers, including a list of errors of our own that the revision
   corrected; compile with `pdflatex` twice (+ `bibtex`).

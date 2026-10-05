@@ -74,6 +74,12 @@ theorem N_succ (D : ι → ℕ) (S : Finset ι) (k : ℕ) :
     simp only [mem_filter] at hi hi'
     omega
 
+private theorem if_pos' {c : Prop} [Decidable c] {α : Sort*} {a b : α} (h : c) : (if c then a else b) = a :=
+  by simp [h]
+
+private theorem if_neg' {c : Prop} [Decidable c] {α : Sort*} {a b : α} (h : ¬ c) : (if c then a else b) = b :=
+  by simp [h]
+
 /-! ## (b) Step 2: the counting criterion -/
 
 theorem count_le_of_slotFeasible {D : ι → ℕ} {m : ℕ} {S : Finset ι}
@@ -789,10 +795,12 @@ theorem findFree_spec (m : ℕ) (occ : ℕ → ℕ) (D : ℕ) :
   | succ D ih =>
     by_cases h : occ (D + 1) < m
     · right
-      simp only [findFree, h, if_true]
+      have hf : findFree m occ (D + 1) = D + 1 := by simp [findFree, h]
+      rw [hf]
       exact ⟨by omega, le_rfl, h, fun r h1 h2 => by omega⟩
     · have hm : m ≤ occ (D + 1) := not_lt.1 h
-      simp only [findFree, h, if_false]
+      have hf : findFree m occ (D + 1) = findFree m occ D := by simp [findFree, h]
+      rw [hf]
       rcases ih with ⟨h0, h1⟩ | ⟨h0, h1, h2, h3⟩
       · left
         refine ⟨h0, fun r hr1 hr2 => ?_⟩
@@ -838,15 +846,15 @@ theorem inv_insert {D : ι → ℕ} {m : ℕ} {A : Finset ι} {occ : ℕ → ℕ
     Inv D m (insert i A) (Function.update occ q (occ q + 1)) := by
   obtain ⟨f, hinj, hb, hocc, hlat⟩ := hinv
   -- a free vehicle at position `q`
-  have hfree : ∃ v, v < m ∧ ∀ j ∈ A, (f j).2 = q → (f j).1 ≠ v := by
+  have hfree : ∃ v, v < m ∧ ∀ j ∈ A, f j ≠ (v, q) := by
     have hlt : ((A.filter (fun j => (f j).2 = q)).image (fun j => (f j).1)).card <
         (range m).card := by
       calc _ ≤ (A.filter (fun j => (f j).2 = q)).card := card_image_le
         _ = occ q := (hocc q).symm
         _ < (range m).card := by simpa using hqocc
     obtain ⟨v, hv, hvn⟩ := exists_mem_notMem_of_card_lt_card hlt
-    refine ⟨v, mem_range.1 hv, fun j hj hjq hjv => hvn ?_⟩
-    exact mem_image.2 ⟨j, mem_filter.2 ⟨hj, hjq⟩, hjv⟩
+    refine ⟨v, mem_range.1 hv, fun j hj h => hvn ?_⟩
+    exact mem_image.2 ⟨j, mem_filter.2 ⟨hj, by rw [h]⟩, by rw [h]⟩
   obtain ⟨v, hvm, hvfree⟩ := hfree
   refine ⟨Function.update f i (v, q), ?_, ?_, ?_, ?_⟩
   · intro a ha b hb' hab
@@ -856,11 +864,11 @@ theorem inv_insert {D : ι → ℕ} {m : ℕ} {A : Finset ι} {occ : ℕ → ℕ
     · exfalso
       have hbi : b ≠ a := fun h => hi (h ▸ hb')
       simp only [Function.update_self, Function.update_of_ne hbi] at hab
-      exact hvfree b hb' (by rw [hab]) (by rw [hab])
+      exact hvfree b hb' hab.symm
     · exfalso
       have hai : a ≠ b := fun h => hi (h ▸ ha)
       simp only [Function.update_self, Function.update_of_ne hai] at hab
-      exact hvfree a ha (by rw [← hab]) (by rw [← hab])
+      exact hvfree a ha hab
     · have hai : a ≠ i := fun h => hi (h ▸ ha)
       have hbi : b ≠ i := fun h => hi (h ▸ hb')
       simp only [Function.update_of_ne hai, Function.update_of_ne hbi] at hab
@@ -881,25 +889,28 @@ theorem inv_insert {D : ι → ℕ} {m : ℕ} {A : Finset ι} {occ : ℕ → ℕ
       have hji : j ≠ i := fun h => hi (h ▸ hj)
       simp [Function.update_of_ne hji]
     rw [filter_insert]
+    have hfi : (Function.update f i (v, q) i).2 = q := by simp
     by_cases hrq : r = q
     · subst hrq
-      simp only [Function.update_self, if_true]
-      rw [card_insert_of_notMem (by simp [hi]), hcongr, ← hocc]
-    · simp only [Function.update_self, if_neg (Ne.symm hrq |>.symm ▸ hrq : ¬ q = r)]
-      rw [hcongr, hocc r, Function.update_of_ne hrq]
+      rw [if_pos' hfi, card_insert_of_notMem (by simp [hi]), hcongr, Function.update_self, ← hocc]
+    · rw [if_neg' (by rw [hfi]; exact fun h => hrq h.symm), hcongr, Function.update_of_ne hrq,
+        hocc r]
   · intro j hj r hr1 hr2
     rw [mem_insert] at hj
-    by_cases hrq : r = q
-    · subst hrq
-      simp only [Function.update_self]
-      omega
-    · rw [Function.update_of_ne hrq]
-      rcases hj with rfl | hj
-      · simp only [Function.update_self] at hr1
-        exact hr r hr1 hr2
-      · have hji : j ≠ i := fun h => hi (h ▸ hj)
-        simp only [Function.update_of_ne hji] at hr1
-        exact hlat j hj r hr1 hr2
+    rcases hj with rfl | hj
+    · simp only [Function.update_self] at hr1
+      have hrq : r ≠ q := by omega
+      rw [Function.update_of_ne hrq]
+      exact hr r hr1 hr2
+    · have hji : j ≠ i := fun h => hi (h ▸ hj)
+      simp only [Function.update_of_ne hji] at hr1
+      have := hlat j hj r hr1 hr2
+      by_cases hrq : r = q
+      · subst hrq
+        simp only [Function.update_self]
+        omega
+      · rw [Function.update_of_ne hrq]
+        exact this
 
 /-- The rejection half of Step 5 (the argument with `q*`): if every position
 `1..D i` is full then `insert i A` violates the counting criterion. -/
@@ -926,7 +937,7 @@ theorem inv_reject {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finset ι} {oc
     by_cases hr : r ≤ D i
     · exact hfull r h1 hr
     · have := hmin r h2
-      push_neg at this
+      rw [not_and, not_lt] at this
       exact this (by omega)
   have hclaim : ∀ j ∈ A, (f j).2 < r0 → D j < r0 := by
     intro j hj hjr
@@ -947,9 +958,10 @@ theorem inv_reject {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finset ι} {oc
       · rintro ⟨⟨hj, _⟩, h⟩; exact ⟨hj, h⟩
       · rintro ⟨hj, h⟩; exact ⟨⟨hj, by omega⟩, h⟩
     · intro j hj
-      rw [mem_filter] at hj
-      rw [mem_Icc]
-      exact ⟨(hb j hj.1).2.1, by omega⟩
+      have hj' := mem_filter.1 (mem_coe.1 hj)
+      have := (hb j hj'.1).2.1
+      simp only [coe_Icc, Set.mem_Icc]
+      exact ⟨this, by omega⟩
   have hsum : m * k ≤ ∑ r ∈ Icc 1 k, (A.filter (fun j => (f j).2 = r)).card := by
     calc m * k = ∑ r ∈ Icc 1 k, m := by simp [mul_comm]
       _ ≤ _ := by
@@ -965,7 +977,7 @@ theorem inv_reject {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finset ι} {oc
     exact ⟨hj.1, by have := hclaim j hj.1 hj.2; omega⟩
   have := count_le_of_slotFeasible hfeas k
   rw [N_insert hi] at this
-  rw [if_pos (by omega)] at this
+  rw [if_pos' (show D i ≤ k by omega)] at this
   omega
 
 theorem algStep_spec {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finset ι} {occ : ℕ → ℕ} {i : ι}
@@ -1015,14 +1027,17 @@ theorem algRun_from {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) :
     · have hfe : SlotFeasible D m (insert x A) := h1.2 hq
       rw [greedyFrom_cons_of_indep L hfe]
       have hinv' := h2 hq
-      apply ih _ _ hnd.2 _ hinv'
       have hstep : (algStep D m (A, occ) x).1 = insert x A := by simp [algStep, hq]
-      rw [hstep]
-      intro y hy hy'
-      rw [mem_insert] at hy'
-      rcases hy' with rfl | hy'
-      · exact hnd.1 hy
-      · exact hdisj y (List.mem_cons_of_mem _ hy) hy'
+      have hdisj' : ∀ y ∈ L, y ∉ insert x A := by
+        intro y hy hy'
+        rw [mem_insert] at hy'
+        rcases hy' with rfl | hy'
+        · exact hnd.1 hy
+        · exact hdisj y (List.mem_cons_of_mem _ hy) hy'
+      have key := ih (algStep D m (A, occ) x).1 (algStep D m (A, occ) x).2 hnd.2
+        (by rw [hstep]; exact hdisj') hinv'
+      rw [← hstep]
+      exact key
     · have hfe : ¬ SlotFeasible D m (insert x A) := fun h => hq (h1.1 h)
       rw [greedyFrom_cons_of_not L hfe, h3 hq]
       exact ih A occ hnd.2 (fun y hy => hdisj y (List.mem_cons_of_mem _ hy)) hinv
@@ -1042,5 +1057,26 @@ theorem algStep_accepts_iff {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finse
   (algStep_spec hm hinv hi).1.symm
 
 end Impl
+
+/-- **Theorem 5, assembled.**  The set kept by Algorithm 3's latest-free-slot rule
+(processing the sites by non-increasing weight) can be served on time by `m ≥ 1` vehicles
+and has maximum weight among all sets that can. -/
+theorem equalP_algRun_optimal {p : ℕ} (hp : 0 < p) (d w : ι → ℕ) {m : ℕ} (hm : 1 ≤ m)
+    (L : List ι) (hnd : L.Nodup) (hall : ∀ i, i ∈ L)
+    (hsort : L.Pairwise (fun a b => w b ≤ w a)) :
+    Schedulable p d m (algRun (fun i => d i / p) m L) ∧
+      ∀ S : Finset ι, Schedulable p d m S →
+        ∑ i ∈ S, w i ≤ ∑ i ∈ algRun (fun i => d i / p) m L, w i := by
+  rw [algRun_eq_greedy hm L hnd]
+  exact equalP_greedy_optimal_sets hp d w m L hnd hall hsort
+
+namespace Example5
+
+/-- Algorithm 3's rule reproduces the worked example: sites `1,3,4` are kept (`m = 1`). -/
+theorem algRun_m1 : algRun (fun i => d i / 2) 1 L = {0, 2, 3} := by decide
+
+theorem algRun_m2 : algRun (fun i => d i / 2) 2 L = Finset.univ := by decide
+
+end Example5
 
 end Mwhed.EqualDispatch
