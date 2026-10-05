@@ -261,6 +261,25 @@ def sample_average_plan(correlated, seed=7, draws=2000):
     return best, best_val
 
 
+def nominal_plan_at(speed):
+    """Optimal plan of the nominal instance (no delay, no scaling) at the
+    given response speed, as a list of site names in NAMES order."""
+    names, p, d, w = instance(speed, "arrival")
+    v, S = solve_exact(p, d, w)
+    return [names[i] for i in sorted(S)]
+
+
+def plan_threshold():
+    """Smallest response speed (km/h, 0.01 grid) from which the nominal
+    optimum includes Concow."""
+    sp = 40.0
+    while sp <= 90.0:
+        if "Concow" in nominal_plan_at(sp):
+            return sp
+        sp = round(sp + 0.01, 2)
+    return None
+
+
 def sensitivity(draws=20000, seed=20260702, correlated=False):
     """Monte-Carlo over uncertain inputs under the arrival reading.
 
@@ -293,7 +312,9 @@ def sensitivity(draws=20000, seed=20260702, correlated=False):
     nom_val, nom_set = solve_exact(np_, nd, nw)
     nominal_plan = [nom_names[i] for i in sorted(nom_set)]
     saa_plan, saa_val = sample_average_plan(correlated)
-    plans = {"nominal-optimal plan": nominal_plan,
+    plans = {"nominal plan @80 km/h": nominal_plan,
+             "nominal plan @65 km/h": nominal_plan_at(65),
+             "nominal plan @50 km/h": nominal_plan_at(50),
              "sample-average plan": saa_plan}
     sets = Counter()
     ret = {(k, m): [] for k in plans for m in ("fixed", "literal")}
@@ -349,6 +370,8 @@ def sensitivity(draws=20000, seed=20260702, correlated=False):
           f"{mode} hazard-minute errors) ===")
     print(f"nominal plan (80 km/h, no delay): {nominal_plan}, "
           f"weight {nom_val:.0f}")
+    for k_, v_ in plans.items():
+        print(f"plan {k_}: {v_}")
     print(f"sample-average plan (best of all subsets on an independent "
           f"2000-draw sample): {saa_plan}, mean weight {saa_val:.0f}")
     for s_, c in sets.most_common():
@@ -383,5 +406,6 @@ if __name__ == "__main__":
             msg = (f"Paradise leaves the optimum when its weight falls "
                    f"below {x:.3f} x {wp} = {x * wp:.0f} people")
         print(f"\nTipping, {sp} km/h: optimum {sorted(base)}; {msg}")
+    print(f"\nthe nominal optimum includes Concow from {plan_threshold()} km/h")
     sensitivity()
     sensitivity(correlated=True)

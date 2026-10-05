@@ -38,31 +38,28 @@ requests for a clearer hardness proof, a self-contained proof of the
 equal-cost theorem, a shorter positioning section and a discussion of
 parameter uncertainty are all addressed.
 
-Before resubmitting we re-checked every numerical result, every cited
-source, and the proofs (the statements and proofs are now also
-machine-checked in Lean~4), and we had the revision critically reviewed
-internally. This found several errors of our own, some in the first
-version and some introduced while revising; we list all of them in
-Section~\ref{sec:own}. The most consequential are: the case study had
-used extrapolated hazard times that the cited NIST report in fact
-documents (and that were far off), and had a modelling premise that its
-own geography contradicts; an extension we had presented as new (the
-equal-cost theorem for several vehicles) is classical; and our
-``tight'' FPTAS guarantee was not the best provable one. All tables and
-figures were regenerated.
+While revising we re-checked every numerical result, every cited source and
+the proofs (the statements and proofs are also machine-checked in Lean~4,
+with the scope stated in the Data Availability section), and we found
+several errors of our own in the version you reviewed; we list them in
+Section~\ref{sec:own}. The most consequential are: the case study used
+hazard times that were partly extrapolated although the cited NIST report
+documents them, and rested on a modelling premise that its own geography
+contradicts; and the earlier discussion of several vehicles contained an
+incorrect inference. All tables and figures were regenerated.
 
 \paragraph{Numbering.} Items are numbered in order of appearance, so the
-numbers of the submitted version have shifted. Submitted $\to$ now:
+numbers of the version you reviewed have shifted. That version $\to$ now:
 Lemma~1 $\to$ Lemma~2; Theorem~2 (hardness) $\to$ Theorem~3; Theorem~3
 (dynamic program) $\to$ Theorem~5; Theorem~4 (FPTAS) $\to$ Theorem~7;
-Theorem~5 (equal cost) $\to$ Theorem~8; Propositions~6, 7, 8 $\to$
-Propositions~9, 10, 11; Theorem~9 (classification) $\to$ Theorem~12.
-New: Proposition~1 (the round-trip model is conservative),
-Proposition~4 (constant hazard-arrival time), Lemma~6 (value-indexed
-table). Fact~1 keeps its number. Below, ``Theorem~$a$ ($b$)'' means
-Theorem~$a$ now and Theorem~$b$ in the submitted version. Section
-numbers: Section~5 now has a new Subsection~5.5 (general-purpose solver),
-so robustness is 5.6 and the Camp Fire study is 5.7.
+Theorem~5 (equal cost) $\to$ Theorem~8; Proposition~6 (naive deadline
+order) $\to$ Proposition~9. New in the revision: Proposition~1 (the
+round-trip model is conservative), Fact~1, Proposition~4 (constant
+hazard-arrival time), Lemma~6 (value-indexed table), Propositions~10
+and~11 (greedy repair; FPTAS tightness) and Theorem~12 (classification).
+Below, ``Theorem~$a$ ($b$)'' means Theorem~$a$ now and Theorem~$b$ in the
+version you reviewed. Section numbers refer to the revised manuscript;
+the Camp Fire study is Section~5.7.
 
 \section*{Summary of the main changes}
 
@@ -90,8 +87,8 @@ experiments in which rounding is active, an adversarial family, and a
 comparison with a general-purpose MIP solver.
 \item \textbf{Case study} (Section~5.7): rebuilt on hazard-arrival times
 documented by NIST for every community (nothing is extrapolated), with a
-comparison against a chained-route model, a sensitivity analysis with a
-stated protocol, and a sample-average plan.
+comparison against a chained-route model and a sensitivity analysis with
+a stated protocol; the conclusions drawn are now conditional and modest.
 \item \textbf{Discussion} (Section~6): corrected multi-vehicle
 subsection; parameter uncertainty in a new subsection with the two
 suggested references.
@@ -130,8 +127,8 @@ classical value-scaling scheme for job sequencing with deadlines
 \citep{karp1972} and the knapsack equivalence; and Theorem~8 (5) is the
 scheduling of unit-time jobs on identical or uniform machines, for which
 $O(n\log n)$ algorithms are known \citep{lawler1976,dessouky1990}.
-Our submitted version presented the extension of Theorem~8 to several
-vehicles as new; it is not, and we now say so (see Section~\ref{sec:own}).
+The extension of Theorem~8 to several vehicles, with different
+speeds, is likewise classical, and we say so.
 \item The summary table (Table~2) has a column giving the origin of each
 result (classical, Lawler--Moore, Moore, elementary corollary, new).
 \item We removed the claim that the dynamic program and the FPTAS are
@@ -146,7 +143,8 @@ deadline-order dispatch and one greedy repair have no guarantee.
 \reply Yes, but they are modest, and we present them as such.
 
 \begin{itemize}[leftmargin=*,itemsep=2pt]
-\item \textbf{Proposition~4 (constant hazard-arrival time).} Under the
+\item \textbf{Proposition~4 (constant hazard-arrival time).} (To our
+knowledge not stated before; it is elementary.) Under the
 arrival reading of Remark~1 the natural homogeneous case is a hazard that
 reaches all sites at the same time, which is \emph{not} a constant
 deadline $d_i$ (it is $d_i=H+p_i/2$). We prove that MWHED stays weakly
@@ -225,11 +223,13 @@ because the bound is pessimistic when the optimum contains many sites; on
 the adversarial family the ratio falls to $0.669$ at $\epsilon=0.5$ and
 follows the guarantee. We now state that the adversarial column is a
 single deterministic instance equal to a closed form, not an empirical
-worst case. A simple completion step repairs the family completely.
+worst case. A simple completion step repairs the family completely, and
+the sharpened bound of Theorem~7 concerns the scheme without that step.
 \item \textbf{Runtime} (Section~5.4) re-run with active scaling, and a
 \textbf{comparison with a general-purpose solver} (Section~5.5): HiGHS on
 the subset formulation returns the same optimum on all $40$ instances and
-is 15 to 200 times slower than the dynamic program.
+is much slower than the dynamic program (between about $15$ and $190$ times
+on these instances; the solver's timings are noisy).
 \end{itemize}
 
 \section{Reviewer 2}
@@ -241,9 +241,9 @@ nevertheless it could be rephrased better by shorter arguments.
 
 \reply The ``Positioning'' paragraph (Section~2) was shortened and now
 lists the literatures it draws on and refers to Table~2; the two long
-paragraphs on real-time schedulability and matroid-partition algorithms
-were cut to two sentences and removed, respectively, since they carried
-no result used later.
+paragraphs on real-time schedulability were cut to a short one, and the
+sentences on recent matroid-partition and multiagent-matroid papers were
+removed, since they carried no result used later.
 
 \begin{comment}
 1. Theorem 2 on NP-hardness of MWHED might require a bit efforts to get
@@ -283,12 +283,12 @@ graph-based pure proof for Theorem 2 possibly might give better insights
 \reply We removed the dependence on the knapsack citation: Theorem~3
 gives a \emph{direct} polynomial reduction from \textsc{Partition} to
 MWHED ($p_i=w_i=a_i$, $d_i=A/2$), so that the proof is self-contained
-and shows hardness when $w_i=p_i$; membership in NP is added. A small
-remark on terminology: \textsc{Partition} is one of the basic
-NP-complete problems in Garey and Johnson, but it is a number problem,
-not a graph problem. We did not give a graph-based proof: MWHED has no
-graph structure once each visit is a round trip from the depot, so there
-is no natural graph on which to base one.
+and shows hardness when $w_i=p_i$; membership in NP is added. We did
+not give a graph-based proof: MWHED has no graph structure once each
+visit is a round trip from the depot, so there is no natural graph on
+which to base one. We do note (Remark~4 after Theorem~3) that the hard
+instances are realized by a tiny network, $K_{2,n}$ with a hazard front
+that reaches all sites simultaneously.
 \citet{delazeri2026} prove NP-completeness for a different, graph-based
 model of wildfire suppression with simultaneous resources; Section~2 says
 so.
@@ -309,11 +309,10 @@ criterion for feasibility; (3) a direct proof of the matroid augmentation
 property; (4) a short proof that greedy is optimal on any matroid; (5) the
 implementation, with a proof that it accepts a site exactly when the kept
 set plus that site is feasible. The theorem now allows vehicles with
-different dispatch times and is stated as classical. In answering this
-comment we also corrected our union--find remark: the
-$O(n\alpha(n))$ bound needs union by size or rank in addition to path
-compression (path compression alone gives $O(\log n)$ amortized), and we
-describe the label array that gives it for our linking direction.
+different dispatch times and is stated as classical. The union--find structure is described with
+union by size and path compression (which together give the
+$O(n\alpha(n))$ bound; path compression alone gives $O(\log n)$
+amortized), including the label array needed for our linking direction.
 Algorithm~3 and Example~5 are rewritten accordingly.
 
 \begin{comment}
@@ -338,116 +337,94 @@ two references \citep{wang2020evac,koca2023}; (ii) a robust-feasibility
 observation; and (iii) calibration and sensitivity analysis. The case
 study (Section~5.7) now includes a Monte-Carlo sensitivity analysis over
 response speed, documented event times and departure delay, in an
-independent and in a correlated variant, with standard errors: the plan
-that is optimal for the nominal instance is fully on time in only
-$16.2\%$ of $20{,}000$ draws and retains $31.9\%$ of the drawn optimum on
-average, whereas a plan chosen against a sample of perturbed scenarios is
-fully on time in $79.3\%$ and retains $99.7\%$. Stochastic programming
+independent and in a correlated variant, with standard errors. The
+finding is conditional: the exact optimum inherits the assumed nominal
+speed. The plan optimal at $80$~km/h (an optimistic corner) is fully on
+time in only $16.2\%$ of $20{,}000$ draws and retains $31.9\%$ of the
+drawn optimum on average, whereas the plans optimal at any nominal speed
+below about $68$~km/h, which coincide with a plan chosen against a sample
+of perturbed scenarios, are fully on time in $79.3\%$ and retain $99.7\%$.
+The paper states that this is a property of the depot-spoke model. Stochastic programming
 for MWHED itself is listed as the main direction for future work; we have
 not attempted a solution method for it here.
 
 \section{Errors of our own corrected in this revision}\label{sec:own}
 
 In the course of revising we re-checked the manuscript, the code, the
-cited sources and the proofs, and found the following, which we correct
-and disclose.
+cited sources and the proofs, and found the following errors in the
+version you reviewed, which we correct and disclose.
 
 \begin{enumerate}[leftmargin=*,itemsep=3pt]
-\item \textbf{Case study: hazard times.} Two of the four hazard-arrival
-times had been \emph{extrapolated} by an isotropic spread-rate rule
-(Magalia at $58$ and Yankee Hill at $64$ minutes), although the cited
-NIST report documents events for them: spot fires in Old Magalia at 08:40
-and the fire running through Yankee Hill on the following day. The
-extrapolation was far off. We also had attributed a ``time zero'' of the
-timeline to NIST, but the report uses clock times only; the earlier
-anchors of $52$ and $71$ minutes were reproducible only with a start time
-taken from another source. The case study now uses the documented clock
-times of the first events in the four communities, with time zero equal
-to the initial dispatch time in NIST's dispatch log, states the event
-definitions as NIST words them, and no longer attributes our ignition
-coordinate to NIST (the figure uses NIST's origin point). All case-study
-results were recomputed; the earlier numbers ($26{,}218$, $26{,}928$) are
-superseded.
+\item \textbf{Case study: hazard times.} The fire's timeline was stated as
+``$52$ and $71$ minutes after ignition'', but the NIST report uses clock
+times and puts ignition at about 06:20, so the documented events (07:25 in
+Concow, 07:44 in Paradise) are $65$ and $84$ minutes after ignition; the
+figures we used are reproducible only with a start time taken from another
+source. Two of the four hazard times were \emph{extrapolated} by an
+isotropic spread-rate rule (Magalia at $58$ and Yankee Hill at $64$
+minutes), although the report documents events for them: spot fires in Old
+Magalia at 08:40 and the fire running through Yankee Hill on the following
+day; the extrapolation was far off. The ignition-point detail
+(transmission tower) is not in the NIST report. The case study now uses
+the documented clock times of the first events in the four communities,
+with time zero equal to the initial dispatch time in NIST's dispatch log,
+states the events as the report words them, and uses NIST's origin point
+in the figure. All case-study results were recomputed and the earlier
+numbers are superseded.
 \item \textbf{Case study: modelling premise.} Concow, Paradise and Yankee
 Hill are within about $10$~km of each other but $22$--$37$~km from the
-depot, so the round-trip model of the paper was far from the geometry,
-and the earlier conclusion that only Paradise could be protected was an
-artefact of that premise. The paper now proves that the round-trip model
-is conservative (Proposition~1), compares it with a chained route on the
-same data (Table~12), and says that the case study illustrates the model
-and does not support operational recommendations.
-\item \textbf{Case study: protocol.} The ``retained share'' of the nominal
-plan was not reproducible from the text (an independent replication under
-another reading of the plan gave about $22\%$ instead of $26.6\%$). The
-protocol (fixed visiting sequence, skipping sites deleted by
-Assumption~1) is now stated, the alternative reading is reported, standard
-errors are given, a correlated-error variant is added, and the weight
-at which Paradise would leave the optimum is reported. We also added a
-paragraph on the ethics of conceding low-weight sites and on what
-``protected'' means.
-\item \textbf{Case study: deadline semantics} (from the first revision).
-The model's on-time test counts the completion of the round trip (return
-reading), but the narrative speaks of reaching the site (arrival
-reading). Remark~1 makes the two readings precise (the arrival reading is
-an instance of MWHED with deadlines $d_i^{\mathrm{haz}}+p_i/2$) and the
-case study uses it; the return reading is reported for comparison.
-Individually infeasible sites are deleted before every algorithm,
-including the naive baseline; statements that the optimum ``saves'' a
-number of people were replaced by the on-time weight.
-\item \textbf{Novelty of Theorem~8 (5).} We had presented the extension of
-the equal-cost greedy to several identical vehicles as new. It is
-classical (Lawler 1976 for identical machines; Dessouky, Lageweg, Lenstra
-and van de Velde 1990 for uniform machines); we now cite both, state the
-theorem for vehicles with different dispatch times, and keep our proof
-for self-containedness. The classification (Theorem~12) is labelled an
-elementary corollary.
-\item \textbf{Release dates.} The statements that equal-cost tractability
-``is not robust to release dates'' and that hardness follows ``once
-release dates are added'' were not supported for one vehicle: the cited
-result of \citet{heegermolter2025} concerns the unweighted problem on
-several identical machines, and for one machine equal processing times
-with release dates and weights are polynomial \citep{baptiste1999}. The
-text now says exactly this. The earlier inference that the equal-cost
-case becomes hard with several vehicles was also wrong, since that
-result requires release dates, which MWHED does not have.
-\item \textbf{Tightness of the FPTAS.} The submitted text claimed that
-the guarantee $1-\epsilon$ is ``tight up to a factor $1-\epsilon^2$''.
-The scheme in fact guarantees a larger constant $\rho_{n,\epsilon}$
-(Theorem~7), which is attained by two families (Proposition~11); the
-classical $1-\epsilon$ is not attained. The statements in the abstract,
-introduction, Table~2 and conclusion were rewritten.
-\item \textbf{Proofs.} The main-text proof of the FPTAS guarantee used an
-inequality in the wrong direction (the appendix repaired it); the displayed
+depot, so the round-trip model was far from the geometry. The paper now
+proves that the round-trip model is conservative when travel times form a
+metric (Proposition~1), compares it with a chained route on the same data
+(Table~12), and says that the case study illustrates the model and does
+not support operational recommendations. We also state the protocol of the
+sensitivity analysis, add a correlated-error variant, report that the
+nominal plan depends on the assumed speed (it includes Concow only from
+about $68$~km/h), and add a paragraph on the ethics of conceding
+low-weight sites and on what ``protected'' means.
+\item \textbf{Case study: deadline semantics.} The model's on-time test
+counts the completion of the round trip (return reading), but the
+narrative speaks of reaching the site (arrival reading). Remark~1 makes
+the two readings precise (the arrival reading is an instance of MWHED with
+deadlines $d_i^{\mathrm{haz}}+p_i/2$) and the case study uses it; the
+return reading is reported for comparison. Individually infeasible sites
+are deleted before every algorithm, including the naive baseline;
+statements that the optimum ``saves'' a number of people were replaced by
+the on-time weight.
+\item \textbf{Naive baseline.} Our naive EDD baseline kept dispatching to
+sites that were already late, which made it a weak anchor; we added EDD
+with skipping.
+\item \textbf{Several vehicles and release dates.} The claim that the $m=1$
+instance ``embeds'' into an instance with more vehicles by adding idle
+vehicles was wrong (extra vehicles can serve sites); we now use blocker
+sites. The inference from \citet{heegermolter2025} that the equal-cost case
+becomes hard with several vehicles was also wrong: that result concerns
+the unweighted problem on several machines \emph{with release dates},
+which MWHED does not have, and for one machine equal processing times with
+release dates and weights are polynomial \citep{baptiste1999}. Theorem~8
+now shows tractability for every number of vehicles, and the text states
+exactly what the cited result covers.
+\item \textbf{Heeger--Hermelin.} The text said that a small number of
+distinct dispatch costs ``does not guarantee tractability''. The result is
+$W[1]$-hardness in that parameter (no $f(k)\mathrm{poly}(n)$ algorithm);
+the text now says this and makes no claim about two or more distinct
+values.
+\item \textbf{Proofs.} In the FPTAS proof an inequality was used in the
+wrong direction in the main text (the appendix repaired it); the displayed
 recursions for the dynamic programs, written as an indicator times a
 value, were wrong as literally stated (they return $0$ when the test
-fails), and are now written with cases; the proof of Lemma~2 did not
-cover ties between deadlines; the union--find cost claim needed union by
-size (see Reviewer~2, point~3); the reduction of Theorem~3 did not handle
-odd $A$ explicitly. Each fix was checked against brute force
-(\texttt{verify\_extensions.py}).
-\item \textbf{Heeger--Hermelin.} The submitted text said that a small
-number of distinct dispatch costs ``does not guarantee tractability''. The
-result is $W[1]$-hardness in that parameter (no $f(k)\mathrm{poly}(n)$
-algorithm); the text now says this and makes no claim about two or more
-distinct values.
-\item \textbf{Multiple vehicles.} The claim that the $m=1$ instance
-``embeds'' by adding idle vehicles was wrong (extra vehicles can serve
-sites); we now use blocker sites.
+fails) and are now written with cases; and the proof of the
+earliest-deadline-first lemma did not cover ties between deadlines. Each
+fix was checked against brute force (\texttt{verify\_extensions.py}).
 \item \textbf{Implementation.} The FPTAS guarantee relies on
 Assumption~1 (so that $w_{\max}\le W^\ast$), which the code did not
 enforce; both algorithms now delete infeasible sites first, and the code
 was rewritten and checked against exhaustive search.
 \item \textbf{Bibliography.} We verified every entry against a
-publisher, Crossref or arXiv record and corrected: the author lists and
-volume of \citet{alvelos2025} (three authors, volume 86), the surname
-\emph{von der Br\"uggen} (G\"unzel et al.), the author order of the NIST
-report, the article type of the AAMAS 2026 entry (extended abstract), and
-missing volume, article and page data for several proceedings entries.
-\item \textbf{Verification claim.} The Lean~4 statement in our first draft
-of the Data Availability section was inconsistent about what is
-formalised (complexity-class and running-time statements are not); it now
-says precisely what is and is not formalised, and the library, the code
-and the experiments are public.
+publisher, Crossref or arXiv record and corrected, among others: the
+author list and volume of \citet{alvelos2025} (three authors, volume 86),
+the author order of the NIST report, and missing volume, article and page
+data for several proceedings entries.
 \item Minor: the dash convention in the dynamic-program example table was
 described incorrectly; the explanation of why the FPTAS runtime was flat
 in $\epsilon$ cited saturating weights, whereas the cause was $K=1$. Both

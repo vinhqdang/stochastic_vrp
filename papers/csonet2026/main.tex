@@ -27,8 +27,8 @@
 \begin{document}
 
 \title[Minimum Weighted Hazard-Exposure Dispatch]{Minimum Weighted
-Hazard-Exposure Dispatch: A Scheduling View with Verified Algorithms and
-a Wildfire Case Study}
+Hazard-Exposure Dispatch: A Scheduling View with Machine-Checked Proofs
+and a Wildfire Case Study}
 
 \author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
 \author[2]{\fnm{Minh Ngoc} \sur{Dinh}}\email{minh.dinh@maeducation.com}
@@ -54,15 +54,18 @@ NP-hardness, a Lawler--Moore dynamic program, a value-scaling FPTAS, and
 a matroid greedy algorithm for equal dispatch times with any number of
 vehicles. We present these in a self-contained form for a transportation
 audience and mark precisely what is classical. What the dispatch setting
-adds is modest and specific: hardness persists when only the
-hazard-arrival time is constant; the depot round-trip model is a
-conservative bound on a chained route; and the FPTAS has an exactly tight
-guarantee that is sharper than the textbook $1-\epsilon$. Natural
-heuristics have unbounded worst-case ratio. The algorithms are verified
-against exhaustive search and the theory is machine-checked in Lean~4. A
-case study of the 2018 Camp Fire, built from hazard-arrival times that
-NIST documents for each community, shows that the nominal optimum is
-brittle and that a sample-average plan is far more robust.}
+adds is modest and specific: hardness persists when the hazard-arrival
+time is the same at every site (with weights proportional to dispatch
+times); the depot round-trip model is a conservative bound on a chained
+route; and the FPTAS has a guarantee, best possible for the scheme, that
+is sharper than the textbook $1-\epsilon$. Natural heuristics have
+unbounded worst-case ratio. The algorithms are checked against exhaustive
+search and the theory is machine-checked in Lean~4. A case study of the
+2018 Camp Fire, built from hazard-arrival times that NIST documents for
+each community, shows in this model that the exact optimum inherits the
+assumed response speed: planned at a speed above $68$~km/h it is on time
+in only $16\%$ of perturbed scenarios, planned at any lower speed it
+retains $99.7\%$ of the optimum.}
 
 \keywords{scheduling under deadlines, computational complexity,
 approximation algorithms, matroids, disaster response, formal
@@ -115,8 +118,8 @@ $p_i$ and $d_i$ are fixed---exactly the question MWHED isolates. This
 separation of concerns (forecast the hazard and fix the travel network
 first; optimize the dispatch order second) mirrors how the wildfire
 operations-research literature we discuss in Section~\ref{sec:related}
-is typically organized, and is what lets us give a complete
-complexity and algorithmic answer to the ordering question alone,
+is typically organized, and is what lets us give a precise
+complexity and algorithmic picture of the ordering question alone,
 rather than a heuristic for the joint problem.
 
 We formalize this as Minimum Weighted Hazard-Exposure Dispatch
@@ -158,23 +161,28 @@ we state them as such:
 \item \emph{A refined FPTAS analysis.} The textbook guarantee
 $1-\epsilon$ is not attained: the scheme of Theorem~\ref{thm:fptas}
 guarantees $\rho_{n,\epsilon}>1/(1+\epsilon)$, and this constant is
-exactly tight (Proposition~\ref{prop:tight}).
+best possible for the scheme as stated, without the optional completion
+step (Proposition~\ref{prop:tight}); rescaling $\epsilon$ recovers the
+classical bound, so the gain is a constant, not an order.
 \item \emph{The two readings of a deadline.} Under the arrival reading
 (the crew must arrive before the hazard does), MWHED stays weakly
-NP-hard even when the hazard-arrival time is the same at every site
-(Proposition~\ref{prop:consth}); and the depot round-trip model is a
+NP-hard even when the hazard-arrival time is the same at every site and
+weights are proportional to dispatch times
+(Proposition~\ref{prop:consth}; to our knowledge not stated before); and the depot round-trip model is a
 conservative bound on a route that chains the sites
 (Proposition~\ref{prop:spoke}), which says when the round-trip premise is
-appropriate and when it is not.
+appropriate and when it is not (when travel times form a metric).
 \item \emph{Worst-case examples.} Dispatching in deadline order, with or
 without skipping, and a weighted greedy repair all have unbounded
 worst-case ratio (Propositions~\ref{prop:naive} and~\ref{prop:repair});
 the examples are elementary, and on random instances the greedy repair is
-within $1\%$ of the optimum.
+within $1\%$ of the optimum on average.
 \item \emph{Verification.} Every algorithm is checked against exhaustive
 search (Section~\ref{sec:verify}), and the statements and proofs of the
-results above, except complexity-class and running-time claims, are
-machine-checked in Lean~4 (see the Data Availability statement).
+lemmas, theorems and propositions above, except complexity-class and
+running-time claims, are machine-checked in Lean~4 (see the Data
+Availability statement for the precise scope; the algorithms'
+implementations are checked by testing, not by Lean).
 \item \emph{A case study on documented data.} A Camp Fire instance built
 from the hazard-arrival times that NIST documents for each community,
 compared with a chained-route model, with a sensitivity analysis and a
@@ -228,8 +236,9 @@ problem, and \citet{gensl1981} give a faster scheme; both build on the
 knapsack schemes of \citet{ibarrakim1975}, \citet{lawler1979} and
 \citet{kellerer1999,kellerer2004}.
 
-Hence our Theorems~\ref{thm:hardness}--\ref{thm:fptas} are re-derivations
-in our notation, not new techniques. The same is true of
+Hence our Theorems~\ref{thm:hardness} and~\ref{thm:dp}, and the scheme of
+Theorem~\ref{thm:fptas}, are re-derivations in our notation, not new
+techniques. The same is true of
 Theorem~\ref{thm:equalp}: for equal processing times (unit jobs) the
 weighted number of late jobs is polynomial on one machine, on identical
 machines and on uniform machines, with $O(n\log n)$ algorithms due to
@@ -272,10 +281,9 @@ Section~\ref{sec:experiments}.
 
 \textbf{Real-time systems.} Earliest-deadline-first ordering is also
 central to real-time scheduling \citep{liulayland1973}, where the question
-is whether \emph{every} task can meet its deadline. MWHED presupposes
-that some sites will be lost and asks which weighted subset to sacrifice,
-the optimization question behind Theorem~\ref{thm:hardness}; Lemma~\ref{lem:edd}
-is the analogue of the EDF ordering fact, not of the utilization test.
+is whether \emph{every} task meets its deadline; MWHED presupposes that
+some sites will be lost, which is the optimization question behind
+Theorem~\ref{thm:hardness}.
 
 \textbf{Approximation.} The 0/1 knapsack problem admits a fully
 polynomial-time approximation scheme via scaling and rounding of item
@@ -326,8 +334,9 @@ problems the travel time between consecutive sites depends on the
 sequence; in MWHED every visit is a round trip from the depot, so the
 occupancy of a site is order-independent and the problem is a scheduling
 problem with exact algorithms and guarantees. The price is a modelling
-premise, which Proposition~\ref{prop:spoke} shows to be conservative: a
-route that chains the sites can only protect more.
+premise, which Proposition~\ref{prop:spoke} shows to be conservative when
+travel times form a metric: a route that chains the sites can only protect
+more.
 
 \textbf{Dispatch under a spreading hazard.} Wildfire suppression is the
 application area where the ``race a spreading hazard'' structure has been
@@ -379,7 +388,7 @@ and its motivation from disaster-response operations research
 Its theoretical results are, with the exceptions listed in the
 introduction, classical ones restated in transportation language;
 Table~\ref{tab:summary} in Section~\ref{sec:theory} marks which, and the
-paper's claim to value rests on the complete and verified treatment, the
+paper's claim to value rests on the careful, machine-checked treatment, the
 sharper FPTAS analysis, the analysis of the two deadline readings and of
 the round-trip premise, and the case study on documented data.
 
@@ -429,7 +438,7 @@ $\epsilon$ & FPTAS accuracy parameter, $\epsilon\in(0,1)$ (Theorem~\ref{thm:fpta
 $K$ & FPTAS weight-scaling factor \\
 $w_i'$ & scaled weight, $\lfloor w_i/K\rfloor$ \\
 $g(i,v)$ & FPTAS's value-indexed dual DP table \\
-$D_i$ & latest feasible dispatch position, equal-cost case, $\lfloor d_i/p\rfloor$ \\
+$D_i$ & latest feasible slot index, equal-size case, $\min\{n,C(d_i)\}$ (Theorem~\ref{thm:equalp}) \\
 $m$ & number of vehicles (MWHED-$m$, Section~\ref{sec:equalp}) \\
 $\rho_{n,\epsilon}$ & FPTAS guarantee constant (Theorem~\ref{thm:fptas}) \\
 \bottomrule
@@ -510,9 +519,10 @@ $B_j\le a_{i_1}+\sum_{l=1}^{j-1}(a_{i_l}+a_{i_{l+1}})
 The inequality is an equality when the sites lie on different branches of
 a star network centred at the depot, and can be strict by a wide margin
 when sites are clustered, as in the case study of
-Section~\ref{sec:campfire}. The proposition says that a depot-spoke
-optimum is a \emph{lower bound} on what a crew can protect, which is the
-safe direction for planning, and it says when the round-trip premise is
+Section~\ref{sec:campfire}. The proposition says that, when travel times form a metric (in particular
+when the direct roads between sites are open), a depot-spoke optimum is a
+\emph{lower bound} on what a crew can protect, which is the safe direction
+for planning, and it says when the round-trip premise is
 costly: when the sites are close to each other relative to their distance
 from the depot.
 
@@ -623,7 +633,7 @@ Constant hazard-arrival time (arrival reading) & weakly NP-hard & Prop.~\ref{pro
 Round-trip vs.\ chained route & round trip is conservative & Prop.~\ref{prop:spoke} & --- & new (elementary) \\
 Naive EDD, EDD with skipping & unbounded ratio & Prop.~\ref{prop:naive} & $O(n\log n)$ & illustrative \\
 Weighted greedy repair & unbounded ratio & Prop.~\ref{prop:repair} & --- & illustrative \\
-FPTAS guarantee & exactly tight & Prop.~\ref{prop:tight} & --- & new \\
+FPTAS guarantee & best possible (without completion step) & Prop.~\ref{prop:tight} & --- & new \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -688,6 +698,20 @@ A/2\}\le A/2$, with equality if and only if some subset sums to exactly
 $A/2$. Thus $W^\ast\ge k:=A/2$ holds iff the \textsc{Partition} instance is
 a yes-instance.
 \end{proof}
+
+\begin{remark}[The hard instances are networks]\label{rem:network}
+The instances of Theorem~\ref{thm:hardness} arise on a tiny network with a
+common hazard time. Take a depot $D$, a hazard origin $H$ and sites
+$s_1,\dots,s_n$, with edges $D\!-\!s_i$ of length $a_i$ and $H\!-\!s_i$ of
+length $A$, a crew and a hazard that both move at unit speed, and the
+return reading. As $a_i\le A/2<A$, the shortest $D$--$s_i$ path is the
+direct edge (any other path costs at least $A$), so $p_i=2a_i$, and the
+hazard reaches every site at time $A$, so $d_i=A$ for all $i$. With
+$w_i=a_i$ this is the instance of Theorem~\ref{thm:hardness} with all
+lengths doubled. So MWHED is NP-hard on the network $K_{2,n}$ with a
+hazard front that reaches all sites simultaneously; hardness does not
+come from an intricate road network.
+\end{remark}
 
 With general weights the common-deadline restriction is exactly the 0/1
 knapsack problem with sizes $p_i$, values $w_i$ and capacity $D$, by
@@ -766,7 +790,7 @@ Constant dispatch times (Theorem~\ref{thm:equalp}) and constant weights
 $d_i=H+p_i/2$) give polynomial algorithms, so
 Proposition~\ref{prop:consth} cannot be strengthened to those
 restrictions; it shows that, under either reading, a constant
-hazard-arrival time never helps.
+hazard-arrival time \emph{alone} never helps.
 
 \subsection{An exact pseudo-polynomial algorithm}
 
@@ -950,10 +974,10 @@ one). It runs in $O(n^3/\epsilon)$ time, and
 \begin{enumerate}
 \item[(a)] if $\epsilon w_{\max}\le n$ (so $K=1$), $W(\hat S)=W^\ast$;
 \item[(b)] if $\epsilon w_{\max}>n$ and $n\ge2$, put $y=n/\epsilon$,
-$N=\lfloor y\rfloor$ and $f=y-N$. Then
+$N=\lfloor y\rfloor$ and $\varphi=y-N$. Then
 \begin{gather*}
 W(\hat S)\ \ge\ \rho_{n,\epsilon}\,W^\ast,\qquad
-\rho_{n,\epsilon}:=\Bigl(1+\max\Bigl\{\tfrac{n-1}{y},\ \tfrac{n-2+f}{N}\Bigr\}\Bigr)^{-1},\\
+\rho_{n,\epsilon}:=\Bigl(1+\max\Bigl\{\tfrac{n-1}{y},\ \tfrac{n-2+\varphi}{N}\Bigr\}\Bigr)^{-1},\\
 \rho_{n,\epsilon}\ \ge\ \frac{N}{N+n-1}\ >\ \frac1{1+\epsilon}\ >\ 1-\epsilon .
 \end{gather*}
 \end{enumerate}
@@ -973,7 +997,7 @@ sets, i.e.\ $W(\hat S)=W^\ast$.
 
 \emph{Case (b).} Now $K=\epsilon w_{\max}/n>1$ exactly, so $w_{\max}=Ky$.
 Let $r_i:=w_i-Kw_i'\in[0,K)$ and let $h$ be a site with $w_h=w_{\max}$;
-then $w_h'=N\ge1$ and $r_h=Kf$. Put $x=W(\hat S)$ and
+then $w_h'=N\ge1$ and $r_h=K\varphi$. Put $x=W(\hat S)$ and
 $\hat v=\sum_{i\in\hat S}w_i'$, let $S^\ast$ be an optimal set,
 $A=S^\ast\setminus\hat S$ and $B=\hat S\setminus S^\ast$. Three facts:
 \begin{enumerate}
@@ -992,14 +1016,14 @@ to prove, so let $A\ne\emptyset$.
 \begin{itemize}
 \item \emph{$h\in\hat S$.} Then $x\ge w_h=Ky$ and $R<K|A|\le K(n-1)$, so
 $W^\ast/x<1+(n-1)/y$.
-\item \emph{$h\in A$.} Then $R=r_h+\sum_{A\setminus h}r_i\le K(f+n-2)$ and,
-by (F1)--(F2), $x\ge KN$, so $W^\ast/x\le1+(n-2+f)/N$.
+\item \emph{$h\in A$.} Then $R=r_h+\sum_{A\setminus h}r_i\le K(\varphi+n-2)$ and,
+by (F1)--(F2), $x\ge KN$, so $W^\ast/x\le1+(n-2+\varphi)/N$.
 \item \emph{$h\notin A\cup\hat S$.} Then $A,\hat S\subseteq\{1,\dots,n\}
 \setminus\{h\}$ are disjoint with $\hat S\ne\emptyset$, so $|A|\le n-2$,
 $R<K(n-2)$, $x\ge KN$, and $W^\ast/x<1+(n-2)/N$, which is dominated by
 the previous case.
 \end{itemize}
-This proves $W(\hat S)\ge\rho_{n,\epsilon}W^\ast$. Since $f<1$ we have
+This proves $W(\hat S)\ge\rho_{n,\epsilon}W^\ast$. Since $\varphi<1$ we have
 $\rho_{n,\epsilon}\ge N/(N+n-1)$, and $N>y-1=n/\epsilon-1\ge(n-1)/\epsilon$
 (as $1/\epsilon>1$), i.e.\ $(n-1)/N<\epsilon$, so $N/(N+n-1)>1/(1+\epsilon)
 >1-\epsilon$. (The classical bound also follows directly from (F3):
@@ -1180,7 +1204,7 @@ examined before $g_k$, $o_j\in A$---a contradiction.
 
 \emph{Step 5: implementation (c).} (i) Only the $\min\{m,n\}$ fastest
 vehicles can contribute to $\sigma_1,\dots,\sigma_n$ (a vehicle appears
-only if its first slot does); select them in $O(m)$. (ii) Generate
+only if its first slot does); select them in $O(m)$ time by linear-time selection. (ii) Generate
 $\sigma_1,\dots,\sigma_n$ with a heap holding the next slot time $jp_v$
 of each vehicle, recording $(v,j)$ for every popped slot:
 $O(n\log\min\{m,n\})$. (iii) For each site let $D_i:=|\{k\le n:\tau(\sigma_k)\le d_i\}|
@@ -1366,7 +1390,7 @@ it cannot be improved for Algorithm~\ref{alg:fptas} as stated.
 
 \begin{proposition}[The refined guarantee is asymptotically tight]\label{prop:tight}
 Let $\epsilon\in(0,1)$, $n\ge2$, and $y=n/\epsilon$, $N=\lfloor y\rfloor$,
-$f=y-N$. For every $\eta>0$ there is an instance with $n$ sites satisfying
+$\varphi=y-N$. For every $\eta>0$ there is an instance with $n$ sites satisfying
 Assumption~\ref{as:feasible} on which Algorithm~\ref{alg:fptas} returns a
 set of weight at most $(\rho_{n,\epsilon}+\eta)W^\ast$. Hence the constant
 $\rho_{n,\epsilon}$ of Theorem~\ref{thm:fptas} is best possible, and it
@@ -1383,7 +1407,7 @@ $W^\ast=M+(n-1)(\lceil K\rceil-1)$; site $1$ has scaled weight $N$ and all
 the others scaled weight $0$, so the algorithm returns $\{1\}$ (zero-scaled
 sites are never selected) and the ratio
 $M/W^\ast\to(1+(n-1)\epsilon/n)^{-1}=(1+(n-1)/y)^{-1}$.
-\emph{Family~2} (the term $\tfrac{n-2+f}{N}$): a site $b$ with
+\emph{Family~2} (the term $\tfrac{n-2+\varphi}{N}$): a site $b$ with
 $(p,d,w)=(1,1,\lceil KN\rceil)$, a site $h$ with $(2,2,M)$, and $n-2$
 sites $z_j$ with $(1,n,\lceil K\rceil-1)$. Then $w_{\max}=M=Ky$, so
 $w_b'=w_h'=N$ and $w_{z}'=0$; $b$ and $h$ are incompatible ($1+2>2$), so
@@ -1392,11 +1416,18 @@ by $\{b\}$: the algorithm returns $\{b\}$, of weight $\lceil KN\rceil$,
 whereas $\{h\}\cup\{z_j\}$ is feasible ($h$ completes at $2$, the $z_j$ at
 $3,\dots,n$), so $W^\ast\ge M+(n-2)(\lceil K\rceil-1)$. The ratio is at
 most $\lceil KN\rceil/(M+(n-2)(\lceil K\rceil-1))\to
-N/(y+n-2)=(1+(n-2+f)/N)^{-1}$. The smaller of the two limits is
+N/(y+n-2)=(1+(n-2+\varphi)/N)^{-1}$. The smaller of the two limits is
 $\rho_{n,\epsilon}$.
 \end{proof}
 
-Family~1 is the extremal one whenever $N(1-f)\ge f(n-2+f)$, in particular
+The constant concerns Algorithm~\ref{alg:fptas} \emph{without} the
+completion step; with the step the guarantee can only improve, and we do
+not determine its exact value. Rescaling is also available: running the
+scheme with $\epsilon'=\delta/(1-\delta)$ guarantees $1-\delta$ for
+$\delta<\tfrac12$, so the refinement changes constants, not the
+dependence on $1/\epsilon$.
+
+Family~1 is the extremal one whenever $N(1-\varphi)\ge\varphi(n-2+\varphi)$, in particular
 when $\epsilon$ divides $n$; Family~2 is needed otherwise (for $n=3$,
 $\epsilon=10/13$ the two limits are $0.661$ and $0.612$). The optional
 completion step of Remark~\ref{rem:completion} repairs Family~1
@@ -1490,7 +1521,7 @@ reproduced for $k=3,10,100$. (v) The results added in the revision are checked b
 Theorem~\ref{thm:equalp} for vehicles with different dispatch times agrees
 with the counting criterion and with exhaustive search over all
 assignments and orders on $1{,}600$ instances ($n\le8$, $m\le3$), with the
-matroid axioms on all pairs of feasible sets, and with a naive greedy on
+matroid axioms on all pairs of feasible sets (on the $1{,}199$ instances with $n\le6$), and with a naive greedy on
 $400$ larger instances; the reduction of
 Proposition~\ref{prop:consth} agrees with a Partition oracle on $600$
 instances ($344$ yes, $256$ no); the bound $\rho_{n,\epsilon}$ of
@@ -1500,9 +1531,10 @@ Proposition~\ref{prop:tight}, with no violation; and the recursions of
 Lemma~\ref{lem:g} and~\eqref{eq:dp}, the tie handling of
 Lemma~\ref{lem:edd} and the Partition preprocessing of
 Theorem~\ref{thm:hardness} agree with brute force cell by cell
-($800$, $800$, $600$ and $700$ instances). The statements of
-Sections~\ref{sec:model} and~\ref{sec:theory} are in addition
-machine-checked in Lean~4 (Data Availability).
+($800$, $800$, $600$ and $700$ instances); the network realisation of
+Remark~\ref{rem:network} is checked with shortest paths on $117$ Partition
+instances. The statements of Sections~\ref{sec:model} and~\ref{sec:theory}
+are in addition machine-checked in Lean~4 (Data Availability).
 
 \subsection{Accuracy across instance sizes}\label{sec:acc}
 
@@ -1784,7 +1816,10 @@ fires in Old Magalia, the earliest-affected part of \emph{Magalia}
 \emph{Yankee Hill}, documented as ``well established'' at 08:40 on
 9~November, about a day after ignition and therefore an almost
 unconstraining deadline. The events are therefore not identical across
-communities, which is a limitation of the data, not of the model.
+communities, which is a limitation of the data, not of the model; the
+documentation is also uneven across communities, and Yankee Hill's event
+is an upper bound on the fire's arrival there (the instance is in effect
+a three-site one, as Yankee Hill's deadline never binds).
 The weights are the 2010 U.S.\ Census populations (the last count before
 the fire; later counts reflect the aftermath, and the NIST report quotes
 different, survey-based figures): Paradise $26{,}218$, Magalia
@@ -1799,8 +1834,9 @@ $50$~km/h (conservative, winding mountain roads) and $80$~km/h
 (optimistic), and Table~\ref{tab:campfire-route} varies the road factor.
 (ii) Time zero is the initial dispatch time in NIST's dispatch log,
 06:31 on 8~November (NIST's own estimate of ignition is about 06:20, and
-the first 911 call is at 06:25); the crew leaves at time zero, and the
-sensitivity analysis adds a departure delay. (iii) The \emph{arrival
+the first 911 call is at 06:25); the crew leaves at time zero (the dispatch to the fire's origin, not a
+decision to defend these communities, so this is optimistic), and the
+sensitivity analysis adds a departure delay, which only postpones it. (iii) The \emph{arrival
 reading} of Remark~\ref{rem:reading} is used: a site is
 \emph{protected} if the crew \emph{arrives} before the documented event,
 so the MWHED deadline is $d_i=d_i^{\mathrm{haz}}+p_i/2$. ``Protected''
@@ -1813,7 +1849,8 @@ Table~\ref{tab:campfire} gives the instance.
 event time in minutes after time zero (06:31); $p_i$ is the round-trip
 occupancy from the Oroville depot at the two response speeds; the MWHED
 deadline under the arrival reading is $d_i=d^{\mathrm{haz}}+p_i/2$
-(rounded); $w_i$ is the 2010 census population.}\label{tab:campfire}
+(rounded, halves to the nearest even integer); $w_i$ is the 2010 census
+population.}\label{tab:campfire}
 \small
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
@@ -1862,10 +1899,10 @@ Naive EDD & 1{,}043 (C, Y) & 38{,}571 \\
 algorithm, even naive deadline order, serves all four communities. At
 $50$~km/h the picture changes: Concow's early deadline (86 minutes) and
 Paradise's (108) cannot both be met, and the optimum gives up Concow
-($710$ people) to protect Paradise, Magalia and Yankee Hill, for
+(weight $710$) to protect Paradise, Magalia and Yankee Hill, for
 $37{,}861$ of the $38{,}571$ total. Deadline-order rules go to Concow
 first because its deadline is earliest, and they pay for it: naive EDD
-protects only $1{,}043$ people, and EDD with skipping $12{,}353$, a third
+reaches an on-time weight of only $1{,}043$, and EDD with skipping $12{,}353$, a third
 of the optimum, because serving Concow makes Paradise late. The greedy
 repair finds the optimum on both speeds, and the FPTAS with $\epsilon=0.1$
 returns $99.1\%$ of the optimum at $50$~km/h: Yankee Hill's weight $333$
@@ -1886,7 +1923,7 @@ measures by how much, comparing the spoke optimum with the optimum of a
 chained route (direct travel between consecutive sites, great-circle
 distance times a road factor $\rho$, exhaustive over all ordered subsets).
 With $\rho=1$ the chained route protects all four communities at both
-speeds; at $50$~km/h the spoke model loses Concow, $710$ people. With
+speeds; at $50$~km/h the spoke model loses Concow, weight $710$. With
 road factors $1.3$ and $1.6$ the spoke model loses more, because it
 charges $\rho$ on every round trip while the hazard times stay fixed
 (Paradise remains in the optimum), whereas the chained route still
@@ -1936,52 +1973,66 @@ even when hopeless, the mean retained share of the nominal plan drops from
 $0.319$ to $0.289$; we report the first protocol.
 
 Paradise is in the optimum in all draws of the independent variant and in
-$98.9\%$ of the correlated one, so Paradise-first is not a knife edge:
-at $50$~km/h Paradise leaves the optimum only if its weight falls below
-$710$, Concow's, i.e.\ to $2.7\%$ of its census population. The optimal set is Paradise, Magalia
-and Yankee Hill in $63.1\%$ of the independent draws, Paradise with
-Yankee Hill in $20.7\%$ and all four communities in $16.2\%$. The plan
-that is optimal for the nominal $80$~km/h instance (all four, Concow
-first) is fully on time in only $16.2\%$ of the draws and retains on
-average $31.9\%$ of the drawn optimum (fifth percentile $2.8\%$), because
-a delay or a slower road lets the Concow visit make Paradise late: the
-nominal optimum places a low-weight site ahead of the dominant one, with
-only $12$ minutes of slack for Paradise. A \emph{sample-average plan}, the subset (in
-the same visiting order) with the largest average protected weight over an
-independent sample of $2{,}000$ draws, is Paradise, Magalia and Yankee Hill;
-it is fully on time in $79.3\%$ of the draws and retains $99.7\%$ of the
-drawn optimum on average (fifth percentile $98.2\%$). Under correlated
-errors the corresponding figures are $26.0\%$ and $37.2\%$ for the
-nominal plan and $79.1\%$ and $99.5\%$ for the sample-average plan.
-Finally, a chained route with road factor $1.0$ (resp.\ $1.3$) protects
-all four communities in $96.1\%$ (resp.\ $79.5\%$) of the independent
-draws.
+$99.2\%$ of the correlated one; at $50$~km/h it leaves the optimum only if
+its weight falls below $710$, Concow's. The decision is in effect a single
+binary conflict, whether to visit Concow ($710$) before Paradise
+($26{,}218$): Yankee Hill's event is a day away and never binds, and
+Magalia rarely does. The optimal set is Paradise, Magalia and Yankee Hill
+in $63.1\%$ of the independent draws, Paradise with Yankee Hill in
+$20.7\%$ and all four communities in $16.2\%$.
 
-\textbf{What the case study does and does not show.} The structural
-lesson is robust across the variants: the exact optimum of a nominal
-model can be a poor plan under timing uncertainty, because it spends the
-slack of a dominant site on a small one, and a plan chosen against a
-sample of perturbed scenarios is far better; this is what a scenario
-formulation would formalize (Section~\ref{sec:disc-stochastic}). It does
-not show what a real crew should have done: the model ignores on-site
-service, road closures, evacuation (which was the main protection in this
-event) and the fact that the dispatch itself changes the fire. The
-objective is also a choice with ethical content. Weighting by population
-and conceding the sites with the least weight is utilitarian; a planner
-may instead require a minimum protection level for every community, or
-weight by vulnerability. A set of sites that must be protected can be
-forced into the plan, within the same model, by adding a constant larger
-than the total weight to their weights, so that they are never
-sacrificed; proportional-fairness constraints generally break the
-knapsack structure. We therefore treat the numbers above as a worked
+The nominal plan depends on the nominal speed. The optimum of the nominal
+instance (no delay) includes Concow only from about $68$~km/h upward, since
+the round trips to Concow and Paradise must both fit before Paradise's
+deadline. The plan that is optimal at $80$~km/h, an optimistic corner of
+the speed range, visits Concow first and is fully on time in only
+$16.2\%$ of the draws, retaining on average $31.9\%$ of the drawn optimum
+(fifth percentile $2.8\%$), because a delay or a slower road lets the
+Concow visit make Paradise late; Paradise has only $12$ minutes of slack.
+The plans that are optimal at $65$ or $50$~km/h, and the sample-average
+plan described next, all drop Concow: Paradise, Magalia and Yankee Hill.
+That plan is fully on time in $79.3\%$ of the draws and retains $99.7\%$
+of the drawn optimum on average (fifth percentile $98.2\%$); since Concow
+carries $1.8\%$ of the total weight, any plan that drops it retains at
+least $98.2\%$ of an optimum that includes it. The \emph{sample-average
+plan} is the subset (in the same visiting order) with the largest average
+protected weight over an independent sample of $2{,}000$ draws; it
+coincides with the conservative-speed optimum, so here the scenario
+sample confirms what a conservative nominal speed already gives, and its
+value would lie in problems where the right nominal is not obvious. Under
+correlated errors the figures are $26.0\%$ and $37.2\%$ for the
+$80$~km/h plan and $79.1\%$ and $99.5\%$ for the others. Finally, a
+chained route with road factor $1.0$ (resp.\ $1.3$) protects all four
+communities in $96.1\%$ (resp.\ $79.5\%$) of the independent draws.
+
+\textbf{What the case study does and does not show.} The finding is
+conditional and modest: in this model the exact optimum inherits whatever
+nominal speed (that is, slack) is assumed. When the assumption is
+optimistic, the plan spends Paradise's slack on a small community and
+fails under timing errors; planning for a conservative speed removes the
+failure at a cost of at most the small community's weight. This is a
+property of the depot-spoke model, which Table~\ref{tab:campfire-route}
+shows to be a poor fit for this geography, and a scenario formulation
+(Section~\ref{sec:disc-stochastic}) is the natural way to make such
+choices. The study does not show what a real crew should have done: the
+model ignores on-site service, road closures, evacuation (the main
+protection in this event) and the fact that the dispatch itself changes
+the fire. The objective is also a choice with ethical content. Weighting
+by population and conceding the sites with the least weight is
+utilitarian; a planner may instead require a minimum protection level for
+every community, or weight by vulnerability. A set of sites that must be
+protected can be forced into the plan, within the same model, by adding a
+constant larger than the total weight to their weights (provided each is
+individually feasible); proportional-fairness constraints generally break
+the knapsack structure. We therefore treat the numbers above as a worked
 illustration of the model and its sensitivity, on a single event with
 four sites, and as nothing more.
 
 % ══════════════════════════════════════════════════════════════════
 \section{Discussion and extensions}\label{sec:discussion}
 
-The results of Section~\ref{sec:theory} settle the single-depot,
-single-vehicle, deterministic-deadline case completely. Three natural
+Section~\ref{sec:theory} treats the single-depot, single-vehicle,
+deterministic-deadline case. Three natural
 directions relax one assumption at a time; we discuss, for each, what
 carries over from our analysis and what specifically breaks, rather
 than simply listing them as unexplored future work.
@@ -2062,8 +2113,10 @@ be at least as hard as MWHED (it contains MWHED as the special case of
 a depot that chooses not to move) and likely strictly harder, since the
 order in which sites are visited now affects future dispatch costs, not
 just which deadlines are met. Proposition~\ref{prop:spoke} bounds the
-effect from one side: with a fixed depot, allowing the crew to chain sites
-can only enlarge what it protects, so the round-trip optimum is a safe
+effect from one side: with a fixed depot and metric travel times,
+allowing the crew to chain sites can only enlarge what it protects (a
+hazard that cuts direct roads between sites while the depot spokes stay
+open would break this), so the round-trip optimum is a safe
 lower bound, and Table~\ref{tab:campfire-route} shows the gap can be large
 when sites are clustered. A full routing model (orienteering or
 deadline-TSP, Section~\ref{sec:related}) would remove the gap at the price
@@ -2144,10 +2197,11 @@ scenario-averaged objectives are the useful formulations there.
 reporting how the optimum moves with them, as in
 Section~\ref{sec:campfire}, is part of using the model. The case study
 shows a practical pattern that scenario models would formalize: the
-exact optimum of the nominal model can spend the slack of a dominant site
-on a small one, and a plan chosen against a sample of perturbed scenarios
-(Section~\ref{sec:campfire}) retained $99.7\%$ of the drawn optimum, where
-the nominal optimum retained $31.9\%$.
+exact optimum of the nominal model inherits the assumed slack, so an
+optimistic nominal speed can spend the slack of a dominant site on a small
+one (retaining $31.9\%$ of the drawn optimum), whereas a conservative
+nominal speed or a plan chosen against a sample of perturbed scenarios
+retains $99.7\%$ (Section~\ref{sec:campfire}).
 
 % ══════════════════════════════════════════════════════════════════
 \section{Conclusion}\label{sec:conclusion}
@@ -2169,9 +2223,9 @@ What the dispatch setting adds is modest. Under the arrival reading of
 the deadline, hardness persists when the hazard-arrival time is the same
 at every site; the depot round-trip model is a conservative bound on a
 chained route, which says when its premise is costly (clustered sites);
-and the FPTAS has the exactly tight guarantee
-$\rho_{n,\epsilon}>1/(1+\epsilon)$, sharper than the textbook
-$1-\epsilon$, which is not attained. Natural heuristics (deadline order
+and the FPTAS has the guarantee
+$\rho_{n,\epsilon}>1/(1+\epsilon)$, best possible for the scheme as
+stated and sharper than the textbook $1-\epsilon$, which is not attained. Natural heuristics (deadline order
 with or without skipping, a weighted greedy repair) have unbounded
 worst-case ratio, although the greedy repair is within $1\%$ of the
 optimum on random instances; a guarantee requires a rule that reconsiders
@@ -2181,12 +2235,13 @@ dynamic program and the FPTAS are two such rules, not the only ones.
 The numerical study and the case study carry two lessons beyond the
 theorems. The reading of the deadline (the crew must arrive before the
 hazard, or return before it) changes the answer on the same data and must
-be stated. And the optimum of a model with estimated inputs can be
-brittle: on the Camp Fire instance, built from the hazard-arrival times
-that NIST documents for each community, the nominal optimum places a
-small community ahead of the dominant one with little slack and is fully
-on time in only $16\%$ of the perturbed scenarios, whereas a plan chosen
-against a sample of scenarios retains almost all of the optimum. The case
+be stated. And the optimum of a model with estimated inputs inherits the
+assumed slack: on the Camp Fire instance, built from the hazard-arrival
+times that NIST documents for each community, an optimistic nominal speed
+yields a plan that places a small community ahead of the dominant one with
+little slack and is fully on time in only $16\%$ of the perturbed
+scenarios, whereas planning for a conservative speed (which a sample of
+scenarios also finds) retains almost all of the optimum, in this model. The case
 study is a single event with four sites, evaluated in a model that is
 conservative about routing (Proposition~\ref{prop:spoke}); it
 illustrates the model and does not support operational recommendations.
@@ -2204,7 +2259,7 @@ approximation schemes for a fixed number of vehicles.
 
 \section{Exhaustive verification of the running example}\label{app:exhaustive}
 
-Examples~\ref{ex:running}--\ref{ex:matroid} rely on
+Examples~\ref{ex:running}--\ref{ex:fptas} rely on
 Example~\ref{ex:running}'s instance being small enough to check by
 exhaustive search, not only by the dynamic program itself. Since
 Lemma~\ref{lem:edd} lets us restrict to dispatching each candidate
@@ -2359,16 +2414,20 @@ derivation and sensitivity analysis) and the Lean~4 formalisation are
 publicly available at \url{https://github.com/vinhqdang/stochastic_vrp}, in
 the directory \texttt{papers/csonet2026}, at the tag
 \texttt{csonet2026-revision1}.
-The statements and proofs of Lemma~\ref{lem:edd},
-Theorems~\ref{thm:hardness}--\ref{thm:equalp}, Propositions~\ref{prop:consth}
-and~\ref{prop:tight} and the worked examples, and of the hardness part of
+The statements and proofs of Proposition~\ref{prop:spoke},
+Lemmas~\ref{lem:edd} and~\ref{lem:g}, Theorems~\ref{thm:hardness}--\ref{thm:equalp},
+Propositions~\ref{prop:consth}--\ref{prop:tight}, the arithmetic of the
+worked examples, and the hardness part of
 Theorem~\ref{thm:classification}, are machine-checked in the Lean~4 proof
 assistant with the Mathlib library, with no unproved steps. The
 formalisation proves the mathematical content (for instance, that the
 reduction preserves yes/no answers, that the dynamic program computes the
 optimum, and that the approximation bound holds) and does not cover
 complexity-class statements (NP-hardness as a class membership, running
-times) or the data-structure implementation of the greedy algorithm; the
+times) the data-structure implementation of the greedy algorithm, the fact that
+only the $n$ earliest slots matter, that the dynamic program on the scaled
+weights of Example~\ref{ex:fptas} selects the stated set, or the modelling
+remarks; the
 file \texttt{MwhedProofs/README.md} lists, theorem by theorem, what is and
 is not formalised.
 
@@ -2376,9 +2435,9 @@ is not formalised.
 A generative AI coding assistant was used to assist with
 LaTeX formatting, to run the numerical code reported in
 Section~\ref{sec:experiments}, to search and check bibliographic records,
-and to write the Lean~4 proofs, which the Lean kernel then checks. All
-theorem statements, proofs, and the manuscript text were authored,
-verified, and are taken responsibility for by the authors.
+and to write the Lean~4 proofs, which the Lean kernel then checks. The
+authors reviewed all statements, proofs, code and text, and take
+responsibility for them.
 
 \bibliography{references}
 

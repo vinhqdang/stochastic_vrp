@@ -11,3 +11,4 @@ import MwhedProofs.Examples
 import MwhedProofs.Classification
 import MwhedProofs.Matroid
 import MwhedProofs.MatroidSpeeds
+import MwhedProofs.Spoke

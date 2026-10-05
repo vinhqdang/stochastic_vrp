@@ -12,7 +12,7 @@ from pathlib import Path
 
 here = Path(__file__).resolve().parent
 out, rc = [], 0
-for i in (1, 2, 3, 4):
+for i in (1, 2, 3, 4, 5):
     r = subprocess.run([sys.executable, str(here / "checks" / f"check_item{i}.py")],
                        capture_output=True, text=True, cwd=here)
     out.append(f"== checks/check_item{i}.py (exit {r.returncode})")

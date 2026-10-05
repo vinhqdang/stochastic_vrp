@@ -30,4 +30,6 @@ closed-form inequality grid: 11741 (n,eps) pairs, failures 0
 (c) Lemma 1 with ties: 600 instances (376 with tied deadlines), 13864 subsets; mismatches 0
 (d) union-find (label array, size+compression) and paper-direction (compression only) vs naive: 1500 runs, mismatches 0; avg pointer steps/op for n=2e5 random: label+size 1.64, compression-only 2.10
 (e) Theorem 2 reduction: 700 Partition instances (351 odd A, 378 with a_i>A/2, 171 YES); mismatches 0
+== checks/check_item5.py (exit 0)
+K_(2,n) network realisation: 117 Partition instances, mismatches: 0
 ALL EXTENSION CHECKS PASSED

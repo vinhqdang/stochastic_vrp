@@ -45,7 +45,7 @@
     Hill were far off; NIST defines no time zero — we use the initial
     dispatch 06:31); comparison with a chained route, stated protocol,
     correlated-error variant, sample-average plan.
-  - **Bibliography** fully verified/corrected (59 entries);
+  - **Bibliography** verified/corrected (59 entries, ~49 cited);
     `verify_extensions.py` checks the added results; `experiment.py`
     gained a HiGHS MIP baseline; code + Lean library are public (tag
     `csonet2026-revision1`).

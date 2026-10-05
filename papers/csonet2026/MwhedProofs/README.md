@@ -37,6 +37,7 @@ appearance; the submitted version had Lemma 1, Theorems 2-5, Propositions
 | Theorem 8, **vehicles with different dispatch times** (a)-(c): `C(t)`, counting criterion, matroid, greedy, link to schedules, identical-time special case | `cap`, `card_slots`, `slotFeasible_iff_count`, `slotFeasible_isIndepFamily`, `greedy_slotFeasible_optimal`, `schedulable_iff`, `speeds_greedy_optimal`, `cap_const`, `slotFeasible_const_iff` (`Mwhed.Speeds`) | `MatroidSpeeds` |
 | Algorithm 3 decision rule (latest-free-slot, logic only) | `algStep_accepts_iff`, `algRun_eq_greedy`, `equalP_algRun_optimal` | `Matroid` |
 | Example 5 (m=1: 22, m=2: 26) | `Example5.*` | `Matroid` |
+| Proposition 1 (round-trip model conservative: chained arrival B_j <= round-trip arrival A_j; equality on a star) | `chainArrival_le_roundTripArrival`, `protected_chain_forall`, `chainArrival_eq_roundTripArrival_of_star` (`Mwhed.Spoke`) | `Spoke` |
 | Proposition 9 (naive EDD / EDD-skip unbounded) | `prop6_naive`, `prop6_skip`, `prop6_unbounded_ratio` | `Heuristics` |
 | Proposition 10 (greedy repair) | `prop7_repair`, `prop7_unbounded_ratio` | `Heuristics` |
 | Running example (W* = 23, naive EDD = 16), Example 2 | `runInst_isOPT`, `runInst_naiveEDD`, `runInst6_*` | `Examples` |
@@ -60,8 +61,8 @@ first version of the manuscript.)
 * The heap-based slot generation, the "only the n earliest slots matter"
   fact, and the union-find data structure of Algorithm 3 (its decision
   rule and correctness are proved, not its data structure or cost).
-* **Proposition 1** (the depot round-trip model is conservative; a
-  triangle-inequality argument) and Remark 1 (arrival vs return reading).
+* Remark 1 (arrival vs return reading, a modelling remark) and Remark 4
+  (the hard instances as a `K_{2,n}` network: arithmetic on path lengths).
 * Moore's algorithm (a cited classical result, not a claim of the paper).
 * The limit `n -> infinity` of `rho_{n,eps}` as a filter statement (the
   exact limits as `M -> infinity` for each family are proved).
@@ -85,7 +86,7 @@ first version of the manuscript.)
 * Site indices in the examples are 0-based. Greedy ties are broken by input
   order. `D_i = ⌊d_i/p⌋` is not capped at `n` (sites with `D_i = 0` are
   simply never feasible).
-* Real-valued guarantees (Thm 4) are stated over `ℝ`; `−∞` in the DP is
+* Real-valued guarantees (Thm 7) are stated over `ℝ`; `−∞` in the DP is
   `⊥ : WithBot ℕ`.
 
 `.lake` is a build directory (git-ignored); in this repository checkout it
