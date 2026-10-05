@@ -1,0 +1,22 @@
+import BatonProofs
+-- Proposition 1
+#print axioms Baton.Endpoint.endpoint_subset_peak
+#print axioms Baton.Endpoint.prob_endpoint_le_peak
+#print axioms Baton.Endpoint.endpoint_frequency_zero
+#print axioms Baton.Endpoint.endpoint_loss_bounds
+#print axioms Baton.Endpoint.endpoint_loss_attained
+-- Proposition 2
+#print axioms Baton.Monotone.C_le_C0
+#print axioms Baton.Monotone.stop_region_subset
+#print axioms Baton.Tree.Cn_le_C0
+#print axioms Baton.Tree.opt_stop_imp_myopic_stop
+#print axioms Baton.Tree.Cn_lt_C0
+#print axioms Baton.Boundary.myopic_boundary
+-- Proposition 3
+#print axioms Baton.Tree.price_of_overtriggering
+#print axioms Baton.Tree.price_flat
+-- Proposition 4
+#print axioms Baton.Monotone.C_monotone'
+#print axioms Baton.Monotone.C_le_E
+#print axioms Baton.Monotone.baton_C_monotone
+#print axioms Baton.Monotone.C0_monotone

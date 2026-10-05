@@ -106,6 +106,7 @@ def simulate_pi(g_test: np.ndarray, B: float, H: np.ndarray, E: np.ndarray,
         "handoff_rate":  float((action == 1).mean()),
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
+        "costs":         costs,
     }
     return (stats, action) if return_actions else stats
 

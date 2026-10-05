@@ -2,27 +2,39 @@
 \caption{Sensitivity of the recourse saving (\%, \emph{higher is
 better}; best non-clairvoyant value per row in bold) to the fleet-economics
 parameters, one factor at a time around the defaults (12 Dethloff
-instances, \textsc{Det} and \textsc{SAA} gates). \textsc{Baton}
-re-balances its action mix as prices move and leads in every
-configuration.}
+instances, \textsc{Det} and \textsc{SAA} gates; the baseline row is
+computed on the same 12 instances). two-lever: tuned handoff threshold
+plus tuned repeatable depot-return trigger. In the
+$F_{\mathrm{sb}} = 60$ row the standby rate exceeds the emergency price
+at late stops, so Inequality~\eqref{eq:prices} fails there. The last
+rows add a fixed fee (dwell, loading-dock time) to every depot return on
+top of its detour, transfer and lateness costs.}
 \label{tab:costsens}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{l ccccc}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l cccccc}
 \toprule
-Configuration & restock & threshold & \textsc{Baton-ho} &
-\textsc{Baton} & oracle (HO) \\
+Configuration & restock & threshold & two-lever & \textsc{Baton-ho} &
+\textsc{Baton} & oracle-ho \\
 \midrule
-baseline & 24.6 & 20.7 & 23.3 & \textbf{40.6} & 42.1 \\
-cheap emergencies ($F_{\mathrm{emg}}{=}25$) & 22.5 & 13.5 & 17.6 & \textbf{39.5} & 31.1 \\
-dear emergencies ($F_{\mathrm{emg}}{=}60$) & 32.3 & 35.7 & 39.1 & \textbf{54.4} & 55.4 \\
-cheap standby ($F_{\mathrm{sb}}{=}10$) & 28.2 & 37.0 & 41.3 & \textbf{51.3} & 57.7 \\
-dear standby ($F_{\mathrm{sb}}{=}35$) & 28.0 & 7.3 & 12.4 & \textbf{41.9} & 24.8 \\
-low SLA price ($p_{\mathrm{late}}{=}0.5$) & 33.1 & 22.3 & 27.0 & \textbf{48.8} & 42.0 \\
-high SLA price ($p_{\mathrm{late}}{=}3$) & 23.3 & 28.5 & 32.2 & \textbf{46.1} & 47.6 \\
-mild surge ($s_{\mathrm{emg}}{=}1.5$) & 26.8 & 20.3 & 24.9 & \textbf{44.2} & 40.3 \\
-heavy surge ($s_{\mathrm{emg}}{=}4$) & 29.8 & 30.2 & 33.6 & \textbf{51.4} & 49.3 \\
+baseline & 28.2 & 24.9 & 41.8 & 29.0 & \textbf{48.0} & 44.5 \\
+cheap emergencies ($F_{\mathrm{emg}}{=}25$) & 23.4 & 13.0 & 33.5 & 18.0 & \textbf{40.1} & 31.0 \\
+dear emergencies ($F_{\mathrm{emg}}{=}60$) & 32.9 & 36.0 & 50.1 & 39.6 & \textbf{55.2} & 55.3 \\
+cheap standby ($F_{\mathrm{sb}}{=}10$) & 28.2 & 37.5 & 46.4 & 41.7 & \textbf{52.7} & 57.7 \\
+dear standby ($F_{\mathrm{sb}}{=}35$) & 28.2 & 8.8 & 36.6 & 13.1 & \textbf{42.6} & 24.8 \\
+low SLA price ($p_{\mathrm{late}}{=}0.5$) & 33.1 & 22.3 & 44.3 & 26.4 & \textbf{49.0} & 42.0 \\
+high SLA price ($p_{\mathrm{late}}{=}3$) & 23.6 & 28.5 & 40.0 & 32.3 & \textbf{47.0} & 47.6 \\
+mild surge ($s_{\mathrm{emg}}{=}1.5$) & 27.4 & 20.6 & 38.5 & 24.8 & \textbf{44.7} & 40.3 \\
+heavy surge ($s_{\mathrm{emg}}{=}4$) & 29.9 & 30.4 & 46.2 & 34.1 & \textbf{52.0} & 49.5 \\
+standby above emergency ($F_{\mathrm{sb}}{=}60$) & 28.2 & 1.4 & 31.1 & 2.1 & \textbf{36.8} & 5.0 \\
+\midrule
+depot-return fee 5 & 21.6 & 24.9 & 34.8 & 29.0 & \textbf{42.4} & 44.5 \\
+depot-return fee 10 & 16.5 & 24.9 & 30.3 & 29.0 & \textbf{37.6} & 44.5 \\
+depot-return fee 20 & 8.5 & 24.9 & 25.5 & 29.0 & \textbf{30.2} & 44.5 \\
+depot-return fee 30 & 3.9 & 24.9 & 24.7 & \textbf{29.0} & \textbf{29.0} & 44.5 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}

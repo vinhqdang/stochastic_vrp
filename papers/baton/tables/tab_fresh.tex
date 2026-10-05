@@ -1,0 +1,32 @@
+\begin{table}[t]
+\caption{The fresh-start value and the post-return state. Bias columns:
+mean error of the estimated fresh-start value $\widehat F_k$ against the
+high-data reference $F_k$ of DP$^3_{50\mathrm{k}}$, in \% of the handoff price;
+in-sample is \textsc{Baton}'s own estimate, out-of-sample re-evaluates
+the same fitted downstream policy on $5\times10^4$ independent paths.
+Saving columns (\% vs.\ reactive, all \emph{without} deployment
+selection, so that the three-action fit is exposed): the three-action
+policy as fitted, with $\widehat F_k$ replaced by its out-of-sample
+value, with $F_k$ replaced by the high-data reference value, with the
+state-conditional fresh-start value (\textsc{Baton-cf}), and with the
+exact residual-capacity reset $x_k = -D_{\le k}$. Savings in this table
+pool the route costs of all plans of a benchmark (ratio of sums), whereas
+Tables~\ref{tab:grand} and~\ref{tab:large} average the plan-level
+savings over instances, so the two differ slightly.}
+\label{tab:fresh}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l cc c ccccc c}
+\toprule
+& \multicolumn{2}{c}{bias of $\widehat F_k$ (\% of $H$)} & & \multicolumn{5}{c}{three-action \textsc{Baton}, saving \%} & \\ \cmidrule(lr){2-3}\cmidrule(lr){5-9}
+Benchmark & in-sample & out-of-sample & \textsc{Baton-ho} & as fitted & $F$ out-of-s. & $F$ reference & \textsc{cf} & exact reset & DP$^3_{50\mathrm{k}}$ \\
+\midrule
+Salhi--Nagy (Det) & +0.50 & +0.09 & 41.3 & 52.2 & 52.2 & 51.9 & 53.1 & 57.9 & 53.5 \\
+Dethloff (SAA) & +0.00 & +0.01 & 18.9 & 51.4 & 51.4 & 51.4 & 52.2 & 54.6 & 54.6 \\
+City, real shops (Det) & -1.18 & -1.05 & 9.2 & 5.6 & 5.6 & 5.9 & 9.4 & 9.9 & 10.7 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

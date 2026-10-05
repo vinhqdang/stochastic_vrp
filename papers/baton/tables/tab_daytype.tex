@@ -1,0 +1,32 @@
+\begin{table}[t]
+\caption{Non-exchangeable days (40 Dethloff instances, \textsc{Det} and
+\textsc{SAA} plans; saving \% vs.\ reactive on the same days, pooled
+over plans as a ratio of sums, with the ``all'' column weighting normal
+and promotion days 0.8/0.2). One day
+in five is a promotion day with mean deliveries $\times 1.15$ and mean
+pickups $\times 1.35$. Pooled: one fit on a history that mixes both day
+types; day-type-specific: separate fits, the day type being known in
+advance (promotions are scheduled), each fitted on the days of its type
+in the same pooled history (about 800 normal and 200 promotion days), so
+that the comparison isolates the day-type information from the sample
+size; stale: fitted on the normal days of that history only and applied
+unchanged on promotion days. The difference between day-type-specific
+and pooled \textsc{Baton} over all days is reported in the text with a
+paired bootstrap interval over the 80 plans.}
+\label{tab:daytype}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l ccc ccc}
+\toprule
+& \multicolumn{3}{c}{tuned threshold} & \multicolumn{3}{c}{\textsc{Baton}} \\ \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Fitting strategy & normal & promotion & all & normal & promotion & all \\
+\midrule
+pooled fit (day type ignored) & 21.2 & 22.7 & 21.7 & 26.8 & 29.4 & 27.6 \\
+day-type-specific fits & 21.2 & 22.4 & 21.6 & 26.6 & 29.7 & 27.6 \\
+stale fit (normal days only) & 21.2 & 22.2 & 21.5 & 26.6 & 28.3 & 27.1 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

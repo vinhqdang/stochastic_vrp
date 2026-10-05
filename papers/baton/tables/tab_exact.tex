@@ -1,0 +1,30 @@
+\begin{table}[t]
+\caption{Exact optimum under independent demands ($\rho = 0$; 40 Dethloff
+instances, all routes of the \textsc{Det} and \textsc{SAA} plans).
+The exact values solve the dynamic programs over $(k, W_k)$ by numerical
+convolution of the Gamma demand densities on a grid of 1{,}500 load
+cells, for the handoff-only menu and for the three-action menu with the
+conservative reset. Policies are fitted on $10^3$ days and evaluated on
+$2\times10^4$ test days; MC err.: relative difference between the
+simulated and the exact reactive cost, a check of the grid. Savings are
+\% of the reactive cost, pooled over routes; the last three columns give
+\textsc{Baton-ho}'s share of the exact handoff-only saving and
+\textsc{Baton}'s and DP$^3_{50\mathrm{k}}$'s share of the exact
+three-action saving (--: the exact saving is below one point, so the
+share is not meaningful).}
+\label{tab:exact}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{l cc c cc ccccccccc ccc}
+\toprule
+& & & MC & \multicolumn{2}{c}{exact optimum} & & & & & & & & & & \multicolumn{3}{c}{share of exact (\%)} \\ \cmidrule(lr){5-6}\cmidrule(lr){16-18}
+Gate & inst. & routes & err.\ (\%) & ho & 3-act. & thr. & thr.-$k$ & two-lever & DP$^3_N$ & \textsc{Baton-ho} & \textsc{Baton} & \textsc{Baton-cf} & DP$_{50\mathrm{k}}$ & DP$^3_{50\mathrm{k}}$ & \textsc{Baton-ho} & \textsc{Baton} & DP$^3_{50\mathrm{k}}$ \\
+\midrule
+\textsc{Det} & 40 & 263 & 0.39 & 9.6 & 13.4 & 8.5 & 8.9 & 11.2 & 10.7 & 9.0 & 12.6 & 12.6 & 9.4 & 12.6 & 93 & 94 & 94 \\
+\textsc{SAA} & 40 & 385 & 0.22 & 0.4 & 10.0 & -3.8 & -3.5 & 5.0 & -0.1 & -2.3 & 5.9 & 6.3 & 0.1 & 8.6 & -- & 59 & 86 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

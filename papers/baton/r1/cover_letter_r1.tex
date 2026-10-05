@@ -1,0 +1,81 @@
+%% Cover letter for revision 1 of CAOR-D-26-01885.
+%% Build (after compiling ../main.tex): pdflatex cover_letter_r1
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.6cm]{geometry}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
+\usepackage{parskip}
+\input{../tables/macros}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{flushright}
+Quang-Vinh Dang\\
+British University Vietnam\\
+Hung Yen, Vietnam\\
+\href{mailto:vinh.dq4@buv.edu.vn}{vinh.dq4@buv.edu.vn}\\[4pt]
+\today
+\end{flushright}
+
+\vspace{6pt}
+\noindent
+The Editor\\
+\emph{Computers \& Operations Research}
+
+\vspace{14pt}
+\noindent Dear Editor,
+
+Please find enclosed the first revision of our manuscript CAOR-D-26-01885,
+\emph{``Optimal-stopping recourse for vehicle routing with simultaneous
+pickup, delivery, and stochastic demands.''} We thank you and the three
+reviewers for constructive reports. Every comment is answered point by
+point in the enclosed response letter, and a version of the manuscript
+with all changes marked is provided.
+
+The main changes are the following.
+
+\begin{itemize}
+\item \textbf{Theory.} The assumptions are weakened: the load need only
+  be a stochastically monotone Markov chain, and no ordering between
+  handoff and emergency prices is required. A new proposition bounds the
+  cost of over-triggering by the myopic threshold. We also corrected two
+  errors of our own in the original propositions.
+\item \textbf{Machine-checked proofs.} All four propositions are now
+  verified formally in the Lean~4 proof assistant with the Mathlib
+  library. The formalisation compiles without unproved steps, relies only
+  on Lean's standard axioms, and is released with the replication code;
+  the manuscript lists its modelling abstractions. The verification also
+  exposed a side condition of the first proposition, now stated.
+\item \textbf{Stronger benchmarks.} New competitors that have the same
+  two levers as our policy (a two-lever threshold rule and an equal-data
+  three-action dynamic program), a position-dependent threshold, a
+  three-action clairvoyant bound, and an exact dynamic program for
+  independent demand, against which our policy attains \exDetShare{} of
+  the optimal saving on deterministic plans.
+\item \textbf{Robustness.} Dependent demand, non-exchangeable days, a
+  capacitated standby pool shared across routes, training-data budgets,
+  single-core timing, deliver-only customers and a depot-return fee.
+\item \textbf{Statistics and reporting.} The instance is the experimental
+  unit, with paired bootstrap intervals and Holm-adjusted tests; ties and
+  the one setting in which a competitor is ahead are reported as such,
+  and several claims of the original version are narrowed accordingly.
+\end{itemize}
+
+Supplementary tables, one figure and one proof have moved to an
+appendix. All tables and figures regenerate from the public repository,
+which also contains the formal proofs.
+
+The revised manuscript has not been published previously and is not
+under consideration elsewhere. The authors have no conflicts of interest
+to declare.
+
+Thank you for your consideration.
+
+\vspace{14pt}
+\noindent Sincerely, on behalf of all authors,
+
+\vspace{6pt}
+\noindent Quang-Vinh Dang (corresponding author)\\
+British University Vietnam
+\end{document}

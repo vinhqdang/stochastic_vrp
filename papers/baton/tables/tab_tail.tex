@@ -1,0 +1,29 @@
+\begin{table}[t]
+\caption{Tail risk of the daily recourse bill of a plan (40 Dethloff
+instances per gate, 2{,}000 test days each). CVaR$_{95}$: mean of the
+worst 5\% of daily plan bills; the reactive column gives its level in
+currency units, the others its reduction (\%, higher is better).
+$P(\mathrm{emg})$: share of days on which at least one route of the plan
+suffers an emergency (\%, lower is better). Best value of each group in
+bold.}
+\label{tab:tail}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{l c ccc cccc}
+\toprule
+& \multicolumn{4}{c}{CVaR$_{95}$ of daily plan bill} &
+\multicolumn{4}{c}{$P(\mathrm{emg})$ per day (\%)} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+Gate & reactive & thr. & \textsc{Baton-ho} & \textsc{Baton} &
+reactive & thr. & \textsc{Baton-ho} & \textsc{Baton} \\
+\midrule
+\textsc{Det} & 481.5 & 23.6 & \textbf{23.8} & 22.3 & 61.7 & 43.5 & \textbf{41.4} & \textbf{41.4} \\
+\textsc{SAA} & 256.0 & 20.1 & 22.2 & \textbf{54.3} & 10.0 & 6.6 & 6.4 & \textbf{4.3} \\
+\textsc{WDRO} & 58.9 & 1.3 & 7.2 & \textbf{37.9} & 2.3 & 1.6 & 1.7 & \textbf{1.3} \\
+\textsc{Rob-G} & 280.2 & 21.3 & 23.2 & \textbf{52.2} & 11.3 & 7.7 & 7.6 & \textbf{5.2} \\
+\textsc{Rob-BS} & 302.7 & 21.1 & 22.9 & \textbf{52.0} & 11.6 & 8.3 & 8.1 & \textbf{5.6} \\
+\textsc{M-DRO} & 72.2 & 3.0 & 9.3 & \textbf{42.4} & 2.7 & 1.9 & 2.0 & \textbf{1.4} \\
+\bottomrule
+\end{tabular}
+\end{table}

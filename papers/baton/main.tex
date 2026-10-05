@@ -1,10 +1,8 @@
-%% BATON manuscript — Elsevier elsarticle, prepared for Omega
-%% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+%% BATON manuscript — Elsevier elsarticle, Computers & Operations Research
+%% (revision 1). Build: pdflatex main && bibtex main && pdflatex main &&
+%% pdflatex main
 %%
-%% Double-blind toggle: \anontrue for an anonymised copy,
-%% \anonfalse for the submission copy with author identity.
-
-%% EJOR reviews single-blind: the submission carries author names
+%% C&OR reviews single-blind: the submission carries author names
 %% (\anonfalse). Flip to \anontrue for an anonymised copy.
 \newif\ifanon
 \anonfalse
@@ -15,6 +13,8 @@
 \usepackage{setspace}
 \onehalfspacing
 \usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{rotating}
 \usepackage{graphicx}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
@@ -79,31 +79,44 @@ simultaneous pickup, delivery, and stochastic demands}
 \begin{abstract}
 In simultaneous pickup-and-delivery operations the load of a vehicle
 evolves stochastically along its route, and a mid-route capacity breach
-forces costly emergency recourse: a surge-priced replacement vehicle and
-compensation for late customers. Fleets hold two cheaper
+forces costly emergency recourse. Fleets hold two cheaper
 levers---handing the remaining route to a standby vehicle, or detouring
 to the depot to unload collected pickups---whose value depends on the
-vehicle's position and prices built from the route's real geometry. We
-cast the question of when to exercise which lever as a finite-horizon
-optimal-stopping problem under an empirical demand distribution, solved
-by
-\textsc{Baton}, a policy that estimates per-stop continuation costs by
-backward induction over historical scenarios and intervenes exactly
-when continuing becomes dearer than the cheapest recourse action. The
-policy has no tunable threshold; we prove that no fixed threshold
-reproduces the optimal intervention boundary under position-dependent
-prices, and that the endpoint-based risk labels of prior work are
-blind to mid-route peaks. Across the Dethloff and Salhi--Nagy
-benchmarks and new instances on the road networks and real retail
-locations of five cities, \textsc{Baton} dominates published recourse
-policies---rule-based restocking triggers, depot-return restocking,
-rollout, and a reinforcement-learning policy---under six planning
-regimes including three published robust planners. It attains
-92--99\% of a near-exact dynamic program given fifty times its data,
-exceeds the handoff-only clairvoyant bound by pricing the full action
-set, adapts its recourse mix to fleet economics without re-tuning, and
-runs in milliseconds per route; all underlying routing plans are
-certified by mixed-integer programming bounds.
+vehicle's position and on prices built from the route's real geometry.
+We cast the choice of when to exercise which lever as a finite-horizon
+optimal-stopping problem and solve it with \textsc{Baton}, which adapts
+regression-based backward induction to this setting: it estimates
+per-stop continuation costs from historical demand scenarios with a
+monotone regression, a shape we prove the true continuation value
+satisfies, and intervenes when continuing becomes dearer than the
+cheapest recourse action. We show that endpoint-based risk labels are
+blind to mid-route peaks, that the myopic break-even threshold
+over-triggers relative to the optimal rule, and that the price of this
+over-triggering is bounded by the cost of interventions on days that
+would have completed cleanly and of acting before cheaper later
+opportunities. On the Dethloff benchmark under six planning regimes,
+\textsc{Baton} or its state-conditional variant has the lowest expected
+cost of the implementable policies compared---rule-based,
+position-dependent and two-lever thresholds, depot-return restocking,
+rollout and equal-data dynamic programming; a reinforcement-learning
+policy, compared on a separate set of routes, also trails it. Its
+margin is \statConsDeltaMin--\statConsDeltaMax{} percentage points on the
+five conservative regimes, while on deterministic plans an equal-data
+three-action dynamic program ties it. It reaches
+\ratioDpThreeLo--\ratioDpThreeHi{} of the saving of a high-data plug-in
+program on these regimes and, under independent demand, \exDetShare{}
+of the exact optimum on deterministic plans (\exSaaShare{} on slack
+ones); across all benchmarks and demand laws with a non-negligible
+reactive cost the share ranges from \ratioAllLo{} to \ratioAllHi, lowest
+where breaches are rare. On the Salhi--Nagy benchmark and on new instances built on the
+road networks and retail locations of five cities it leads or ties the
+strongest competitor; on the city instances the depot return rarely pays
+and the policy reduces to its handoff-only form. Because the depot return
+enlarges the action set, the policy can exceed the clairvoyant bound of
+the handoff-only class. The conclusions largely survive dependent
+demand, non-exchangeable days and a capacitated standby pool shared
+across routes. The policy has no continuous tuning parameter and fits in
+milliseconds per route.
 \end{abstract}
 
 \begin{keyword}
@@ -141,8 +154,8 @@ the remainder of the route to a standby vehicle from a pooled reserve,
 paying a callout, a per-kilometre surcharge on the remaining tour, and a
 cargo-transfer dwell. Or, when the depot is near, they can order a
 \emph{depot return}: the vehicle swings by the depot, unloads the
-pickups collected so far, reloads its remaining deliveries, and
-continues its own route, delaying its downstream customers by the
+pickups collected so far, and continues its own route with the
+deliveries still on board, delaying its downstream customers by the
 detour.
 
 The decision problem this creates is deceptively simple to state and
@@ -154,8 +167,7 @@ every handoff consumes a vehicle-day from the reserve pool. Acting too
 late means paying the full price of a breach. The trade-off shifts along
 the route, because both recourse prices fall as fewer stops remain while
 the scope for demand surprises shrinks; it shifts with the geometry,
-because a depot return is nearly free downtown and prohibitive at the
-urban fringe; and it shifts with the day, because the demands observed at
+because a depot return is cheap near the depot and dear far from it; and it shifts with the day, because the demands observed at
 the first stops carry information about the demands still to come. A
 policy that captures all three effects must, at every stop, weigh the
 \emph{cost of continuing optimally}---an expectation over everything that
@@ -177,76 +189,132 @@ First, a threshold on the current load ignores \emph{option value}: early
 in the route, waiting is nearly free because many opportunities to act
 remain, while late in the route the same load level may leave a single
 chance to intervene. A fixed threshold cannot be right at both ends, and
-we prove below that its error is one-sided---it always over-triggers.
+we prove below that the myopic, break-even threshold errs in one
+direction: it over-triggers.
 Second, and more fundamentally, when recourse prices vary by stop---as
 they do whenever they are built from real route geometry---the optimal
 intervention boundary is not representable by \emph{any} single threshold
 on load or on breach probability: the comparison that defines optimal
 behaviour is between two costs, not between a probability and a constant.
 
-This paper develops, analyses, and extensively benchmarks a policy that
-makes exactly that comparison. \textsc{Baton} (\emph{Backward-induction
+This paper develops, analyses, and benchmarks a policy that makes
+exactly that comparison. \textsc{Baton} (\emph{Backward-induction
 AcTion pricing for ONline recourse}) learns, from nothing more than
 historical demand realisations, a per-stop estimate
 $\widehat C_k(w)$ of the expected cost of continuing past stop $k$ with
 load state $w$ under optimal future play, by sweeping the historical
 paths backwards in the manner of \citet{longstaff2001valuing} and
 projecting each regression onto the class of monotone functions---a
-shape restriction we prove the true continuation value satisfies. Online,
-the vehicle performs a single comparison after each stop: it exercises
-the cheapest recourse action whose price is below the estimated cost of
-continuing, and otherwise drives on. The policy has no tuning parameter
-at all; the threshold rules of the literature are recovered as its
-myopic degeneration. Crucially, the same backward induction prices an
-\emph{arbitrary menu} of recourse actions. Adding the depot return
-requires one extra term in the Bellman recursion---the continuation
-value from the post-return state, which the algorithm evaluates exactly
-by simulating the reset state through its own already-fitted downstream
-policy---and the resulting three-action policy chooses, stop by stop and
-day by day, whichever lever the economics favour.
+shape restriction we prove the true continuation value satisfies when
+the load evolves as a stochastically monotone Markov chain. Online, the
+vehicle performs a single comparison after each stop: it exercises the
+cheapest recourse action whose price is below the estimated cost of
+continuing, and otherwise drives on. The policy has no continuous tuning
+parameter (its one discrete choice, the recourse menu, is made on the
+training days);
+the threshold rules of the literature are recovered as its myopic
+degeneration. The same backward induction prices a menu of recourse
+actions: adding the depot return requires one extra term in the Bellman
+recursion---the continuation value from the post-return state, which
+the algorithm evaluates by simulating the reset state through its own
+already-fitted downstream policy---and the resulting three-action
+policy chooses, stop by stop and day by day, whichever lever the
+economics favour.
 
-We subject this policy to what we believe is the most comprehensive
-computational study of execution-stage recourse in the simultaneous
-pickup-and-delivery setting to date. The study rests on three pillars.
-The first is breadth of comparison: we evaluate against the published
-rule-based restocking family of \citet{salavati2019rule}, a depot-return
-restocking policy in the tradition of \citet{florio2020new} and
-\citet{legault2025superadditivity}, a rollout policy in the spirit of
-\citet{secomandi2001rollout}, a tuned threshold given our corrected risk
-labels, a reinforcement-learning policy re-implemented from
-\citet{iklassov2024rl} and trained on a GPU, and two dynamic-programming
-benchmarks---one restricted to the same data budget as \textsc{Baton}
-and one supplied with fifty times more data as a near-exact yardstick.
-The second pillar is breadth of environment: six planning regimes
-generate the routes, from a deterministic gate through sample-average
-and Wasserstein distributionally robust gates to three published robust
-planners \citep{gounaris2013robust,bertsimas2004price,ghosal2024unifying};
-the instances span the classical Dethloff and Salhi--Nagy benchmarks and
-a new set built on the actual road networks of Ho Chi Minh City, Hanoi,
+The paper makes three contributions, and we separate them because they
+are of different kinds. The first is a \emph{model}: execution-stage
+recourse in simultaneous pickup-and-delivery routing, with its
+non-monotone load, formulated as a finite-horizon optimal-stopping
+problem over a menu of levers whose prices are built per stop from the
+route's geometry and a three-class fleet economy. The second is a set
+of \emph{structural results} about that model: endpoint-based risk labels
+are blind to mid-route peaks, and we bound the excess cost this causes
+(Proposition~\ref{prop:bias}); the stopping region of the myopic
+(break-even) rule contains the optimal one, so the break-even threshold
+over-triggers (Proposition~\ref{prop:myopic}), and the price of this
+over-triggering is bounded by the cost of interventions on days that
+would have completed cleanly, plus any saving forgone by acting before a
+cheaper later opportunity (Proposition~\ref{prop:regret}); and the continuation
+value is monotone in the load (Proposition~\ref{prop:monotone}), which
+justifies a nonparametric monotone estimator. All four propositions are
+machine-checked in the Lean~4 proof assistant with the Mathlib library,
+and the formal proofs are released with the paper; the formalisation
+exposed a side condition of Proposition~\ref{prop:bias} (at least one
+decision epoch before the last stop) that the informal statement had
+left implicit. The third is a
+\emph{method} that is deliberately an adaptation rather than an
+invention: regression-based backward induction for optimal stopping
+\citep{longstaff2001valuing,tsitsiklis2001regression,clement2002analysis}
+is established, and we claim novelty only for the pieces the model
+requires---the isotonic regression step licensed by
+Proposition~\ref{prop:monotone}, the simulation-based valuation of the
+post-return state, and the train-set selection of the recourse menu.
+
+We evaluate the policy in an extensive computational study resting on
+three pillars. The first is breadth of comparison: we evaluate against
+the published rule-based restocking family of \citet{salavati2019rule},
+a depot-return restocking policy in the tradition of
+\citet{florio2020new} and \citet{legault2025superadditivity}, a rollout
+policy in the spirit of \citet{secomandi2001rollout} and a cost-scaled
+version of it, a tuned threshold on our corrected risk labels and a
+position-dependent threshold with one tuned level per stop, a
+reinforcement-learning policy re-implemented from
+\citet{iklassov2024rl}, a two-lever rule that gives a tuned threshold the
+depot return as well, and dynamic-programming benchmarks---two
+restricted to the same data budget as \textsc{Baton} and two supplied
+with fifty times more data as high-data references. The second pillar
+is breadth of environment: six planning regimes generate the routes,
+from a deterministic gate through sample-average and Wasserstein
+distributionally robust gates to three published robust planners
+\citep{gounaris2013robust,bertsimas2004price,ghosal2024unifying}; the
+instances span the classical Dethloff and Salhi--Nagy benchmarks and a
+new set built on the actual road networks of Ho Chi Minh City, Hanoi,
 New York, Paris, and Shanghai, with customers placed at real shop
-locations so that the spatial demand distribution is the true retail
-one. The third pillar is anchoring: the execution stage is compared
-against exact dynamic programming, the planning stage is certified
-against mixed-integer programming bounds computed with a commercial
-solver, and a clairvoyant bound measures how much saving is achievable
-at all.
+locations. The third pillar is anchoring: the execution stage is
+compared against an exact dynamic program where one can be computed
+(independent demand), against high-data plug-in programs elsewhere, and
+against clairvoyant bounds for both action menus; the planning stage is
+certified against mixed-integer programming bounds computed with a
+commercial solver. The study also probes the assumptions behind the
+model---demand dependence, non-exchangeable days, the post-return state,
+a capacitated standby pool shared across routes, and the size of the
+training history.
 
-The empirical picture that emerges is unambiguous.
-\textsc{Baton} attains the lowest execution cost of every implementable
-policy on every planning gate and every benchmark family, with paired
-significance levels that leave no room for doubt; on four of the six
-gates it exceeds the clairvoyant bound of the handoff-only class,
-which is the cleanest possible demonstration that pricing a richer
-action set, not statistical luck, is the source of the gain. The
-economics sweeps deliver the managerial headline: when standby capacity
-is expensive, threshold policies destroy value while \textsc{Baton}
-quietly shifts its recourse mix toward depot returns; when service-level
-penalties rise, it shifts back---all without re-tuning, because the
-policy prices actions rather than memorising trigger levels. Two
-deliberate negative results round off the study: enriching the
-conditioning statistic beyond the scalar load state does not help at
-operational data scales, and quadrupling the training budget of the
-reinforcement-learning baseline does not close its gap.
+On the Dethloff benchmark, \textsc{Baton} or its state-conditional
+variant has the lowest expected execution cost of the implementable
+policies on every planning gate. On the five conservative gates its
+margin over the strongest competitor is \statConsDeltaMin--\statConsDeltaMax{}
+percentage points with confidence intervals that exclude zero; on the
+deterministic gate an equal-data three-action dynamic program ties it.
+It reaches \ratioDpThreeLo--\ratioDpThreeHi{} of the saving of a
+high-data plug-in program for its own action set on these gates, and
+\exDetShare{} of the exact optimum on the deterministic plans where the
+exact optimum can be computed (\exSaaShare{} on the slack \textsc{SAA}
+plans). Across all our benchmarks and demand laws with a reactive cost of
+at least three units per plan-day that share ranges from \ratioAllLo{} to
+\ratioAllHi{}; it is lowest
+where breaches are rare, because a thousand days then carry little
+information about them. On \nOrcBeat{} of the six gates \textsc{Baton}
+exceeds the clairvoyant bound of the handoff-only class. This is not a
+paradox: that bound is clairvoyant only about the handoff lever, and a
+depot return can prevent a breach at a price no handoff can match, so the
+excess measures the value of the second lever; the clairvoyant bound for
+the full menu stays well above every policy. A two-lever threshold rule
+that also has the depot return captures part of this value but stays
+\twoGapLo--\twoGapHi{} points below \textsc{Baton}, so the gain comes
+from pricing the levers, not merely from having them. The economics
+sweeps deliver the managerial headline: when standby capacity is
+expensive, threshold policies lose most of their saving while
+\textsc{Baton} shifts
+its recourse mix toward depot returns; when service-level penalties
+rise, it shifts back---without re-tuning, because the policy prices
+actions rather than memorising trigger levels. The gains are not
+uniform, and we report where they are small or absent. On the city
+instances the depot return rarely pays and \textsc{Baton} reduces to its
+handoff-only form, leading the best threshold by only \lgCityDelta{}
+points; with half of the customers deliver-only it is tied with an
+equal-data dynamic program; and on tightly packed routes a well-started
+position-dependent threshold comes close to the handoff-only policy.
 
 The remainder of the paper unfolds as follows.
 Section~\ref{sec:related} positions the work within the recourse,
@@ -256,7 +324,8 @@ model, formulates the stopping problem, diagnoses why endpoint labels
 and fixed thresholds fail, and presents the \textsc{Baton} policy with
 its supporting analysis and algorithms. Section~\ref{sec:study} reports
 the computational study. Section~\ref{sec:conclusion} distils the
-managerial insights, acknowledges limitations, and concludes.
+managerial insights, states the scope of the conclusions and their
+limitations, and concludes.
 
 
 % ══════════════════════════════════════════════════════════════════════
@@ -278,7 +347,18 @@ routes are fixed before demands are revealed and a simple rule---return
 to the depot upon failure---prices the risk. The insight that
 \emph{preventive} action dominates reactive failure recovery led to the
 restocking policies of \citet{yang2000stochastic}, who compute optimal
-return thresholds by dynamic programming on a fixed route, and to a rich
+return thresholds by dynamic programming on a fixed route and show that
+the optimal policy has one threshold per stop. For simultaneous pickup and
+delivery on a predefined customer sequence, \citet{minis2011stochastic}
+derive the corresponding dynamic program and threshold-type optimal
+restocking policies, and \citet{tatarakis2009stochastic} allow multiple
+depot returns; our exact benchmark in \S\ref{sec:robust} solves the
+same kind of fixed-sequence program for the handoff and return levers.
+These results rest on the classical theory of monotone optimal policies
+for Markov decision processes \citep{serfozo1976monotone,
+puterman1994markov} and on stochastic-order comparison arguments
+\citep{muller2002comparison}, of which our Proposition~\ref{prop:monotone}
+is an instance. They led also to a rich
 family of rule-based triggers whose modern form is analysed by
 \citet{salavati2019rule}: return when residual capacity falls below a
 fixed fraction of capacity, below a multiple of the next customer's
@@ -319,7 +399,7 @@ findings is that planning conservatism and execution intelligence are
 substitutes at the margin---conservative plans leave little for any
 execution policy to save, yet it is precisely there that pricing the
 full action menu matters most, because on such plans the threshold
-family destroys value while the priced policy still extracts double-digit
+family saves little or nothing while the priced policy still extracts double-digit
 savings.
 
 The learning strand estimates routing policies from data.
@@ -335,17 +415,22 @@ uncertainty in simultaneous pickup-and-delivery variants adjacent to
 ours. Our method is deliberately conservative within this strand: it
 uses the regression-based backward induction of American-option pricing
 \citep{longstaff2001valuing,tsitsiklis2001regression}, whose convergence
-is understood \citep{clement2002analysis}, combined with isotonic
+with fixed and with nonparametric approximation classes has been analysed
+\citep{clement2002analysis,egloff2005monte,zanger2013quantitative},
+combined with isotonic
 regression \citep{barlow1972statistical,robbins1955empirical} whose
 shape constraint we justify structurally. Two of our empirical results
-speak directly to this strand: a policy-gradient network trained on a
-GPU captures materially less of the achievable saving than the monotone
-regression from identical data, and enriching the conditioning statistic
-with factor posteriors and recency features---the natural
+speak directly to this strand: a policy-gradient network trained on the
+same data captures materially less of the achievable saving than the
+monotone regression, and enriching the conditioning statistic with
+factor posteriors and recency features---the natural
 representation-learning move---makes matters slightly worse at
-operational sample sizes. Simple, shaped, and exhaustively priced beats
-flexible and learned in this regime, and we consider establishing that
-boundary to be part of the paper's contribution.
+operational sample sizes. We read these results as statements about a
+regime, not about learning in general: with a scalar sufficient state,
+a known monotone value structure and a thousand paths per route, a
+shaped regression is hard to beat, and \S\ref{sec:learning} discusses
+which learning architectures could narrow the gap as the state or the
+data grow.
 
 
 % ══════════════════════════════════════════════════════════════════════
@@ -360,7 +445,25 @@ approach and their formal diagnosis (\S\ref{sec:defects}), the
 estimation scheme (\S\ref{sec:estimation}), the generalisation to the
 full recourse action set (\S\ref{sec:actions}), and the resulting
 algorithms with their complexity and reference bounds
-(\S\ref{sec:algorithms}).
+(\S\ref{sec:algorithms}). The four propositions have been verified
+formally in the Lean~4 proof assistant with the Mathlib library; the
+formal statements, and how they correspond to the text, are part of the
+replication repository (see Data availability). The formalisation
+abstracts from the text in three places: the transition law is an
+abstract kernel carrying only the stochastic-monotonicity property of
+Assumption~\ref{ass:markov}; the inclusion and strictness claims of
+Proposition~\ref{prop:myopic} and Proposition~\ref{prop:regret} are
+proved on finite history trees, so they cover rules that may use the
+whole observed history rather than the deployed rules, which observe
+$W_k$ only; and the class of admissible continuations is left abstract,
+with only the properties the proofs use. On finite-support demand
+distributions---including the empirical distribution of the training
+days---the tree versions of Propositions~\ref{prop:myopic}
+and~\ref{prop:regret} hold without the Markov
+Assumption~\ref{ass:markov}, with continuation values conditioned on the
+history rather than on $W_k$ alone; they do not by themselves establish
+the claims for the $W_k$-rules that \textsc{Baton} deploys, which rest
+on Assumption~\ref{ass:markov}.
 
 \subsection{Operational setting and the three-class fleet cost model}
 \label{sec:setting}
@@ -414,8 +517,8 @@ stop itself,
        + p_{\mathrm{late}}\,(m-k) + p_{\mathrm{breach}} .
 \end{equation}
 Finally, a \emph{depot return} after stop $k$ sends the vehicle from
-stop $k$ to the depot and back to stop $k{+}1$, emptying the pickups
-collected so far and reloading the plan's remaining deliveries; it costs
+stop $k$ to the depot and back to stop $k{+}1$, unloading the pickups
+collected so far while the undelivered cargo stays on board; it costs
 the detour at the running rate plus the transfer dwell plus the same
 per-customer lateness as any other delay,
 \begin{equation}\label{eq:restockprice}
@@ -425,15 +528,45 @@ per-customer lateness as any other delay,
 where $D_{i,j}$ denotes road distance. All three schedules are computed
 from the route's actual geometry before departure and are therefore
 known constants at decision time; both $H_k$ and $E_k$ decrease along
-the route, and
+the route. At our default parameters
 \begin{equation}\label{eq:prices}
   E_k \;>\; H_k \quad\text{for all } k ,
 \end{equation}
-since an unplanned breach at a stop is always dearer than a planned
-transfer at the same stop. The flat two-price model
+an unplanned breach at a stop being dearer than a planned transfer at
+the same stop. Inequality~\eqref{eq:prices} describes the calibration,
+not a requirement of the method: none of our results uses it
+(Assumption~\ref{ass:prices} below asks only that $E_k$ be
+non-increasing), and where it fails---when standby capacity is priced
+above an emergency hire, as in one configuration of
+\S\ref{sec:sensitivity}---the handoff is simply dominated at the stops
+concerned and the policy never uses it there. The flat two-price model
 $H_k \equiv \omega_F$, $E_k \equiv C_{\mathrm{fail}}$ with
 $C_{\mathrm{fail}} > \omega_F$ is the special case used in our
 controlled experiments and by the incumbent system.
+
+\paragraph{Standby versus emergency vehicles} The two recourse classes
+differ in how they are contracted and in what they cost the customer,
+not in the vehicles themselves. A \emph{standby} vehicle is reserved
+capacity under a pre-agreed rate card: it is dispatched
+\emph{before} a breach, meets the planned vehicle at the next stop,
+takes over the remaining route at a small per-kilometre surcharge, and
+keeps the downstream customers on schedule apart from the transfer
+dwell. An \emph{emergency} vehicle is hired on the spot market
+\emph{after} the planned vehicle has overflowed: it is paid a surge
+callout and surge distance rate, must first reach a vehicle that is
+already stranded, and every downstream customer is served late. The
+standby day rate $F_{\mathrm{sb}}$ in~\eqref{eq:handoffprice} is the
+holding cost of standby capacity, charged per vehicle-day actually
+consumed. This pay-per-use convention treats the standby pool as shared
+across a metropolitan operation and large relative to one plan, so that
+a single plan's handoffs never exhaust it; it is the standard
+arrangement with third-party reserve fleets, and it makes the pool size
+a by-product of the policy (the $95$th percentile of daily handoffs,
+reported with our results) rather than a constraint on it. When instead
+a fixed number of standby vehicles is reserved in advance, their holding
+cost is sunk at execution time and the pool is a shared, capacitated
+resource that couples the routes; \S\ref{sec:pool} treats that case
+explicitly.
 
 \subsection{The optimal-stopping formulation}\label{sec:formulation}
 
@@ -456,21 +589,41 @@ The operator seeks $\inf_\sigma \mathbb E\, J(\sigma)$, the expectation
 taken over the demand law. Throughout the analysis we assume:
 
 \begin{assumption}\label{ass:markov}
-The increments $g_1,\dots,g_m$ are independent (not necessarily
-identically distributed), so that $(W_k)$ is Markov and $W_k$ is a
-sufficient statistic for the future of the load path.
+The running load $(W_k)_{k=0}^m$ is a Markov chain with respect to
+$(\mathcal F_k)$, possibly time-inhomogeneous, whose transition kernels
+are \emph{stochastically monotone}: for every $k$ and all $x \le x'$,
+the conditional law of $W_{k+1}$ given $W_k = x$ is dominated in the
+usual stochastic order by its conditional law given $W_k = x'$.
 \end{assumption}
 
 \begin{assumption}\label{ass:prices}
-$H_k \le E_k$ for all $k$, and both schedules are non-increasing in $k$.
+The emergency schedule $(E_k)$ is non-negative and non-increasing in $k$;
+the handoff and return schedules $(H_k)$, $(R_k)$ are arbitrary
+non-negative constants.
 \end{assumption}
 
-Assumption~\ref{ass:markov} matches the benchmark protocol exactly when
-demands are independent and holds approximately under correlated
-demands, where the running sum absorbs a common demand factor; the
-correlated case is examined empirically in \S\ref{sec:study}.
+Assumption~\ref{ass:markov} makes $(k, W_k)$ a sufficient state for
+the handoff problem and covers two cases of practical interest. The first is independent
+increments, not necessarily identically distributed: the conditional
+law of $W_{k+1}$ given $W_k = x$ is that of $x + g_{k+1}$, which is
+stochastically increasing in $x$. The second is positively dependent
+demand driven by a common day-level factor: if
+$g_j = \mu_j + \beta Z + \varepsilon_j$ with a Gaussian factor $Z$ and
+independent Gaussian noise $\varepsilon_j$ of common variance, the
+likelihood of $(g_1,\dots,g_k)$ depends on $Z$ only through $W_k$, so
+$W_k$ is sufficient for the factor, the posterior of $Z$ is increasing in
+$W_k$, and the chain is Markov with stochastically monotone kernels.
+Outside these cases $W_k$ is not exactly sufficient---in our benchmark
+protocol pickups and deliveries load on separate factors with
+customer-specific scales---and the policies of this paper are then
+optimal within the class of policies that observe $(k, W_k)$ only in the
+approximate sense of regression-based stopping. Section~\ref{sec:robust}
+measures what this costs: it varies the demand correlation from $0$ to
+$0.9$, adds a multiplicative day factor, and tests the monotonicity of
+the estimated continuation value directly.
 Assumption~\ref{ass:prices} holds by construction of
-\eqref{eq:handoffprice}--\eqref{eq:emergencyprice}. By finite-horizon
+\eqref{eq:emergencyprice}, since both the remaining distance and the
+number of downstream customers fall along the route. By finite-horizon
 dynamic programming, define value functions backwards from
 $V_m(w) \equiv 0$ on $\{w \le B\}$ by
 \begin{align}
@@ -487,7 +640,7 @@ where $C_k(w)$ is the expected cost of \emph{continuing past stop $k$
 and playing optimally thereafter}. The optimal policy is the
 first-passage rule
 \begin{equation}\label{eq:rule}
-  \sigma^\star \;=\; \min\{\,k < m \;:\; C_k(W_k) > H_k \,\}
+  \sigma^\star \;=\; \min\{\,k < m \wedge T \;:\; C_k(W_k) > H_k \,\}
 \end{equation}
 by the standard verification argument for finite-horizon stopping
 problems \citep{chow1971great,peskir2006optimal}. Everything difficult
@@ -504,16 +657,19 @@ literature---estimated a per-stop breach \emph{probability}
 $p_k(w)$ by isotonic regression of a binary label on $W_k$ across
 historical routes and triggered a handoff when
 $\hat p_k(W_k) > \tau$ for a tuned constant $\tau$. Both design choices
-fail structurally, not statistically, and both failures were observed in
-the field before they were understood formally.
+fail structurally, not statistically. Both failures were first noticed
+in the operation that motivated this work, before they were understood
+formally; these observations are anecdotal, and the evidence we offer
+for both defects is the analysis below and the controlled experiments of
+\S\ref{sec:study}.
 
 The first defect concerns the label. The natural per-route summary in
 logged data is the endpoint total $W_m$, and the incumbent labelled a
 route as overflowing by $Y^{\mathrm{end}} = \mathbf 1\{W_m > B\}$ rather
 than by the physical event
 $Y^{\mathrm{peak}} = \mathbf 1\{\max_{k \le m} W_k > B\}$. We state the
-consequence formally; despite its simplicity, it explains a genuine
-field failure in which a deployed policy saved exactly nothing, and the
+consequence formally; despite its simplicity, it explains an observed
+(anecdotal) failure in which a deployed policy saved nothing, and the
 same endpoint-for-peak substitution recurs whenever monitoring data are
 aggregated per route.
 
@@ -523,87 +679,161 @@ $\{W_m > B\} \subseteq \{\max_{k\le m} W_k > B\}$, hence
 $\mathbb P(Y^{\mathrm{end}}{=}1) \le \mathbb P(Y^{\mathrm{peak}}{=}1)$,
 and the endpoint-trained regression estimates a conditional probability
 of the wrong event. The gap is extremal on collect-then-deliver routes:
-if the route structure forces $W_m = 0$ almost surely and $B > 0$, then
-$Y^{\mathrm{end}} = 0$ a.s.\ while $\mathbb P(T \le m)$ may be arbitrary
-in $[0,1)$. In that regime, under flat prices
-$(\omega_F, C_{\mathrm{fail}})$, any threshold policy trained on
-endpoint labels converges to the never-handoff policy with expected cost
-$C_{\mathrm{fail}}\,\mathbb P(T\le m)$, whereas the stopping rule
-\eqref{eq:rule} attains at most
-$\omega_F\,\mathbb P(2 \le T \le m) +
-C_{\mathrm{fail}}\,\mathbb P(T = 1)$. Whenever breaches occur but rarely
-at the first stop, the endpoint-trained policy therefore inflates
-execution cost by approximately the factor
-$C_{\mathrm{fail}}/\omega_F$.
+if the route structure forces $W_m \le 0$ almost surely and $B > 0$,
+then $Y^{\mathrm{end}} = 0$ a.s.\ while $\mathbb P(T \le m)$ may be
+arbitrary in $[0,1]$. In that regime every threshold policy trained on
+endpoint labels coincides with the reactive policy and forgoes the
+entire value of preventive recourse,
+$\Delta := V^{\mathrm{react}} - V^\star$, where
+$V^{\mathrm{react}} = \mathbb E[E_T \mathbf 1\{T \le m\}]$ and
+$V^\star = \inf_\sigma \mathbb E J(\sigma)$. Under flat prices
+$(\omega_F, C_{\mathrm{fail}})$ with $0 \le \omega_F \le C_{\mathrm{fail}}$
+and routes with $m \ge 2$ stops (so that at least one decision epoch
+precedes the last stop),
+\begin{multline}\label{eq:biasbounds}
+  \max\bigl\{0,\;
+  (C_{\mathrm{fail}} - \omega_F)\,\mathbb P(2 \le T \le m)
+  - \omega_F\,\mathbb P(T = \infty)\bigr\} \\
+  \;\le\; \Delta \;\le\;
+  (C_{\mathrm{fail}} - \omega_F)\,\mathbb P(2 \le T \le m),
+\end{multline}
+and the upper bound is attained when the breach is announced one stop
+ahead, that is, when $T-1$ is a stopping time on $\{2 \le T \le m\}$.
 \end{proposition}
 
-\begin{proof}
-The inclusion is immediate since $W_m \le \max_{k\le m} W_k$. If
-$W_m = 0$ a.s.\ and $B > 0$ then $Y^{\mathrm{end}} = 0$ a.s., so any
-regression of $Y^{\mathrm{end}}$ on any covariate is the zero function
-on the support of the data; a trigger $\hat p_k(W_k) > \tau$ with
-$\tau > 0$ never fires, and the policy pays $E_T = C_{\mathrm{fail}}$
-exactly on $\{T \le m\}$. For the upper bound on the optimum, rule
-\eqref{eq:rule} is optimal and therefore no worse than the clairvoyant
-policy of \S\ref{sec:algorithms} restricted to information
-$\mathcal F_k$: on $\{2 \le T \le m\}$ a handoff at $T-1$ costs
-$\omega_F$, on $\{T = 1\}$ no decision epoch precedes the breach, and on
-$\{T = \infty\}$ continuing forever costs $0$. Taking expectations gives
-the bound, and the ratio of the two costs tends to
-$C_{\mathrm{fail}}/\omega_F$ as $\mathbb P(T{=}1) \to 0$.
-\end{proof}
+The proof, elementary but careful about the decision epochs, is given in
+Appendix~\ref{app:proofbias}.
 
+The bounds~\eqref{eq:biasbounds} say that when breaches are frequent
+relative to clean days, the endpoint label costs the operator almost the
+whole value of the handoff lever, $(C_{\mathrm{fail}} - \omega_F)$ per
+breach that could have been anticipated. The synthetic
+collect-then-deliver scenario of \S\ref{sec:headline} realises this
+regime: the endpoint-trained policy saves exactly nothing there.
 \textsc{Baton} therefore labels and calibrates on the running peak
 everywhere; in particular, when the slack must be calibrated
 empirically, it uses the $(1{-}\alpha)$-quantile of historical
 \emph{peaks}, never of endpoint totals.
 
 The second defect concerns the trigger. Even with the label corrected,
-a fixed probability threshold is the wrong functional form, and its
-error has a sign:
+a myopic comparison is the wrong functional form, and its error has a
+sign. Write
+$C^0_k(w) = \mathbb E[E_T \mathbf 1\{T \le m\} \mid W_k = w, T > k]$
+for the cost of continuing from $(k,w)$ and never acting again. The
+\emph{myopic rule} hands off after stop $k < m \wedge T$ when
+$C^0_k(W_k) > H_k$.
+Under flat prices $C^0_k(w) = C_{\mathrm{fail}}\,p_k(w)$ with
+$p_k(w) = \mathbb P(T \le m \mid W_k = w, T > k)$ the peak-overflow
+probability, and the myopic rule is exactly the probability threshold
+$p_k(w) > \tau$ with $\tau = \omega_F / C_{\mathrm{fail}}$.
 
 \begin{proposition}[Myopic over-triggering]\label{prop:myopic}
-Take flat prices $H_k \equiv \omega_F$, $E_k \equiv C_{\mathrm{fail}}$,
-and let $p_k(w) = \mathbb P(T \le m \mid W_k = w, T > k)$ be the true
-conditional peak-overflow probability. The myopic rule ``hand off iff
-$C_{\mathrm{fail}}\, p_k(w) > \omega_F$'', i.e.\ $p_k(w) > \tau$ with
-$\tau = \omega_F / C_{\mathrm{fail}}$, has stopping region containing
-that of the optimal rule \eqref{eq:rule} at every stop:
+Under Assumption~\ref{ass:markov}, at every stop $k < T$ the stopping region
+of the optimal rule~\eqref{eq:rule} is contained in that of the myopic
+rule:
 \[
-  \{\, w : C_k(w) > \omega_F \,\} \;\subseteq\;
-  \{\, w : C_{\mathrm{fail}}\, p_k(w) > \omega_F \,\} .
+  \{\, w : C_k(w) > H_k \,\} \;\subseteq\;
+  \{\, w : C^0_k(w) > H_k \,\} .
 \]
-The inclusion is strict at stop $k$ whenever
-$\mathbb P(T > k+1 \mid W_k = w, T > k) > 0$ on a set of $w$ of positive
-measure---that is, whenever the breach, if it comes, may still be more
-than one stop away.
+Moreover $C_k(w) < C^0_k(w)$ whenever, with positive probability given
+$W_k = w$ and $T > k$, the path survives to some stop
+$j \in \{k+1, \dots, m-1\}$ at which the myopic rule itself fires. If,
+in addition, Assumption~\ref{ass:prices} holds, $C_k$ and $C^0_k$ are
+continuous, and this condition holds at the myopic
+boundary $\bar w_k = \inf\{w : C^0_k(w) > H_k\} < B$, the inclusion is
+strict: a right-neighbourhood of $\bar w_k$ is stopped by the myopic rule
+but continued by the optimal one.
 \end{proposition}
 
 \begin{proof}
-``Continue and never act again'' is a feasible continuation policy with
-expected cost from state $(k,w)$ exactly $C_{\mathrm{fail}}\,p_k(w)$;
-since $C_k(w)$ is the infimum over all continuation policies,
-$C_k(w) \le C_{\mathrm{fail}}\, p_k(w)$, giving the inclusion. For
-strictness, split $p_k(w) = q_1(w) + q_2(w)$ with
-$q_1(w) = \mathbb P(T = k{+}1 \mid \cdot)$ and
-$q_2(w) = \mathbb P(k{+}1 < T \le m \mid \cdot)$, and consider the
-feasible policy ``continue one stop; if no breach, hand off at $k{+}1$''
-restricted to the event driving $q_2$. Its cost is at most
-$C_{\mathrm{fail}}\,q_1(w) + \omega_F\, q_2(w)$, strictly below
-$C_{\mathrm{fail}}\,\bigl(q_1(w) + q_2(w)\bigr) =
-C_{\mathrm{fail}}\,p_k(w)$ whenever $q_2(w) > 0$ because
-$\omega_F < C_{\mathrm{fail}}$. Hence $C_k(w) <
-C_{\mathrm{fail}}\,p_k(w)$ there, and every state with $\omega_F$
-between the two values is myopically stopped but optimally continued.
+``Continue and never act again'' is an admissible continuation from
+$(k,w)$ with expected cost $C^0_k(w)$; since $C_k(w)$ is the infimum over
+admissible continuations, $C_k \le C^0_k$, which gives the inclusion.
+For the strict inequality, let $\rho$ be the first stop $j > k$ with
+$T > j$ and $C^0_j(W_j) > H_j$, and consider the continuation that hands
+off at $\rho$ and never acts otherwise. It differs from ``never act''
+only on $A = \{\rho < m\}$, where it pays $H_\rho$ while never acting
+costs, conditionally on $\mathcal F_\rho$ and by the strong Markov
+property, $C^0_\rho(W_\rho) > H_\rho$. If $\mathbb P(A \mid W_k = w,
+T > k) > 0$, its expected cost is strictly below $C^0_k(w)$, and so is
+$C_k(w)$. Finally, $C^0_k$ is non-decreasing (it is the continuation
+value of the problem with $H \equiv \infty$, to which
+Proposition~\ref{prop:monotone} applies), so $C^0_k > H_k$ on
+$(\bar w_k, B]$ and, by continuity, $C^0_k(\bar w_k) = H_k$. Then
+$C_k(\bar w_k) < C^0_k(\bar w_k) = H_k$, and continuity of $C_k$ gives
+$C_k < H_k < C^0_k$ on a right-neighbourhood of $\bar w_k$.
 \end{proof}
 
-Proposition~\ref{prop:myopic} explains a second field observation:
-tuned thresholds drifted upward---toward less triggering---precisely on
-long routes, chasing option value the functional form cannot express.
-Under state-dependent prices the failure becomes qualitative rather
-than quantitative: the comparison $p_k(w)\,E > H_k$ with per-stop $H_k$
-is not even representable as one threshold on $p_k$, whereas the cost
-comparison of \eqref{eq:rule} is unchanged.
+Proposition~\ref{prop:myopic} is qualitative. The next result prices
+the over-triggering. Let $\sigma^0$ and $\sigma^\star$ be the stopping
+times of the myopic and the optimal rule, and write
+$L_k := 0$ on $\{T = \infty\}$ and
+$L_k := \min\{\min_{k<j<T} H_j,\; E_T\}$ on $\{k < T \le m\}$ for the
+clairvoyant cost of the remainder of the day after stop $k$: the
+cheapest later handoff before the breach, or the breach itself.
+
+\begin{proposition}[The price of over-triggering]\label{prop:regret}
+Under Assumption~\ref{ass:markov}, $\sigma^0 \le \sigma^\star$ almost
+surely, and
+\begin{align}
+  0 \;\le\; \mathbb E\,J(\sigma^0) - \mathbb E\,J(\sigma^\star)
+  &\;=\; \mathbb E\bigl[\bigl(H_{\sigma^0} - C_{\sigma^0}(W_{\sigma^0})\bigr)
+        \mathbf 1\{\sigma^0 < \sigma^\star\}\bigr] \notag\\
+  &\;\le\; \mathbb E\bigl[\bigl(H_{\sigma^0} - L_{\sigma^0}\bigr)
+        \mathbf 1\{\sigma^0 < \sigma^\star\}\bigr]. \label{eq:regret}
+\end{align}
+Under flat prices the right-hand side is at most
+$\omega_F\,\mathbb P(\sigma^0 < \sigma^\star,\, T = \infty) \le
+\omega_F\,\mathbb P(\sigma^0 < \infty,\, T = \infty)$.
+\end{proposition}
+
+\begin{proof}
+If the optimal rule stops at $k$ then $W_k$ lies in its stopping region,
+hence in the myopic one by Proposition~\ref{prop:myopic}; the myopic rule
+has therefore stopped at $k$ or earlier, so $\sigma^0 \le \sigma^\star$.
+On $\{\sigma^0 = \sigma^\star\}$ the two policies take identical actions
+all day and pay the same. On $\{\sigma^0 < \sigma^\star\}$, an event in
+$\mathcal F_{\sigma^0}$, the myopic rule pays $H_{\sigma^0}$ while the
+optimal rule continues from $(\sigma^0, W_{\sigma^0})$, whose conditional
+expected cost is $C_{\sigma^0}(W_{\sigma^0})$ by the strong Markov
+property. This gives the identity, and the difference is non-negative
+because $\sigma^\star$ is optimal. For the inequality, every admissible
+continuation from stop $k$ pays, path by path, either some $H_j$ with
+$k < j < T$, or $E_T$, or nothing on a clean day, hence at least $L_k$;
+taking conditional expectations, $C_k(W_k) \ge \mathbb E[L_k \mid
+\mathcal F_k]$ on $\{T > k\}$, and the tower property gives the bound.
+Under flat prices $H_{\sigma^0} - L_{\sigma^0}$ equals $\omega_F$ on
+$\{T = \infty\}$, $0$ on $\{T \ge \sigma^0 + 2\}$ and
+$\omega_F - C_{\mathrm{fail}} < 0$ on $\{T = \sigma^0 + 1\}$.
+\end{proof}
+
+Proposition~\ref{prop:regret} turns the critique into an accounting
+statement. The premium a threshold rule pays for its simplicity is at
+most the handoff price times the probability that it intervenes on a
+day that would have ended cleanly, plus, under declining prices, the
+saving forgone by handing off before a cheaper later opportunity. A
+threshold is therefore ``good enough'' exactly when both terms are
+small: when the states in which it fires lead to a breach almost surely,
+as on tightly packed routes whose risk sits in the next stop or two, and
+when prices decline slowly along the route. It is poorer on plans that
+carry slack, where the rule fires on more days that would have
+recovered by themselves. Section~\ref{sec:learning} evaluates both sides
+of~\eqref{eq:regret} on our benchmarks.
+
+Proposition~\ref{prop:myopic} is also consistent with an anecdotal
+observation from the same operation: tuned thresholds drifted upward---toward less triggering---precisely on long
+routes, chasing option value the functional form cannot express. Under
+state-dependent prices the failure is also one of representation: the
+comparison $C^0_k(w) > H_k$ with per-stop $H_k$ is not a single
+threshold on $p_k$, whereas the cost comparison of~\eqref{eq:rule} is
+unchanged. A threshold that varies by stop can represent the optimal
+boundary---since $C_k$ is monotone (Proposition~\ref{prop:monotone}),
+the optimal stopping region at each stop is an upper set
+$\{w > w^\star_k\}$---but its $m-1$ boundaries must then be searched
+directly against realised cost; \S\ref{sec:setup} includes such a
+position-dependent threshold, and a cost-scaled myopic rule, among the
+competitors, to isolate the value of \emph{estimating} the boundary by
+backward induction rather than searching for it.
 
 \subsection{Estimating continuation values from historical paths}
 \label{sec:estimation}
@@ -628,62 +858,111 @@ convenience; it is a theorem about the estimand:
 \begin{proposition}[Monotone continuation value]\label{prop:monotone}
 Under Assumptions~\ref{ass:markov} and \ref{ass:prices}, for every
 $k \in \{1,\dots,m-1\}$ the continuation value $C_k(\cdot)$ of
-\eqref{eq:contvalue} is non-decreasing on $(-\infty, B]$.
+\eqref{eq:contvalue} is non-decreasing on $(-\infty, B]$. The same holds
+for any recourse menu whose actions either end the route at a price
+known at stop $k$ or reset the load to a fixed level at a known
+price---in particular for the three-action recursion~\eqref{eq:bellman3}
+below, and for the menu without the handoff lever, whose continuation
+value is $C^0_k$.
 \end{proposition}
 
 \begin{proof}
 Backward induction on $k$. Write the integrand of \eqref{eq:contvalue}
 as $\varphi_{k+1}(x) = E_{k+1}\mathbf 1\{x > B\} +
-V_{k+1}(x)\mathbf 1\{x \le B\}$, so that by
-Assumption~\ref{ass:markov}
-$C_k(w) = \mathbb E\,\varphi_{k+1}(w + g_{k+1})$ with $g_{k+1}$
-independent of $w$; it suffices that $\varphi_{k+1}$ be non-decreasing,
-monotonicity being preserved by the shift $w \mapsto w + g_{k+1}$
-pathwise and by expectation. At $k+1 = m$ we have
-$V_m \equiv 0 \le E_m$, so $\varphi_m$ is a non-decreasing step
-function. For $k+1 < m$, the inductive hypothesis makes $C_{k+1}$
-non-decreasing, hence $V_{k+1} = \min\{H_{k+1}, C_{k+1}\}$ is
-non-decreasing on $(-\infty,B]$ with $V_{k+1} \le H_{k+1} \le E_{k+1}$
-by Assumption~\ref{ass:prices}. For $x \le x'$: if both exceed $B$,
-$\varphi_{k+1}(x) = \varphi_{k+1}(x') = E_{k+1}$; if both are at most
-$B$, $\varphi_{k+1}(x) = V_{k+1}(x) \le V_{k+1}(x') =
+V_{k+1}(x)\mathbf 1\{x \le B\}$, so that
+$C_k(w) = \mathbb E[\varphi_{k+1}(W_{k+1}) \mid W_k = w]$. By
+Assumption~\ref{ass:markov} the conditional law of $W_{k+1}$ is
+stochastically increasing in $w$, so $C_k$ is non-decreasing as soon as
+$\varphi_{k+1}$ is. At $k+1 = m$ we have $V_m \equiv 0 \le E_m$, so
+$\varphi_m$ is a non-decreasing step function. For $k+1 < m$, the
+inductive hypothesis makes $C_{k+1}$ non-decreasing, and $V_{k+1}$ is the
+minimum of $C_{k+1}$ and of constants (the handoff price, and the
+return price plus the fresh-start value), hence non-decreasing on
+$(-\infty,B]$. Moreover $V_{k+1}(x) \le C_{k+1}(x) \le E_{k+1}$: the
+cost of continuing and never acting again is at most the largest
+emergency price still reachable, $\max_{j \ge k+2} E_j$, which is at most
+$E_{k+1}$ by Assumption~\ref{ass:prices}. For $x \le x'$: if both
+exceed $B$, $\varphi_{k+1}(x) = \varphi_{k+1}(x') = E_{k+1}$; if both
+are at most $B$, $\varphi_{k+1}(x) = V_{k+1}(x) \le V_{k+1}(x') =
 \varphi_{k+1}(x')$; if $x \le B < x'$, then
 $\varphi_{k+1}(x) = V_{k+1}(x) \le E_{k+1} = \varphi_{k+1}(x')$. Thus
 $\varphi_{k+1}$ is non-decreasing in every case, completing the
-induction.
+induction. No ordering between $H_k$ (or $R_k$) and $E_k$ is used.
 \end{proof}
+
+The argument is the classical one for monotone optimal policies
+\citep{serfozo1976monotone}, \citep[\S4.7]{puterman1994markov}; we
+include it because the peak-breach terminal cost and the resetting
+action need the two case distinctions above.
 
 Isotonic regression is therefore the least-squares projection onto
 exactly the function class known to contain the truth; it requires no
 basis choice, bandwidth, or regularisation parameter, and it inherits
 classical consistency guarantees
-\citep{robbins1955empirical,barlow1972statistical}. Convergence of the
-full backward-induction scheme to the optimal stopping value as
-$N \to \infty$ follows the analysis of \citet{clement2002analysis},
-whose argument requires only that each regression step be an
-$L^2$-consistent estimator within the approximating class; monotone
-functions on a compact range form a Glivenko--Cantelli class, so the
-isotonic step qualifies whenever the truth is monotone, which
-Proposition~\ref{prop:monotone} guarantees.
+\citep{robbins1955empirical,barlow1972statistical}. For the full
+backward-induction scheme, the analysis of \citet{clement2002analysis}
+covers a fixed, finite linear basis and does not apply to isotonic
+regression. The statistical-learning analyses of
+\citet{egloff2005monte} and \citet{zanger2013quantitative} treat
+nonparametric approximation classes of controlled complexity; uniformly
+bounded monotone functions on an interval have finite bracketing
+entropy, which suggests that their arguments extend to the isotonic
+step, but we do not prove a convergence theorem for \textsc{Baton}
+here. One feature of the scheme matters for reading the shape
+constraint: the regression target at stop $k$ is the realised cost under
+the \emph{fitted} downstream policy, not under the optimal one, so it is
+monotone in $W_k$ only in the limit in which the downstream fits
+converge; in finite samples the isotonic step projects a target that may
+be slightly non-monotone. When Assumption~\ref{ass:markov} holds only
+approximately, the isotonic fit is the monotone projection of the
+conditional expectation given $W_k$; \S\ref{sec:robust} checks directly,
+on fifty thousand paths per route, whether that conditional expectation
+is monotone under strongly dependent demand.
 
 \begin{remark}\label{rem:smalln}
-For very small histories ($N \lesssim 500$ paths) backward induction
-amplifies estimation noise, because errors at late stops propagate into
-the regression targets of early stops. \textsc{Baton} then falls back
-to the label-corrected threshold variant---isotonic estimation of the
-peak-overflow probability with one threshold tuned on realised training
-cost---which inherits the label fix but not the option-value
-correction. Its empirical price is quantified in \S\ref{sec:study}.
+Backward induction propagates estimation error from late stops into the
+regression targets of early stops, so its advantage over a directly
+tuned threshold should shrink as the history shortens. An earlier
+version of this analysis therefore recommended falling back to the
+label-corrected tuned threshold below about 500 training paths. The
+data-budget experiment of \S\ref{sec:budget} does not support that
+recommendation: \textsc{Baton} beats the tuned threshold at every
+history length we tested, down to 100 training days per route. The
+isotonic projection pools information along the load axis, which keeps
+the propagated error small. The regime in which backward induction
+does over-fit is a different one---breaches so rare that a history
+contains only a few dozen of them (\S\ref{sec:robust}). There the
+full policy learns to decline acting, while its handoff-only restriction
+still over-fits and loses a little money.
 \end{remark}
 
 \subsection{Pricing the full action set}\label{sec:actions}
 
-The recursion \eqref{eq:contvalue}--\eqref{eq:bellman} extends to the
-depot-return lever with one additional term. A return after stop $k$
-resets the running sum to zero---collected pickups leave the vehicle,
-and the remaining deliveries are reloaded to plan---at price $R_k$, so
-the vehicle re-enters the same decision process in the state
-$(k, 0)$. The three-action Bellman recursion is therefore
+\paragraph{The depot-return transition} After stop $k$ the vehicle
+carries $L_0 + W_k$, where $L_0$ is the departure load. A return drives
+to the depot, unloads every pickup collected so far, and sends the
+vehicle back to stop $k+1$ to continue its route in the planned order,
+at the price $R_k$ of~\eqref{eq:restockprice}. The policy records the
+post-return state as $W = 0$ against the unchanged slack $B$, that is,
+as if the vehicle left the depot again with its departure load $L_0$.
+This is a conservative convention. Unloading the pickups leaves on
+board exactly the undelivered cargo $L_0 - D_{\le k}$, where
+$D_{\le k} = \sum_{j \le k} d_j$ is the volume already delivered, so the
+exact post-return state is $x_k = -D_{\le k} \le 0$; the convention
+understates the residual capacity after a return by $D_{\le k}$ and, if
+anything, undervalues the lever. We adopt it because it fixes the
+post-return state, which reduces the fresh-start value to a single
+number per stop; with the exact reset it becomes a function of the
+observed delivered volume. Section~\ref{sec:robust} prices the exact
+reset and shows that it raises the saving further, so the results we
+report for the depot return are conservative. Returns may be repeated:
+after a return the vehicle re-enters the same decision process in state
+$(k, 0)$, so further returns and a later handoff remain available. (The
+published restocking competitor is restricted to a single return, as is
+usual in that literature.)
+
+The recursion~\eqref{eq:contvalue}--\eqref{eq:bellman} therefore
+extends to the depot-return lever with one additional term:
 \begin{equation}\label{eq:bellman3}
   V_k(w) \;=\; \min\bigl\{\, C_k(w),\;\; H_k,\;\;
       R_k + C_k(0) \,\bigr\},
@@ -695,31 +974,65 @@ the remainder of the day from the reset state under optimal play with
 the full action set, including any further returns or a later handoff.
 The optimal policy exercises, at each stop, the cheapest action whose
 price is below the estimated cost of continuing.
+Recursion~\eqref{eq:bellman3} is the exact dynamic program for the
+three-action problem under the conservative reset when the increments
+are independent, because the law of the remainder of the day after a
+return then does not depend on the state that triggered it. Under
+factor dependence it is misspecified: the post-return remainder depends
+on the factor posterior, hence on the pre-return state $W_k$, so
+$(k, W_k)$ is no longer a sufficient state once returns are allowed and
+the fresh-start value should be a function $F_k(W_k)$ rather than a
+number. The state-conditional variant \textsc{Baton-cf} introduced
+below estimates exactly that function.
 
-Estimating \eqref{eq:bellman3} requires care on one point. The isotonic
-estimate $\widehat C_k$ is fitted on the \emph{alive} paths at stop $k$,
-whose load states concentrate away from zero on routes that depart
-nearly full; naively reading off $\widehat C_k(0)$ then extrapolates the
-monotone fit to the edge of its support, where it is biased downward,
-and the fitted policy over-returns---a failure mode we observed and
-document in \S\ref{sec:study}. \textsc{Baton} instead evaluates $F_k$
-\emph{exactly with respect to its own fitted policy}: during the
-backward sweep, when stop $k$ is reached, the models and fresh-start
-values of all later stops are already available, so $F_k$ is computed by
-simulating the reset state $(k,0)$ forward through the training paths
-under the already-fitted downstream policy, nested returns valued by the
-already-computed $F_j$, $j > k$. This adds one vectorised forward pass
-per stop---$O(Nm)$ work---and removes the extrapolation bias entirely.
+\paragraph{Estimating the fresh-start value}\label{sec:cf} The isotonic estimate
+$\widehat C_k$ is fitted on the \emph{alive} paths at stop $k$, whose
+load states concentrate away from zero on routes that depart nearly
+full; reading off $\widehat C_k(0)$ would extrapolate the monotone fit to
+the edge of its support, where it is biased downward, and the fitted
+policy would over-return. \textsc{Baton} instead evaluates $F_k$ with
+respect to its own fitted policy: during the backward sweep, when stop
+$k$ is reached, the models and fresh-start values of all later stops are
+already available, so $F_k$ is computed by simulating the reset state
+$(k,0)$ forward through the training paths under the already-fitted
+downstream policy, nested returns valued by the already-computed $F_j$,
+$j > k$. This adds one vectorised forward pass per stop---$O(Nm)$
+work---and avoids the extrapolation.
 
-One further safeguard completes the policy. On routes where the return
-lever cannot pay---remote depots, hostile geometry---including it in the
-menu adds estimation noise without adding value, and a noisy extra
-action can degrade a finite-sample policy. \textsc{Baton} therefore
-performs \emph{deployment selection}: it fits both the two-action and
+The resulting estimate $\widehat F_k$ is subject to three biases of
+different signs. (i)~The downstream policy is the fitted, not the
+optimal, one, which pushes $\widehat F_k$ above the optimal $F_k$ in
+population; this is also the value the deployed policy will actually
+realise after a return, so it is the consistent price for the policy
+that is deployed. (ii)~The forward pass runs on the paths on which the
+downstream models were fitted, which pushes $\widehat F_k$ down by the
+usual in-sample optimism. (iii)~When demand is positively dependent, the
+suffix after a return is correlated with the state that triggered it:
+returns are chosen on heavy days, whose remainder tends to be heavy too,
+so an unconditional $F_k$ under-prices the return on exactly the days
+on which it is used. Section~\ref{sec:robust} measures all three on
+fifty thousand independent paths per route: (i) and (ii) nearly cancel,
+while (iii) is material on delivery-dominated urban routes. The third
+bias has a direct remedy that stays within the method. Regressing each
+training path's realised post-return cost, computed from that path's
+own future increments, on its pre-return state $W_k$ gives a
+\emph{state-conditional} fresh-start value $\widehat F_k(W_k)$ at the
+cost of one more isotonic fit per stop. It is monotone for the same
+reason as $C_k$, and it is flat, so that the policy reduces to
+\textsc{Baton}, when increments are independent. We report this variant
+as \textsc{Baton-cf}.
+
+\paragraph{Deployment selection} On routes where the return lever
+cannot pay---remote depots, hostile geometry---including it in the menu
+adds estimation noise without adding value, and the finite-sample
+biases above can then make the richer menu slightly worse than the
+handoff-only one. \textsc{Baton} therefore fits both the two-action and
 the three-action policy on the training paths, evaluates both on those
-same training paths, and deploys whichever is cheaper. The selection
-uses no test data, costs one simulation pass, and guarantees that the
-richer menu is used exactly where the data say it helps.
+same paths, and deploys whichever is cheaper. The selection uses no test
+data and costs one simulation pass. Because it compares in-sample costs
+it inherits bias (ii), which is why it is a safeguard rather than a
+guarantee; \textsc{Baton-cf}, which removes bias (iii) at its source,
+performs as well without it (\S\ref{sec:robust}).
 
 \subsection{Algorithms, complexity, and reference bounds}
 \label{sec:algorithms}
@@ -729,10 +1042,13 @@ action set; Algorithm~\ref{alg:online} the online loop, whose logic is
 also drawn in Figure~\ref{fig:flow}. The offline phase performs one
 isotonic fit and one fresh-start evaluation per stop:
 $O(N \log N + Nm)$ per stop, hence $O(mN(\log N + m))$ per route in
-total---single-digit milliseconds at $N = 10^3$ and route lengths up to
-$m \approx 25$ on one commodity core, which is what makes nightly
+total. Measured on one core (\S\ref{sec:budget}), fitting the full
+policy with deployment selection takes \timeBatonMs{} per route at
+$N = 10^3$ (median over our routes), which is what makes nightly
 re-fitting across a metropolitan fleet unremarkable. The online decision
-is one monotone-function evaluation and two scalar comparisons per stop.
+is one evaluation of a monotone piecewise-linear function---a binary
+search over its breakpoints---and two scalar comparisons per stop, about
+\timeOnlineUs{} per decision.
 
 \begin{algorithm}[t]
 \caption{\textsc{Baton} offline phase: peak-aware backward induction
@@ -752,7 +1068,7 @@ over the full action set}
          $\{W^{(s)}_k\}_{s\in A}$
   \State $F_k \gets$ mean cost of simulating state $(k,0)$ forward
          through $\{\widehat C_j, F_j\}_{j>k}$
-         \Comment{exact fresh-start value}
+         \Comment{simulated fresh-start value}
   \State for $s \in A$: \ $\phi_s \gets
          \min\bigl\{\widehat C_k(W^{(s)}_k),\, H_k,\, R_k + F_k\bigr\}$
          if an action is cheaper \Comment{policy improvement}
@@ -778,7 +1094,7 @@ over the full action set}
        \Return (\textsc{Handoff}, $H_k$) \EndIf
   \If{$R_k + F_k < c$}
        \State pay $R_k$;\quad $W \gets 0$
-       \Comment{depot return: pickups emptied, deliveries reloaded}
+       \Comment{depot return: pickups unloaded, state recorded as $W = 0$}
   \EndIf
 \EndFor
 \end{algorithmic}
@@ -833,43 +1149,75 @@ loop proceeds on the same route.}
 \label{fig:flow}
 \end{figure}
 
-Two reference points calibrate the empirical results. The
+Three reference points calibrate the empirical results. The
 \emph{clairvoyant bound} pays $0$ on $\{T = \infty\}$ and
 $\min\{\min_{k<j} H_k,\, E_j\}$ on $\{T = j\}$---the cheapest of any
 pre-breach handoff or the breach itself, with a breach at the first stop
-leaving no decision epoch; no policy adapted to $(\mathcal F_k)$ pays
-less on any path. Because it is defined for the handoff lever, a
-policy with the richer menu may legitimately beat it, and in our
-experiments \textsc{Baton} does---the cleanest evidence that the action
-generalisation has real value. The \emph{plug-in dynamic program}
-replaces the isotonic step by quantile-binned conditional means; run
-with fifty times \textsc{Baton}'s training data it approaches the exact
-solution of the stopping problem and serves as a near-exact yardstick,
-while at equal data it is a fair equal-information competitor. We
-emphasise a point of method: mixed-integer programming, the exact
-technology of the \emph{planning} stage, cannot compactly encode a
-non-anticipative multistage stopping rule, so backward dynamic
-programming is the correct exact anchor for the \emph{execution} stage;
-we use MIP where it belongs, certifying the routing plans beneath all
-our experiments (\S\ref{sec:study}).
+leaving no decision epoch; no policy adapted to $(\mathcal F_k)$ that is
+restricted to the handoff lever pays less on any path. Because it is
+defined for the handoff lever, a policy with the richer menu may
+legitimately beat it: a depot return costs less than a handoff and does
+not end the route, so it can prevent a breach at a price no handoff-only
+policy, clairvoyant or not, can match. When \textsc{Baton} exceeds this
+bound, the excess measures the value of the second lever, not a
+statistical artefact. We therefore also report the \emph{three-action
+clairvoyant} (oracle$^3$), which on each day solves by dynamic
+programming over (stop, last return) the cheapest sequence of returns
+and at most one handoff that avoids or absorbs the breach; it is a lower
+bound on the expected cost of every policy in this paper. The
+\emph{plug-in dynamic programs} replace the isotonic step by
+quantile-binned conditional means. Run with fifty times
+\textsc{Baton}'s training data they serve as \emph{high-data plug-in
+references in the $(k, W_k)$ state}, one for the handoff-only problem
+(DP$_{50\mathrm{k}}$) and one for the three-action problem
+(DP$^{3}_{50\mathrm{k}}$). The latter uses the state-conditional
+fresh-start value $F_k(W_k)$ of \S\ref{sec:cf}, estimated on a half of
+the sample that is independent of the half used for the continuation
+values, so that it carries no in-sample optimism. These
+references are not exact: they are restricted to the $(k, W_k)$ state,
+their binning adds bias, and \S\ref{sec:budget} shows \textsc{Baton}
+matching or exceeding them at large training budgets. The only exact
+anchor is the grid dynamic program of \S\ref{sec:robust}, which solves
+both problems to discretisation accuracy when demands are independent.
+At equal data the plug-in programs are fair equal-information
+competitors (DP$_N$, DP$^3_N$). We emphasise a
+point of method: mixed-integer programming, the exact technology of the
+\emph{planning} stage, cannot compactly encode a non-anticipative
+multistage stopping rule, so backward dynamic programming is the correct
+exact anchor for the \emph{execution} stage; we use MIP where it
+belongs, certifying the routing plans beneath all our experiments
+(\S\ref{sec:large}).
 
-Figure~\ref{fig:explainer} makes the machinery concrete on one route of
-the Hanoi instance introduced below: the fan of simulated load paths
-with a demand-spike day highlighted, the fitted continuation cost
-crossing the handoff price at stop 2---ten stops before the breach the
-reactive policy suffers---and the resulting cost distribution over two
-thousand held-out days.
+Figures~\ref{fig:explainer} and~\ref{fig:explainer2} make the
+machinery concrete on one route of the Hanoi instance introduced below:
+the fan of simulated load paths with a demand-spike day highlighted, the
+fitted continuation cost crossing the handoff price at stop 2---ten
+stops before the breach the reactive policy suffers---and the resulting
+expected cost over two thousand held-out days.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/fig2_how_it_works}
-\caption{\textsc{Baton} on one 18-stop route in Hanoi. Left: onboard
-load across 200 simulated days; the highlighted day breaches capacity at
-stop 12 if nobody acts. Centre: the decision rule on that day---the
-estimated cost of continuing $\widehat C_k(W_k)$ crosses the per-stop
-handoff price at stop 2, where the policy hands off. Right: expected
-execution cost per policy over 2{,}000 held-out days.}
+\includegraphics[width=\textwidth]{figures/fig2a_how_it_works}
+\caption{\textsc{Baton} on one 18-stop route in Hanoi. (a) Onboard load
+across 200 simulated days; the highlighted day breaches capacity at
+stop 12 if nobody acts. (b) The decision rule on that day: the estimated
+cost of continuing $\widehat C_k(W_k)$ crosses the per-stop handoff
+price at stop 2, where the policy hands off.}
 \label{fig:explainer}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{figures/fig2b_test_costs}
+\caption{Expected execution cost per policy on the route of
+Figure~\ref{fig:explainer}, over 2{,}000 held-out days. On this route
+deployment selection keeps the depot return switched off, so
+\textsc{Baton} coincides with \textsc{Baton-ho}, although at stop 2 a
+return would have been slightly cheaper than the handoff; selection
+compares the two menus on average over the training days, not stop by
+stop, and here the richer menu did not pay on average. The oracle is
+the handoff-only clairvoyant bound.}
+\label{fig:explainer2}
 \end{figure}
 
 
@@ -880,19 +1228,23 @@ Our computational study is designed around a simple discipline: every
 claim about the policy must survive a change of environment, a change of
 competitor, and a change of yardstick. This section first describes the
 environments, competitors, and protocol (\S\ref{sec:setup}), then the
-headline comparison across planning regimes (\S\ref{sec:headline}),
-the large-scale and real-map benchmarks with the planning-stage
-certification (\S\ref{sec:large}), the comparison against learning
-methods together with two deliberate negative results
-(\S\ref{sec:learning}), and finally the economic and spatial sensitivity
-analyses (\S\ref{sec:sensitivity}). All experiments, result files, and
-figures are reproducible from a single repository, and every table in
-this paper is generated mechanically from the result files.
+headline comparison across planning regimes with its statistical
+analysis and tail risk (\S\ref{sec:headline}), the large-scale and
+real-map benchmarks with the planning-stage certification
+(\S\ref{sec:large}), the comparison against learning methods and the
+empirical price of over-triggering (\S\ref{sec:learning}), the
+robustness of the conclusions to the modelling assumptions
+(\S\ref{sec:robust}), shared standby capacity (\S\ref{sec:pool}), data
+and computing budgets (\S\ref{sec:budget}), and finally the economic and
+spatial sensitivity analyses (\S\ref{sec:sensitivity}). All
+experiments, result files, and figures are reproducible from a single
+repository, and every table in this paper is generated mechanically from
+the result files.
 
 \subsection{Instances, planners, competitors, and protocol}
 \label{sec:setup}
 
-\paragraph{Instances.} Three families are used. The 40 Dethloff
+\paragraph{Instances} Three families are used. The 40 Dethloff
 instances \citep{dethloff2001vehicle}, 50 customers each, are the
 classical simultaneous pickup-and-delivery benchmark. The Salhi--Nagy
 family \citep{salhi1999cluster}, 14 instances of 50--199 customers, is
@@ -909,10 +1261,14 @@ distances \citep{boeing2017osmnx}. Instance sizes reach 400 customers;
 Figure~\ref{fig:cities} shows four of the instances with their planned
 routes. Demands follow the benchmark protocol (gamma marginals,
 coefficient of variation $0.3$, equicorrelated Gaussian copula
-$\rho = 0.6$); the city instances use parcel-van magnitudes, with mean
+$\rho = 0.6$ among the deliveries and, independently, among the
+pickups); the city instances use parcel-van magnitudes, with mean
 deliveries of 8\,kg, pickup fractions uniform on $[0.2, 0.8]$, and
 150\,kg vehicles, which yields the long 12--25-stop routes where
-execution policy matters most.
+execution policy matters most. Because deliver-only customers are
+common in practice, every city instance also has two deliver-only twins
+in which the pickup of a random 25\% or 50\% of the customers is set to
+zero; the twins are re-planned.
 
 \begin{figure}[tp]
 \centering
@@ -925,7 +1281,7 @@ convention misses; \S\ref{sec:sensitivity} quantifies its effect.}
 \label{fig:cities}
 \end{figure}
 
-\paragraph{Planning regimes.} Routes are constructed by an adaptive
+\paragraph{Planning regimes} Routes are constructed by an adaptive
 large neighbourhood search planner running under six capacity-feasibility
 gates of increasing conservatism: a deterministic gate on the nominal
 load peak (\textsc{Det}); a sample-average CVaR gate (\textsc{SAA}); a
@@ -934,72 +1290,155 @@ Wasserstein distributionally robust gate (\textsc{WDRO})
 \citet{gounaris2013robust} (\textsc{Rob-G}); a budget-uncertainty gate
 in the sense of \citet{bertsimas2004price} (\textsc{Rob-BS}); and a
 moment-ambiguity gate in the closed form implied by
-\citet{ghosal2024unifying} (\textsc{M-DRO}). Every execution policy is
+\citet{ghosal2024unifying} (\textsc{M-DRO}). With a type-1 Wasserstein
+ball over unbounded support and a peak-load loss that is 1-Lipschitz,
+the worst-case CVaR equals the empirical CVaR plus the constant
+$\varepsilon/(1-\alpha)$ \citep{esfahani2018data}, so the
+\textsc{WDRO} gate is the \textsc{SAA} gate at a tighter threshold; we
+retain it as a distinct, more conservative planning regime rather than
+as an independent modelling paradigm. Every execution policy is
 evaluated on the identical plans of every gate, so planning quality
 never contaminates the policy comparison; the plans themselves are
 certified in \S\ref{sec:large}.
 
-\paragraph{Competitors.} Eleven execution policies are compared, all
+\paragraph{Competitors} Sixteen execution policies are compared, all
 trained (where applicable) on scenarios strictly disjoint from the test
 set: the \emph{reactive} policy that never intervenes; the incumbent
 endpoint-labelled threshold and its myopic variant, retained as
 ablations of Propositions~\ref{prop:bias} and \ref{prop:myopic}; the
-\emph{label-corrected tuned threshold} (peak labels, threshold tuned on
-realised training cost---the strongest member of the threshold family);
-the three published rule-based restocking triggers $\pi_1, \pi_2, \pi_3$
-of \citet{salavati2019rule}, adapted to the handoff lever and
-grid-tuned on realised cost; a \emph{rollout} policy in the sense of
-\citet{secomandi2001rollout}, one step of policy improvement over the
-reactive base; a \emph{depot-return restocking} policy in the tradition
-of \citet{yang2000stochastic} and \citet{florio2020new}, with real
-detour prices and a tuned trigger; \textsc{Baton-ho}, the handoff-only
+\emph{label-corrected tuned threshold} (peak labels, one threshold tuned
+on realised training cost); a \emph{position-dependent threshold} with
+one load threshold per stop, tuned by coordinate descent on realised
+training cost, which can represent any monotone stopping boundary and
+therefore isolates the value of estimating that boundary by backward
+induction rather than searching for it (the descent starts from the
+best of the reactive policy, the per-stop cuts implied by the tuned
+global threshold and the per-stop boundaries of \textsc{Baton-ho}, so
+it is at least as good as each of them on the training days); a
+\emph{two-lever} rule that combines the tuned probability threshold for
+the handoff with a tuned depot-return trigger---return whenever the
+running load exceeds a tuned fraction of the slack, repeatedly if
+needed---with both parameters searched jointly on realised cost, which
+gives a heuristic the same two levers as \textsc{Baton}; the three published rule-based
+restocking triggers $\pi_1, \pi_2, \pi_3$ of \citet{salavati2019rule},
+adapted to the handoff lever and grid-tuned on realised cost; a
+\emph{rollout} policy in the sense of \citet{secomandi2001rollout}, one
+step of policy improvement over the reactive base---which, under
+position-dependent prices, is exactly the myopic rule
+$C^0_k(W_k) > H_k$---and a \emph{cost-scaled rollout} that hands off
+when $C^0_k(W_k) > \theta H_k$ with $\theta$ tuned on realised cost; a
+\emph{depot-return restocking} policy in the tradition of
+\citet{yang2000stochastic} and \citet{florio2020new}, with real detour
+prices and a tuned trigger; \textsc{Baton-ho}, the handoff-only
 restriction of our policy; \textsc{Baton} itself; the equal-data
-plug-in dynamic program DP$_{N}$; and the near-exact
-DP$_{50\mathrm{k}}$. A reinforcement-learning policy re-implemented
-from \citet{iklassov2024rl} is compared separately in
-\S\ref{sec:learning}, and the clairvoyant bound closes every table.
-Table~\ref{tab:competitors} collects the full roster with sources; in
-every results table the reported quantity is the expected-recourse
-saving relative to the reactive policy, in percent, so \emph{higher is
-always better}.
+plug-in dynamic programs DP$_{N}$ (handoff only) and DP$^3_N$ (three
+actions, continuation and fresh-start values fitted on the two halves of
+the same $10^3$ training days); and \textsc{Baton-cf}, the variant with a
+state-conditional fresh-start value. \textsc{Baton-cf} was introduced
+during the revision, after the city results had exposed the dependence
+bias it removes (\S\ref{sec:cf}); we report it beside \textsc{Baton}
+rather than in its place.
+A reinforcement-learning policy re-implemented from
+\citet{iklassov2024rl} is compared separately in \S\ref{sec:learning}.
+The two high-data programs DP$_{50\mathrm{k}}$ and DP$^3_{50\mathrm{k}}$
+and the two clairvoyant bounds close every table as reference points.
+Table~\ref{tab:competitors} collects the roster with sources; in every
+results table the reported quantity is the expected-recourse saving
+relative to the reactive policy, in percent, so \emph{higher is always
+better}.
 
 \begin{table}[tp]
 \caption{Execution policies compared in this paper. Policies marked
-``tuned'' receive their best hyper-parameter by grid search on the
-training scenarios; \textsc{Baton} has no tunable parameter.}
+``tuned'' receive their best hyper-parameter(s) by search on realised
+cost over the training scenarios; \textsc{Baton} has no continuous
+hyper-parameter (its one discrete choice, the recourse menu, is made in
+sample). The last three rows are reference points, not competitors.}
 \label{tab:competitors}
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{l p{4.9cm} p{4.6cm}}
+\begin{tabular}{l p{5.3cm} p{4.4cm}}
 \toprule
 Label & Policy & Source \\
 \midrule
 reactive & never intervenes; emergency on breach & baseline \\
 endpoint $+\,\tau$ & endpoint-label threshold (tuned), and its
   myopic variant & ablation (Props.~\ref{prop:bias}, \ref{prop:myopic}) \\
-threshold & peak-label threshold (tuned) & strongest threshold ablation \\
+thr. & peak-label threshold (tuned) & threshold ablation \\
+thr.-$k$ & one load threshold per stop (tuned by coordinate descent) &
+  position-dependent threshold \\
+two-lever & tuned handoff threshold $+$ tuned repeatable return trigger &
+  two-lever heuristic \\
 $\pi_1$--$\pi_3$ & rule-based restocking triggers (tuned) &
   \citet{salavati2019rule} \\
-rollout & one-step policy improvement & \citet{secomandi2001rollout} \\
+roll. & one-step policy improvement (myopic cost rule) &
+  \citet{secomandi2001rollout} \\
+roll.-$\theta$ & myopic cost rule with tuned price multiplier &
+  cost-dependent threshold \\
 restock & depot-return restocking, tuned trigger &
   \citet{yang2000stochastic}; \citet{florio2020new} \\
-RL & policy-gradient network, GPU-trained &
+RL & policy-gradient network &
   \citet{iklassov2024rl} \\
-DP$_N$, DP$_{50\mathrm{k}}$ & plug-in dynamic program, equal /
-  $50{\times}$ data & \citet{secomandi2009reoptimization} \\
+DP$_N$, DP$^3_N$ & plug-in dynamic programs, equal data, handoff-only /
+  three actions & \citet{secomandi2009reoptimization} \\
 \textsc{Baton-ho} & handoff-only restriction of our policy & this paper \\
 \textsc{Baton} & priced-action optimal stopping & this paper \\
-oracle & clairvoyant per-day optimum (handoff-only) & upper bound \\
+\textsc{Baton-cf} & \textsc{Baton} with state-conditional fresh-start
+  value & this paper \\
+\midrule
+DP$_{50\mathrm{k}}$, DP$^3_{50\mathrm{k}}$ & plug-in dynamic programs,
+  $50{\times}$ data, handoff-only / three actions & high-data reference \\
+oracle-ho, oracle$^3$ & clairvoyant per-day optimum, handoff-only / three
+  actions & bounds \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Protocol.} Per route, policies are fitted on $10^3$ training
-scenarios and evaluated on $2 \times 10^3$ independent test days;
-results aggregate to plan level and then across instances. All
-significance statements are paired Wilcoxon signed-rank tests across
-plan-level observations. The fleet-economics defaults are
+\paragraph{Protocol} For each instance, one set of $10^3$ training
+days, one set of $2 \times 10^3$ test days and one set of
+$5 \times 10^4$ reference days are drawn from independent random
+streams whose seeds are fixed functions of the instance name, so every
+run of the pipeline draws identical scenarios. All routes of a plan
+share the same days, as they would in operation. Every data-driven
+policy---\textsc{Baton}, the thresholds, the two-lever rule, the
+rule-based triggers, the rollouts, the restocking trigger, DP$_N$,
+DP$^3_N$ and the RL policy---sees exactly the same $10^3$ training days;
+hyper-parameters of the tuned competitors are selected on realised cost
+over those same training days (there is no separate validation set,
+which, if anything, favours the tuned competitors: \textsc{Baton} has no
+continuous hyper-parameter, and its one discrete choice, the recourse
+menu, is made on the same days). The test days
+are used only for the reported evaluation. The reference programs use
+the $5 \times 10^4$ reference days; DP$^3_{50\mathrm{k}}$ fits its
+continuation values on one half and its state-conditional fresh-start
+values on the other (sample splitting; DP$^3_N$ does the same on the two
+halves of the $10^3$ training days).
+The two clairvoyant bounds are evaluated on the test days. Offline fitting
+time and online decision time are reported separately in
+\S\ref{sec:budget}.
+
+\paragraph{Statistical analysis} The experimental unit is the instance
+within a planning gate: policies are compared on the plan-level expected
+recourse cost, the sum over the plan's routes of the mean over the
+$2 \times 10^3$ test days. Routes of a plan share their test days and
+are therefore not treated as independent observations, and the six
+gates re-use the same forty instances, so we analyse each gate
+separately ($n = 40$) rather than pooling them. For each comparison we
+report the mean paired difference in saving with a 95\% bootstrap
+confidence interval, the number of instances won, the matched-pairs
+rank-biserial effect size, and a two-sided Wilcoxon signed-rank test
+with Holm's correction across all comparisons of a table. Where the
+comparator is ``the strongest competitor'', it is chosen by mean saving
+on the same instances; the reported interval then re-selects the
+comparator in every bootstrap resample, and the $p$-value is the largest
+of the $p$-values against each candidate competitor (an
+intersection-union test), so that the selection does not inflate the
+evidence. Route-level
+results for every policy, gate and instance are provided as
+supplementary data, and the tail of the daily plan-level bill is
+analysed separately.
+
+\paragraph{Fleet economics} The defaults are
 $F_{\mathrm{plan}} = 35$, $F_{\mathrm{sb}} = 20$,
 $F_{\mathrm{ho}} = 5$, $c_{\mathrm{tr}} = 3$, $F_{\mathrm{emg}} = 40$,
 $s_{\mathrm{ho}} = 1.2$, $s_{\mathrm{emg}} = 2.5$,
@@ -1008,17 +1447,17 @@ per vehicle-day or per event; kilometre costs $c_{\mathrm{km}} = 0.1$),
 calibrated to the order of magnitude of Southeast-Asian gig-logistics
 rates and swept in \S\ref{sec:sensitivity}.
 
-\paragraph{Software.} All planning and execution code is Python 3.11.15
+\paragraph{Software} All planning and execution code is Python 3.11.15
 (NumPy 2.4.6, SciPy 1.17.1, pandas 3.0.3); the isotonic regressions of
-Algorithm~\ref{alg:offline} use scikit-learn 1.9.0. The MIP
+Algorithm~\ref{alg:offline} use scikit-learn 1.9.1. The MIP
 certification of \S\ref{sec:large} solves the two-commodity flow
 formulation through PuLP 3.3.2 with Gurobi 13.0.2 as the primary solver
 and the open-source HiGHS 1.15.1 as an independent cross-check; both
 solvers run single-model with a 300-second budget per instance and
 default tolerances. Street networks and shop locations come from
 OpenStreetMap via OSMnx 2.1.0 \citep{boeing2017osmnx}, and the
-reinforcement-learning baseline is trained with PyTorch on an NVIDIA
-T4 GPU. Everything else---the ALNS planner, all six gates, and every
+reinforcement-learning baseline is trained with PyTorch 2.14 on the same
+CPU. Everything else---the ALNS planner, all six gates, and every
 execution policy of Table~\ref{tab:competitors}---is implemented from
 the cited papers in plain Python within our repository, so all
 competitors share the same simulator, cost model, and data.
@@ -1026,9 +1465,9 @@ competitors share the same simulator, cost model, and data.
 \subsection{Headline comparison across planning regimes}
 \label{sec:headline}
 
-Table~\ref{tab:grand} reports the central result, and
-Figure~\ref{fig:gatedots} draws it. Three observations organise the
-discussion.
+Table~\ref{tab:grand} reports the central result, Figure~\ref{fig:gatedots}
+draws it, and Table~\ref{tab:stats} gives the paired statistics. Four
+observations organise the discussion.
 
 \input{tables/tab_grand}
 
@@ -1036,77 +1475,169 @@ discussion.
 \centering
 \includegraphics[width=\textwidth]{figures/fig4_gate_dots}
 \caption{Expected-recourse saving by planning gate and execution policy
-(Table~\ref{tab:grand} drawn). \textsc{Baton} (diamonds) leads on every
-gate and exceeds the handoff-only clairvoyant bound (stars) wherever
-plans leave slack for the depot-return lever to work with.}
+(Table~\ref{tab:grand} drawn). \textsc{Baton} (diamonds) leads the
+plotted implementable policies on every gate (\textsc{Baton-cf}, not
+plotted, is slightly higher) and exceeds the handoff-only clairvoyant
+bound (black stars) on four of the six gates, where plans leave enough
+slack for the depot-return lever to work with; the three-action clairvoyant bound (grey stars)
+lies above every policy.}
 \label{fig:gatedots}
 \end{figure}
 
-First, \textsc{Baton} attains the lowest execution cost on every gate,
-and the paired tests are unequivocal: against the tuned threshold
-\batonWThreshP{} (better on \batonWThreshN{} plan comparisons), against
-the strongest rule-based trigger \batonWPiThreeP{}, against the rollout
-policy \batonWRolloutP{}, against depot-return restocking
-\batonWRestockP{}, against its own handoff-only restriction
-\batonWHoP{}, and against the near-exact dynamic program---which sees
-fifty times its data but is confined to the handoff lever---%
-\batonWDpxlP{} (better on \batonWDpxlN{}).
+\input{tables/tab_stats}
+
+First, a \textsc{Baton} variant has the highest saving of the
+implementable policies on every gate, but the margin over the strongest
+competitor depends on the gate. On the five conservative gates the
+strongest competitor is the two-lever rule or depot-return restocking,
+and \textsc{Baton}'s mean advantage ranges from \statConsDeltaMin{} to
+\statConsDeltaMax{} percentage points; the 95\% confidence interval
+excludes zero on each of these gates, \textsc{Baton} is better on at
+least \statConsWinMin{} of the 40 instances, and \statConsPmax{}. On the
+deterministic gate the strongest competitor is the equal-data
+three-action dynamic program DP$^3_N$, and the two are tied
+($\Delta = \statDetDelta$ points, 95\% interval \statDetCI, better on
+\statDetWin{} of 40 instances, $p_{\mathrm{Holm}} = \statDetP$). There
+\textsc{Baton-cf} is ahead of both (\svDetCf{} against \svDetBaton{}).
+\textsc{Baton-cf} exceeds \textsc{Baton} on \nCfAbove{} of the six
+gates (by \cfGapLo{} to \cfGapHi{} points where it does); as stated in \S\ref{sec:setup}, it was introduced during the
+revision, so we report \textsc{Baton} as the headline policy and
+\textsc{Baton-cf} beside it. Against the high-data three-action
+reference DP$^3_{50\mathrm{k}}$, which sees fifty times its data,
+\textsc{Baton} attains \ratioDpThreeLo--\ratioDpThreeHi{} of its saving
+on the Dethloff gates (a shortfall of \statDpDeltaMax{} to
+\statDpDeltaMin{} points; \S\ref{sec:budget} shows it closing as the
+history grows), and \ratioOrcThreeLo--\ratioOrcThreeHi{} of the saving
+of the three-action clairvoyant, which knows the day's demands.
 
 Second, the \emph{composition} of the win changes across gates in an
 instructive way. On the deterministic gate, routes depart packed to
 capacity, most breach risk sits at the first stop where no online
 policy can act, and all preventive policies compress toward each other;
-\textsc{Baton}'s margin there (\svDetBaton{} against \svDetThresh{} for
-the tuned threshold) comes mostly from the trigger correction of
-Proposition~\ref{prop:myopic}. On every conservative gate---the two
-sample-based gates and all three published robust planners---plans
-carry slack, breaches happen mid-route, and the depot-return lever
-becomes live: \textsc{Baton} roughly \emph{doubles} the saving of the
-best handoff-only policy (for instance \svSAABaton{} against
-\svSAAHo{} on \textsc{SAA} plans) and \emph{exceeds the handoff-only
-clairvoyant bound} (\svSAAOrc{}) on four of the six gates. We emphasise
-what that comparison does and does not say: the bound is valid for the
-restricted action set, so beating it is not a paradox but a
-measurement---of exactly how much the second lever is worth when priced
-optimally.
+\textsc{Baton}'s margin over the tuned threshold there (\svDetBaton{}
+against \svDetThresh{}) comes mostly from the trigger correction of
+Proposition~\ref{prop:myopic}, and the depot return adds
+\detActGain{} points. On every conservative gate---the two sample-based gates and all
+three published robust planners---plans carry slack, breaches happen
+mid-route, and the depot-return lever becomes live: \textsc{Baton} more
+than doubles the saving of the best handoff-only policy (for instance
+\svSAABaton{} against \svSAAHo{} on \textsc{SAA} plans) and exceeds the
+handoff-only clairvoyant bound (\svSAAOrc{}) on \nOrcBeat{} of the six
+gates. As explained in \S\ref{sec:algorithms}, that bound is clairvoyant
+only about the handoff lever: beating it is not a paradox but a
+measurement of how much the second lever is worth when priced
+optimally. The three-action clairvoyant (\svSAAOrcThree{} on
+\textsc{SAA}) remains well above every policy.
 
-Third, the threshold family collapses where conservatism meets
-realistic prices. On \textsc{WDRO} plans the tuned threshold's saving
-is \emph{negative} (\svWDROThresh{}): with handoffs carrying their true
-standby vehicle-day cost, the thresholds' interventions cost more than
-they prevent, while \textsc{Baton} extracts \svWDROBaton{} on the same
-plans. A policy that prices actions declines to act when acting has
-negative value; a policy that memorises a trigger level cannot.
+Third, a second lever alone does not explain the gain, and neither does
+a richer threshold class. The two-lever rule gives a tuned threshold the
+depot return as well; it captures much of the three-action gain on the
+conservative gates (\svSAATwo{} on \textsc{SAA}) but stays
+\twoGapLo--\twoGapHi{} points below \textsc{Baton} across the gates:
+with both levers available, the difference lies in \emph{pricing} them
+against the cost of waiting rather than in having them. The equal-data
+three-action program DP$^3_N$ prices the same actions by quantile bins;
+it ties \textsc{Baton} on the deterministic plans, where breaches are
+frequent, and collapses on the conservative ones, where they are rare
+(\svSAADpThreeN{} on \textsc{SAA}, \svWDRODpThreeN{} on \textsc{WDRO}),
+because bins cannot pool information along the load axis the way the
+monotone projection does. For the handoff lever alone, the
+position-dependent threshold, with its search started from the tuned
+global threshold and from \textsc{Baton-ho}'s boundaries, comes within
+\thrkHoGapMin--\thrkHoGapMax{} points of \textsc{Baton-ho} on every gate
+(\svDetThrK{} against \svDetHo{} on \textsc{Det}): a stop-dependent
+threshold can represent the handoff boundary, and a well-started search
+recovers most of it. The tuned global threshold, by contrast, is
+negative or negligible on \textsc{WDRO} and \textsc{M-DRO} plans
+(\svWDROThresh{} and \svMDROThresh{}): with handoffs carrying their true
+standby cost, its interventions cost about as much as they prevent.
+
+Fourth, the gains extend to the tail. Table~\ref{tab:tail} reports the
+mean of the worst 5\% of daily plan-level bills and the probability that
+at least one route of a plan suffers an emergency on a given day.
+\textsc{Baton} cuts the CVaR$_{95}$ of the daily bill by
+\tailBatonLo--\tailBatonHi{} relative to the reactive policy and, on the
+conservative gates, lowers the daily emergency probability more than
+any handoff-only policy, because a depot return prevents breaches that a
+priced handoff would not be worth. On \textsc{Det} plans the emergency
+probability of all policies stays high, again because the risk sits at
+the first stop, and \textsc{Baton}'s reduction of the CVaR$_{95}$
+(\tailDetBaton) is slightly smaller than that of the tuned threshold
+(\tailDetThr) and of \textsc{Baton-ho} (\tailDetHo): there the depot
+return lowers the mean bill but not the bill of the worst days, on which
+the breach happens before any return can help.
+
+\input{tables/tab_tail}
 
 The synthetic scenarios of Table~\ref{tab:synthetic} isolate the two
 defects of \S\ref{sec:defects} under controlled conditions and confirm
 Proposition~\ref{prop:bias} at its extremal point: on
 collect-then-deliver structure the endpoint-trained policy saves
 exactly \ctdVOne{}---it never intervenes---while the label-corrected
-policies save half of the reactive cost, and the option-value
-correction adds a further margin that grows with route length and the
-price ratio.
+policies save about half of the reactive cost, the option-value
+correction adds a further margin, and a depot return (priced flat at half a handoff) lifts
+\textsc{Baton} to \ctdBatonFull{}.
 
-\input{tables/tab_synthetic}
 
 \subsection{Scale, real maps, and certified plans}\label{sec:large}
 
 Table~\ref{tab:large} extends the comparison to the Salhi--Nagy family
-and the city instances. On Salhi--Nagy, whose 50--199-customer routes
-are tight and long, the picture of the conservative Dethloff gates
-repeats at scale: \textsc{Baton} saves \svSalhiBaton{} of reactive
-cost---beyond the handoff-only oracle (\svSalhiOrc{})---with the
-depot-return lever doing heavy work on the centrally-located depots of
-the CMT geometry. On the city instances the same policy correctly
-reverses itself: real urban depots sit at the retail centre of gravity
-but detours through congested networks are long, the return lever
-rarely pays, deployment selection switches it off on most routes, and
-\textsc{Baton} equals its handoff-only restriction within noise
-(\svCityBaton{} across \nCity{} instances) rather than paying the
-estimation cost of a useless action. We regard this
-do-no-harm behaviour as a first-class experimental result: an
-operator can enable the full menu everywhere and trust the policy to
-discover, per route, which levers its geography supports.
+and the city instances, all on \textsc{Det}-gate plans. On Salhi--Nagy,
+whose 50--199-customer routes are tight and long, the picture of the
+conservative Dethloff gates repeats at scale: \textsc{Baton} saves
+\svSalhiBaton{} of reactive cost---against \svSalhiHo{} for its
+handoff-only restriction and beyond the handoff-only oracle
+(\svSalhiOrc{})---with the depot-return lever doing heavy work on the
+centrally located depots of the CMT geometry. The equal-data
+three-action program comes close here ($\Delta = \lgSalhiDelta$ points,
+95\% interval \lgSalhiDeltaCI), and \textsc{Baton} reaches
+\lgSalhiRatio{} of the high-data reference.
+
+On the city instances the return lever rarely pays. Deployment
+selection keeps it in the menu on only \cityActShare{} of the routes,
+and \textsc{Baton} equals its handoff-only restriction (\svCityBaton{}
+against \svCityHo{} across \nCity{} instances) rather than paying the
+estimation cost of a useless action; it leads the strongest competitor,
+the position-dependent threshold, by \lgCityDelta{} points
+(\lgCityDeltaCI). We attribute the idle return lever to the demand
+profile and the plan rather than to the road network as such. The city
+routes are delivery-dominated, so their load drifts downward and rarely
+approaches capacity late in the day, and they are \textsc{Det} plans,
+which carry no slack: on the Dethloff \textsc{Det} plans the depot
+return also adds only \detActGain{} points. We could not separate the
+two explanations with slacker city plans, because on \textsc{SAA} plans
+for the same instances ($\citySaaK$ routes per plan instead of
+$\cityDetK$) breaches all but vanish---the reactive policy costs
+\citySaaReact{} per plan-day---and no policy has anything to save. Two
+reference points lie above \textsc{Baton} on the city instances. The
+oracle knows the day's demands in advance; on city routes much of the
+breach risk comes from demand surprises at the next stop that no policy
+observing only the past can anticipate, which is why its lead is large
+(\svCityOrc{}). DP$_{50\mathrm{k}}$ is fitted on fifty times more data;
+with the return lever idle, the gap between it and \textsc{Baton}
+(\svCityDp{} against \svCityBaton{}) is a gap to a reference that has
+more data \emph{and} a different estimator (binned means instead of the
+isotonic fit), so it cannot be attributed to the data alone.
+\S\ref{sec:budget} shows that it closes, and reverses, when
+\textsc{Baton} is given a comparable history, which indicates that
+the amount of data accounts for most of it. The
+uniform-scatter twins behave the same way, with \textsc{Baton} and the
+cost-scaled rollout statistically tied ($\Delta = \lgCityUDelta$,
+\lgCityUDeltaCI).
+
+The deliver-only twins test a feature of real demand that the benchmark
+protocol lacks. With a quarter or a half of the customers collecting
+nothing, the load rises less along the route, breaches become rarer,
+and every policy has less to save. \textsc{Baton} still saves
+\svZpTwentyFiveBaton{} and \svZpFiftyBaton{}, while the tuned threshold
+falls to \svZpFiftyThr{} at 50\% deliver-only customers. At 25\%
+\textsc{Baton} leads by \lgZpTwentyFiveDelta{} points
+(\lgZpTwentyFiveDeltaCI); at 50\%, where recourse is worth least, it is
+tied with the equal-data handoff-only program ($\Delta =
+\lgZpFiftyDelta$, \lgZpFiftyDeltaCI) and reaches only \lgZpFiftyRatio{}
+of the high-data reference, the lowest share among our settings with a
+non-negligible reactive cost: with breaches
+this rare a thousand days carry little information about them.
 
 \input{tables/tab_large}
 
@@ -1135,7 +1666,7 @@ the emergency guard, and the remaining four complete unaided. The
 figure makes the operating regime of the policy concrete: recourse is
 not an exceptional disaster response but a routine, priced re-balancing
 of work across the fleet, exercised on roughly half the routes of a
-hard day at a total recourse bill of a few hundred dollars.
+hard day at a total recourse bill of a few hundred currency units.
 
 \begin{figure}[tp]
 \centering
@@ -1152,19 +1683,7 @@ transfer with the rest of the route still unserved.}
 \label{fig:replay}
 \end{figure}
 
-\begin{figure}[tp]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/fig6_fleet}
-\caption{One high-demand day for a full 200-customer plan on the Hanoi
-network (instance \textsc{Hanoi}-200-1): thirteen vehicles execute
-simultaneously under \textsc{Baton}, sharing one demand scenario. Solid
-trails are planned vehicles, dashed trails the standby vehicles that
-take over at the circled handoff points, and red crosses the two spikes
-that outran any profitable anticipative action and fell through to the
-emergency guard. Seven of thirteen routes exercised the handoff lever;
-the whole day's recourse bill is \$341.}
-\label{fig:fleet}
-\end{figure}
+
 
 The routing plans beneath every number above were certified against
 mixed-integer programming bounds, using the two-commodity flow
@@ -1173,56 +1692,426 @@ formulation of \citet{montane2006tabu} solved by Gurobi with a
 within \certGap{} of optimality on average (worst case
 \certGapMax{}), and at equal time budgets the solver's own incumbents
 beat the heuristic plans on only \certBeatN{} instances---so the
-execution-stage comparisons run on plans that are simultaneously
-near-optimal and representative of what strong planning practice
-produces. On 12--24-customer sub-instances, where the MIP proves
+execution-stage comparisons run on plans that are close to optimal and
+representative of what strong planning practice produces. On 12--24-customer sub-instances, where the MIP proves
 optimality outright, even the fast construction heuristic used for the
 largest instances lands within 1.2--3.6\% of the optimum.
 
-\subsection{Against learning methods: a GPU-trained policy and two
-deliberate negative results}\label{sec:learning}
+\subsection{Against learning methods, the price of over-triggering, and
+two deliberate negative results}\label{sec:learning}
 
 Because \textsc{Baton} is itself a learned policy, the natural
 challenge is a more flexible learner. We re-implemented the
 reinforcement-learning approach of \citet{iklassov2024rl}---a policy
-network over the observable state (position, load, slack, price ratios,
-remaining-demand moments), trained by REINFORCE with a moving
-baseline---and trained it on a GPU over the identical routes and
+network (two hidden layers of 64 units) over the observable state
+(position, load, slack, price ratios, remaining-demand moments), trained
+by REINFORCE with a moving-average baseline, Adam with learning rate
+$3\times10^{-4}$ and batches of 256 days---over the identical routes and
 training scenarios available to \textsc{Baton}, evaluating both on
-identical held-out days. Table~\ref{tab:rl} reports the outcome. The
+identical held-out days. Table~\ref{tab:rl} reports the outcome for the
+specification's 40 epochs and for 150 epochs under three seeds. The
 learned policy is respectable, clearly beating the rule-based family,
-but its best configuration---after quadrupling the training epochs,
-adding entropy regularisation, and selecting over learning rates and
-seeds---saves \rlBest{} against \textsc{Baton-ho}'s \rlBatonHo{} on the
-same days, losing on \rlWinN{} routes (\rlWinP{}). The seeds cluster
-within a percentage point of each other, so the gap is not
-under-training; it is sample efficiency. A policy-gradient method must
-discover the value structure that the backward induction computes
-directly, and at a thousand paths per route the regression wins---at
-five orders of magnitude less compute.
+but its best run saves \rlBest{} against \textsc{Baton-ho}'s
+\rlBatonHo{} on the same days (savings pooled over the \nRL{} routes).
+Because the routes of an instance share their test days, we compare the
+two at the instance level: \textsc{Baton-ho} is better on
+\rlInstWin{} instances, by \rlInstDelta{} points of reactive cost on
+average (95\% bootstrap interval \rlInstCI; one-sided Wilcoxon test over
+the \rlNInst{} instances, \rlWinP).
+The three seeds cluster closely and almost quadrupling the epochs barely
+moves the result. This does not rule out that longer training, other
+hyper-parameters or another architecture would do better, but for the
+architecture and budgets we tested it points to sample efficiency as the
+main reason for the gap: a policy-gradient method must discover the value
+structure that the backward induction computes directly, and at a
+thousand paths per route the regression does better, at a small fraction
+of the compute (\S\ref{sec:budget}).
 
-\input{tables/tab_rl}
 
-Two further experiments were designed to fail, and did, in ways that
-sharpen the method's justification. First, we enriched the conditioning
-statistic beyond the scalar $W_k$ with exactly the features a
-representation-learning critique would demand: the precision-weighted
-residual that is the posterior location of the day's common demand
-factor, the last increment, and the running maximum increment, fitted
-with monotonicity-constrained gradient-boosted trees. On 25 real routes
-the enriched policy \emph{lost} to the scalar isotonic policy on 23,
-by 3.2\% of cost on average, while fitting orders of magnitude slower:
-at operational sample sizes the extra features buy more estimation
-variance than signal, and Proposition~\ref{prop:monotone}'s shape
-constraint is doing the statistical heavy lifting. Second, the
-equal-data plug-in dynamic program---the same backward induction with
-quantile bins in place of the isotonic projection---collapses exactly
-where data are scarcest relative to risk (on conservative plans it
-saves nothing or worse; Table~\ref{tab:grand}), because bins cannot
-pool information across the load axis the way the monotone projection
-can. Together the two null results locate \textsc{Baton} at a
-complexity sweet spot: one scalar statistic, one shape constraint, no
-free parameters.
+We have compared one learning architecture, and other architectures
+could narrow the gap. Value-based methods such as deep Q-learning
+estimate the same continuation value as \textsc{Baton} but with a
+generic function class; given the monotone structure of
+Proposition~\ref{prop:monotone} and a scalar state, we would expect them
+to approach, not exceed, the isotonic regression at equal data.
+Actor-critic methods such as PPO reduce the variance of the policy
+gradient and would likely close part of the gap to \textsc{Baton-ho}
+by learning a critic that plays the role of $\widehat C_k$. Attention-
+and graph-based architectures pay off when the state is a large
+combinatorial object---which customers remain, where the standby
+vehicles are---and would become relevant for partial handoffs or
+fleet-level coordination, where the state is no longer a scalar. In the
+problem studied here the learner has little to discover that the
+backward induction does not compute exactly, and we therefore read the
+comparison as a statement about this regime rather than about
+reinforcement learning in general.
+
+\paragraph{The price of over-triggering} Proposition~\ref{prop:regret}
+bounds what the myopic rule loses to the optimal one; Table~\ref{tab:regret}
+evaluates both sides on the Dethloff \textsc{Det} and \textsc{SAA} plans
+and the city plans, with both rules estimated on fifty thousand paths
+so that the comparison reflects the functional form rather than
+estimation noise. The pathwise ordering $\sigma^0 \le \sigma^\star$
+holds on \regretContained{} of the test days, and the bound holds on
+\regretBoundHolds{} routes; on the \regretBoundFail{} remaining route
+the regret exceeds the bound by \regretFailMax{} of that route's reactive
+cost, within Monte Carlo error. Pooled over all routes (a ratio of sums,
+not an average of route-level ratios) the myopic rule's regret is
+\regretAll{} of the reactive cost against a bound of \regretBoundAll{};
+the route-level average of the ratio is \regretRouteMean. The clean-day
+term---the cost of handing off on days that would have ended without a
+breach---is of the same size as the bound (\regretCleanShare{} of it
+overall; on breach days the integrand of the bound can be negative, so
+the share can exceed 100\% on a row), so unnecessary interventions are
+indeed what the myopic rule pays for. The breakdown answers the
+practical question of when a threshold is good enough. The regret is
+smallest on the \regretMinRow{} plans (\regretMin{} of reactive cost)
+and on short routes of at most 12 stops (\regretShort{}), and larger on
+longer routes (\regretMid{} and \regretLong{} for 13--18 and 19 or more
+stops); on the Dethloff plans it is \regretDet{} on \textsc{Det} and
+\regretSaa{} on \textsc{SAA}. The tuned threshold fitted on a thousand
+days behaves differently from the myopic rule: its excess cost over
+\textsc{Baton-ho} is \thrGapDet{} of reactive cost on \textsc{Det}
+plans, \thrGapCity{} on the city plans and \thrGapSaa{} on \textsc{SAA}
+plans. Tuning moves the threshold away from the myopic break-even level,
+so Proposition~\ref{prop:regret} bounds the myopic rule, not the tuned
+threshold; the two gaps are related but not the same quantity. On tight
+plans and on the city routes a tuned threshold is thus a defensible
+simplification of the handoff decision; on plans that carry slack the
+larger loss comes from the missing depot return, which no handoff
+threshold can price.
+
+\input{tables/tab_regret}
+
+\paragraph{Two negative results} Two further experiments were designed
+to fail, and did, in ways that sharpen the method's justification.
+First, we enriched the conditioning statistic beyond the scalar $W_k$
+with exactly the features a representation-learning critique would
+demand: the precision-weighted residual that is the posterior location
+of the day's common demand factor, the last increment, and the running
+maximum increment, fitted with monotonicity-constrained gradient-boosted
+trees. On 25 real routes the enriched policy \emph{lost} to the scalar
+isotonic policy on 23, by 3.2\% of cost on average, while fitting
+considerably more slowly (an ensemble of boosted trees per stop instead
+of one isotonic pass): at operational sample sizes the extra
+features buy more estimation variance than signal, and
+Proposition~\ref{prop:monotone}'s shape constraint is doing the
+statistical heavy lifting. Second, the equal-data plug-in dynamic
+program---the same backward induction with quantile bins in place of
+the isotonic projection---collapses exactly where data are scarcest
+relative to risk (on \textsc{WDRO} and \textsc{M-DRO} plans it saves
+\svWDRODpN{} and \svMDRODpN{}, against \svWDROHo{} and \svMDROHo{}
+for \textsc{Baton-ho}), because bins cannot pool information across
+the load axis the way the monotone projection can. Together the two
+null results locate \textsc{Baton} at a complexity sweet spot: one
+scalar statistic, one shape constraint, no continuous tuning parameter.
+
+\subsection{Robustness to the modelling assumptions}\label{sec:robust}
+
+This subsection probes three assumptions behind the model: that the
+scalar load is a sufficient state, that days are exchangeable, and the
+treatment of the post-return state.
+
+\paragraph{Dependent demand and the sufficiency of the scalar load}
+Table~\ref{tab:dependence} holds the Dethloff \textsc{Det} and
+\textsc{SAA} plans fixed and re-fits and re-tests every policy under
+five demand laws: Gaussian-copula correlations $\rho = 0, 0.3, 0.6, 0.9$
+among the deliveries and among the pickups, and a route-level
+multiplicative day factor on top of independent marginals. Three
+findings stand out. First, dependence helps rather than hurts. Every
+implementable policy saves more as $\rho$ grows, because correlated demand creates
+heavy days whose breaches can be foreseen from the running load; under
+independence much of the risk is idiosyncratic and cannot be
+anticipated. Second, the ranking holds with exceptions that we report.
+A \textsc{Baton} variant has the highest saving of the implementable
+policies in every row, \textsc{Baton-cf} in \depCfAbove{} of the ten.
+\textsc{Baton} itself leads the strongest competitor with a
+confidence interval above zero in six rows, is tied in three---the
+benchmark law on \textsc{Det} plans and the two \textsc{SAA} rows with
+almost nothing to save, discussed below---and loses one: at $\rho = 0.9$
+on \textsc{Det} plans the equal-data three-action program is ahead
+(\depRhoNineDetCompSv{} against \depRhoNineDetBaton, $\Delta =
+\depRhoNineDetDelta$ points, \depRhoNineDetDeltaCI). This is the row in
+which the dependence bias (iii) of \S\ref{sec:actions} is strongest,
+and \textsc{Baton-cf}, which removes it, saves \depRhoNineDetCf. On
+\textsc{Det} plans \textsc{Baton} attains \depRhoZeroDetRatio,
+\depRhoSixDetRatio{} and \depRhoNineDetRatio{} of the high-data
+three-action saving at $\rho = 0$, $0.6$ and $0.9$. Third, the monotone
+shape survives strong dependence. On fifty thousand paths per route, the
+unconstrained binned estimate of the conditional expected future cost
+given $W_k$ decreases significantly between adjacent bins in
+\shapeViolZero{} of pairs under independence, where
+Proposition~\ref{prop:monotone} guarantees monotonicity, in
+\shapeViolThree, \shapeViolSix{} and \shapeViolNine{} of pairs at $\rho =
+0.3$, $0.6$ and $0.9$, and in \shapeViolDayfac{} under the day factor.
+The test found no significant violations beyond its false-positive
+level, but its power is limited: a dip of 10\% of the mean continuation
+cost injected into one bin is detected in only \shapePowTenAll{} of the
+tests, and a dip of 25\% in \shapePowTwentyFiveAll. Moderate dips of
+the size that would matter for the policy would usually be detected,
+while small ones could go unnoticed. The evidence is therefore
+consistent with, but does not prove, a monotone continuation value
+outside the setting of Proposition~\ref{prop:monotone}, and it supports
+the isotonic restriction as a reasonable approximation there.
+
+The two \textsc{SAA} rows are instructive. Under independence the
+\textsc{SAA} plans, calibrated for correlated demand, are so conservative
+that the reactive policy costs only \depRhoZeroSaaReact{} per plan-day
+and breaches are rare in a thousand training days. Out of sample, the
+handoff interventions of the tuned threshold and of \textsc{Baton-ho}
+then cost more than they prevent (\depRhoZeroSaaThr{} and
+\depRhoZeroSaaHo). The position-dependent threshold also loses money
+(\depRhoZeroSaaThrK), while \textsc{Baton} learns almost never to act
+(\depRhoZeroSaaBaton) and \textsc{Baton-cf} is marginally positive
+(\depRhoZeroSaaCf); the best competitor, the equal-data handoff-only
+program, is statistically tied with \textsc{Baton} ($\Delta =
+\depRhoZeroSaaDelta$, \depRhoZeroSaaDeltaCI). Under the day factor on
+\textsc{SAA} plans \textsc{Baton} saves \depDayfacSaaBaton{} against
+\depDayfacSaaCompSv{} for restocking, again a tie within the interval
+(\depDayfacSaaDeltaCI), and reaches only \depDayfacSaaRatio{} of the
+high-data reference. These are the small-data regimes of
+Remark~\ref{rem:smalln}: with a few dozen breaches per history, backward
+induction propagates noise, and a policy that declines to act is the
+right outcome.
+
+\input{tables/tab_dependence}
+
+\paragraph{An exact benchmark under independence} The plug-in
+references DP$_{50\mathrm{k}}$ and DP$^3_{50\mathrm{k}}$ are estimates.
+When the demands are independent ($\rho = 0$), the load is a Markov
+chain with known transition densities, and both the handoff-only
+program~\eqref{eq:contvalue}--\eqref{eq:bellman} and the three-action
+program~\eqref{eq:bellman3} can be solved exactly, up to the
+discretisation of the load, by numerical convolution of the Gamma demand
+densities on a grid of 1{,}500 load cells per route---the fixed-sequence
+dynamic programming of \citet{minis2011stochastic}, applied to our two
+levers. Table~\ref{tab:exact} compares the policies with these exact
+optima on all routes of the Dethloff \textsc{Det} and \textsc{SAA}
+plans; the simulated and the exact reactive costs agree to within
+\exDetMcErr, which checks the grid. On \textsc{Det} plans
+\textsc{Baton-ho} attains \exDetShareHo{} of the exact handoff-only
+saving and \textsc{Baton} \exDetShare{} of the exact three-action saving
+(\exDetBaton{} against \exDetThree), the same share as
+DP$^3_{50\mathrm{k}}$. On the slack \textsc{SAA} plans, where breaches
+are rare under independence and there is almost nothing for the handoff
+to do (the exact handoff-only saving is \exSaaHo), \textsc{Baton}
+attains \exSaaShare{} of the exact three-action saving against
+\exSaaShareDp{} for DP$^3_{50\mathrm{k}}$: this is the rare-breach
+regime in which a thousand days are too few, and where the high-data
+reference, with fifty times the data, does markedly better. (Savings in
+Table~\ref{tab:exact} pool the route costs; the instance-averaged
+savings of Table~\ref{tab:dependence} weight the many \textsc{SAA} plans
+with almost no reactive cost equally and are therefore lower.)
+
+\input{tables/tab_exact}
+
+\paragraph{Non-exchangeable days} The model treats days as
+exchangeable, whereas real demand has seasons, weekdays and promotions.
+Table~\ref{tab:daytype} makes one day in five a promotion day, with mean
+deliveries 15\% and mean pickups 35\% above normal---returns surge after
+promotions---and compares three ways of fitting the policy on the same
+history of $10^3$ days. A pooled fit ignores the day type; day-type-specific
+fits split that history by type (about \dtNNormal{} normal and
+\dtNPromo{} promotion days), as an operator can when promotions are
+scheduled; a stale fit uses the normal days only and is applied unchanged
+on promotion days. On promotion days \textsc{Baton} saves
+\dtPromoAware{} with the day-type-specific fit, \dtPromoPooled{} with
+the pooled fit and \dtPromoStale{} with the stale fit. Over all days the
+day-type-specific fits are no better than the pooled one: pooled over
+plans the savings are equal (\dtAllAware{} against \dtAllPooled), and
+averaged over plans the split fits are slightly worse
+(\dtAwarePooledDelta{} points, 95\% bootstrap interval
+\dtAwarePooledCI), because what they gain
+on promotion days they lose on normal days by fitting on fewer paths,
+and the stale fit loses \dtStalePooledDelta{} points per plan
+(\dtStalePooledCI) against pooling. The pooled policy copes with the mixture because its
+trigger conditions on the observed load itself: a promotion day reveals
+itself through a heavier running load, and the monotone continuation
+value prices that load whatever the day type. At this sample size the
+practical rule is therefore to pool the history rather than to split it,
+and to fit per day type only when each type has a history of its own
+that is long enough. The tuned threshold behaves the same way at a lower
+level.
+
+\input{tables/tab_daytype}
+
+\paragraph{The fresh-start value and the post-return state}
+Table~\ref{tab:fresh} (in the appendix) examines the depot-return machinery of
+\S\ref{sec:actions} on the three settings where it matters most or
+least: Salhi--Nagy, where returns are used on about a fifth of the days;
+Dethloff \textsc{SAA} plans; and the city routes, where they rarely
+pay. To expose the three-action fit, all columns are computed
+\emph{without} deployment selection. The first two columns measure the
+error of \textsc{Baton}'s fresh-start value against the
+reference value from fifty thousand independent paths. In-sample, the error is
+\frSalhiBiasIn{} of the handoff price on Salhi--Nagy and
+\frDethBiasIn{} on Dethloff; out of sample, for the same fitted
+downstream policy, it is \frSalhiBiasOut{} and \frDethBiasOut{}.
+Biases (i) and (ii) of \S\ref{sec:actions} are therefore small and
+nearly cancel, and replacing $\widehat F_k$ by the reference value
+changes the saving by a fraction of a point (\frSalhiThree{} against
+\frSalhiFstar{} on Salhi--Nagy). Bias (iii) is different. On the
+delivery-dominated city routes the three-action fit without selection
+saves only \frCityThree{}, below the handoff-only policy
+(\frCityHo{}): the running load drifts downward there, a return is
+chosen only on unusually heavy days, and an unconditional fresh-start
+value under-prices it on exactly those days. The state-conditional
+fresh-start value removes the effect (\frCityCf{}) and slightly improves
+the other two settings as well, so \textsc{Baton-cf} performs as well as
+\textsc{Baton} \emph{with} deployment selection without needing it. The
+last policy column prices the exact post-return state $x_k = -D_{\le k}$
+instead of the conservative reset to zero. It raises the saving to
+\frSalhiExact{} on Salhi--Nagy and \frDethExact{} on Dethloff: the
+conservative convention of the main tables understates what the depot
+return is worth, so the three-action results we report are
+conservative. For deployment we recommend the exact reset; the main
+tables keep the conservative convention for comparability with the
+submitted version and with the restocking competitor, which uses the
+same reset. (The exact reset can exceed DP$^3_{50\mathrm{k}}$, which
+is computed under the conservative convention and is therefore a
+reference for that convention only.)
+
+
+\subsection{Shared, capacitated standby capacity}\label{sec:pool}
+
+The default model treats standby capacity as pay-per-use from a pool
+large relative to one plan (\S\ref{sec:setting}); each route then
+decides alone. When instead a fixed number $S$ of standby vehicles is
+reserved for the day, their holding cost is paid whether or not they are
+used, a handoff costs only its marginal price $H_k - F_{\mathrm{sb}}$,
+and the routes sharing the pool compete for it. We simulate this
+coupling exactly for two pool scopes: one pool per plan, and a
+metropolitan pool shared by the \textsc{Det} plans of all ten instances
+of a Dethloff class (about \poolMetroK{} routes). On every test day the
+routes run simultaneously, handoff requests are served first come,
+first served in the order of the time at which they arise along the
+routes, and a route whose request is refused decides at the refusal stop
+between continuing and a depot return, and continues under the
+handoff-free menu fitted by the same backward induction. Two policies
+are compared. The \emph{naive} policy decides every route at the
+marginal price and ignores the cap. The \emph{shadow-priced} policy
+decides every route at the price $H_k - F_{\mathrm{sb}} + \lambda$,
+where the shadow price $\lambda \ge 0$ of a standby vehicle is chosen,
+for each pool and pool size, on the training days; it decouples the
+routes, which can then still be decided one at a time. We also report
+the two fixed prices $\lambda = F_{\mathrm{sb}}$ (routes decide as under
+pay-per-use) and $\lambda = \infty$ (routes never hand off). Rather than
+fix the holding cost of a reserved vehicle, we report the recourse cost
+for every pool size and derive the break-even holding cost $h_1$ of the
+first reserved vehicle---the reduction in expected daily recourse cost
+that it buys---together with the cost-minimising pool size at holding
+costs of 20 (the standby day rate) and 5 per vehicle-day.
+
+Table~\ref{tab:pool} gives three answers. The first concerns the
+holding cost. A reserved vehicle takes over at most one route per day,
+so at a holding cost equal to the standby day rate a used reservation
+costs what a pay-per-use handoff costs and an idle one is pure loss:
+at $h = 20$ no reserved pool beats pay-per-use in any row (for example
+\poolDethTotHigh{} against \poolDethPpu{} per Dethloff \textsc{Det}
+plan). Below the day rate reservation pays where handoffs are frequent.
+The first reserved vehicle for a Dethloff \textsc{Det} plan is worth
+\poolDethBreakEven{} per day, and at $h = 5$ a pool of about
+\poolDethSstarLow{} vehicles lowers the plan's daily cost from
+\poolDethPpu{} under pay-per-use to \poolDethTotLow{}, on
+\poolDethBeatLow{} plans; on the metropolitan pools the reserved optimum
+(\poolMetroSstarLow{} vehicles) costs \poolMetroTotLow{} against
+\poolMetroPpu{} under pay-per-use, on \poolMetroBeatLow{} pools. On the
+slack \textsc{SAA} plans and on the city plans, which need few handoffs
+(first vehicle worth \poolDethSaaBreakEven{} and \poolCityBreakEven{}),
+reservation does not pay even at $h = 5$. Pay-per-use from a shared
+pool, the default model, is therefore the right assumption when standby
+capacity is bought at its day rate, and a reserved pool is worth
+considering when capacity can be held for well under that rate. (Under
+pay-per-use, the pool that covers 95\% of days, a by-product of the
+policy, has a median of \poolDetMed{} and a maximum of \poolDetMax{}
+vehicles per plan for \textsc{Baton} on \textsc{Det} plans and a median
+of \poolBatonMed{} over all six gates, where the depot return does much
+of the work.) The second answer concerns the coupling. Given a cap, deciding each route
+with a shadow price beats ignoring the cap wherever the cap binds: on
+the Dethloff \textsc{Det} plans by \poolDethGainOne{} with one reserved
+vehicle, on the city plans by \poolCityGainOne, and on the metropolitan
+pools by up to \poolMetroGainMax{} (at $S = \poolMetroGainMaxS$), because
+a naive route requests handoffs it may be refused and, once refused, has
+already let its load climb past the point at which a return would have
+paid. On a metropolitan pool the first vehicle is worth little
+(\poolMetroBreakEven{} per day): served first come, first served among
+some \poolMetroK{} routes, it goes to whichever route asks first rather
+than to the one that needs it most, and the shadow price chosen on the
+training days uses it only sparingly. The third answer concerns
+the price. The price chosen on the training days is high for small pools
+(about \poolMetroLamSmall{} on the metropolitan pools at $S = 2$, above
+the day rate) and falls as the pool grows (\poolMetroLamLarge{} at $S =
+\poolMetroSmax$). Neither fixed price does as well: pay-per-use pricing
+($\lambda = F_{\mathrm{sb}}$) comes within a few per cent of the shadow
+price but stays above it at every pool size, and $\lambda = \infty$
+gives up the handoff lever. The shadow price
+decouples the routes, so the policy is still fitted one route at a time,
+and the depot return is the lever that makes a small or empty pool
+tolerable.
+
+\input{tables/tab_pool}
+
+
+\subsection{Data and computing budgets}\label{sec:budget}
+
+Every data-driven policy in the preceding tables was fitted on the same
+$10^3$ training days per instance; only the two reference programs saw
+more. Table~\ref{tab:budget} and Figure~\ref{fig:budget} vary the
+history from $10^2$ to $2\times10^4$ days per route, on the same test
+days, for \textsc{Baton}, the label-corrected tuned threshold and the
+equal-data dynamic program.
+
+\textsc{Baton} beats the tuned threshold at every history length we
+tested. With only 100 days per route it saves \budDethDetSmall{} on
+\textsc{Det} plans and \budDethSaaSmall{} on \textsc{SAA} plans, where
+the threshold saves \budDethSaaThrSmall{} and the equal-data dynamic
+program \budDethSaaDpNSmall. The isotonic projection pools information along
+the load axis, whereas quantile bins need many paths per bin before
+their estimates stabilise, which is why DP$_N$ is roughly level with the
+threshold on short histories (behind it on two of the three benchmarks,
+ahead on the third). As the history grows, \textsc{Baton}
+approaches the high-data references. On the \textsc{SAA} plans it
+reaches \budDethSaaLarge{} at $2\times10^4$ days against
+\budDethSaaDpThree{} for DP$^3_{50\mathrm{k}}$, and on the city routes it
+slightly exceeds the binned references (\budCityLarge{} against
+\budCityDp{}), which are estimates themselves rather than exact optima.
+The gaps in Table~\ref{tab:grand} between \textsc{Baton} and the
+references therefore shrink with the amount of data and do not point to a
+structural shortfall of the policy; since the references also use a
+different estimator, this experiment cannot attribute the gaps to data
+alone. The clairvoyant
+oracle's lead, by contrast, does not shrink with data: it is the value
+of knowing the future.
+
+Table~\ref{tab:timing} separates offline from online computation on one
+CPU core. Offline, fitting \textsc{Baton-ho} takes \timeBatonHoMs{} per
+route and the full policy, including the fresh-start valuations and
+deployment selection, \timeBatonMs. Tuning re-simulates the training
+days for every candidate parameter, so the grid-tuned competitors cost
+from less (the $\pi_3$ rule and the restocking trigger, with
+short grids) to considerably more (the position-dependent threshold and
+the two-lever rule). Online, every cost-comparison policy makes one
+lookup in a monotone piecewise-linear function and two comparisons per
+stop, about \timeOnlineUs{} per decision through the fitted breakpoints.
+The reinforcement-learning baseline of \S\ref{sec:learning} is the
+exception: on the same CPU its training takes \rlTrainMin--\rlTrainMax{}
+minutes for the \nRL{} routes of Table~\ref{tab:rl}, against
+\rlBatonFitS{} seconds for fitting \textsc{Baton} on the same routes, so
+the comparison of Table~\ref{tab:rl} is, if anything, generous to the
+learner in computing budget and identical in data.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig8_budget}
+\caption{Saving over the reactive policy as a function of the number of
+training days per route (log scale), on identical test days. Horizontal
+lines: the high-data handoff-only and three-action plug-in programs
+fitted on $5\times10^4$ days.}
+\label{fig:budget}
+\end{figure}
+
+
+
 
 \subsection{Economic and spatial sensitivity}\label{sec:sensitivity}
 
@@ -1230,16 +2119,34 @@ A recourse policy earns its keep only if its advantage survives changes
 in the prices that define it. Table~\ref{tab:costsens} and
 Figure~\ref{fig:costsens} sweep the four managerial cost levers one at
 a time around the defaults: the standby day rate, the emergency
-callout, the surge multiplier, and the per-customer lateness price.
-\textsc{Baton} leads in every configuration, but the instructive
-content is \emph{how}. When standby capacity is dear
-($F_{\mathrm{sb}} = 35$), the threshold family collapses to
-\dearSbThresh{}---its handoffs cost more than they save---while
+callout, the surge multiplier, and the per-customer lateness price,
+and then add a fixed fee to the depot return. \textsc{Baton} leads in
+every configuration, but the instructive content is \emph{how}. When standby capacity is dear
+($F_{\mathrm{sb}} = 35$), the tuned threshold collapses to
+\dearSbThresh{}---its handoffs now barely pay for themselves---while
 \textsc{Baton} holds \dearSbBaton{} by shifting its mix toward depot
 returns, ending far above the handoff-only clairvoyant bound
 (\dearSbOrc{}). When lateness is expensive, depot returns lose their
-appeal and the mix shifts back toward handoffs. No parameter changes
-across these worlds; the policy simply re-prices its levers.
+appeal and the mix shifts back toward handoffs. Another row sets the
+standby rate so high ($F_{\mathrm{sb}} = 60$) that a handoff costs more
+than an emergency at late stops, violating
+Inequality~\eqref{eq:prices}. Nothing in the theory depends on that
+inequality (Assumption~\ref{ass:prices}), and the policy behaves
+accordingly: it stops handing off where the handoff is dominated,
+relies on depot returns, and saves \sbSixtyBaton{}, while the tuned
+threshold saves \sbSixtyThresh{} and the handoff-only restriction
+\sbSixtyHo{}. The last four rows charge a fixed fee for every depot return
+on top of its detour, transfer and lateness costs---loading-dock time,
+a depot slot, the driver's dwell. The value of the return lever,
+\textsc{Baton}'s saving over \textsc{Baton-ho}, falls from
+\feeGapZero{} points without a fee to \feeGapMax{} points at a fee of
+\feeMax, and the lever stops paying (adds less than 0.1 points) at a fee
+of \feeBreakEven{} currency units; for comparison, at the start of a
+route on these instances a handoff costs roughly 30 to 55 and a return,
+before the fee, roughly 15 to 20. Where returns carry such fixed costs the
+two-lever advantage shrinks accordingly, and deployment selection falls
+back to the handoff-only menu. No parameter changes across these
+worlds; the policy simply re-prices its levers.
 
 \input{tables/tab_costsens}
 
@@ -1263,8 +2170,8 @@ the uniform convention spreads demand into residential and peripheral
 blocks. The real retail clustering shortens optimal
 routes by \shopTravelSaving{} on average---uniform spatial conventions
 materially overstate travel in urban simultaneous pickup-and-delivery
----while the execution-policy ranking and \textsc{Baton}'s margins are
-unchanged between the twins. The policy conclusions of this paper do
+---while \textsc{Baton} leads or ties the strongest competitor on both
+twins, with small margins in both (Table~\ref{tab:large}). The policy conclusions of this paper do
 not depend on where customers stand; the absolute economics do, which
 is precisely why we report both.
 
@@ -1277,8 +2184,8 @@ OpenStreetMap shop locations, clustered along the retail corridors
 around the commercial centre. Right: the uniform twin---identical
 demand draws, customers scattered uniformly over the same street
 network. Real clustering shortens optimal routes by
-\shopTravelSaving{} on average while leaving the execution-policy
-ranking unchanged.}
+\shopTravelSaving{} on average; \textsc{Baton} leads or ties the
+strongest competitor on both twins.}
 \label{fig:shops}
 \end{figure}
 
@@ -1287,62 +2194,143 @@ ranking unchanged.}
 \section{Managerial insights and conclusions}\label{sec:conclusion}
 
 This paper set out from an operational nuisance---mid-route capacity
-breaches in simultaneous pickup-and-delivery---and arrived at a general
+breaches in simultaneous pickup-and-delivery---and arrived at a
 prescription for execution-stage recourse: \emph{price the levers,
 estimate the cost of waiting, and compare}. The resulting policy,
 \textsc{Baton}, is a data-driven optimal-stopping rule that fits in
 milliseconds per route from ordinary historical demand logs, carries no
-tuning parameter, and accommodates whatever recourse menu an operation
-actually offers. Across six planning regimes, three benchmark families
-including instances built on real road networks and real retail
-locations, and eleven competitors spanning the rule-based,
-restocking, rollout, dynamic-programming, and reinforcement-learning
-traditions, it delivered the lowest execution cost everywhere,
-approached a near-exact dynamic program given fifty times its data, and
-exceeded the clairvoyant bound of the single-lever policy class
-wherever plans left room for its second lever to work.
+continuous tuning parameter, and accommodates the recourse menu an
+operation actually offers. On the Dethloff benchmark under six planning
+regimes, against competitors spanning the rule-based, threshold,
+two-lever, restocking, rollout and dynamic-programming traditions
+(and, on a separate route set, reinforcement learning), \textsc{Baton} or its
+state-conditional variant delivered the lowest expected execution cost
+of every implementable policy, with margins of
+\statConsDeltaMin--\statConsDeltaMax{} points on the conservative regimes
+and a tie with an equal-data dynamic program on deterministic plans. It
+reached \ratioDpThreeLo--\ratioDpThreeHi{} of the saving of a high-data
+plug-in program on those regimes and, under independent demand,
+\exDetShare{} of the exact optimum on deterministic plans and
+\exSaaShare{} on slack ones; across all benchmarks and demand laws with
+a non-negligible reactive cost the share lay between \ratioAllLo{} and
+\ratioAllHi. On the larger benchmarks it led or
+tied the strongest competitor; the ties, and the one loss (to an
+equal-data three-action program under very strong demand correlation,
+which the state-conditional variant reverses), occur where there is
+little to save or where the dependence bias of the fresh-start value is
+strongest. On four of the six planning gates it also exceeded
+the clairvoyant bound of the handoff-only class; that bound is
+clairvoyant only about the handoff lever, so the excess is a measure of
+what the second lever is worth, not a contradiction.
 
-For the practitioner, four findings travel beyond our test bed. First,
+For the practitioner, five findings travel beyond our test bed. First,
 \emph{label on the peak}. Aggregated per-route data invite risk labels
 computed from end-of-route totals, and Proposition~\ref{prop:bias}
 shows the resulting policies can be blind to the very event they are
 meant to prevent; monitoring must record the running maximum. Second,
-\emph{thresholds over-trigger by construction}. The one-sided error of
-Proposition~\ref{prop:myopic} means every tuned trigger level buys its
-simplicity with premature interventions, and the cost of that
-simplicity explodes precisely when intervention prices are high---in
-our sweeps the threshold family destroyed value on conservative plans
-while the priced policy still earned double-digit savings. Third,
-\emph{planning conservatism and execution intelligence are
-substitutes, but asymmetric ones}: robust plans leave little recourse
-cost to save, yet what remains is recovered almost exclusively by the
-policy that prices the full action menu. An operator choosing between a
-more conservative planner and a smarter execution layer should note
-that the latter kept earning when the former had nothing left to give.
-Fourth, \emph{geography selects the lever}. Depot returns dominate
-where depots are central---classical benchmark geometries flatter them
----and are nearly worthless on real urban networks with peripheral
-depots; a deployed policy must discover this per route, and
-\textsc{Baton}'s train-set deployment selection does so at no risk to
-performance where the extra lever is useless.
+\emph{the break-even threshold over-triggers by construction, and the
+premium can be bounded}. Proposition~\ref{prop:regret} bounds it by the
+cost of interventions on days that would have completed cleanly and of
+acting before cheaper later opportunities---under flat prices, by the
+handoff price times the probability of such clean-day interventions.
+A threshold tuned on realised cost moves away from the break-even level
+and is not covered by the bound; its excess cost over the handoff-only
+policy is measured separately in \S\ref{sec:learning}. On tightly packed plans and short routes that premium
+is small, and a tuned threshold is a defensible simplification of the
+handoff decision; on plans that carry slack it is larger, and there the
+threshold family saved little in our experiments while the priced
+policy still earned double-digit savings. Third, \emph{planning
+conservatism and execution intelligence are substitutes, but asymmetric
+ones}: robust plans leave less recourse cost to save, yet what remains
+is recovered best by the policy that prices the full
+action menu. Fourth, \emph{plan slack and the demand profile select the
+lever}. Depot returns earn most on plans that carry slack and on
+geometries with central depots---classical benchmark geometries flatter
+them---and little on packed plans; on our delivery-dominated city
+instances, planned without slack, they were nearly worthless. A deployed
+policy must discover this per route, and on our city instances
+\textsc{Baton} does so and reduces to its handoff-only form. With the
+instances available we cannot separate the role of the road network
+from that of plan slack and demand profile, so we do not claim that
+urban geography as such makes the return worthless. Fifth, \emph{buy standby capacity by the use unless it can be held
+cheaply}. A reserved standby vehicle serves at most one route a day, so
+at a holding cost equal to the standby day rate a reserved pool cannot
+beat pay-per-use; below that rate it pays where handoffs are frequent,
+on packed plans and above all on pools shared by many plans. Where
+capacity is capped, deciding each route with a shadow price on the pool
+beats ignoring the cap, keeps the routes decoupled, and relies on the
+depot return as the fallback lever (\S\ref{sec:pool}).
 
-The study has limits that chart the next steps. The policy conditions
-on a scalar load statistic; our negative result shows richer statistics
-do not pay at a thousand training paths, but fleets with vastly longer
-logs may cross that boundary, and the recursion accepts any regressor.
-The action set, while general in form, was instantiated with two
-levers; partial handoffs---transferring only the riskiest remaining
-customers---compose naturally with the same backward induction and
-await a per-customer cost model. The demand model treats days as
-exchangeable; systematic seasonality would enter through
-day-type-specific fits. Finally, our deepest structural finding cuts
-toward planning: on deterministically packed routes most breach risk
-sits at the first stop, where no execution policy can act, so the
-larger prize is a planner whose acceptance gate internalises the fitted
-execution cost itself---co-optimising the routes with the recourse
-policy that will execute them. The machinery developed here, cheap
-enough to sit inside a planner's inner loop, makes that co-optimisation
-a concrete and, we believe, imminent possibility.
+The structural results behind these findings do not rest on
+hand-checked algebra alone: Propositions~\ref{prop:bias}--\ref{prop:monotone}
+are verified in Lean~4, within the modelling abstractions listed at the
+start of \S\ref{sec:method}.
+
+\paragraph{Scope of the conclusions} Our managerial conclusions hold
+for the model we studied, and several features of real operations lie
+outside it. The model has no time windows: lateness is priced per
+downstream customer, uniformly, and customers with heterogeneous delay
+penalties or hard windows would make the handoff and return prices
+depend on which customers remain, not only on how many. The routes are
+fixed and executed in their planned order; we do not re-sequence the
+remaining stops, and we do not integrate execution with route planning.
+Shared resources enter only through the standby pool of
+\S\ref{sec:pool}, with a first-come-first-served dispatch rule and a
+shadow price chosen per pool; depot congestion, driver hours and
+standby vehicles that serve several routes in one day are not modelled,
+and a standby vehicle is assumed to meet the route at the next stop
+without waiting, so its response time enters only through the transfer
+dwell.
+Demand is simulated from a calibrated protocol rather than drawn from
+operational logs, and the fleet costs are calibrated to orders of
+magnitude rather than to one operator's rate card. The comparisons
+between execution policies are, we believe, robust to these choices,
+since every policy faces the same model and our sensitivity analyses
+move each of them; the absolute savings are not, and should be read as
+indicative.
+
+\paragraph{Limitations and next steps} The policy conditions on a
+scalar load statistic. Our negative result shows that richer statistics
+do not pay at a thousand training paths, and the robustness study shows
+that the scalar state loses little under strongly dependent demand, but
+fleets with vastly longer logs may cross that boundary, and the
+recursion accepts any regressor. The action set is general in form but
+has definite boundaries. Proposition~\ref{prop:monotone} and the
+algorithm cover any action that ends the route at a price known at the
+current stop or resets the load to a known level at a known price;
+handoffs and depot returns are of these kinds. A \emph{partial}
+handoff---transferring only the riskiest remaining customers to a
+standby vehicle---is not: it changes the remaining route itself, so the
+state must record which suffix of the route the planned vehicle still
+serves, the price schedule must be recomputed for every possible split,
+and the continuation value becomes a family of functions indexed by the
+split point. The backward induction extends to that augmented state
+with one regression per stop and split, at a cost quadratic rather than
+linear in the route length, and awaits a per-customer cost model to be
+worth instantiating. The demand model treats days as exchangeable. The
+experiment of \S\ref{sec:robust} shows what systematic variation does to
+a deployed policy: a policy fitted on ordinary days and applied
+unchanged on promotion days keeps most, but not all, of its saving,
+while a policy fitted on a history that contains both day types does as
+well as separate fits per type, which see fewer days each. The remedy
+for known day types is therefore to keep them in the training history;
+separate fits pay only when each type has a long history of its own,
+and where the mix drifts, the policy should be re-fitted on a rolling
+window and monitored. Finally, our deepest structural finding cuts toward planning:
+on deterministically packed routes most breach risk sits at the first
+stop, where no execution policy can act, so the larger prize is a
+planner whose acceptance gate internalises the fitted execution cost
+itself---co-optimising the routes with the recourse policy that will
+execute them. We regard this as the most important direction for future
+work, because it attacks the risk that no execution policy can reach,
+and we did not attempt it here for two reasons. It changes the object of
+study---the plans would then depend on the execution policy, so a
+comparison of execution policies on common plans, which is the design
+that isolates the contribution of this paper, would no longer be
+possible---and it requires the fitted execution cost of every candidate
+route inside the planner's inner loop, which is a separate
+computational question. The machinery developed here is cheap enough
+to make that co-optimisation a concrete possibility.
 
 \ifanon\else
 \section*{Acknowledgements}
@@ -1356,6 +2344,75 @@ All instance generators, result files, and code sufficient to reproduce
 every table and figure are available in a public repository
 \ifanon (anonymised for review; link supplied to the editors)\else at
 \url{https://github.com/vinhqdang/stochastic_vrp}\fi.
+Machine-checked proofs of Propositions~\ref{prop:bias}--\ref{prop:monotone},
+written in Lean~4 with the Mathlib library, are in the same repository,
+in the subdirectory \nolinkurl{BatonProofs} of the manuscript directory.
+
+\appendix
+
+\section{Supplementary material}\label{app:supp}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+
+\subsection{Proof of Proposition~\ref{prop:bias}}\label{app:proofbias}
+
+\begin{proof}[Proof of Proposition~\ref{prop:bias}]
+The inclusion is immediate since $W_m \le \max_{k\le m} W_k$. If
+$W_m \le 0$ a.s.\ and $B > 0$ then $Y^{\mathrm{end}} = 0$ a.s., so any
+regression of $Y^{\mathrm{end}}$ on any covariate is the zero function
+on the support of the data; a trigger $\hat p_k(W_k) > \tau$ with
+$\tau > 0$ never fires, and the policy is the reactive one. The reactive
+policy is feasible, so $\Delta \ge 0$. For the upper bound, every
+policy adapted to $(\mathcal F_k)$ pays $C_{\mathrm{fail}}$ on
+$\{T = 1\}$, where no decision epoch precedes the breach, at least
+$\min\{\omega_F, C_{\mathrm{fail}}\} = \omega_F$ on
+$\{2 \le T \le m\}$, and at least $0$ on $\{T = \infty\}$; hence
+$V^\star \ge C_{\mathrm{fail}}\mathbb P(T{=}1) +
+\omega_F\,\mathbb P(2 \le T \le m)$, and subtracting from
+$V^{\mathrm{react}} = C_{\mathrm{fail}}\,\mathbb P(T \le m)$ gives the
+right-hand inequality. It holds with equality when handing off at $T-1$
+is an admissible policy, which is the case exactly when $T-1$ is a
+stopping time. For the lower bound, the policy ``hand off after stop 1
+unless the route has already breached'' is admissible and costs
+$C_{\mathrm{fail}}\mathbb P(T{=}1) + \omega_F\,\mathbb P(T \ge 2)$, the
+event $\{T \ge 2\}$ including $\{T = \infty\}$; subtracting its cost
+from $V^{\mathrm{react}}$ bounds $\Delta$ from below.
+\end{proof}
+
+\subsection{Supplementary tables and figure}\label{app:tables}
+
+The following tables and figure support statements of
+\S\ref{sec:study} and are referred to there: the structural synthetic
+scenarios (Table~\ref{tab:synthetic}), the reinforcement-learning
+comparison (Table~\ref{tab:rl}), the fresh-start value and the
+post-return state (Table~\ref{tab:fresh}), the training-data budget
+(Table~\ref{tab:budget}) and the offline fitting times
+(Table~\ref{tab:timing}), and a full-plan replay on the Hanoi network
+(Figure~\ref{fig:fleet}).
+
+\input{tables/tab_synthetic}
+
+\input{tables/tab_rl}
+
+\input{tables/tab_fresh}
+
+\input{tables/tab_budget}
+
+\input{tables/tab_timing}
+
+\begin{figure}[tp]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig6_fleet}
+\caption{One high-demand day for a full 200-customer plan on the Hanoi
+network (instance \textsc{Hanoi}-200-1): thirteen vehicles execute
+simultaneously under \textsc{Baton}, sharing one demand scenario. Solid
+trails are planned vehicles, dashed trails the standby vehicles that
+take over at the circled handoff points, and red crosses the two spikes
+that outran any profitable anticipative action and fell through to the
+emergency guard. Seven of thirteen routes exercised the handoff lever;
+the whole day's recourse bill is 341 currency units.}
+\label{fig:fleet}
+\end{figure}
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{references}

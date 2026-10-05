@@ -2,301 +2,491 @@
  {
   "inst": "CON3-0",
   "m": 9,
-  "rl_cost": 1.393280267715454,
-  "reactive_cost": 1.8206342458724976
+  "rl_cost": 1.422703742980957,
+  "reactive_cost": 1.8849306106567383,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-0",
   "m": 12,
-  "rl_cost": 19.716154098510742,
-  "reactive_cost": 30.7286319732666
+  "rl_cost": 18.69221305847168,
+  "reactive_cost": 29.172527313232422,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-0",
   "m": 12,
-  "rl_cost": 1.2634693384170532,
-  "reactive_cost": 1.4893410205841064
+  "rl_cost": 0.8966440558433533,
+  "reactive_cost": 1.3806496858596802,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-0",
   "m": 17,
-  "rl_cost": 67.08240509033203,
-  "reactive_cost": 69.88371276855469
+  "rl_cost": 67.20835876464844,
+  "reactive_cost": 69.21040344238281,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-1",
   "m": 20,
-  "rl_cost": 20.975034713745117,
-  "reactive_cost": 36.441219329833984
+  "rl_cost": 20.0052547454834,
+  "reactive_cost": 34.103233337402344,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-1",
   "m": 11,
-  "rl_cost": 22.934354782104492,
-  "reactive_cost": 36.91232681274414
+  "rl_cost": 22.770957946777344,
+  "reactive_cost": 36.248634338378906,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-1",
   "m": 3,
   "rl_cost": 0.0,
-  "reactive_cost": 0.0
+  "reactive_cost": 0.0,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-1",
   "m": 16,
-  "rl_cost": 49.33800506591797,
-  "reactive_cost": 59.56393814086914
+  "rl_cost": 46.301876068115234,
+  "reactive_cost": 55.983299255371094,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-2",
   "m": 3,
   "rl_cost": 0.0,
-  "reactive_cost": 0.0
+  "reactive_cost": 0.0,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-2",
   "m": 14,
-  "rl_cost": 23.367008209228516,
-  "reactive_cost": 38.47744369506836
+  "rl_cost": 25.124269485473633,
+  "reactive_cost": 39.13569641113281,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-2",
   "m": 16,
-  "rl_cost": 37.828670501708984,
-  "reactive_cost": 42.3152961730957
+  "rl_cost": 38.41932678222656,
+  "reactive_cost": 42.4338264465332,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-2",
   "m": 17,
-  "rl_cost": 24.609289169311523,
-  "reactive_cost": 34.21998596191406
+  "rl_cost": 23.12852668762207,
+  "reactive_cost": 32.86574935913086,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-3",
   "m": 3,
   "rl_cost": 0.0,
-  "reactive_cost": 0.0
+  "reactive_cost": 0.0,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-3",
   "m": 14,
-  "rl_cost": 27.7176570892334,
-  "reactive_cost": 44.43095016479492
+  "rl_cost": 29.265348434448242,
+  "reactive_cost": 46.23768615722656,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-3",
   "m": 14,
-  "rl_cost": 19.708757400512695,
-  "reactive_cost": 30.709749221801758
+  "rl_cost": 21.505023956298828,
+  "reactive_cost": 32.394264221191406,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-3",
   "m": 19,
-  "rl_cost": 28.099422454833984,
-  "reactive_cost": 50.02382278442383
+  "rl_cost": 29.85006332397461,
+  "reactive_cost": 51.91538619995117,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-4",
   "m": 13,
-  "rl_cost": 28.196027755737305,
-  "reactive_cost": 45.353065490722656
+  "rl_cost": 28.51919174194336,
+  "reactive_cost": 45.44788360595703,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-4",
   "m": 22,
-  "rl_cost": 45.62974166870117,
-  "reactive_cost": 73.97449493408203
+  "rl_cost": 44.95786666870117,
+  "reactive_cost": 73.10987854003906,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-4",
   "m": 13,
-  "rl_cost": 26.464853286743164,
-  "reactive_cost": 41.8558464050293
+  "rl_cost": 26.335792541503906,
+  "reactive_cost": 40.62427520751953,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-5",
   "m": 14,
-  "rl_cost": 35.879573822021484,
-  "reactive_cost": 45.92666244506836
+  "rl_cost": 36.77299880981445,
+  "reactive_cost": 43.975257873535156,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-5",
   "m": 19,
-  "rl_cost": 53.379119873046875,
-  "reactive_cost": 69.27743530273438
+  "rl_cost": 50.7512092590332,
+  "reactive_cost": 65.02983093261719,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-5",
   "m": 15,
-  "rl_cost": 36.88633728027344,
-  "reactive_cost": 45.461299896240234
+  "rl_cost": 34.6395263671875,
+  "reactive_cost": 43.3446159362793,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-6",
   "m": 18,
-  "rl_cost": 48.58442687988281,
-  "reactive_cost": 63.716697692871094
+  "rl_cost": 50.64113235473633,
+  "reactive_cost": 64.75330352783203,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-6",
   "m": 12,
-  "rl_cost": 7.520426273345947,
-  "reactive_cost": 9.413082122802734
+  "rl_cost": 7.990976333618164,
+  "reactive_cost": 10.161855697631836,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-6",
   "m": 17,
-  "rl_cost": 24.450756072998047,
-  "reactive_cost": 44.174381256103516
+  "rl_cost": 24.45775032043457,
+  "reactive_cost": 42.292388916015625,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-6",
   "m": 3,
   "rl_cost": 0.0,
-  "reactive_cost": 0.0
+  "reactive_cost": 0.0,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-7",
   "m": 13,
-  "rl_cost": 18.63897705078125,
-  "reactive_cost": 24.641645431518555
+  "rl_cost": 19.09063720703125,
+  "reactive_cost": 24.38292694091797,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-7",
   "m": 19,
-  "rl_cost": 29.131990432739258,
-  "reactive_cost": 43.94395446777344
+  "rl_cost": 32.0258674621582,
+  "reactive_cost": 44.33232879638672,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-7",
   "m": 17,
-  "rl_cost": 34.37685775756836,
-  "reactive_cost": 50.869876861572266
+  "rl_cost": 33.09786605834961,
+  "reactive_cost": 50.01825714111328,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-8",
   "m": 14,
-  "rl_cost": 30.605928421020508,
-  "reactive_cost": 45.91465377807617
+  "rl_cost": 31.21328353881836,
+  "reactive_cost": 47.22997283935547,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-8",
   "m": 8,
-  "rl_cost": 1.5063005685806274,
-  "reactive_cost": 1.656825304031372
+  "rl_cost": 1.448474645614624,
+  "reactive_cost": 1.8289103507995605,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-8",
   "m": 18,
-  "rl_cost": 32.43629837036133,
-  "reactive_cost": 51.553218841552734
+  "rl_cost": 32.89339828491211,
+  "reactive_cost": 52.130001068115234,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-8",
   "m": 10,
-  "rl_cost": 0.025081336498260498,
-  "reactive_cost": 0.025081336498260498
+  "rl_cost": 0.0,
+  "reactive_cost": 0.0,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-9",
   "m": 11,
-  "rl_cost": 17.435546875,
-  "reactive_cost": 23.416772842407227
+  "rl_cost": 18.1114444732666,
+  "reactive_cost": 24.175838470458984,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-9",
   "m": 11,
-  "rl_cost": 0.5411182045936584,
-  "reactive_cost": 0.6800603270530701
+  "rl_cost": 0.46402406692504883,
+  "reactive_cost": 0.5997599363327026,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-9",
   "m": 16,
-  "rl_cost": 21.835933685302734,
-  "reactive_cost": 29.29844856262207
+  "rl_cost": 22.53341293334961,
+  "reactive_cost": 29.862058639526367,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "CON3-9",
   "m": 12,
-  "rl_cost": 6.778911113739014,
-  "reactive_cost": 9.123157501220703
+  "rl_cost": 7.016333103179932,
+  "reactive_cost": 8.97791576385498,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "HANOI-100-1",
-  "m": 19,
-  "rl_cost": 0.4252133369445801,
-  "reactive_cost": 0.4252133369445801
- },
- {
-  "inst": "HANOI-100-1",
-  "m": 11,
+  "m": 3,
   "rl_cost": 0.0,
-  "reactive_cost": 0.0
+  "reactive_cost": 0.0,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
+ },
+ {
+  "inst": "HANOI-100-1",
+  "m": 18,
+  "rl_cost": 6.1896820068359375,
+  "reactive_cost": 6.1896820068359375,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
+ },
+ {
+  "inst": "HANOI-100-1",
+  "m": 20,
+  "rl_cost": 1.2677431106567383,
+  "reactive_cost": 1.2677431106567383,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "HANOI-100-1",
   "m": 17,
-  "rl_cost": 2.2388315200805664,
-  "reactive_cost": 2.2388315200805664
+  "rl_cost": 0.374431848526001,
+  "reactive_cost": 0.386264830827713,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "HANOI-100-1",
-  "m": 18,
-  "rl_cost": 7.182389736175537,
-  "reactive_cost": 7.182389736175537
+  "m": 19,
+  "rl_cost": 5.2628631591796875,
+  "reactive_cost": 5.2628631591796875,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "HANOI-100-1",
+  "m": 23,
+  "rl_cost": 6.168974876403809,
+  "reactive_cost": 6.168974876403809,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
+ },
+ {
+  "inst": "HCMC-100-1",
+  "m": 16,
+  "rl_cost": 1.2152791023254395,
+  "reactive_cost": 1.2446120977401733,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
+ },
+ {
+  "inst": "HCMC-100-1",
+  "m": 20,
+  "rl_cost": 16.041627883911133,
+  "reactive_cost": 16.041627883911133,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
+ },
+ {
+  "inst": "HCMC-100-1",
+  "m": 3,
+  "rl_cost": 0.0,
+  "reactive_cost": 0.0,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
+ },
+ {
+  "inst": "HCMC-100-1",
+  "m": 22,
+  "rl_cost": 15.255922317504883,
+  "reactive_cost": 15.255922317504883,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
+ },
+ {
+  "inst": "HCMC-100-1",
   "m": 21,
-  "rl_cost": 18.54319190979004,
-  "reactive_cost": 18.54319190979004
- },
- {
-  "inst": "HANOI-100-1",
-  "m": 14,
-  "rl_cost": 2.8230161666870117,
-  "reactive_cost": 2.8230161666870117
- },
- {
-  "inst": "HCMC-100-1",
-  "m": 15,
-  "rl_cost": 3.7611820697784424,
-  "reactive_cost": 3.7611820697784424
- },
- {
-  "inst": "HCMC-100-1",
-  "m": 16,
-  "rl_cost": 0.18227975070476532,
-  "reactive_cost": 0.26285260915756226
- },
- {
-  "inst": "HCMC-100-1",
-  "m": 16,
-  "rl_cost": 0.0,
-  "reactive_cost": 0.0
- },
- {
-  "inst": "HCMC-100-1",
-  "m": 14,
-  "rl_cost": 0.014652764424681664,
-  "reactive_cost": 0.03083723783493042
- },
- {
-  "inst": "HCMC-100-1",
-  "m": 9,
-  "rl_cost": 0.0,
-  "reactive_cost": 0.0
+  "rl_cost": 0.5622297525405884,
+  "reactive_cost": 0.6190139651298523,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  },
  {
   "inst": "HCMC-100-1",
   "m": 18,
-  "rl_cost": 3.3290815353393555,
-  "reactive_cost": 3.3290815353393555
- },
- {
-  "inst": "HCMC-100-1",
-  "m": 12,
-  "rl_cost": 0.3624797761440277,
-  "reactive_cost": 0.3624797761440277
+  "rl_cost": 1.9129921197891235,
+  "reactive_cost": 1.9129921197891235,
+  "train_s": 152.07440519332886,
+  "device": "cpu",
+  "epochs": 150,
+  "seed": 1
  }
 ]

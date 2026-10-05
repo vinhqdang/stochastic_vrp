@@ -1,0 +1,32 @@
+\begin{table}[t]
+\caption{Training-data budget: saving \% vs.\ reactive as a function of
+the number $N$ of training days per route (same test days throughout).
+thr.: label-corrected tuned threshold; DP$_N$: plug-in dynamic program
+at equal data; \textsc{Baton} with deployment selection. The last row
+gives the high-data reference programs (handoff-only / three-action).
+The $N = 10^3$ row re-draws the training days of a smaller instance set
+(Section~\ref{sec:budget}) and therefore differs from
+Tables~\ref{tab:grand} and~\ref{tab:large} by up to 0.3 points.}
+\label{tab:budget}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{r ccc ccc ccc}
+\toprule
+& \multicolumn{3}{c}{Dethloff, \textsc{Det}} & \multicolumn{3}{c}{Dethloff, \textsc{SAA}} & \multicolumn{3}{c}{City, \textsc{Det}} \\ \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+$N$ & thr. & DP$_N$ & \textsc{Baton} & thr. & DP$_N$ & \textsc{Baton} & thr. & DP$_N$ & \textsc{Baton} \\
+\midrule
+100 & 23.0 & 22.7 & 25.8 & -2.4 & -1.6 & 41.7 & 0.4 & -0.3 & 3.8 \\
+250 & 24.0 & 23.8 & 26.9 & 7.4 & -0.5 & 49.7 & 5.4 & 1.0 & 8.1 \\
+500 & 24.6 & 25.3 & 27.6 & 13.0 & 2.6 & 52.0 & 8.6 & 3.3 & 9.6 \\
+1{,}000 & 24.8 & 25.7 & 27.9 & 16.5 & 12.1 & 53.6 & 10.0 & 7.0 & 10.5 \\
+2{,}000 & 25.0 & 25.7 & 28.0 & 18.1 & 18.3 & 54.8 & 10.8 & 9.4 & 11.5 \\
+5{,}000 & 25.0 & 25.8 & 28.2 & 18.9 & 21.1 & 55.6 & 11.5 & 10.4 & 12.0 \\
+20{,}000 & 25.0 & 26.3 & 28.3 & 19.6 & 22.0 & 56.3 & 12.0 & 11.9 & 12.9 \\
+\midrule
+ref.: DP$_{50\mathrm{k}}$ / DP$^3_{50\mathrm{k}}$ &  & 26.4 & 29.5 &  & 22.2 & 56.4 &  & 12.2 & 12.3 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

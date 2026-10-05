@@ -111,12 +111,16 @@ def episode_batch(policy, rt, g, idx, device, greedy=False):
 def main():
     bundle, epochs, out = "rl_bundle.npz", 30, "rl_results.json"
     batch = 256
+    seed = 0
     for a in sys.argv[1:]:
         if a.startswith("bundle="): bundle = a[7:]
         elif a.startswith("epochs="): epochs = int(a[7:])
         elif a.startswith("out="):    out = a[4:]
         elif a.startswith("batch="):  batch = int(a[6:])
+        elif a.startswith("seed="):   seed = int(a[5:])
 
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"device={device}")
     routes = load_bundle(bundle)
@@ -145,6 +149,8 @@ def main():
               f"{ep_cost / len(routes):.3f}  ({time.time() - t0:.0f}s)",
               flush=True)
 
+    train_s = time.time() - t0
+
     # greedy evaluation on held-out test days
     results = []
     with torch.no_grad():
@@ -161,7 +167,9 @@ def main():
             react = np.where(ostep >= 0, rt["E"][np.clip(ostep, 0, m - 1)], 0.0)
             results.append(dict(inst=rt["inst"], m=int(g.shape[1]),
                                 rl_cost=float(costs.mean()),
-                                reactive_cost=float(react.mean())))
+                                reactive_cost=float(react.mean()),
+                                train_s=train_s, device=device,
+                                epochs=epochs, seed=seed))
     json.dump(results, open(out, "w"), indent=1)
     tot_rl = sum(r["rl_cost"] for r in results)
     tot_re = sum(r["reactive_cost"] for r in results)

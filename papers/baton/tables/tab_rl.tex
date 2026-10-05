@@ -1,21 +1,23 @@
 \begin{table}[t]
 \caption{Reinforcement-learning baseline (re-implementation of the policy
-architecture of Iklassov et al., 2024) versus \textsc{Baton-ho} on the
-identical 50 routes and out-of-sample test days; saving \% vs.\ the
-reactive policy, \emph{higher is better}. The learned policy is
-trained on a GPU; \textsc{Baton} fits in milliseconds per route on a CPU.}
+architecture of Iklassov et al., 2024) versus \textsc{Baton} on the
+identical 49 routes and out-of-sample test days; saving \% vs.\ the
+reactive policy, \emph{higher is better}. The learned policy acts on the
+handoff lever only, so \textsc{Baton-ho} is the like-for-like
+comparison; the full \textsc{Baton} row adds the depot return.}
 \label{tab:rl}
 \centering
 \begin{tabular}{l c}
 \toprule
 Policy & saving vs.\ reactive (\%) \\
 \midrule
-40 epochs (paper spec) & 27.6 \\
-150 epochs, seed 0 & 27.7 \\
-150 epochs, seed 1 & 28.6 \\
-150 epochs, seed 2 & 28.7 \\
+RL, 40 epochs & 27.2 \\
+RL, 150 epochs, seed 0 & 27.4 \\
+RL, 150 epochs, seed 1 & 27.3 \\
+RL, 150 epochs, seed 2 & 27.3 \\
 \midrule
-\textsc{Baton-ho} & \textbf{33.9} \\
+\textsc{Baton-ho} (handoff only) & \textbf{32.9} \\
+\textsc{Baton} (handoff and depot return) & \textbf{33.7} \\
 \bottomrule
 \end{tabular}
 \end{table}

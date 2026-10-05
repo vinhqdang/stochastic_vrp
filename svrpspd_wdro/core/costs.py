@@ -79,6 +79,9 @@ class LastMileCosts:
     p_late: float = 1.5      # $ SLA compensation per downstream customer served late
     p_breach: float = 10.0   # $ churn/goodwill loss at the breached stop itself
 
+    # ── depot return ─────────────────────────────────────────────────
+    F_return: float = 0.0    # fixed fee per depot return (dock slot, driver time)
+
     def handoff_cost(self, remaining_km: float) -> float:
         """Planned handoff after stop k: one standby vehicle-day consumed
         (retainer F_standby, pooled city-wide) + dispatch fee + the standby
@@ -276,6 +279,7 @@ def _stats(costs: np.ndarray, action: np.ndarray) -> dict:
         "handoff_rate":  float((action == 1).mean()),
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
+        "costs":         costs,
     }
 
 
@@ -377,7 +381,7 @@ def restock_schedule(route: list, D: np.ndarray, scale: float,
         detour = (float(D[cur, 0]) + float(D[0, nxt])
                   - float(D[cur, nxt])) / scale
         R[k] = (costs.c_km * detour + costs.c_transfer
-                + costs.p_late * (m - (k + 1)))
+                + costs.p_late * (m - (k + 1)) + costs.F_return)
     return R
 
 
@@ -423,6 +427,7 @@ def simulate_restock(g_test: np.ndarray, B: float, E: np.ndarray,
         "handoff_rate":  float((action == 1).mean()),   # = restock rate here
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
+        "costs":         costs_out,
     }
     return (stats, action) if return_actions else stats
 
@@ -587,6 +592,7 @@ def simulate_actions(g_test: np.ndarray, B: float, H: np.ndarray,
         "handoff_rate":  float((action == 1).mean()),
         "fail_rate":     float((action == 2).mean()),
         "complete_rate": float((action == 0).mean()),
+        "costs":         costs_out,
     }
     return (stats, action) if return_actions else stats
 

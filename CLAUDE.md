@@ -10,7 +10,7 @@ shared engine (`svrpspd_wdro/`) plus one directory per paper under
 in a subpackage of `svrpspd_wdro/` (e.g. `core/`, `ev/`) so everything
 shares the same instances, simulator, cost model, and test suite.
 
-### Paper 1 — BATON (papers/baton/, UNDER REVIEW at Computers & OR)
+### Paper 1 — BATON (papers/baton/, REVISION 1 at Computers & OR)
 
 SVRPSPD with two coupled layers:
 
@@ -30,8 +30,10 @@ Costs follow a three-class fleet model (planned / standby / emergency
 vehicles) with per-stop price schedules built from real route geometry —
 see `svrpspd_wdro/core/costs.py`.
 
-**Do not modify `papers/baton/` while the paper is under review** (see
-its STATUS.md); revisions only when the decision arrives.
+Reviews (3 reviewers, CAOR-D-26-01885) arrived September 2026; revision
+1 is prepared in `papers/baton/` with `r1/` holding the response letter,
+portal replies and marked-up diff. Once resubmitted the directory is
+frozen again until the next decision (see its STATUS.md).
 
 ### Paper 2 — TEMPO (papers/tempo/, UNDER REVIEW at Transportation Science)
 
@@ -138,13 +140,11 @@ only *capacity* does (a context window is rivalrous like vehicle
 capacity). Shares NO code, instances, or results with papers 1–3; all
 PARCEL code stays inside `papers/parcel/`.
 
-One live thread from paper 4: BATON's W-DRO gate in
+Resolved thread from paper 4: BATON's W-DRO gate in
 `svrpspd_wdro/core/wdro_exact.py` adds a **route-independent** constant
-`epsilon/(1-alpha)` to a CVaR gate. As a feasibility constraint that
-tightens the threshold rather than cancelling, so not vacuous — but it
-does make the W-DRO gate equivalent to the SAA-CVaR gate at a shifted
-threshold. Check against the manuscript's claims when BATON's decision
-arrives; a referee could raise it. BATON is frozen, so do not act now.
+`epsilon/(1-alpha)` to a CVaR gate, so it is the SAA-CVaR gate at a
+tighter threshold. Revision 1 of BATON states this explicitly (Section
+4.1) and presents the gate as a more conservative regime.
 
 ## Layout
 
@@ -153,7 +153,7 @@ arrives; a referee could raise it. BATON is frozen, so do not act now.
   BATON-era machinery reused everywhere; `ev/` is paper 2. Paper 3
   (`papers/csonet2026/`) does NOT use this engine at all — its code is
   self-contained inside its own directory.
-- `papers/baton/` — C&OR manuscript (frozen; tables ONLY via its
+- `papers/baton/` — C&OR manuscript (revision 1; tables ONLY via its
   `make_tables.py`, never hand-edit `tables/*`).
 - `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
 - `papers/csonet2026/` — paper 3, under **major revision** at JOCO
@@ -169,7 +169,8 @@ arrives; a referee could raise it. BATON is frozen, so do not act now.
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1–3 are closed to edits, paper 4 is abandoned, and papers 5
+  paper 1 (BATON) is in revision 1, papers 2–3 are closed to edits,
+  paper 4 is abandoned, and papers 5
   (ECLAIR) and 6 (PARCEL) are the **open papers**.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
   manuscript, a `STATUS.md` (venue, review state, freeze policy), a
@@ -189,7 +190,7 @@ arrives; a referee could raise it. BATON is frozen, so do not act now.
 
 - Python 3.11, no conda needed: `pip install -r requirements.txt`.
 - Run tests from `svrpspd_wdro/`: `python -m pytest tests/ -q`
-  (~180+ tests; keep green).
+  (~220 tests; keep green).
 - Git: `git pull origin main` at the start of a session and before
   pushing. Commit author AND committer: Vinh <dqvinh87@gmail.com>.
   Always commit and push to `origin main` after every change. No pull
