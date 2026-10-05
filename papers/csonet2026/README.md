@@ -25,6 +25,13 @@ submission record and the revision log.
   (Lemma 1, Theorems 2–5, Propositions 6–8, examples, hardness part of
   Theorem 9); `lake build`, no `sorry`; see its README for the
   paper↔Lean table and what is not formalised.
+- `submission/` — the flat upload package for the journal's revision
+  portal: ONE `main.tex` (bibliography inlined as `thebibliography`, no
+  `.bib`/`.bst`, no subfolders) plus the five figure PNGs, nothing else.
+  Generated from `main.tex` + `references.bib` (re-inline the `.bbl` if
+  either changes); Data Availability is reworded because the scripts are
+  not shipped in it. Needs Springer's `sn-jnl.cls` to compile (supplied by
+  the journal system; not included on purpose).
 - `revision/` — latexdiff tracked-changes manuscript vs the submitted
   version.
 - `response_to_reviewers.tex` — point-by-point response to the two
