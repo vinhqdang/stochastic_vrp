@@ -47,8 +47,9 @@
     correlated-error variant, sample-average plan.
   - **Bibliography** verified/corrected (59 entries, ~49 cited);
     `verify_extensions.py` checks the added results; `experiment.py`
-    gained a HiGHS MIP baseline; code + Lean library are public (tag
-    `csonet2026-revision1`).
+    gained a HiGHS MIP baseline; code + Lean library are public in this
+    repository (no tag/DOI yet — the authoring environment could not
+    push tags; create a tag or Zenodo snapshot before upload).
   - **Open items for the author:** (a) Baptiste (1999) was cited from its
     verified record and a secondary source, not read directly — the
     claim is that one machine with equal processing times, weights and

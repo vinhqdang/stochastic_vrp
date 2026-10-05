@@ -107,9 +107,10 @@ results here would jeopardize both.
 ## Before submitting
 
 - [ ] Confirm affiliation/ORCID details are current.
-- [ ] Data Availability points to the public repository and the tag
-  `csonet2026-revision1`; consider a Zenodo snapshot with a DOI (the
-  repository also contains other, unrelated manuscripts).
+- [ ] Data Availability points to the public repository
+  (`papers/csonet2026`); a git tag / Zenodo snapshot with a DOI would be
+  better (the environment used here could not create tags), and the
+  repository also contains other, unrelated manuscripts.
 - [ ] Read the compiled PDF once, end to end, before uploading — JOCO's
   own guidance: "the Meteor submission system does not support
   post-submission edits."
