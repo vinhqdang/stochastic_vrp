@@ -1,7 +1,8 @@
 # CSoNet 2026 / JOCO paper — status
 
-- **Title:** Minimum Weighted Hazard-Exposure Dispatch: Complexity, an
-  Exact Algorithm, and an FPTAS
+- **Title (revised):** Minimum Weighted Hazard-Exposure Dispatch: A
+  Scheduling View with Verified Algorithms and a Wildfire Case Study
+  (submitted as *...: Complexity, an Exact Algorithm, and an FPTAS*)
 - **Venue:** Journal of Combinatorial Optimization (Springer), via
   CSoNet 2026's Journal Track — **SUBMITTED.**
 - **Submission record:**
@@ -26,22 +27,35 @@
   additivity step, self-contained proof of Theorem 5, shorter
   positioning, and parameter uncertainty (refs: Wang 2020; Koca 2023).
   **Revised manuscript and `response_to_reviewers.tex` prepared**
-  (2026-10-05: also machine-checked in Lean 4, `MwhedProofs/`, and a
-  latexdiff tracked-changes PDF in `revision/`; neither is part of the
-  journal upload unless the author decides to cite the Lean library)
-  (not yet uploaded — upload editable sources only, no PDF). Changes
-  verified: all algorithms agree with exhaustive search
-  (`verify_small.py`); experiments regenerated; manuscript builds clean
-  at 38 pages. Own errors corrected and disclosed in the response
-  letter: Camp Fire deadline semantics (return vs arrival reading; the
-  80 km/h optimum is now Concow+Paradise), naive baseline strawman,
-  Heeger-Hermelin wording, the multi-vehicle embedding and the
-  Heeger-Molter inference (needs release dates; equal-cost m-vehicle is
-  polynomial), FPTAS scaling vacuous (K=1) in the original experiments.
-  **Open item for the author:** the NIST anchor minutes (Concow 52,
-  Paradise 71 after the timeline's time zero) were inherited from the
-  submitted version and could not be re-verified against TN 2135 from
-  this environment; confirm before resubmitting.
+  (2026-10-05; not yet uploaded — upload the flat package in
+  `submission/` only: one `main.tex` + figure PNGs, no PDF). The
+  revision went through a second pass the same day (an internal
+  simulated review, `review_round1/`, then fixes), which changed the
+  paper materially — see `review_round1/EDITORIAL_DECISION.md` for the
+  review and the list below for what was done:
+  - **Positioning:** equal-size greedy for several vehicles is
+    *classical* (Lawler 1976; Dessouky–Lageweg–Lenstra–van de Velde
+    1990), no longer claimed; classification = elementary corollary;
+    new, modest claims: refined exactly tight FPTAS guarantee
+    (Thm 7, Prop 11), hardness for a constant hazard-arrival time under
+    the arrival reading (Prop 4), round-trip model conservative vs a
+    chained route (Prop 1).
+  - **Camp Fire rebuilt** on NIST-documented clock times for all four
+    communities (the earlier extrapolated times for Magalia and Yankee
+    Hill were far off; NIST defines no time zero — we use the initial
+    dispatch 06:31); comparison with a chained route, stated protocol,
+    correlated-error variant, sample-average plan.
+  - **Bibliography** fully verified/corrected (59 entries);
+    `verify_extensions.py` checks the added results; `experiment.py`
+    gained a HiGHS MIP baseline; code + Lean library are public (tag
+    `csonet2026-revision1`).
+  - **Open items for the author:** (a) Baptiste (1999) was cited from its
+    verified record and a secondary source, not read directly — the
+    claim is that one machine with equal processing times, weights and
+    release dates is polynomial; (b) Lawler (1976) agreeable-weights
+    statement is via Lawler et al., *Elements of Scheduling*; (c) the
+    Oroville depot is a modelling choice; (d) nothing has been uploaded
+    to Editorial Manager.
 - **Policy:** treat as frozen — **do not modify** except for
   editor-requested fixes like the one above, same convention as
   `papers/baton/STATUS.md`. Record any further editorial exchange here.

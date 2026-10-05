@@ -156,7 +156,7 @@ variable (a : ι → ℕ) (ha : ∀ i, 0 < a i)
 theorem hazardInst_arrivalConst : ArrivalConst (hazardInst a ha) (2 * (∑ j, a j) + 1) := by
   intro x
   cases x with
-  | none => refine ⟨⟨∑ j, a j + 1, by simp [hazardInst]; ring⟩, ?_, rfl⟩; simp [hazardInst]; omega
+  | none => refine ⟨⟨∑ j, a j + 1, by simp [hazardInst]; ring⟩, ?_, rfl⟩; simp [hazardInst]
   | some i => refine ⟨⟨a i, by simp [hazardInst]⟩, ?_, rfl⟩; simp [hazardInst]
 
 /-- Assumption 1 (`p i ≤ d i`) holds for the constructed instance. -/
@@ -191,7 +191,8 @@ private theorem time_split (S : Finset (Option ι)) :
     time (hazardInst a ha) S =
       (if none ∈ S then 2 * (∑ j, a j) + 2 else 0) + 2 * ∑ i ∈ J S, a i := by
   unfold time
-  rw [sum_option_split, mul_sum]
+  have h2 : 2 * ∑ i ∈ J S, a i = ∑ i ∈ J S, 2 * a i := mul_sum _ _ _
+  rw [sum_option_split, h2]
   rfl
 
 private theorem sup_none (S : Finset (Option ι)) (hS : none ∈ S) (hne : S.Nonempty) :
@@ -213,7 +214,8 @@ private theorem feasible_none_iff (S : Finset (Option ι)) (hS : none ∈ S) :
   have hne : S.Nonempty := ⟨none, hS⟩
   rw [feasible_iff_mid (hazardInst a ha) (H := 2 * (∑ j, a j) + 1)
     (fun x => (hazardInst_arrivalConst a ha x).1) (fun x => (hazardInst_arrivalConst a ha x).2.2)
-    S hne, time_split a ha, sup_none a ha S hS hne, if_pos hS]
+    S hne, time_split a ha, sup_none a ha S hS hne]
+  simp only [hS, ↓reduceIte]
   omega
 
 /-- **Proposition `prop:consth`, reduction correctness.**  For positive integers `a`
@@ -248,16 +250,19 @@ theorem hazard_partition_reduction :
       omega
     · have hJ : J (insert none (I.image some)) = I := by
         ext i; simp [J]
-      rw [weight_split a ha, hJ, if_pos (mem_insert_self _ _)]
+      rw [weight_split a ha, hJ]
+      simp only [mem_insert_self, ↓reduceIte]
       omega
   · rintro ⟨S, hS, hw⟩
     by_cases hnone : none ∈ S
     · refine ⟨J S, ?_⟩
       have h1 := (feasible_none_iff a ha S hnone).1 hS
-      rw [weight_split a ha, if_pos hnone] at hw
+      rw [weight_split a ha] at hw
+      simp only [hnone, ↓reduceIte] at hw
       omega
     · exfalso
-      rw [weight_split a ha, if_neg hnone] at hw
+      rw [weight_split a ha] at hw
+      simp only [hnone, ↓reduceIte] at hw
       have : ∑ i ∈ J S, a i ≤ ∑ i, a i := sum_le_sum_of_subset (subset_univ _)
       omega
 

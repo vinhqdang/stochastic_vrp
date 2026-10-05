@@ -81,7 +81,7 @@ theorem allOnTime_filter_of_feasible [Fintype ι] (I : Inst ι) {L : List ι} (h
   apply allOnTime_of_sorted I _ _ (hs.filter _)
   intro i hi
   have hiS : i ∈ S := by simpa using (List.mem_filter.1 hi).2
-  rw [sum_filter_list I hndf]
+  rw [sum_filter_list I hndf, zero_add]
   have hsub : (L.filter (fun i => decide (i ∈ S))).toFinset.filter (fun j => I.d j ≤ I.d i)
       ⊆ S.filter (fun j => I.d j ≤ I.d i) := by
     intro j hj
@@ -104,8 +104,8 @@ theorem gSpec_eq_gTab [Fintype ι] (I : Inst ι) (w' : ι → ℕ) {L : List ι}
     gSpec I w' L i v = gTab I w' (L.take i) v := by
   have hnd' : (L.take i).Nodup := hnd.sublist (List.take_sublist _ _)
   have hs' : (L.take i).Pairwise (fun a b => I.d a ≤ I.d b) := hs.sublist (List.take_sublist _ _)
-  generalize L.take i = M at hnd' hs'
   unfold gSpec
+  generalize L.take i = M at hnd' hs' ⊢
   apply le_antisymm
   · -- `gSpec ≤ gTab`
     rcases gTab_attained I w' M v with h | ⟨S, hS, hon, hv, hg⟩
@@ -164,7 +164,7 @@ theorem lem_g_succ [Fintype ι] (I : Inst ι) (w' : ι → ℕ) {L : List ι} (h
         min (gSpec I w' L i v) (gSpec I w' L i (v - w' L[i]) + (I.p L[i] : ℕ∞))
       else gSpec I w' L i v := by
   have h : L.take (i + 1) = L.take i ++ [L[i]] := by
-    rw [List.take_succ, List.getElem?_eq_getElem hi]; rfl
+    rw [List.take_add_one, List.getElem?_eq_getElem hi]; rfl
   rw [gSpec_eq_gTab I w' hnd hs, gSpec_eq_gTab I w' hnd hs, gSpec_eq_gTab I w' hnd hs, h,
     gTab_append_singleton]
   split_ifs with hc
@@ -305,7 +305,7 @@ theorem partition_reduction_full (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) :
   refine ⟨fun h => ⟨partition_no_of_bad a h, noInst_indivFeasible, noInst_isOPT,
     noInst_not_ge_two⟩, fun h => ?_⟩
   unfold PartitionBad at h
-  push_neg at h
+  push Not at h
   obtain ⟨heven, hbig⟩ := h
   have heven' : 2 ∣ ∑ i, a i := by simpa using heven
   refine ⟨partitionInst_indivFeasible a ha fun i => ?_, partition_reduction a ha heven'⟩

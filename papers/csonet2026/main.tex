@@ -430,7 +430,8 @@ $K$ & FPTAS weight-scaling factor \\
 $w_i'$ & scaled weight, $\lfloor w_i/K\rfloor$ \\
 $g(i,v)$ & FPTAS's value-indexed dual DP table \\
 $D_i$ & latest feasible dispatch position, equal-cost case, $\lfloor d_i/p\rfloor$ \\
-$m$ & number of identical vehicles (MWHED-$m$, Section~\ref{sec:equalp}) \\
+$m$ & number of vehicles (MWHED-$m$, Section~\ref{sec:equalp}) \\
+$\rho_{n,\epsilon}$ & FPTAS guarantee constant (Theorem~\ref{thm:fptas}) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -600,7 +601,7 @@ $4$.}\label{fig:running-example}
 
 Table~\ref{tab:summary} previews the results of this section and marks
 which are classical (stated here in transportation language, with
-complete proofs) and which we believe are new.
+complete proofs) and which are additions of this paper.
 
 \begin{table}[h]
 \caption{Summary of this section's results. $n$ is the number of
@@ -1943,10 +1944,9 @@ Yankee Hill in $20.7\%$ and all four communities in $16.2\%$. The plan
 that is optimal for the nominal $80$~km/h instance (all four, Concow
 first) is fully on time in only $16.2\%$ of the draws and retains on
 average $31.9\%$ of the drawn optimum (fifth percentile $2.8\%$), because
-a delay or a slower road lets the Concow visit make Paradise late. This is
-the same brittleness as in a small example one can write down: the
-nominal optimum places a low-weight site ahead of the dominant one with
-only $12$ minutes of slack. A \emph{sample-average plan}, the subset (in
+a delay or a slower road lets the Concow visit make Paradise late: the
+nominal optimum places a low-weight site ahead of the dominant one, with
+only $12$ minutes of slack for Paradise. A \emph{sample-average plan}, the subset (in
 the same visiting order) with the largest average protected weight over an
 independent sample of $2{,}000$ draws, is Paradise, Magalia and Yankee Hill;
 it is fully on time in $79.3\%$ of the draws and retains $99.7\%$ of the

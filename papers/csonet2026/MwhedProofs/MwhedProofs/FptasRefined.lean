@@ -105,7 +105,7 @@ theorem fptasRef_core [Fintype ι] {F : Finset ι → Prop} {w : ι → ℕ} {ε
     rw [lt_div_iff₀ hε0]; nlinarith
   have hwh : (w h : ℝ) = K * ((Fintype.card ι : ℝ) / ε) := by
     rw [hK]; field_simp
-  have hN1 : 1 ≤ ⌊(Fintype.card ι : ℝ) / ε⌋₊ := Nat.one_le_floor_iff.2 (by linarith)
+  have hN1 : 1 ≤ ⌊(Fintype.card ι : ℝ) / ε⌋₊ := (Nat.one_le_floor_iff _).2 (by linarith)
   have hNpos : (0 : ℝ) < (⌊(Fintype.card ι : ℝ) / ε⌋₊ : ℝ) := by exact_mod_cast hN1
   have hf0 : 0 ≤ (Fintype.card ι : ℝ) / ε - (⌊(Fintype.card ι : ℝ) / ε⌋₊ : ℝ) := by
     have := Nat.floor_le hy_pos.le; linarith
@@ -217,7 +217,7 @@ theorem rho_facts (hn : 2 ≤ n) (hε0 : 0 < ε) (hε1 : ε < 1) :
       (n : ℝ) / ε < ((⌊(n : ℝ) / ε⌋₊ : ℕ) : ℝ) + 1 := by
   have hnR : (2 : ℝ) ≤ n := by exact_mod_cast hn
   have hy2 : 2 < (n : ℝ) / ε := by rw [lt_div_iff₀ hε0]; nlinarith
-  exact ⟨hy2, Nat.one_le_floor_iff.2 (by linarith), Nat.floor_le (by linarith),
+  exact ⟨hy2, (Nat.one_le_floor_iff _).2 (by linarith), Nat.floor_le (by linarith),
     Nat.lt_floor_add_one _⟩
 
 theorem refinedMax_nonneg (hn : 2 ≤ n) (hε0 : 0 < ε) (hε1 : ε < 1) : 0 ≤ refinedMax n ε := by
@@ -298,7 +298,7 @@ theorem fptasRef_generic {F : Finset ι → Prop} {w : ι → ℕ} {ε : ℝ}
     (hgt : (Fintype.card ι : ℝ) < ε * ((univ.sup w : ℕ) : ℝ))
     {Sh : Finset ι} (hSh : IsScaledMax F (fptasK ε w) w Sh) {S : Finset ι} (hS : F S) :
     ∑ i ∈ S, (w i : ℝ) ≤ (1 + refinedMax (Fintype.card ι) ε) * ∑ i ∈ Sh, (w i : ℝ) := by
-  have hsup : univ.sup w = w h := le_antisymm (sup_le fun i _ => hmax i) (le_sup (mem_univ h))
+  have hsup : univ.sup w = w h := le_antisymm (Finset.sup_le fun i _ => hmax i) (Finset.le_sup (mem_univ h))
   have hnpos : (0 : ℝ) < Fintype.card ι := by
     have : 0 < Fintype.card ι := by omega
     exact_mod_cast this
@@ -355,7 +355,7 @@ theorem fptas_refined (I : Inst ι) (hI : IndivFeasible I) (hn : 2 ≤ Fintype.c
       have h1 : I.w h ≤ v := by simpa [weight] using hvmax {h} hFh
       have h2 : (0 : ℝ) < I.w h := by
         have : (0 : ℝ) < ε * ((univ.sup I.w : ℕ) : ℝ) := lt_trans hnpos hgt
-        rw [← hh] at this
+        rw [hh] at this
         have h3 : (0 : ℝ) < ((I.w h : ℕ) : ℝ) := by
           by_contra hc
           push_neg at hc
@@ -524,25 +524,28 @@ theorem tight2_scaled_sum (h : TightHyp ε n M) (S : Finset (Fin n)) :
     · have hb : i = siteB h.hn := Fin.ext h0
       have hh : i ≠ siteH h.hn := by
         intro e; have := congrArg Fin.val e; simp [siteH] at this; omega
-      simp only [hb, hh, if_true, if_false, add_zero]
-      unfold scaledW
-      simp only [tight2Inst, siteB, if_true]
-      exact tight2B_scaled h
+      have hs : scaledW (tightK ε n M) (tight2Inst ε n M).w i = ⌊(n : ℝ) / ε⌋₊ := by
+        unfold scaledW
+        simp only [tight2Inst, h0, if_true]
+        exact tight2B_scaled h
+      rw [hs, if_pos hb, if_neg hh, add_zero]
     · by_cases h1 : i.val = 1
       · have hh : i = siteH h.hn := Fin.ext h1
         have hb : i ≠ siteB h.hn := by
           intro e; have := congrArg Fin.val e; simp [siteB] at this; omega
-        simp only [hb, hh, if_true, if_false, zero_add]
-        unfold scaledW
-        simp only [tight2Inst, siteH, if_true, if_false, h0]
-        exact tight2H_scaled h
+        have hs : scaledW (tightK ε n M) (tight2Inst ε n M).w i = ⌊(n : ℝ) / ε⌋₊ := by
+          unfold scaledW
+          simp only [tight2Inst, h0, h1, if_true, if_false]
+          exact tight2H_scaled h
+        rw [hs, if_neg hb, if_pos hh, zero_add]
       · have hb : i ≠ siteB h.hn := fun e => h0 (by simp [e, siteB])
         have hh : i ≠ siteH h.hn := fun e => h1 (by simp [e, siteH])
-        simp only [hb, hh, if_false, add_zero]
-        unfold scaledW
-        simp only [tight2Inst, h0, h1, if_false]
-        rw [Nat.floor_eq_zero, div_lt_one h.K_pos]
-        exact h.C_lt_K
+        have hs : scaledW (tightK ε n M) (tight2Inst ε n M).w i = 0 := by
+          unfold scaledW
+          simp only [tight2Inst, h0, h1, if_false]
+          rw [Nat.floor_eq_zero, div_lt_one h.K_pos]
+          exact h.C_lt_K
+        rw [hs, if_neg hb, if_neg hh, add_zero]
   simp only [key, Finset.sum_add_distrib, Finset.sum_ite_eq']
 
 /-- `b` and `h` are incompatible (`1 + 2 > 2`). -/
@@ -555,11 +558,13 @@ theorem tight2_not_both (h : TightHyp ε n M) {S : Finset (Fin n)}
     intro x hx
     simp only [mem_insert, mem_singleton] at hx
     rcases hx with rfl | rfl
-    · simp [hb, tight2Inst, siteB]
-    · simp [hh, tight2Inst, siteH]
+    · exact Finset.mem_filter.2 ⟨hb, by simp [tight2Inst, siteB]⟩
+    · exact Finset.mem_filter.2 ⟨hh, by simp [tight2Inst, siteH]⟩
   have := Finset.sum_le_sum_of_subset (f := (tight2Inst ε n M).p) hsub
   rw [Finset.sum_pair (siteB_ne_siteH h.hn)] at this
-  simp [tight2Inst, siteB, siteH] at this
+  have e1 : (tight2Inst ε n M).p (siteB h.hn) = 1 := by simp [tight2Inst, siteB]
+  have e2 : (tight2Inst ε n M).p (siteH h.hn) = 2 := by simp [tight2Inst, siteH]
+  rw [e1, e2] at this
   omega
 
 theorem tight2_feasible_singleton_b (h : TightHyp ε n M) :
@@ -658,9 +663,10 @@ theorem tight2_scaledMax_iff (h : TightHyp ε n M) (S : Finset (Fin n)) :
     have h1 := hmax {siteB h.hn} (tight2_feasible_singleton_b h)
     rw [tight2_scaled_sum h, tight2_scaled_sum h] at h1
     by_contra hc
-    push_neg at hc
-    simp only [hc.1, hc.2, if_false, add_zero] at h1
-    simp [siteB_ne_siteH h.hn] at h1
+    rw [not_or] at hc
+    have hne' : siteH h.hn ∉ ({siteB h.hn} : Finset (Fin n)) := by
+      simpa using (siteB_ne_siteH h.hn).symm
+    rw [if_pos (mem_singleton_self _), if_neg hne', if_neg hc.1, if_neg hc.2] at h1
     omega
   · rintro ⟨hF, hbh⟩
     refine ⟨hF, fun T hT => ?_⟩

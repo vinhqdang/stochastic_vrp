@@ -65,7 +65,7 @@ def cap (pv : Fin m → ℕ) (t : ℕ) : ℕ := ∑ v, t / pv v
 theorem cap_zero (pv : Fin m → ℕ) : cap pv 0 = 0 := by simp [cap]
 
 theorem cap_mono (pv : Fin m → ℕ) {s t : ℕ} (h : s ≤ t) : cap pv s ≤ cap pv t :=
-  sum_le_sum fun v _ => Nat.div_le_div_right h
+  sum_le_sum fun _ _ => Nat.div_le_div_right h
 
 /-- Slot-feasibility (Step 1): the sites of `S` can be mapped injectively to slots
 `(v, j)` (vehicle `v`, position `j ≥ 1`) with slot time `j * pv v ≤ d i`.  (The
@@ -292,7 +292,7 @@ theorem greedy_slotFeasible_optimal {pv : Fin m → ℕ} (hp : ∀ v, 0 < pv v) 
     SlotFeasible pv d (greedy (SlotFeasible pv d) L) ∧
       ∀ O, SlotFeasible pv d O →
         ∑ i ∈ O, w i ≤ ∑ i ∈ greedy (SlotFeasible pv d) L, w i :=
-  greedy_optimal (slotFeasible_isIndepFamily hp d) w (fun i => Nat.zero_le _) L hnd hall hsort
+  greedy_optimal (slotFeasible_isIndepFamily hp d) w (fun _ => Nat.zero_le _) L hnd hall hsort
 
 /-! ## (d) Scheduling semantics -/
 
@@ -347,29 +347,43 @@ theorem schedulable_iff {pv : Fin m → ℕ} (d : ι → ℕ) (S : Finset ι) :
     · intro i hi
       exact ⟨_, rfl, by simp, (hvj i hi).2⟩
   · rintro ⟨f, hinj, hf⟩
-    choose! s hs h1 h2 using hf
+    have hS : ∀ i ∈ S, ∃ (u : Fin m) (j : ℕ), f i = some (u, j) ∧ 1 ≤ j ∧ j * pv u ≤ d i := by
+      intro i hi
+      obtain ⟨⟨u, j⟩, h1, h2, h3⟩ := hf i hi
+      exact ⟨u, j, h1, h2, h3⟩
+    -- vehicle and position of each site of `S`
+    let vf : ι → Option (Fin m) := fun i => (f i).map Prod.fst
+    let g : ι → ℕ := fun i => ((f i).map Prod.snd).getD 0
     have key : ∀ u : Fin m, ∃ ℓ : List ι, ℓ.Nodup ∧
-        (∀ i, i ∈ ℓ ↔ i ∈ S.filter (fun i => (s i).1 = u)) ∧
-        ∀ i ∈ S.filter (fun i => (s i).1 = u), ∃ j, ℓ[j]? = some i ∧ j + 1 ≤ (s i).2 := by
+        (∀ i, i ∈ ℓ ↔ i ∈ S.filter (fun i => vf i = some u)) ∧
+        ∀ i ∈ S.filter (fun i => vf i = some u), ∃ j, ℓ[j]? = some i ∧ j + 1 ≤ g i := by
       intro u
-      refine exists_ordered_list (fun i => (s i).2) _ _ rfl ?_ ?_
+      refine exists_ordered_list g _ _ rfl ?_ ?_
       · intro a ha b hb hab
         simp only [coe_filter, Set.mem_ofPred_eq] at ha hb
+        obtain ⟨ua, ja, hfa, -, -⟩ := hS a ha.1
+        obtain ⟨ub, jb, hfb, -, -⟩ := hS b hb.1
+        have h1 : ua = u := by have := ha.2; simp [vf, hfa] at this; exact this
+        have h2 : ub = u := by have := hb.2; simp [vf, hfb] at this; exact this
+        have h3 : ja = jb := by simpa [g, hfa, hfb] using hab
         apply hinj ha.1 hb.1
-        rw [hs a ha.1, hs b hb.1]
-        exact congrArg some (Prod.ext (by rw [ha.2, hb.2]) hab)
+        rw [hfa, hfb, h1, h2, h3]
       · intro i hi
-        exact (h1 i (mem_filter.1 hi).1)
+        obtain ⟨ui, ji, hfi, h1, -⟩ := hS i (mem_filter.1 hi).1
+        simpa [g, hfi] using h1
     choose ℓ hnd hmem hidx using key
     refine ⟨ℓ, ⟨hnd, ?_⟩, ?_⟩
     · intro u v huv i hu hv
       rw [hmem] at hu hv
       have h1 := (mem_filter.1 hu).2
       have h2 := (mem_filter.1 hv).2
-      exact huv (h1.symm.trans h2)
+      exact huv (Option.some_injective _ (h1.symm.trans h2))
     · intro i hi
-      obtain ⟨j, hj, hjl⟩ := hidx (s i).1 i (mem_filter.2 ⟨hi, rfl⟩)
-      exact ⟨(s i).1, j, hj, (Nat.mul_le_mul_right _ hjl).trans (h2 i hi)⟩
+      obtain ⟨u, j, hfi, h1, h2⟩ := hS i hi
+      obtain ⟨j', hj', hjl⟩ := hidx u i (mem_filter.2 ⟨hi, by simp [vf, hfi]⟩)
+      have hgj : g i = j := by simp [g, hfi]
+      rw [hgj] at hjl
+      exact ⟨u, j', hj', (Nat.mul_le_mul_right _ hjl).trans h2⟩
 
 /-! ## (e) Headline: correctness of the greedy for vehicles with different dispatch times -/
 
