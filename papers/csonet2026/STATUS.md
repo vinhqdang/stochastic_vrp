@@ -45,6 +45,11 @@
     Hill were far off; NIST defines no time zero — we use the initial
     dispatch 06:31); comparison with a chained route, stated protocol,
     correlated-error variant, sample-average plan.
+  - **Hazard geometry** (new Section 4.7, Appendix C, Theorems 13-21):
+    spoke-chain gap (at most n, attained; bracket via the clustering
+    ratio), chained route on a line (pseudo-poly., FPTAS, weighted
+    NP-hard), affine-deadline classification, thin ring. Checked by
+    `verify_geometry.py`; not formalised in Lean.
   - **Bibliography** verified/corrected (59 entries, ~49 cited);
     `verify_extensions.py` checks the added results; `experiment.py`
     gained a HiGHS MIP baseline; code + Lean library are public in this

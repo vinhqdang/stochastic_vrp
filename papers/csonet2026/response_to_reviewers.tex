@@ -56,7 +56,8 @@ Theorem~5 (equal cost) $\to$ Theorem~8; Proposition~6 (naive deadline
 order) $\to$ Proposition~9. New in the revision: Proposition~1 (the
 round-trip model is conservative), Fact~1, Proposition~4 (constant
 hazard-arrival time), Lemma~6 (value-indexed table), Propositions~10
-and~11 (greedy repair; FPTAS tightness) and Theorem~12 (classification).
+and~11 (greedy repair; FPTAS tightness), Theorem~12 (classification) and,
+in the new Section~4.7 (hazard geometry) and Appendix~C, Theorems~13--21.
 Below, ``Theorem~$a$ ($b$)'' means Theorem~$a$ now and Theorem~$b$ in the
 version you reviewed. Section numbers refer to the revised manuscript;
 the Camp Fire study is Section~5.7.
@@ -78,6 +79,22 @@ elementary worst-case examples for natural heuristics (Propositions~9
 and~10). The equal-cost theorem (Theorem~8) now covers vehicles with
 different speeds and is labelled classical; the classification
 (Theorem~12) is labelled an elementary corollary.
+\item \textbf{Hazard geometry} (new Section~4.7, Appendix~C): in answer to
+the requests for a result that is not inherited from scheduling theory we
+quantify what the round-trip abstraction costs. The ratio of the best
+chained route to the best round-trip plan is at most $n$ and the bound is
+attained, by clustered sites and by a front that chases the crew along a
+road (Theorem~13); a speed-augmentation bracket in terms of a clustering
+ratio, which cannot be improved in general (Theorem~14), and a
+two-parameter bound (Proposition~15); a chained route on a line is
+pseudo-polynomial, has an FPTAS (Theorem~17; a selective version of a
+dynamic program of Tsitsiklis 1992) and is NP-hard with weights (Theorem~18);
+and for deadlines induced by a front at constant speed we classify the
+complexity by the slope and offset of the deadline as a function of the
+dispatch time (Proposition~19, Theorems~20--21), which shows that even a
+front that starts at the depot gives an NP-hard problem. These statements
+are checked against brute force (\texttt{verify\_geometry.py}); they are
+\emph{not} formalised in Lean, and the manuscript says so.
 \item \textbf{Hardness proof} (Theorem~3 (2)): a direct reduction from
 \textsc{Partition} with an explicit lemma (Fact~1) on feasibility under
 a common deadline.
@@ -156,6 +173,18 @@ site no later than in the depot round-trip model, so the round-trip
 optimum is a lower bound on what a crew can protect. This makes explicit
 when the premise of the model is costly (clustered sites) and is
 quantified on our case study.
+\item \textbf{Hazard geometry (Section~4.7).} The most specific new
+material: the round-trip surrogate can lose a factor $n$ against a chained
+route (attained), with a bracket controlled by a clustering ratio
+(Theorems~13 and~14); chained routing on a line is pseudo-polynomial and
+has an FPTAS but is NP-hard with weights (Theorems~17 and~18); and for
+affine deadlines $d=\beta+\alpha p$ (a constant-speed front) the
+complexity is classified, with NP-hardness for $\alpha>1$ even at
+$\beta=0$, i.e.\ for a front that starts at the depot (Theorems~20
+and~21). The proofs use exchange arguments and Partition reductions and
+are not deep; we claim them as new only in the sense that we found no
+source stating them (the line algorithm itself is a selective version of
+Tsitsiklis's dynamic program, and we say so).
 \item \textbf{A sharper, exactly tight FPTAS analysis} (Theorem~7,
 Proposition~11): the scheme of Theorem~7 guarantees a constant
 $\rho_{n,\epsilon}$ that exceeds both $1-\epsilon$ and $1/(1+\epsilon)$,

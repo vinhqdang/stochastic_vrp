@@ -58,8 +58,14 @@ adds is modest and specific: hardness persists when the hazard-arrival
 time is the same at every site (with weights proportional to dispatch
 times); the depot round-trip model is a conservative bound on a chained
 route; and the FPTAS has a guarantee, best possible for the scheme, that
-is sharper than the textbook $1-\epsilon$. Natural heuristics have
-unbounded worst-case ratio. The algorithms are checked against exhaustive
+is sharper than the textbook $1-\epsilon$. Natural heuristics have unbounded worst-case ratio.
+Looking behind the scheduling abstraction, we show that the loss of the
+round-trip model against a chained route is at most a factor $n$ and that
+the bound is attained, bracket it by a speed-augmentation argument
+controlled by a clustering ratio, show that chained routing on a line is
+pseudo-polynomial with an FPTAS yet weakly NP-hard with weights, and
+classify deadlines produced by an affine hazard front, which stay NP-hard
+even for a front that starts at the depot. The algorithms are checked against exhaustive
 search and the theory is machine-checked in Lean~4. A case study of the
 2018 Camp Fire, built from hazard-arrival times that NIST documents for
 each community, shows in this model that the exact optimum inherits the
@@ -177,6 +183,19 @@ without skipping, and a weighted greedy repair all have unbounded
 worst-case ratio (Propositions~\ref{prop:naive} and~\ref{prop:repair});
 the examples are elementary, and on random instances the greedy repair is
 within $1\%$ of the optimum on average.
+\item \emph{Hazard geometry.} Section~\ref{sec:geometry} quantifies what the
+round-trip abstraction costs: the ratio between the best chained route and
+the best round-trip plan is at most $n$ and the bound is attained, even by
+a front that chases the crew along one road; a bracket in terms of a
+clustering ratio and a two-parameter bound explain when it is small; chained
+routing on a line has a pseudo-polynomial algorithm and an FPTAS (a
+selective version of a classical dynamic program) and is NP-hard with
+weights; and for deadlines induced by a front moving at constant speed
+we classify the complexity by the slope and the offset of the deadline
+as a function of the dispatch time, including the case of a front
+starting at the depot. These results are, as far as we found, not in the
+literature, and they use no tool beyond exchange arguments and
+reductions from Partition.
 \item \emph{Verification.} Every algorithm is checked against exhaustive
 search (Section~\ref{sec:verify}), and the statements and proofs of the
 lemmas, theorems and propositions above, except complexity-class and
@@ -335,8 +354,12 @@ sequence; in MWHED every visit is a round trip from the depot, so the
 occupancy of a site is order-independent and the problem is a scheduling
 problem with exact algorithms and guarantees. The price is a modelling
 premise, which Proposition~\ref{prop:spoke} shows to be conservative when
-travel times form a metric: a route that chains the sites can only protect
-more.
+travel times form a metric: a route that chains the sites
+can only protect more. Section~\ref{sec:geometry} quantifies by how much.
+On a line, the closest problems are scheduling a server with release times
+and deadlines \citep{psaraftis1990,tsitsiklis1992,afrati1986} and the
+deadline-TSP on a line \citep{baryehuda2005,farbstein2019}; the selective
+weighted version we need is not, as far as we found, treated there.
 
 \textbf{Dispatch under a spreading hazard.} Wildfire suppression is the
 application area where the ``race a spreading hazard'' structure has been
@@ -631,6 +654,9 @@ Equal-size sites, any number of vehicles (identical or not) & solved exactly & T
 Which of $p,w,d$ are constant & polynomial iff $p$ or $w$ constant (if P$\ne$NP) & Thm.~\ref{thm:classification} & --- & elementary corollary \\
 Constant hazard-arrival time (arrival reading) & weakly NP-hard & Prop.~\ref{prop:consth} & --- & new (elementary) \\
 Round-trip vs.\ chained route & round trip is conservative & Prop.~\ref{prop:spoke} & --- & new (elementary) \\
+Gap round trip / chained & at most $n$, attained; bracket via $\kappa$ & Thms.~\ref{thm:gap}, \ref{thm:speedaug} & $O(nP)$ per end & new \\
+Chained route on a line & pseudo-poly., FPTAS; NP-hard with weights & Thms.~\ref{thm:linealg}, \ref{thm:linehard} & $O(n^2W)$ & selective version of a classical DP; hardness new \\
+Affine front deadlines $d=\beta+\alpha p$ & classified; NP-hard for $\alpha>1$, $\beta=0$ & Thm.~\ref{thm:affine} & --- & new (elementary) \\
 Naive EDD, EDD with skipping & unbounded ratio & Prop.~\ref{prop:naive} & $O(n\log n)$ & illustrative \\
 Weighted greedy repair & unbounded ratio & Prop.~\ref{prop:repair} & --- & illustrative \\
 FPTAS guarantee & best possible (without completion step) & Prop.~\ref{prop:tight} & --- & new \\
@@ -1482,6 +1508,301 @@ the dispatch problem is easy however the hazard spreads. Under the
 arrival reading the same holds with ``constant hazard-arrival time'' in
 place of ``constant deadline'' (Proposition~\ref{prop:consth}).
 
+\subsection{Hazard geometry: when the round-trip premise is costly, and what a front does}\label{sec:geometry}
+
+The model abstracts the geometry into the pairs $(p_i,d_i)$. This
+subsection asks three questions about what that abstraction hides and
+what it keeps: how much a crew gains by chaining sites instead of making
+round trips (Section~\ref{sec:model} claims only a one-sided bound); what
+the chained problem looks like on the simplest network, a line; and which
+hardness survives when the deadlines are produced by an actual hazard
+front, in particular a front that starts at the depot. All results are
+for the arrival reading of Remark~\ref{rem:reading}. They are checked by
+independent brute-force code (Section~\ref{sec:verify}) and their proofs
+are in this subsection and Appendix~\ref{app:geometry}.
+
+\paragraph{Setting.} Distances are travel times (the crew moves at unit
+speed) in a metric $\delta$ on the depot $0$ and the sites; $a_i:=\delta(0,i)$;
+the hazard reaches site $i$ at time $h_i$, and $F:=\{i:a_i\le h_i\}$ is the
+set of sites that can be reached in time at all (a site outside $F$ is
+never protected in either model, by the triangle inequality). In the
+round-trip (spoke) model $p_i=2a_i$ and $d_i=h_i+a_i$, and the crew
+arrives at the $j$-th site of an order $(i_1,\dots,i_k)$ at
+$A_j=2\sum_{l<j}a_{i_l}+a_{i_j}$; if it travels directly between
+consecutive sites it arrives at $B_j=a_{i_1}+\sum_{l<j}\delta(i_l,i_{l+1})$.
+$W^\ast_{\mathrm{spoke}}$ is the optimum of the MWHED instance, and
+$W^\ast_{\mathrm{chain}}$ the optimum over ordered subsets for the chained
+route; Proposition~\ref{prop:spoke} gives
+$W^\ast_{\mathrm{spoke}}\le W^\ast_{\mathrm{chain}}$. $W^\ast_{\mathrm{spoke}}(c)$
+is the spoke optimum for a crew $c$ times faster. For $n\ge2$ let
+$\kappa:=\min_{i\ne j}\delta(i,j)/(a_i+a_j)\in(0,1]$ (the \emph{clustering ratio}, positive because the sites are at distinct locations; small for clustered sites) and $\Gamma:=\max_{i\in F}a_i/\min_{i\in F}a_i$
+(the \emph{aspect ratio}).
+
+\begin{theorem}[The spoke--chain gap]\label{thm:gap}
+\begin{enumerate}
+\item[(a)] $W^\ast_{\mathrm{spoke}}\le W^\ast_{\mathrm{chain}}\le\sum_{i\in F}w_i\le|F|\,W^\ast_{\mathrm{spoke}}$; in particular
+$W^\ast_{\mathrm{chain}}\le n\,W^\ast_{\mathrm{spoke}}$.
+\item[(b)] The factor $n$ is attained: for every $n\ge2$ there are metric
+instances with unit weights, $W^\ast_{\mathrm{chain}}=n$ and
+$W^\ast_{\mathrm{spoke}}=1$, among them (i) \emph{clusters}, with all
+$a_i=R$ and $\delta(i,j)=\varepsilon<2R/(n-1)$, and (ii) a \emph{ray}, with sites at
+distances $r^j$ ($r>1$) on a half-line, which is a hazard front that
+starts at the depot and moves at exactly the crew's speed.
+\item[(c)] $W^\ast_{\mathrm{chain}}=W^\ast_{\mathrm{spoke}}$ for all
+hazard times and weights if and only if $\delta(i,j)=a_i+a_j$ for all
+$i\ne j$ (the depot lies on every shortest path between two sites: every
+site is on its own branch of a tree rooted at the depot). If a pair violates it, there are
+hazard times and weights with $W^\ast_{\mathrm{spoke}}=1<2=W^\ast_{\mathrm{chain}}$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) The first inequality is Proposition~\ref{prop:spoke}. Sites protected
+by the chained route lie in $F$, which gives the second and third. The
+heaviest site of $F$ served alone is spoke-feasible ($A_1=a_i\le h_i$), so
+$w^F_{\max}\le W^\ast_{\mathrm{spoke}}$ and $\sum_Fw_i\le|F|w^F_{\max}$.
+(b)(i) Chain order $1,\dots,n$ with $h_j=R+(j-1)\varepsilon$: $B_j=h_j$,
+so all $n$ sites are protected. In the spoke model the later of two
+protected sites arrives at time at least $2R+R=3R>R+(n-1)\varepsilon\ge h_j$, so
+at most one site is protected. (ii) Chain outward with $h_j=r^j$:
+$B_j=r^j=h_j$. In the spoke model the later of two protected sites
+$i<j$ arrives at $2a_i+a_j>a_j=h_j$.
+(c) If $\delta(i,j)=a_i+a_j$ for all pairs then
+$B_j=a_{i_1}+\sum_{l<j}(a_{i_l}+a_{i_{l+1}})=A_j$ for every order. If
+$\delta(i,j)<a_i+a_j$, set $h_i=a_i$, $h_j=a_i+\delta(i,j)$, $w_i=w_j=1$ and
+$h_k=0$ for the other sites. The chain order $(i,j)$ gives $B_1=a_i\le h_i$,
+$B_2=h_j$, so both are protected; in the spoke model order $(i,j)$ gives
+$A_2=2a_i+a_j>h_j$ and order $(j,i)$ gives $A_2=2a_j+a_i>a_i=h_i$, so only
+one site is protected. \end{proof}
+
+Theorem~\ref{thm:gap}(c) sharpens the remark after
+Proposition~\ref{prop:spoke}, and (b) shows that the gap is not an
+artefact of clustered towns: it occurs for the most natural geometry of a
+front that chases the crew along one road. The next result says which
+parameters control the gap.
+
+\begin{theorem}[Speed augmentation; no bound in $\kappa$ alone]\label{thm:speedaug}
+\begin{enumerate}
+\item[(a)] For every chained order and every $j\ge2$,
+$A_j\le\bigl(B_j-(1-\kappa)a_{i_1}\bigr)/\kappa\le B_j/\kappa$, and $A_1=B_1$.
+Consequently $W^\ast_{\mathrm{spoke}}\le W^\ast_{\mathrm{chain}}\le W^\ast_{\mathrm{spoke}}(1/\kappa)$,
+a bracket whose ends are both computed by the dynamic program of
+Theorem~\ref{thm:dp}.
+\item[(b)] The speed multiplier $1/\kappa$ of the bracket cannot be reduced in general: on the ray
+of Theorem~\ref{thm:gap}(b)(ii), where $\kappa=\frac{r-1}{r+1}$, the
+least speed multiplier at which the spoke crew protects all $n$ sites
+equals $1+2\frac{1-r^{1-n}}{r-1}$, which tends to $1/\kappa$.
+\item[(c)] There is no function $f$ with $W^\ast_{\mathrm{chain}}\le f(\kappa)W^\ast_{\mathrm{spoke}}$: for every
+$\kappa_0\in(0,1)$ and $n$ the ray with $r=\frac{1+\kappa_0}{1-\kappa_0}$ has
+$\kappa=\kappa_0$ and $W^\ast_{\mathrm{chain}}/W^\ast_{\mathrm{spoke}}=n$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) For $j\ge2$, $\delta(i_l,i_{l+1})\ge\kappa(a_{i_l}+a_{i_{l+1}})$ gives
+$B_j\ge a_{i_1}+\kappa\sum_{l<j}(a_{i_l}+a_{i_{l+1}})=(1-\kappa)a_{i_1}+\kappa A_j$.
+With a crew $1/\kappa$ times faster the spoke arrival times are
+$\kappa A_j\le B_j\le h_{i_j}$, so a chain-protected set is protected by the
+same order. (b),(c) On the ray, the earliest-deadline order is the outward
+order (Lemma~\ref{lem:edd}), and the spoke crew at speed $c$ reaches site
+$k$ after sites $1,\dots,k-1$ in time $(2\sum_{j<k}r^j+r^k)/c\le r^k$ iff
+$c\ge1+2(1-r^{1-k})/(r-1)$; (c) is Theorem~\ref{thm:gap}(b)(ii) with the
+stated $r$. \end{proof}
+
+(Part (b) concerns the outward order, which is the earliest-deadline order
+on the ray; it does not show that the factor is needed for every instance
+with the same $\kappa$.)
+
+\begin{proposition}[A two-parameter bound]\label{prop:twopar}
+If $W^\ast_{\mathrm{spoke}}>0$ and $n\ge2$,
+\[
+\frac{W^\ast_{\mathrm{chain}}}{W^\ast_{\mathrm{spoke}}}\ \le\ \min\Bigl\{n,\ \Bigl\lceil\frac{3\Gamma-1}{2\kappa}\Bigr\rceil,\ \bigl(\lfloor\log_2\Gamma\rfloor+1\bigr)\Bigl\lceil\frac{5}{2\kappa}\Bigr\rceil\Bigr\}.
+\]
+For $\Gamma=1$ (all sites equally far from the depot) the bound is
+$\lceil1/\kappa\rceil$, and it is attained up to rounding by the
+\emph{uniform} family $a_i=1$, $\delta(i,j)=2\kappa$, $h_j=1+2\kappa(j-1)$,
+whose ratio is $n/(\lfloor(n-1)\kappa\rfloor+1)$.
+\end{proposition}
+
+\begin{proof}
+Take a chain-optimal route $(i_1,\dots,i_k)$ of protected sites with
+extreme distances $a_{\min},a_{\max}\le\Gamma a_{\min}$, an integer
+$m\ge(3\Gamma-1)/(2\kappa)$, and the residue classes
+$J_r=\{j\equiv r\bmod m\}$ of the route positions. We show that each $J_r$
+is protected in the spoke model in the induced order, so that
+$W^\ast_{\mathrm{spoke}}\ge\max_rw(J_r)\ge W^\ast_{\mathrm{chain}}/m$. For
+$j=r+(t-1)m$ with $t=1$ the spoke arrival is $a_{i_j}\le B_j\le h_{i_j}$.
+For $t\ge2$ it is at most $2(t-1)a_{\max}+a_{i_j}$, while the proof of
+Theorem~\ref{thm:speedaug}(a) gives
+$B_j\ge(1-\kappa)a_{\min}+2\kappa(j-1)a_{\min}+\kappa a_{i_j}$ with
+$j-1\ge(t-1)m$; the first is at most the second when
+$2(t-1)\Gamma a_{\min}+(1-\kappa)(\Gamma-1)a_{\min}\le2\kappa(t-1)ma_{\min}$,
+which holds because the left side is at most $(t-1)(3\Gamma-1)a_{\min}$ and
+$2\kappa m\ge3\Gamma-1$. For the third bound split the route into
+$\lfloor\log_2\Gamma\rfloor+1$ dyadic classes $a_i\in[2^qa_{\min},2^{q+1}a_{\min})$;
+a sub-route of a chain-feasible route is chain-feasible (triangle
+inequality), each class has aspect ratio below $2$, and the second bound
+with $\Gamma<2$ gives $\lceil5/(2\kappa)\rceil$. The first term is
+Theorem~\ref{thm:gap}(a). For the uniform family, the $t$-th protected
+spoke site needs $2t-1\le h_j$, i.e.\ $j\ge1+(t-1)/\kappa$.
+\end{proof}
+
+On the Camp Fire instance $\kappa=0.078$ and $\Gamma=1.64$, so the bound
+is vacuous there ($26>n=4$) and the explicit chained optimum of
+Table~\ref{tab:campfire-route} is the right tool; the bracket and the
+bound are informative for dispersed sites.
+
+\paragraph{A chained route on a line.} Put the depot at the origin of a
+line, the sites at integer positions $x_i\ne0$, and let the crew move at
+unit speed; site $i$ counts iff the crew is at $x_i$ at some time
+$\le h_i$ (arrival reading, deadlines only). A walk that turns at extents
+$e_1,e_2,\dots$ on alternating sides reaches the $k$-th turning point at
+$2\sum_{j<k}e_j+e_k$, which is the spoke formula with $p_j=2e_j$; the
+sites between turning points are collected on the way.
+
+\begin{proposition}[One road]\label{prop:ray}
+If all sites lie on one side of the depot, $W^\ast_{\mathrm{chain}}=\sum_{i:\,x_i\le h_i}w_i$.
+\end{proposition}
+
+(The crew walks straight out.) On a single road the chained problem is
+therefore trivial, while the round-trip surrogate is the NP-hard MWHED;
+with a front that starts at the depot and moves slower than the crew
+($h_i=a_i/v$, $v\le1$) the chained route protects \emph{every} site and the
+surrogate does not (Theorem~\ref{thm:gap}(b)(ii) and
+Theorem~\ref{thm:affine} below).
+
+\begin{theorem}[The weighted line problem]\label{thm:linealg}
+Let the left sites be sorted by distance $\ell_1\le\dots$ and the right
+sites by distance $r_1\le\dots$.
+\begin{enumerate}
+\item[(a)] The set of sites visited at any time is a prefix of each side, a walk can be taken to turn only at the outermost newly covered site, and
+a dynamic program over the states (left prefix, right prefix, side) with the minimum time for each protected weight $v$
+solves the problem in $O(n^2W)$ time, $W=\sum_iw_i$.
+\item[(b)] With equal weights the value is the number of protected sites and the program runs in $O(n^3)$ time.
+\item[(c)] Scaling the weights as in Theorem~\ref{thm:fptas} gives an FPTAS in $O(n^4/\epsilon)$ time.
+\end{enumerate}
+\end{theorem}
+
+\begin{theorem}[The weighted line problem is NP-hard]\label{thm:linehard}
+Weighted chained routing on a line with deadlines is NP-hard (weakly, by
+Theorem~\ref{thm:linealg}(a)), even when the deadlines are those of a front
+that starts at the depot at speed $2/3$ of the crew's, with a dispatch
+delay. By Theorem~\ref{thm:linealg}(b) the hardness comes from the
+weights alone.
+\end{theorem}
+
+\emph{Proof sketch of Theorem~\ref{thm:linealg}.} Every walk can be replaced
+by one that reverses direction only at the outermost not yet covered site
+of the side it is leaving, without delaying any first visit (shortcutting
+and the triangle inequality); then the covered set is a pair of prefixes
+and the state $(i,j,\text{side})$ plus the protected weight $v$ determines
+the earliest time at which it can be reached, with $O(1)$ transitions.
+Equal weights make $v\le n$. Theorem~\ref{thm:linealg} is a selective
+version of the dynamic program of \citet{tsitsiklis1992} for deadlines on a
+line, which minimises the time to visit all sites; we do not claim it as
+new and we give only this sketch. The hardness is proved in
+Appendix~\ref{app:geometry}. We did not find a source that states the
+complexity of the weighted selective problem; for the related line
+problems with release times and for deadline-TSP see
+\citet{psaraftis1990,afrati1986,baryehuda2005,farbstein2019}.
+
+\paragraph{Hazard fronts and affine deadlines.} Suppose the depot lies on
+a shortest path from the hazard origin $H$ to every site (for instance
+$H$ is the depot, or all sites lie beyond the depot on a line through
+$H$), at distance $D\ge0$ from $H$, and the front moves at speed $v$. Then
+$h_i=(D+a_i)/v$, so with $p_i=2a_i$ the deadlines are affine in the
+dispatch times: $d_i=\beta+\alpha p_i$ with $\beta=D/v$ and
+$\alpha=\tfrac12(1+\tfrac1v)$ under the arrival reading, $\alpha=\tfrac1{2v}$ under
+the return reading. A front that starts at the depot has $\beta=0$.
+Proposition~\ref{prop:consth} is the case $\alpha=\tfrac12$. For
+$d_i=\beta+\alpha p_i$ and a set $S$ sorted by $p$ with prefix sums $T_k$,
+feasibility is $T_k\le\beta+\alpha p_k$ for all $k$.
+
+\begin{proposition}[Feasibility under affine deadlines]\label{prop:affine}
+\begin{enumerate}
+\item[(a)] If $0<\alpha\le1$, a set $S$ is feasible iff
+$\sum_{i\in S}p_i-\alpha\max_{i\in S}p_i\le\beta$.
+\item[(b)] If $\alpha>1$ and $\beta=0$, put $\lambda=\alpha$ and $\mu=\alpha-1$:
+a set is feasible iff $T_{k-1}\le\mu p_k$ for all $k$, equivalently $T_k\ge(1+1/\mu)T_{k-1}$; hence every feasible set has
+at most $1+\ln(\lambda R)/\ln(1+1/\mu)\le1+\lambda\ln(\lambda R)$ elements, where $R=p_{\max}/p_{\min}$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(a) With $u_k:=T_k-\alpha p_k$, $u_{k+1}-u_k=\alpha p_k+(1-\alpha)p_{k+1}>0$,
+so only the last constraint binds and $u_{|S|}=\sum_Sp-\alpha\max_Sp$.
+(b) $T_k\le\alpha p_k$ is $T_{k-1}\le\mu p_k$, i.e.\
+$T_k=T_{k-1}+p_k\ge(1+1/\mu)T_{k-1}$. Then $T_m\ge(1+1/\mu)^{m-1}p_{\min}$
+and $T_m\le\alpha p_m\le\lambda p_{\max}$, and
+$\ln(1+1/\mu)\ge1/\lambda$. \end{proof}
+
+\begin{theorem}[Classification of affine deadlines]\label{thm:affine}
+For a fixed rational $\alpha>0$ and $d_i=\beta+\alpha p_i$:
+\begin{center}\small
+\begin{tabular}{@{}llp{0.58\textwidth}@{}}
+\toprule
+$\alpha$ & $\beta$ & complexity \\
+\midrule
+$<1$ & $\le0$ & trivial ($W^\ast=0$) \\
+$<1$ & fixed constant & polynomial ($p_i\le\beta/(1-\alpha)$, so $P$ is polynomial) \\
+$<1$ & part of the input & NP-hard, even with $w_i=p_i$ \\
+$=1$ & $0$ & trivial ($W^\ast=w_{\max}$) \\
+$=1$ & fixed constant & $O(n^2\beta)$ (guess the largest $p$, then a knapsack of capacity $\beta$) \\
+$=1$ & part of the input & NP-hard, even with $w_i=p_i$ \\
+$>1$ & $0$ (hence also $\beta$ in the input) & NP-hard (arbitrary weights) \\
+\bottomrule
+\end{tabular}
+\end{center}
+All hardness is in the ordinary (weak) sense and strong NP-hardness is
+excluded unless $\mathrm P=\mathrm{NP}$, by Theorem~\ref{thm:dp}.
+\end{theorem}
+
+\begin{proof}
+The trivial and polynomial rows follow from Proposition~\ref{prop:affine}
+and Assumption~\ref{as:feasible}. For $\alpha\le1$ and $\beta$ in the
+input, write $\alpha=u/q$ and reduce from \textsc{Partition}
+$a_1,\dots,a_n$ with $A=\sum a_i$ even: $p_i=2qa_i$, $w_i=p_i$ for $i\ge1$,
+$p_0=2qA+q$, $w_0=p_0$, $\beta=qA+(q-u)(2A+1)$, so $d_i=\beta+2ua_i$ and
+$d_0=\beta+u(2A+1)$ are integers and $p_i\le d_i$; the target is
+$T=p_0+qA$. Site $0$ has the largest $p$. If $0\in S$, by
+Proposition~\ref{prop:affine}(a) $S$ is feasible iff
+$\sum_{S\setminus0}p\le\beta-(1-\alpha)p_0=qA$, i.e.\ $\sum_{S\setminus0}a_i\le A/2$,
+and then $w(S)\le T$ with equality iff the subset sums to $A/2$. If
+$0\notin S$ then $w(S)\le2qA<T$. The case $\alpha>1$ is proved in
+Appendix~\ref{app:geometry}. \end{proof}
+
+So a hazard front never makes dispatch easy: even a front that starts at
+the depot and moves slower than the crew ($v<1$, $\alpha=\frac12(1+\frac1v)>1$,
+$\beta=0$) gives an NP-hard MWHED. The hardness instances use sites at
+exponentially spread distances; with the factor $\lambda$ in the input,
+a thin ring suffices.
+
+\begin{theorem}[A thin ring around the depot]\label{thm:annulus}
+MWHED with $d_i=\lambda p_i$ and $w_i=p_i$ is NP-hard when $\lambda$ is
+part of the input, even if all dispatch times lie in an interval
+$[K,K(1+O(1/n))]$ (all sites on a thin ring around a depot that is the
+origin of the front), with $\lambda=n+\frac12$.
+\end{theorem}
+
+\begin{proof}
+Let $x_1,\dots,x_n,t,k$ be positive integers, $X=\max x_i$,
+$K=2kX+t+1$, $\mu=k-\frac12$, $\lambda=k+\frac12$, $H=(kK+t)/\mu$. The
+sites (all with $d=\lambda p$, $w=p$) are \emph{real} sites with
+$p_i=K+x_i$, $k$ \emph{dummy} sites with $p=K$, and one \emph{dominant}
+site $D$ with $p_D=H$. Since $K>2(k-1)X$, any $k$ band sites are mutually
+feasible; since $K\ge2kX$, $H>K+X$, so $D$ is the largest site. The last
+site of a feasible $S$ completes at $P(S)\le\lambda p_{\max}(S)$ and
+$W(S)=P(S)$; without $D$ this is $<\lambda H$, and with $D$ the
+constraint at $D$ is $P(S\setminus D)\le\mu H=kK+t$, so
+$W(S)\le\lambda H$, with equality iff $P(S\setminus D)=kK+t$. If
+$T\subseteq[n]$ with $|T|\le k$ and $x(T)=t$, adding $k-|T|$ dummies and
+$D$ attains $\lambda H$. Conversely, if $W(S)\ge\lambda H$ then $S\setminus D$
+consists of $m$ band sites with $mK+x(T)=kK+t$; $m\ge k+1$ would give
+$(k+1)K>kK+t$ as $K>t$, and $m\le k-1$ would give
+$x(T)\le(k-1)X<K$ and a total below $kK$, so $m=k$ and $x(T)=t$. For
+\textsc{Partition} take $k=n$, $x=a$ and $t=A/2$. After multiplying all
+sizes by $2(2k-1)$ every $p_i$, $d_i$ is an integer. \end{proof}
+
 % ══════════════════════════════════════════════════════════════════
 \section{Numerical study}\label{sec:experiments}
 
@@ -1533,7 +1854,15 @@ Lemma~\ref{lem:edd} and the Partition preprocessing of
 Theorem~\ref{thm:hardness} agree with brute force cell by cell
 ($800$, $800$, $600$ and $700$ instances); the network realisation of
 Remark~\ref{rem:network} is checked with shortest paths on $117$ Partition
-instances. The statements of Sections~\ref{sec:model} and~\ref{sec:theory}
+instances. (vi) The results of Section~\ref{sec:geometry} are checked by
+\texttt{verify\_geometry.py} against independent brute force over all
+chained and round-trip routes: the gap bounds and the characterisation
+of equality, the speed-augmentation bracket, the two-parameter bound, the
+line algorithms against enumeration of walks, the two reductions of
+Appendix~\ref{app:geometry} against a Partition oracle, the feasibility
+criteria for affine deadlines and the thin-ring reduction. These checks are
+tests, not proofs, and Section~\ref{sec:geometry} is not formalised in
+Lean. The statements of Sections~\ref{sec:model} and~\ref{sec:theory}
 are in addition machine-checked in Lean~4 (Data Availability).
 
 \subsection{Accuracy across instance sizes}\label{sec:acc}
@@ -2182,6 +2511,20 @@ scenario is natural, and exploiting Lemma~\ref{lem:edd} within a scenario
 to generate cuts is, we believe, a promising direction that we have not
 pursued.
 
+\emph{Structure of the scenario problem.} The completion time of a site
+does not depend on the scenario, so the objective is $\sum_iF_i(C_i)$ with
+$F_i(t)=w_i\Pr[d_i\ge t]$, a non-increasing step function of the
+completion time: the scenario problem is a single-machine problem with
+step profits (several due dates per job). Two consequences are immediate.
+If all dispatch times are equal the problem is an assignment problem of
+sites to positions with profit $F_i(kp)$, so it is polynomial for any
+number of scenarios. With the number of scenarios part of the input,
+sequencing with several due dates per job is strongly NP-hard
+\citep{kuhn2024}, so no pseudo-polynomial algorithm should be expected
+there, and robust (min-max) variants of the number of late jobs have their
+own complexity map \citep{aissi2011}. We have not pursued these
+directions.
+
 \emph{Robust feasibility.} Feasibility of a set of sites is monotone in
 the parameters: it is preserved when $d_i$ increases or $p_i$
 decreases. A set that is on time for \emph{every} realization in a box
@@ -2231,6 +2574,17 @@ worst-case ratio, although the greedy repair is within $1\%$ of the
 optimum on random instances; a guarantee requires a rule that reconsiders
 earlier commitments in light of both weights and dispatch times, and the
 dynamic program and the FPTAS are two such rules, not the only ones.
+
+The geometry behind the abstraction gives the most specific findings of
+the paper. The round-trip model can lose a factor $n$ against a chained
+route, and this is attained even by a front that chases the crew along a
+road, but the loss is controlled by a clustering ratio and an aspect ratio
+of the sites; chained routing on a line is pseudo-polynomial and has an
+FPTAS, yet is NP-hard with weights; and deadlines induced by a front that
+moves at constant speed remain NP-hard, so that a hazard front does not
+make dispatch easy (Section~\ref{sec:geometry}). Whether the chained
+problem on general networks admits a constant-factor approximation, and the
+complexity of the unit-weight chained problem beyond a line, are open.
 
 The numerical study and the case study carry two lessons beyond the
 theorems. The reading of the deadline (the crew must arrive before the
@@ -2374,6 +2728,86 @@ $\hat S$ also has scaled value at least $\lfloor w_{\max}/K\rfloor$, which
 bounds $W(\hat S)$ from below by about $w_{\max}-K$ independently of
 $W^\ast$.
 
+\section{Proofs for Section~\ref{sec:geometry}}\label{app:geometry}
+
+\subsection*{C.1 Proof of Theorem~\ref{thm:linehard} (the weighted line problem)}
+
+We reduce from \textsc{Partition}: positive integers $b_1,\dots,b_n$ with
+$A=\sum_jb_j$ even (an odd sum is a trivial no-instance). Put $K=n+1$,
+$M=A+1$, $X_1=4A+4$, $X_{k+1}=4\sum_{j\le k}X_j+4A+4$ and
+$\tau_k=2\sum_{j<k}X_j+X_k$. The depot is the origin. \emph{Skeleton
+sites} $S_k$ ($k=1,\dots,K$) sit at $(-1)^{k+1}X_k$ (to the right for odd
+$k$), with weight $M$ and deadline $\tau_k+A$. \emph{Option sites} $O_j$
+($j=1,\dots,n$) sit at $(-1)^{j+1}(X_j+b_j)$, just beyond $S_j$ on the same
+side, with weight $b_j$ and deadline $\tau_j+b_j+A$. We claim
+$W^\ast=KM+\max\{b(C):C\subseteq[n],\,b(C)\le A/2\}$, so $W^\ast=KM+A/2$
+iff the \textsc{Partition} instance is a yes-instance.
+
+($\ge$) For $C$ with $b(C)\le A/2$ put $c_j=b_j[j\in C]$ and walk the
+zigzag with extents $e_k=X_k+c_k$ ($e_K=X_K$). By the turning-point
+formula, $S_k$ is reached at $\tau_k+2\sum_{j<k}c_j\le\tau_k+A$ and, if
+$k\in C$, $O_k$ at $\tau_k+2\sum_{j<k}c_j+b_k\le\tau_k+b_k+A$; the weight
+is $KM+b(C)$.
+
+($\le$) Take any walk, with protected set $U$. If some $S_k\notin U$ then
+$w(U)\le(K-1)M+A<KM$. Otherwise let $t_k\le\tau_k+A$ be the first visit of
+$S_k$ and $C=\{j:O_j\in U\}$. (1) $t_1<\dots<t_K$: if $t_{k+1}<t_k$, after
+$t_{k+1}\ge X_{k+1}$ the walk must still travel $X_{k+1}+X_k$ to reach
+$S_k$ on the other side, so $t_k\ge2X_{k+1}+X_k>2\sum_{l\le k}X_l+A\ge\tau_k+A$
+because $X_{k+1}>4\sum_{l\le k}X_l+4A$, a contradiction. (2) For
+$j\in C$, $O_j$ lies beyond $S_j$ on the same ray, so its first visit
+$T_j\ge t_j$, and $T_j\le\tau_j+b_j+A<\tau_{j+1}\le t_{j+1}$ since
+$\tau_{j+1}-\tau_j=X_j+X_{j+1}>b_j+A$. (3) Hence in the disjoint windows
+$[t_j,t_{j+1}]$ the walk goes $S_j\to O_j\to S_{j+1}$, of length at least
+$X_j+X_{j+1}+2b_j$ if $j\in C$ and $X_j+X_{j+1}$ otherwise, and
+$[0,t_1]$ has length at least $X_1$. Summing, $t_K\ge X_1+\sum_{j<K}(X_j+X_{j+1})+2b(C)=\tau_K+2b(C)$,
+and $t_K\le\tau_K+A$ gives $b(C)\le A/2$, so $w(U)=KM+b(C)$.
+
+\emph{Front-induced deadlines.} By the recursion for $X_k$,
+$\tau_k=\tfrac32X_k-2A-2$ exactly, so the skeleton deadlines are
+$\tau_k+A=\tfrac32|x|-(A+2)$: the hazard reaches distance $|x|$ at time
+$\tfrac32|x|$ (a front from the depot at speed $2/3$) and the crew leaves
+$A+2$ late. Giving every site, options included, the deadline
+$\tfrac32|x|-(A+2)$ only loosens the option deadlines to
+$\tau_j+A+\tfrac32b_j$; steps (1)--(3) are unchanged (for (2) note that
+$\tau_{j+1}-\tau_j>\tfrac32b_j+A$). \hfill$\square$
+
+\subsection*{C.2 Proof of Theorem~\ref{thm:affine}, row $\alpha>1$}
+
+Let $\alpha>1$ be rational, $c=\alpha-1$, $m=\lceil c\rceil-1\ge0$,
+$\gamma=c-m\in(0,1]$, $z\ge3$ an integer with $z>1+1/c$, and
+$\theta=c-\frac1{z-1}>0$. Reduce from \textsc{Partition} $a_1,\dots,a_n$,
+$n\ge2$, $A=\sum a_i$ even. Put $M_0=\lceil A/\theta\rceil+A+1$,
+$X_i=M_0z^i$ ($i=1,\dots,n$), $\mathrm{cap}=\sum_iX_i+A/2$ and
+$g=\mathrm{cap}/\gamma$. The sites, all with $d=\alpha p$ (we work in
+rational units and finally multiply all sizes by a common integer), are
+\emph{level sites} $\mathrm{lo}_i$ and $\mathrm{hi}_i$ with $p=X_i$ and
+$p=X_i+a_i$ and weight $p$, and $m+1$ \emph{ballast} sites with $p=g$ and
+weight $W_B=1+\sum_{\mathrm{level}}p$. As $\gamma\le1$ and $X_1>A\ge a_n$,
+$g\ge\mathrm{cap}>X_n+a_n$, so the ballast sorts last. For a set $S$ let
+$\Lambda(S)$ be the total size of its level sites.
+
+(a) \emph{Cap.} If $S$ contains all ballast, the constraint at the last
+ballast site is $\Lambda(S)+mg\le cg$, i.e.\ $\Lambda(S)\le\gamma g=\mathrm{cap}$.
+(b) \emph{Light sets are feasible.} If $S$ contains all ballast, at most
+one site per level, and $\Lambda(S)\le\mathrm{cap}$, then it is feasible:
+for a level-$i$ site the prefix is below
+$\sum_{j<i}X_j+A<X_i/(z-1)+A\le cX_i$, because $\theta X_i\ge\theta M_0\ge A$
+and $c=\theta+\frac1{z-1}$ (levels sort by level, as $X_{i+1}-X_i>A$); for
+the $t$-th ballast site the prefix is at most $\Lambda+(t-1)g\le\gamma g+mg=cg$.
+(c) \emph{Ballast is forced.} All the ballast alone is feasible
+($(t-1)g\le mg<cg$), and a set missing a ballast site weighs less than
+$(m+1)W_B$. Hence $W^\ast=(m+1)W_B+\max\Lambda$, and $W^\ast\le(m+1)W_B+\mathrm{cap}$
+by (a). (d) \emph{Equality iff yes.} If $a(I)=A/2$ take $\mathrm{hi}_i$ for
+$i\in I$ and $\mathrm{lo}_i$ otherwise: it is light with
+$\Lambda=\mathrm{cap}$, hence feasible by (b). Conversely let
+$\Lambda(S)=\mathrm{cap}$ with $c_i\in\{0,1,2\}$ level-$i$ sites and
+total increment $e\in[0,A]$. Then $M_0\sum_ic_iz^i=M_0\sum_iz^i+A/2-e$, so
+$M_0$ divides $A/2-e$ with $|A/2-e|\le A/2<M_0$, whence $e=A/2$ and
+$\sum_ic_iz^i=\sum_iz^i$; base-$z$ digits are unique ($z\ge3$), so
+$c_i=1$ for all $i$ and the sites carrying the increment form a subset of
+sum $A/2$. \hfill$\square$
+
 \end{appendices}
 
 \backmatter
@@ -2427,9 +2861,11 @@ complexity-class statements (NP-hardness as a class membership, running
 times) the data-structure implementation of the greedy algorithm, the fact that
 only the $n$ earliest slots matter, that the dynamic program on the scaled
 weights of Example~\ref{ex:fptas} selects the stated set, or the modelling
-remarks; the
-file \texttt{MwhedProofs/README.md} lists, theorem by theorem, what is and
-is not formalised.
+remarks; the file \texttt{MwhedProofs/README.md} lists, theorem by theorem, what is and
+is not formalised. The results of Section~\ref{sec:geometry} and
+Appendix~\ref{app:geometry} are not formalised; they are checked against
+brute force by \texttt{verify\_geometry.py} (and the scripts in
+\texttt{checks/geometry}).
 
 \subsection*{Use of Large Language Models}
 A generative AI coding assistant was used to assist with
@@ -2441,7 +2877,7 @@ responsibility for them.
 
 %% BioMed_Central_Bib_Style_v1.01
 
-\begin{thebibliography}{49}
+\begin{thebibliography}{55}
 % BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
 \ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
 \ifx \binits  \undefined \def \binits#1{#1}\fi
@@ -2501,6 +2937,39 @@ responsibility for them.
 \endbibitem
 
 %%% 2
+\bibitem[\protect\citeauthoryear{Aissi et~al.}{2011}]{aissi2011}
+\begin{barticle}
+\bauthor{\bsnm{Aissi}, \binits{H.}},
+\bauthor{\bsnm{Aloulou}, \binits{M.A.}},
+\bauthor{\bsnm{Kovalyov}, \binits{M.Y.}}:
+\batitle{Minimizing the number of late jobs on a single machine under due date
+  uncertainty}.
+\bjtitle{Journal of Scheduling}
+\bvolume{14}(\bissue{4}),
+\bfpage{351}--\blpage{360}
+(\byear{2011})
+\doiurl{10.1007/s10951-010-0183-z}
+\end{barticle}
+\endbibitem
+
+%%% 3
+\bibitem[\protect\citeauthoryear{Afrati et~al.}{1986}]{afrati1986}
+\begin{barticle}
+\bauthor{\bsnm{Afrati}, \binits{F.}},
+\bauthor{\bsnm{Cosmadakis}, \binits{S.}},
+\bauthor{\bsnm{Papadimitriou}, \binits{C.H.}},
+\bauthor{\bsnm{Papageorgiou}, \binits{G.}},
+\bauthor{\bsnm{Papakostantinou}, \binits{N.}}:
+\batitle{The complexity of the travelling repairman problem}.
+\bjtitle{RAIRO -- Informatique th{\'e}orique et applications}
+\bvolume{20}(\bissue{1}),
+\bfpage{79}--\blpage{87}
+(\byear{1986})
+\doiurl{10.1051/ita/1986200100791}
+\end{barticle}
+\endbibitem
+
+%%% 4
 \bibitem[\protect\citeauthoryear{Alvelos et~al.}{2025}]{alvelos2025}
 \begin{barticle}
 \bauthor{\bsnm{Alvelos}, \binits{F.}},
@@ -2516,7 +2985,7 @@ responsibility for them.
 \end{barticle}
 \endbibitem
 
-%%% 3
+%%% 5
 \bibitem[\protect\citeauthoryear{Antonov et~al.}{2026}]{antonov2026}
 \begin{barticle}
 \bauthor{\bsnm{Antonov}, \binits{N.}},
@@ -2533,7 +3002,7 @@ responsibility for them.
 \end{barticle}
 \endbibitem
 
-%%% 4
+%%% 6
 \bibitem[\protect\citeauthoryear{Baptiste}{1999}]{baptiste1999}
 \begin{barticle}
 \bauthor{\bsnm{Baptiste}, \binits{P.}}:
@@ -2547,7 +3016,7 @@ responsibility for them.
 \end{barticle}
 \endbibitem
 
-%%% 5
+%%% 7
 \bibitem[\protect\citeauthoryear{Bansal et~al.}{2004}]{bansal2004}
 \begin{bchapter}
 \bauthor{\bsnm{Bansal}, \binits{N.}},
@@ -2564,7 +3033,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{bchapter}
 \endbibitem
 
-%%% 6
+%%% 8
 \bibitem[\protect\citeauthoryear{Baptiste et~al.}{2004}]{baptiste2004}
 \begin{barticle}
 \bauthor{\bsnm{Baptiste}, \binits{P.}},
@@ -2581,7 +3050,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 7
+%%% 9
 \bibitem[\protect\citeauthoryear{Bringmann et~al.}{2022}]{bringmann2022}
 \begin{barticle}
 \bauthor{\bsnm{Bringmann}, \binits{K.}},
@@ -2598,7 +3067,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 8
+%%% 10
 \bibitem[\protect\citeauthoryear{Brucker and
   Kravchenko}{2006}]{bruckerkravchenko2006}
 \begin{barticle}
@@ -2614,7 +3083,23 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 9
+%%% 11
+\bibitem[\protect\citeauthoryear{Bar-Yehuda et~al.}{2005}]{baryehuda2005}
+\begin{barticle}
+\bauthor{\bsnm{Bar-Yehuda}, \binits{R.}},
+\bauthor{\bsnm{Even}, \binits{G.}},
+\bauthor{\bsnm{Shahar}, \binits{S.M.}}:
+\batitle{On approximating a geometric prize-collecting traveling salesman
+  problem with time windows}.
+\bjtitle{Journal of Algorithms}
+\bvolume{55}(\bissue{1}),
+\bfpage{76}--\blpage{92}
+(\byear{2005})
+\doiurl{10.1016/j.jalgor.2003.11.002}
+\end{barticle}
+\endbibitem
+
+%%% 12
 \bibitem[\protect\citeauthoryear{Chekuri and Khanna}{2005}]{chekuri2005}
 \begin{barticle}
 \bauthor{\bsnm{Chekuri}, \binits{C.}},
@@ -2629,7 +3114,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 10
+%%% 13
 \bibitem[\protect\citeauthoryear{Chen et~al.}{2025}]{chen2025fptas}
 \begin{barticle}
 \bauthor{\bsnm{Chen}, \binits{L.}},
@@ -2644,7 +3129,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 11
+%%% 14
 \bibitem[\protect\citeauthoryear{Dessouky et~al.}{1990}]{dessouky1990}
 \begin{barticle}
 \bauthor{\bsnm{Dessouky}, \binits{M.I.}},
@@ -2660,7 +3145,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 12
+%%% 15
 \bibitem[\protect\citeauthoryear{Delazeri and Ritt}{2026}]{delazeri2026}
 \begin{botherref}
 \oauthor{\bsnm{Delazeri}, \binits{G.}},
@@ -2671,7 +3156,7 @@ arXiv:2603.29865
 \end{botherref}
 \endbibitem
 
-%%% 13
+%%% 16
 \bibitem[\protect\citeauthoryear{Edmonds}{1971}]{edmonds1971}
 \begin{barticle}
 \bauthor{\bsnm{Edmonds}, \binits{J.}}:
@@ -2684,7 +3169,7 @@ arXiv:2603.29865
 \end{barticle}
 \endbibitem
 
-%%% 14
+%%% 17
 \bibitem[\protect\citeauthoryear{Feillet et~al.}{2005}]{feillet2005}
 \begin{barticle}
 \bauthor{\bsnm{Feillet}, \binits{D.}},
@@ -2699,7 +3184,21 @@ arXiv:2603.29865
 \end{barticle}
 \endbibitem
 
-%%% 15
+%%% 18
+\bibitem[\protect\citeauthoryear{Farbstein and Levin}{2019}]{farbstein2019}
+\begin{barticle}
+\bauthor{\bsnm{Farbstein}, \binits{B.}},
+\bauthor{\bsnm{Levin}, \binits{A.}}:
+\batitle{Deadline {TSP}}.
+\bjtitle{Theoretical Computer Science}
+\bvolume{771},
+\bfpage{83}--\blpage{92}
+(\byear{2019})
+\doiurl{10.1016/j.tcs.2018.11.016}
+\end{barticle}
+\endbibitem
+
+%%% 19
 \bibitem[\protect\citeauthoryear{Fischer and
   Wennmann}{2025}]{fischer2025theoretics}
 \begin{botherref}
@@ -2713,7 +3212,7 @@ TheoretiCS
 \end{botherref}
 \endbibitem
 
-%%% 16
+%%% 20
 \bibitem[\protect\citeauthoryear{Garey and Johnson}{1979}]{gareyjohnson1979}
 \begin{bbook}
 \bauthor{\bsnm{Garey}, \binits{M.R.}},
@@ -2726,7 +3225,7 @@ TheoretiCS
 \end{bbook}
 \endbibitem
 
-%%% 17
+%%% 21
 \bibitem[\protect\citeauthoryear{Gens and Levner}{1981}]{gensl1981}
 \begin{barticle}
 \bauthor{\bsnm{Gens}, \binits{G.V.}},
@@ -2740,7 +3239,7 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 18
+%%% 22
 \bibitem[\protect\citeauthoryear{Gabow and Tarjan}{1985}]{gabow1985}
 \begin{barticle}
 \bauthor{\bsnm{Gabow}, \binits{H.N.}},
@@ -2754,7 +3253,7 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 19
+%%% 23
 \bibitem[\protect\citeauthoryear{Granda et~al.}{2025}]{granda2025}
 \begin{barticle}
 \bauthor{\bsnm{Granda}, \binits{B.}},
@@ -2770,7 +3269,7 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 20
+%%% 24
 \bibitem[\protect\citeauthoryear{Harris et~al.}{2023}]{harris2023}
 \begin{barticle}
 \bauthor{\bsnm{Harris}, \binits{M.G.}},
@@ -2785,7 +3284,7 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 21
+%%% 25
 \bibitem[\protect\citeauthoryear{Heeger and
   Hermelin}{2024}]{heegerhermelin2024}
 \begin{bchapter}
@@ -2803,7 +3302,7 @@ vol. \bseriesno{308}.
 \end{bchapter}
 \endbibitem
 
-%%% 22
+%%% 26
 \bibitem[\protect\citeauthoryear{Heeger and Molter}{2025}]{heegermolter2025}
 \begin{bchapter}
 \bauthor{\bsnm{Heeger}, \binits{K.}},
@@ -2822,7 +3321,7 @@ vol. \bseriesno{327}.
 \end{bchapter}
 \endbibitem
 
-%%% 23
+%%% 27
 \bibitem[\protect\citeauthoryear{Hermelin et~al.}{2024}]{hermelin2024}
 \begin{barticle}
 \bauthor{\bsnm{Hermelin}, \binits{D.}},
@@ -2838,7 +3337,7 @@ vol. \bseriesno{327}.
 \end{barticle}
 \endbibitem
 
-%%% 24
+%%% 28
 \bibitem[\protect\citeauthoryear{Hejl et~al.}{2022}]{hejl2022}
 \begin{barticle}
 \bauthor{\bsnm{Hejl}, \binits{L.}},
@@ -2855,7 +3354,7 @@ vol. \bseriesno{327}.
 \end{barticle}
 \endbibitem
 
-%%% 25
+%%% 29
 \bibitem[\protect\citeauthoryear{Ibarra and Kim}{1975}]{ibarrakim1975}
 \begin{barticle}
 \bauthor{\bsnm{Ibarra}, \binits{O.H.}},
@@ -2870,7 +3369,7 @@ vol. \bseriesno{327}.
 \end{barticle}
 \endbibitem
 
-%%% 26
+%%% 30
 \bibitem[\protect\citeauthoryear{Jin}{2019}]{jin2019}
 \begin{bchapter}
 \bauthor{\bsnm{Jin}, \binits{C.}}:
@@ -2887,7 +3386,7 @@ vol. \bseriesno{132}.
 \end{bchapter}
 \endbibitem
 
-%%% 27
+%%% 31
 \bibitem[\protect\citeauthoryear{Karp}{1972}]{karp1972}
 \begin{bchapter}
 \bauthor{\bsnm{Karp}, \binits{R.M.}}:
@@ -2903,7 +3402,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{bchapter}
 \endbibitem
 
-%%% 28
+%%% 32
 \bibitem[\protect\citeauthoryear{Koca}{2023}]{koca2023}
 \begin{barticle}
 \bauthor{\bsnm{Koca}, \binits{E.}}:
@@ -2917,7 +3416,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{barticle}
 \endbibitem
 
-%%% 29
+%%% 33
 \bibitem[\protect\citeauthoryear{Kellerer and Pferschy}{1999}]{kellerer1999}
 \begin{barticle}
 \bauthor{\bsnm{Kellerer}, \binits{H.}},
@@ -2932,7 +3431,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{barticle}
 \endbibitem
 
-%%% 30
+%%% 34
 \bibitem[\protect\citeauthoryear{Kellerer and Pferschy}{2004}]{kellerer2004}
 \begin{barticle}
 \bauthor{\bsnm{Kellerer}, \binits{H.}},
@@ -2947,7 +3446,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{barticle}
 \endbibitem
 
-%%% 31
+%%% 35
 \bibitem[\protect\citeauthoryear{Klein et~al.}{2023}]{klein2023}
 \begin{bchapter}
 \bauthor{\bsnm{Klein}, \binits{K.-M.}},
@@ -2963,7 +3462,7 @@ pp. \bfpage{2947}--\blpage{2960}
 \end{bchapter}
 \endbibitem
 
-%%% 32
+%%% 36
 \bibitem[\protect\citeauthoryear{Korte and Vygen}{2018}]{kortevygen2018}
 \begin{bbook}
 \bauthor{\bsnm{Korte}, \binits{B.}},
@@ -2979,7 +3478,7 @@ vol. \bseriesno{21}.
 \end{bbook}
 \endbibitem
 
-%%% 33
+%%% 37
 \bibitem[\protect\citeauthoryear{Kravchenko and
   Werner}{2011}]{kravchenkowerner2011}
 \begin{barticle}
@@ -2994,7 +3493,23 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 34
+%%% 38
+\bibitem[\protect\citeauthoryear{K{\"u}hn et~al.}{2024}]{kuhn2024}
+\begin{barticle}
+\bauthor{\bsnm{K{\"u}hn}, \binits{R.}},
+\bauthor{\bsnm{Wei{\ss}}, \binits{C.}},
+\bauthor{\bsnm{Ackermann}, \binits{H.}},
+\bauthor{\bsnm{Heydrich}, \binits{S.}}:
+\batitle{Scheduling a single machine with multiple due dates per job}.
+\bjtitle{Journal of Scheduling}
+\bvolume{27}(\bissue{6}),
+\bfpage{565}--\blpage{585}
+(\byear{2024})
+\doiurl{10.1007/s10951-024-00825-w}
+\end{barticle}
+\endbibitem
+
+%%% 39
 \bibitem[\protect\citeauthoryear{Lawler}{1976}]{lawler1976}
 \begin{barticle}
 \bauthor{\bsnm{Lawler}, \binits{E.L.}}:
@@ -3006,7 +3521,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 35
+%%% 40
 \bibitem[\protect\citeauthoryear{Lawler}{1979}]{lawler1979}
 \begin{barticle}
 \bauthor{\bsnm{Lawler}, \binits{E.L.}}:
@@ -3019,7 +3534,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 36
+%%% 41
 \bibitem[\protect\citeauthoryear{Liu and Layland}{1973}]{liulayland1973}
 \begin{barticle}
 \bauthor{\bsnm{Liu}, \binits{C.L.}},
@@ -3034,7 +3549,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 37
+%%% 42
 \bibitem[\protect\citeauthoryear{Lawler and Moore}{1969}]{lawlermoore1969}
 \begin{barticle}
 \bauthor{\bsnm{Lawler}, \binits{E.L.}},
@@ -3049,7 +3564,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 38
+%%% 43
 \bibitem[\protect\citeauthoryear{Lenstra et~al.}{1977}]{lenstra1977}
 \begin{bchapter}
 \bauthor{\bsnm{Lenstra}, \binits{J.K.}},
@@ -3065,7 +3580,7 @@ pp. \bfpage{343}--\blpage{362}
 \end{bchapter}
 \endbibitem
 
-%%% 39
+%%% 44
 \bibitem[\protect\citeauthoryear{Maranghides et~al.}{2021}]{nist2021campfire}
 \begin{botherref}
 \oauthor{\bsnm{Maranghides}, \binits{A.}},
@@ -3085,7 +3600,7 @@ National Institute of Standards and Technology
 \end{botherref}
 \endbibitem
 
-%%% 40
+%%% 45
 \bibitem[\protect\citeauthoryear{Moore}{1968}]{moore1968}
 \begin{barticle}
 \bauthor{\bsnm{Moore}, \binits{J.M.}}:
@@ -3099,7 +3614,23 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 41
+%%% 46
+\bibitem[\protect\citeauthoryear{Psaraftis et~al.}{1990}]{psaraftis1990}
+\begin{barticle}
+\bauthor{\bsnm{Psaraftis}, \binits{H.N.}},
+\bauthor{\bsnm{Solomon}, \binits{M.M.}},
+\bauthor{\bsnm{Magnanti}, \binits{T.L.}},
+\bauthor{\bsnm{Kim}, \binits{T.-U.}}:
+\batitle{Routing and scheduling on a shoreline with release times}.
+\bjtitle{Management Science}
+\bvolume{36}(\bissue{2}),
+\bfpage{212}--\blpage{223}
+(\byear{1990})
+\doiurl{10.1287/mnsc.36.2.212}
+\end{barticle}
+\endbibitem
+
+%%% 47
 \bibitem[\protect\citeauthoryear{Rostamian et~al.}{2026}]{rostamian2026}
 \begin{barticle}
 \bauthor{\bsnm{Rostamian}, \binits{P.}},
@@ -3116,7 +3647,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 42
+%%% 48
 \bibitem[\protect\citeauthoryear{Rachaniotis and
   Pappis}{2006}]{rachaniotis2006}
 \begin{barticle}
@@ -3132,7 +3663,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 43
+%%% 49
 \bibitem[\protect\citeauthoryear{Sahni}{1976}]{sahni1976}
 \begin{barticle}
 \bauthor{\bsnm{Sahni}, \binits{S.K.}}:
@@ -3145,7 +3676,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 44
+%%% 50
 \bibitem[\protect\citeauthoryear{Shabtay et~al.}{2013}]{shabtay2013}
 \begin{barticle}
 \bauthor{\bsnm{Shabtay}, \binits{D.}},
@@ -3160,7 +3691,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 45
+%%% 51
 \bibitem[\protect\citeauthoryear{Tezcan and Eren}{2025}]{tezcan2025}
 \begin{barticle}
 \bauthor{\bsnm{Tezcan}, \binits{B.}},
@@ -3175,7 +3706,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 46
+%%% 52
 \bibitem[\protect\citeauthoryear{Tsitsiklis}{1992}]{tsitsiklis1992}
 \begin{barticle}
 \bauthor{\bsnm{Tsitsiklis}, \binits{J.N.}}:
@@ -3189,7 +3720,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 47
+%%% 53
 \bibitem[\protect\citeauthoryear{Vansteenwegen
   et~al.}{2011}]{vansteenwegen2011}
 \begin{barticle}
@@ -3205,7 +3736,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 48
+%%% 54
 \bibitem[\protect\citeauthoryear{Wang}{2020}]{wang2020evac}
 \begin{barticle}
 \bauthor{\bsnm{Wang}, \binits{L.}}:
@@ -3219,7 +3750,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 49
+%%% 55
 \bibitem[\protect\citeauthoryear{Woeginger}{2000}]{woeginger2000}
 \begin{barticle}
 \bauthor{\bsnm{Woeginger}, \binits{G.J.}}:

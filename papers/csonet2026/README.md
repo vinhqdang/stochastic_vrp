@@ -43,6 +43,11 @@ submission record and the revision log.
   (different-speed slot greedy, constant hazard-arrival-time reduction,
   refined FPTAS bound, recursions, ties, union-find, Partition
   preprocessing); `python3 verify_extensions.py` (~15 s).
+- `verify_geometry.py` / `checks/geometry/` / `verify_geometry_results.txt`
+  — brute-force checks of Section 4.7 and Appendix C (spoke–chain gap,
+  speed augmentation, line algorithms, affine-deadline classification,
+  thin-ring reduction); `python3 verify_geometry.py` (~30 s). These
+  results are checked by tests, not formalised in Lean.
 - `response_to_reviewers.tex` — point-by-point response to the two
   reviewers, including a list of errors of our own that the revision
   corrected; compile with `pdflatex` twice (+ `bibtex`).

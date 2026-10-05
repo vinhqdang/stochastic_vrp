@@ -1,0 +1,42 @@
+== checks/geometry/h1_verify_basic.py (exit 0)
+geometry: front from depot, return/arrival reading == d=rho*p / (rho+1/2)*p    inst= 20000 checks=   40000 violations=0
+closed form (sorted by p, P_{k-1}<=mu p_k) == literal EDD test, all subsets    inst=  1500 checks=  171338 violations=0
+optimum: all n! orders == subset DFS == Lawler-Moore DP (integerised)          inst=   400 checks=     800 violations=0
+equal weights: Moore-Hodgson == exhaustive                                     inst=   600 checks=     600 violations=0
+cardinality bound  max|S| <= 1+log(rho R)/log(1+1/mu)                          inst=  1500 checks=    1500 violations=0
+   smallest slack observed: 0.0
+rho=1: optimum = max w ; rho<1: optimum = 0                                    inst=   300 checks=     600 violations=0
+
+TOTAL violations: 0
+== checks/geometry/h1_thmA.py (exit 0)
+Theorem A: 900 random instances (yes=504, no=396), max #sites=16, violations=0
+Theorem A (Partition, k=n): 141 instances (yes=42), violations=0
+example: band ratio (K+xmax)/K = 1.068230277185501  rho = 13/2  H/K = 1.1234735413839891
+== checks/geometry/h2_run_all.py (exit 0)
+claim                                                                                                |  #checks | detail
+--------------------------------------------------------------------------------------------------------------------------------------------
+3 chain solvers (permutations / ordered-subset DFS / Held-Karp Pareto) agree                         |     6000 | random Euclid/graph/line/star metrics, hazards uniform/front/tight, n<=6
+W_spoke <= W_chain <= |F| w_max <= n W_spoke (Thm 1)                                                 |     6000 | strict gap in 2135, max ratio seen 4.0
+star metric => W_chain = W_spoke (Thm 2, =>)                                                         |     1520 | all equal
+non-star pair => explicit 2-site gap instance (Thm 2, <=)                                            |     1522 | all W_spoke=1, W_chain=2
+lemma A_j <= B_j/kappa on random orders (j>=2) and equality at j=1                                   |     6000 | 
+speed augmentation W_chain(1) <= W_spoke(1/kappa) (Thm 3)                                            |     6000 | 
+bounds ceil((3rho-1)/2kappa), (floor(log2 rho)+1) ceil(5/2kappa) (Thm 4)                             |     5694 | 
+residue-class construction J_r spoke-feasible for h=B (proof of Thm 4)                               |     9000 | random orders on Euclid/graph/line metrics, n<=12
+extremal families (cluster ratio n, ray ratio n, uniform ratio n/(floor((n-1)k)+1))                  |       42 | exact brute force, n=2..7
+random search over tight-hazard instances: largest ratio found (equals n; bound far larger)          |     3000 | (6.0, ('graph', 6, 1, 6, 0.059, 1.5, 30))
+ray: minimal speed factor to cover all n -> 1/kappa from below (Thm 3 sharp)                         |       15 | r in {2,3,5}, n<=20; brute-force confirmation n<=6
+line interval DP (weighted) and O(n^3) count DP == exhaustive                                        |     3000 | n<=7, int data
+one ray: optimum = sum of individually feasible weights                                              |      500 | 
+PARTITION -> weighted line (Thm 5): optimum == K*M + max{b(C)<=A/2}                                  |      240 | 121 yes / 119 no; interval DP and independent Held-Karp agree for <=11 sites
+same reduction with front-induced deadlines h=(3/2)|x|-(A+2) (radial front from depot, v=2/3, delay) |      240 | 104 yes / 136 no; DP and Held-Karp agree
+line FPTAS (value-indexed interval DP)                                                               |      400 | worst ratio 0.9983 >= 1-eps
+subset/EDD solver == permutation brute force                                                         |     1500 | 
+alpha<=1: feasible <=> sum p - alpha p_max <= beta                                                   |     1500 | all nonempty subsets
+PARTITION -> MWHED, alpha in {1/10..1}, w=p (Thm C1)                                                 |      450 | 314 yes / 136 no, alpha in 9 values
+PARTITION -> MWHED, alpha>1, beta=0 (Thm C2)                                                         |      150 | 91 yes / 59 no, alpha in {6/5,3/2,2,5/2,3,9/2,11/2,7/5,13/10,4}
+beta=0, alpha>1: geometric growth law T_k >= lambda T_{k-1}, |S| <= 1+log_lambda                     |      400 | 
+
+Camp Fire (depot dist km, pair dist km, kappa_min, rho): ({'Concow': 26.33, 'Paradise': 29.25, 'Magalia': 36.88, 'Yankee Hill': 22.54}, {('Concow', 'Paradise'): 9.52, ('Concow', 'Magalia'): 12.16, ('Concow', 'Yankee Hill'): 3.8, ('Paradise', 'Yankee Hill'): 10.57, ('Magalia', 'Paradise'): 8.8, ('Magalia', 'Yankee Hill'): 15.3}, 0.0777, 1.636)
+total runtime 32.3s
+ALL GEOMETRY CHECKS PASSED
