@@ -1,78 +1,349 @@
-@article{moore1968,
-  author  = {Moore, J. Michael},
-  title   = {An n Job, One Machine Sequencing Algorithm for Minimizing the Number of Late Jobs},
-  journal = {Management Science},
-  volume  = {15},
-  number  = {1},
-  pages   = {102--109},
-  year    = {1968},
-  doi     = {10.1287/mnsc.15.1.102}
+
+% ---------- PART A ----------
+@incollection{karp1972,
+  author    = {Karp, Richard M.},
+  title     = {Reducibility among combinatorial problems},
+  booktitle = {Complexity of Computer Computations},
+  editor    = {Miller, Raymond E. and Thatcher, James W.},
+  publisher = {Plenum Press},
+  address   = {New York},
+  year      = {1972},
+  pages     = {85--103},
+  doi       = {10.1007/978-1-4684-2001-2_9}
 }
 
-@article{lawlermoore1969,
-  author  = {Lawler, Eugene L. and Moore, J. Michael},
-  title   = {A Functional Equation and Its Application to Resource Allocation and Sequencing Problems},
-  journal = {Management Science},
+@article{baptiste1999,
+  author  = {Baptiste, Philippe},
+  title   = {Polynomial time algorithms for minimizing the weighted number of late jobs on a single machine with equal processing times},
+  journal = {Journal of Scheduling},
+  volume  = {2},
+  number  = {6},
+  pages   = {245--252},
+  year    = {1999},
+  doi     = {10.1002/(SICI)1099-1425(199911/12)2:6<245::AID-JOS28>3.0.CO;2-5}
+}
+
+@inproceedings{heegermolter2025,
+  author    = {Heeger, Klaus and Molter, Hendrik},
+  title     = {Minimizing the Number of Tardy Jobs with Uniform Processing Times on Parallel Machines},
+  booktitle = {42nd International Symposium on Theoretical Aspects of Computer Science (STACS 2025)},
+  series    = {LIPIcs},
+  volume    = {327},
+  pages     = {47:1--47:17},
+  publisher = {Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r Informatik},
+  year      = {2025},
+  doi       = {10.4230/LIPIcs.STACS.2025.47},
+  eprint    = {2404.14208},
+  archiveprefix = {arXiv}
+}
+
+@inproceedings{heegerhermelin2024,
+  author    = {Heeger, Klaus and Hermelin, Danny},
+  title     = {Minimizing the Weighted Number of Tardy Jobs Is {W[1]}-Hard},
+  booktitle = {32nd Annual European Symposium on Algorithms (ESA 2024)},
+  series    = {LIPIcs},
+  volume    = {308},
+  pages     = {68:1--68:14},
+  publisher = {Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r Informatik},
+  year      = {2024},
+  doi       = {10.4230/LIPIcs.ESA.2024.68},
+  eprint    = {2401.01740},
+  archiveprefix = {arXiv}
+}
+
+% PARTLY: bibliographic data taken from the reference list of Lawler, Lenstra, Rinnooy Kan, Shmoys, "Elements of Scheduling"; no DOI.
+@article{lawler1976,
+  author  = {Lawler, Eugene L.},
+  title   = {Sequencing to minimize the weighted number of tardy jobs},
+  journal = {RAIRO Recherche Op{\'e}rationnelle},
+  volume  = {10},
+  number  = {5, Suppl.},
+  pages   = {27--33},
+  year    = {1976}
+}
+
+@article{shabtay2013,
+  author  = {Shabtay, Dvir and Gaspar, Nufar and Kaspi, Moshe},
+  title   = {A survey on offline scheduling with rejection},
+  journal = {Journal of Scheduling},
   volume  = {16},
   number  = {1},
-  pages   = {77--84},
-  year    = {1969},
-  doi     = {10.1287/mnsc.16.1.77}
+  pages   = {3--28},
+  year    = {2013},
+  doi     = {10.1007/s10951-012-0303-z}
 }
 
-@incollection{lenstra1977,
-  author    = {Lenstra, J. K. and Rinnooy Kan, A. H. G. and Brucker, P.},
-  title     = {Complexity of Machine Scheduling Problems},
-  booktitle = {Annals of Discrete Mathematics},
-  volume    = {1},
-  pages     = {343--362},
-  year      = {1977},
-  doi       = {10.1016/S0167-5060(08)70743-X}
+@article{rachaniotis2006,
+  author  = {Rachaniotis, Nikos P. and Pappis, Costas P.},
+  title   = {Scheduling fire-fighting tasks using the concept of ``deteriorating jobs''},
+  journal = {Canadian Journal of Forest Research},
+  volume  = {36},
+  number  = {3},
+  pages   = {652--658},
+  year    = {2006},
+  doi     = {10.1139/x05-267}
 }
 
-@article{ibarrakim1975,
-  author  = {Ibarra, Oscar H. and Kim, Chul E.},
-  title   = {Fast Approximation Algorithms for the Knapsack and Sum of Subset Problems},
-  journal = {Journal of the ACM},
-  volume  = {22},
+@article{kellerer1999,
+  author  = {Kellerer, Hans and Pferschy, Ulrich},
+  title   = {A new fully polynomial time approximation scheme for the knapsack problem},
+  journal = {Journal of Combinatorial Optimization},
+  volume  = {3},
+  number  = {1},
+  pages   = {59--71},
+  year    = {1999},
+  doi     = {10.1023/A:1009813105532}
+}
+
+@article{kellerer2004,
+  author  = {Kellerer, Hans and Pferschy, Ulrich},
+  title   = {Improved dynamic programming in connection with an {FPTAS} for the knapsack problem},
+  journal = {Journal of Combinatorial Optimization},
+  volume  = {8},
+  number  = {1},
+  pages   = {5--11},
+  year    = {2004},
+  doi     = {10.1023/B:JOCO.0000021934.29833.6B}
+}
+
+@article{lawler1979,
+  author  = {Lawler, Eugene L.},
+  title   = {Fast approximation algorithms for knapsack problems},
+  journal = {Mathematics of Operations Research},
+  volume  = {4},
   number  = {4},
-  pages   = {463--468},
-  year    = {1975},
-  doi     = {10.1145/321906.321909}
+  pages   = {339--356},
+  year    = {1979},
+  doi     = {10.1287/moor.4.4.339}
 }
 
-@book{gareyjohnson1979,
-  author    = {Garey, Michael R. and Johnson, David S.},
-  title     = {Computers and Intractability: A Guide to the Theory of {NP}-Completeness},
-  publisher = {W.H. Freeman},
-  address   = {San Francisco},
-  year      = {1979}
+@inproceedings{bringmann2020,
+  author    = {Bringmann, Karl and Fischer, Nick and Hermelin, Danny and Shabtay, Dvir and Wellnitz, Philip},
+  title     = {Faster Minimization of Tardy Processing Time on a Single Machine},
+  booktitle = {47th International Colloquium on Automata, Languages, and Programming (ICALP 2020)},
+  series    = {LIPIcs},
+  volume    = {168},
+  pages     = {19:1--19:12},
+  year      = {2020},
+  doi       = {10.4230/LIPIcs.ICALP.2020.19}
 }
 
-@book{kortevygen2018,
-  author    = {Korte, Bernhard and Vygen, Jens},
-  title     = {Combinatorial Optimization: Theory and Algorithms},
-  publisher = {Springer},
-  address   = {Berlin Heidelberg},
-  edition   = {6},
-  series    = {Algorithms and Combinatorics},
-  volume    = {21},
-  year      = {2018},
-  doi       = {10.1007/978-3-662-56039-6}
+@article{bringmann2022,
+  author  = {Bringmann, Karl and Fischer, Nick and Hermelin, Danny and Shabtay, Dvir and Wellnitz, Philip},
+  title   = {Faster Minimization of Tardy Processing Time on a Single Machine},
+  journal = {Algorithmica},
+  volume  = {84},
+  number  = {5},
+  pages   = {1341--1356},
+  year    = {2022},
+  doi     = {10.1007/s00453-022-00928-w}
 }
 
-@article{harris2023,
-  author  = {Harris, M. G. and Forbes, M. A. and Taimre, T.},
-  title   = {Logic-based {B}enders decomposition for wildfire suppression},
-  journal = {Computers \& Operations Research},
-  volume  = {160},
-  pages   = {106392},
-  year    = {2023},
-  doi     = {10.1016/j.cor.2023.106392}
+@inproceedings{klein2023,
+  author    = {Klein, Kim-Manuel and Polak, Adam and Rohwedder, Lars},
+  title     = {On Minimizing Tardy Processing Time, Max-Min Skewed Convolution, and Triangular Structured {ILPs}},
+  booktitle = {Proceedings of the 2023 Annual ACM-SIAM Symposium on Discrete Algorithms (SODA)},
+  pages     = {2947--2960},
+  year      = {2023},
+  doi       = {10.1137/1.9781611977554.ch112}
 }
 
+@inproceedings{fischer2024,
+  author    = {Fischer, Nick and Wennmann, Leo},
+  title     = {Minimizing Tardy Processing Time on a Single Machine in Near-Linear Time},
+  booktitle = {51st International Colloquium on Automata, Languages, and Programming (ICALP 2024)},
+  series    = {LIPIcs},
+  volume    = {297},
+  pages     = {64:1--64:15},
+  year      = {2024},
+  doi       = {10.4230/LIPIcs.ICALP.2024.64}
+}
+
+@article{fischer2025theoretics,
+  author  = {Fischer, Nick and Wennmann, Leo},
+  title   = {Minimizing Tardy Processing Time on a Single Machine in Near-Linear Time},
+  journal = {TheoretiCS},
+  volume  = {4},
+  year    = {2025},
+  doi     = {10.46298/theoretics.25.14}
+}
+
+@article{hermelin2021,
+  author  = {Hermelin, Danny and Karhi, Shlomo and Pinedo, Michael L. and Shabtay, Dvir},
+  title   = {New algorithms for minimizing the weighted number of tardy jobs on a single machine},
+  journal = {Annals of Operations Research},
+  volume  = {298},
+  number  = {1--2},
+  pages   = {271--287},
+  year    = {2021},
+  doi     = {10.1007/s10479-018-2852-9}
+}
+
+@article{chekuri2005,
+  author  = {Chekuri, Chandra and Khanna, Sanjeev},
+  title   = {A polynomial time approximation scheme for the multiple knapsack problem},
+  journal = {SIAM Journal on Computing},
+  volume  = {35},
+  number  = {3},
+  pages   = {713--728},
+  year    = {2005},
+  doi     = {10.1137/S0097539700382820}
+}
+
+@article{caprara2000,
+  author  = {Caprara, Alberto and Kellerer, Hans and Pferschy, Ulrich},
+  title   = {The multiple subset sum problem},
+  journal = {SIAM Journal on Optimization},
+  volume  = {11},
+  number  = {2},
+  pages   = {308--319},
+  year    = {2000},
+  doi     = {10.1137/S1052623498348481}
+}
+
+@article{tsitsiklis1992,
+  author  = {Tsitsiklis, John N.},
+  title   = {Special cases of traveling salesman and repairman problems with time windows},
+  journal = {Networks},
+  volume  = {22},
+  number  = {3},
+  pages   = {263--282},
+  year    = {1992},
+  doi     = {10.1002/net.3230220305}
+}
+
+@inproceedings{bansal2004,
+  author    = {Bansal, Nikhil and Blum, Avrim and Chawla, Shuchi and Meyerson, Adam},
+  title     = {Approximation algorithms for deadline-{TSP} and vehicle routing with time-windows},
+  booktitle = {Proceedings of the 36th Annual ACM Symposium on Theory of Computing (STOC '04)},
+  pages     = {166--174},
+  year      = {2004},
+  doi       = {10.1145/1007352.1007385}
+}
+
+@article{vansteenwegen2011,
+  author  = {Vansteenwegen, Pieter and Souffriau, Wouter and Van Oudheusden, Dirk},
+  title   = {The orienteering problem: A survey},
+  journal = {European Journal of Operational Research},
+  volume  = {209},
+  number  = {1},
+  pages   = {1--10},
+  year    = {2011},
+  doi     = {10.1016/j.ejor.2010.03.045}
+}
+
+@article{feillet2005,
+  author  = {Feillet, Dominique and Dejax, Pierre and Gendreau, Michel},
+  title   = {Traveling salesman problems with profits},
+  journal = {Transportation Science},
+  volume  = {39},
+  number  = {2},
+  pages   = {188--205},
+  year    = {2005},
+  doi     = {10.1287/trsc.1030.0079}
+}
+
+@article{dessouky1990,
+  author  = {Dessouky, Mohamed I. and Lageweg, Barry J. and Lenstra, Jan Karel and van de Velde, Steef L.},
+  title   = {Scheduling identical jobs on uniform parallel machines},
+  journal = {Statistica Neerlandica},
+  volume  = {44},
+  number  = {3},
+  pages   = {115--123},
+  year    = {1990},
+  doi     = {10.1111/j.1467-9574.1990.tb01276.x}
+}
+
+@article{lawlermartel1989,
+  author  = {Lawler, Eugene L. and Martel, Charles U.},
+  title   = {Preemptive scheduling of two uniform machines to minimize the number of late jobs},
+  journal = {Operations Research},
+  volume  = {37},
+  number  = {2},
+  pages   = {314--318},
+  year    = {1989},
+  doi     = {10.1287/opre.37.2.314}
+}
+
+@article{kravchenkowerner2011,
+  author  = {Kravchenko, Svetlana A. and Werner, Frank},
+  title   = {Parallel machine problems with equal processing times: a survey},
+  journal = {Journal of Scheduling},
+  volume  = {14},
+  number  = {5},
+  pages   = {435--444},
+  year    = {2011},
+  doi     = {10.1007/s10951-011-0231-3}
+}
+
+@article{bruckerkravchenko2006,
+  author  = {Brucker, Peter and Kravchenko, Svetlana A.},
+  title   = {Scheduling equal processing time jobs to minimize the weighted number of late jobs},
+  journal = {Journal of Mathematical Modelling and Algorithms},
+  volume  = {5},
+  number  = {2},
+  pages   = {143--165},
+  year    = {2006},
+  doi     = {10.1007/s10852-005-9011-4}
+}
+
+@article{edmonds1971,
+  author  = {Edmonds, Jack},
+  title   = {Matroids and the greedy algorithm},
+  journal = {Mathematical Programming},
+  volume  = {1},
+  number  = {1},
+  pages   = {127--136},
+  year    = {1971},
+  doi     = {10.1007/BF01584082}
+}
+
+% pages 111--127 confirmed only from a secondary search result
+@article{baptiste2004,
+  author  = {Baptiste, Philippe and Brucker, Peter and Knust, Sigrid and Timkovsky, Vadim G.},
+  title   = {Ten notes on equal-processing-time scheduling: at the frontiers of solvability in polynomial time},
+  journal = {4OR},
+  volume  = {2},
+  number  = {2},
+  pages   = {111--127},
+  year    = {2004},
+  doi     = {10.1007/s10288-003-0024-4}
+}
+
+@article{gabow1985,
+  author  = {Gabow, Harold N. and Tarjan, Robert Endre},
+  title   = {A linear-time algorithm for a special case of disjoint set union},
+  journal = {Journal of Computer and System Sciences},
+  volume  = {30},
+  number  = {2},
+  pages   = {209--221},
+  year    = {1985},
+  doi     = {10.1016/0022-0000(85)90014-5}
+}
+
+@article{woeginger2000,
+  author  = {Woeginger, Gerhard J.},
+  title   = {When does a dynamic programming formulation guarantee the existence of a fully polynomial time approximation scheme ({FPTAS})?},
+  journal = {INFORMS Journal on Computing},
+  volume  = {12},
+  number  = {1},
+  pages   = {57--74},
+  year    = {2000},
+  doi     = {10.1287/ijoc.12.1.57.11901}
+}
+
+@inproceedings{chen2024stoc,
+  author    = {Chen, Lin and Lian, Jiayi and Mao, Yuchen and Zhang, Guochuan},
+  title     = {A Nearly Quadratic-Time {FPTAS} for Knapsack},
+  booktitle = {Proceedings of the 56th Annual ACM Symposium on Theory of Computing (STOC 2024)},
+  pages     = {283--294},
+  year      = {2024},
+  doi       = {10.1145/3618260.3649730}
+}
+
+% ---------- PART B (existing entries, corrected where needed) ----------
 @article{avci2024,
-  author  = {Avci, Mustafa Gokce and Avci, Mualla and Battarra, Maria and Erdo{\u{g}}an, G{\"u}ne{\c{s}}},
+  author  = {Avci, Mualla Gonca and Avci, Mustafa and Battarra, Maria and Erdo{\u{g}}an, G{\"u}ne{\c{s}}},
   title   = {The wildfire suppression problem with multiple types of resources},
   journal = {European Journal of Operational Research},
   volume  = {316},
@@ -82,26 +353,105 @@
   doi     = {10.1016/j.ejor.2024.03.005}
 }
 
+% CORRECTED: three authors, volume 86
 @article{alvelos2025,
-  author  = {Alvelos, Filipe},
+  author  = {Alvelos, Filipe and Marto, Marco and Mendes, Andr{\'e}},
   title   = {Dispatching, positioning and routing resources for wildfire initial attack},
   journal = {Networks},
-  volume  = {85},
+  volume  = {86},
   number  = {1},
   pages   = {80--102},
   year    = {2025},
   doi     = {10.1002/net.22278}
 }
 
-@article{liulayland1973,
-  author  = {Liu, C. L. and Layland, J. W.},
-  title   = {Scheduling Algorithms for Multiprogramming in a Hard-Real-Time Environment},
-  journal = {Journal of the ACM},
-  volume  = {20},
+@article{antonov2026,
+  author  = {Antonov, Nikolai and {\v S}{\r u}cha, P{\v r}emysl and Janota, Mikol{\'a}{\v s} and H{\r u}la, Jan},
+  title   = {Minimizing the weighted number of tardy jobs: data-driven heuristic for single-machine scheduling},
+  journal = {Computers \& Operations Research},
+  volume  = {185},
+  pages   = {107281},
+  year    = {2026},
+  doi     = {10.1016/j.cor.2025.107281}
+}
+
+% CORRECTED: add SICOMP special-issue pagination; STOC 2024 version is chen2024stoc
+@article{chen2025fptas,
+  author  = {Chen, Lin and Lian, Jiayi and Mao, Yuchen and Zhang, Guochuan},
+  title   = {A nearly quadratic-time {FPTAS} for knapsack},
+  journal = {SIAM Journal on Computing},
+  pages   = {STOC24-1--STOC24-23},
+  year    = {2025},
+  doi     = {10.1137/24M1686772}
+}
+
+@misc{delazeri2026,
+  author        = {Delazeri, Gustavo and Ritt, Marcus},
+  title         = {Wildfire Suppression: Complexity, Models, and Instances},
+  year          = {2026},
+  eprint        = {2603.29865},
+  archiveprefix = {arXiv}
+}
+
+@book{gareyjohnson1979,
+  author    = {Garey, Michael R. and Johnson, David S.},
+  title     = {Computers and Intractability: A Guide to the Theory of {NP}-Completeness},
+  publisher = {W. H. Freeman},
+  address   = {San Francisco},
+  year      = {1979}
+}
+
+@article{gensl1981,
+  author  = {Gens, G. V. and Levner, E. V.},
+  title   = {Fast approximation algorithm for job sequencing with deadlines},
+  journal = {Discrete Applied Mathematics},
+  volume  = {3},
+  number  = {4},
+  pages   = {313--318},
+  year    = {1981},
+  doi     = {10.1016/0166-218X(81)90008-1}
+}
+
+% CORRECTED: "von der Br{\"u}ggen"
+@inproceedings{gunzel2022,
+  author    = {G{\"u}nzel, Mario and von der Br{\"u}ggen, Georg and Chen, Kuan-Hsun and Chen, Jian-Jia},
+  title     = {{EDF}-like scheduling for self-suspending real-time tasks},
+  booktitle = {2022 IEEE Real-Time Systems Symposium (RTSS)},
+  pages     = {172--184},
+  year      = {2022},
+  doi       = {10.1109/RTSS55097.2022.00024}
+}
+
+@article{granda2025,
+  author  = {Granda, Bibiana and Vitoriano, Bego{\~n}a and Figueira, Jos{\'e} Rui},
+  title   = {A mathematical programming approach for a wildfire suppression problem},
+  journal = {Operational Research},
+  volume  = {25},
   number  = {1},
-  pages   = {46--61},
-  year    = {1973},
-  doi     = {10.1145/321738.321743}
+  pages   = {16},
+  year    = {2025},
+  doi     = {10.1007/s12351-024-00882-1}
+}
+
+@article{harris2023,
+  author  = {Harris, Mitchell G. and Forbes, Michael A. and Taimre, Thomas},
+  title   = {Logic-based {B}enders decomposition for wildfire suppression},
+  journal = {Computers \& Operations Research},
+  volume  = {160},
+  pages   = {106392},
+  year    = {2023},
+  doi     = {10.1016/j.cor.2023.106392}
+}
+
+@article{hermelin2024,
+  author  = {Hermelin, Danny and Molter, Hendrik and Shabtay, Dvir},
+  title   = {Minimizing the weighted number of tardy jobs via (max,+)-convolutions},
+  journal = {INFORMS Journal on Computing},
+  volume  = {36},
+  number  = {3},
+  pages   = {836--848},
+  year    = {2024},
+  doi     = {10.1287/ijoc.2022.0307}
 }
 
 @article{hejl2022,
@@ -115,87 +465,137 @@
   doi     = {10.1016/j.ejor.2021.07.002}
 }
 
-@inproceedings{heegerhermelin2024,
-  author    = {Heeger, Klaus and Hermelin, Danny},
-  title     = {Minimizing the Weighted Number of Tardy Jobs Is {W[1]}-Hard},
-  booktitle = {32nd Annual European Symposium on Algorithms (ESA 2024)},
-  year      = {2024},
-  doi       = {10.4230/LIPIcs.ESA.2024.68}
-}
-
-@inproceedings{heegermolter2025,
-  author    = {Heeger, Klaus and Molter, Hendrik},
-  title     = {Minimizing the Number of Tardy Jobs with Uniform Processing Times on Parallel Machines},
-  booktitle = {42nd International Symposium on Theoretical Aspects of Computer Science (STACS 2025)},
-  year      = {2025},
-  doi       = {10.4230/LIPIcs.STACS.2025.47}
-}
-
-@article{hermelin2024,
-  author  = {Hermelin, Danny and Molter, Hendrik and Shabtay, Dvir},
-  title   = {Minimizing the Weighted Number of Tardy Jobs via (max,+)-Convolutions},
-  journal = {INFORMS Journal on Computing},
-  volume  = {36},
-  number  = {3},
-  pages   = {836--848},
-  year    = {2024},
-  doi     = {10.1287/ijoc.2022.0307}
-}
-
-@article{antonov2026,
-  author  = {Antonov, Nikolai and {\v S}{\r u}cha, P{\v r}emysl and Janota, Mikol{\'a}{\v s} and H{\r u}la, Jan},
-  title   = {Minimizing the weighted number of tardy jobs: data-driven heuristic for single-machine scheduling},
-  journal = {Computers \& Operations Research},
-  volume  = {185},
-  pages   = {107281},
-  year    = {2026},
-  doi     = {10.1016/j.cor.2025.107281}
-}
-
-@article{chen2025fptas,
-  author  = {Chen, Lin and Lian, Jiayi and Mao, Yuchen and Zhang, Guochuan},
-  title   = {A Nearly Quadratic-Time {FPTAS} for Knapsack},
-  journal = {SIAM Journal on Computing},
-  year    = {2025},
-  doi     = {10.1137/24M1686772}
+@article{ibarrakim1975,
+  author  = {Ibarra, Oscar H. and Kim, Chul E.},
+  title   = {Fast approximation algorithms for the knapsack and sum of subset problems},
+  journal = {Journal of the ACM},
+  volume  = {22},
+  number  = {4},
+  pages   = {463--468},
+  year    = {1975},
+  doi     = {10.1145/321906.321909}
 }
 
 @inproceedings{jin2019,
   author    = {Jin, Ce},
-  title     = {An Improved {FPTAS} for 0-1 Knapsack},
+  title     = {An improved {FPTAS} for 0-1 knapsack},
   booktitle = {46th International Colloquium on Automata, Languages, and Programming (ICALP 2019)},
   series    = {LIPIcs},
   volume    = {132},
+  pages     = {76:1--76:14},
   year      = {2019},
   doi       = {10.4230/LIPIcs.ICALP.2019.76}
 }
 
-@article{terao2025,
-  author  = {Terao, Tatsuya},
-  title   = {Faster Matroid Partition Algorithms},
-  journal = {ACM Transactions on Algorithms},
-  volume  = {21},
-  number  = {2},
-  year    = {2025},
-  doi     = {10.1145/3707208}
+@article{koca2023,
+  author  = {Koca, Esra},
+  title   = {Two-stage stochastic facility location problem with disruptions and restricted shortages},
+  journal = {Computers \& Industrial Engineering},
+  volume  = {183},
+  pages   = {109484},
+  year    = {2023},
+  doi     = {10.1016/j.cie.2023.109484}
 }
 
-@misc{ma2026,
-  author = {Ma, Qingwen and Peng, Chao and Xu, Changfeng and Xu, Chenyang and Zhang, Ruilong},
-  title  = {Multiagent Matroid Upgrading: Greedy is Fair and Efficient},
-  year   = {2026},
-  note   = {Proceedings of AAMAS 2026; arXiv:2606.01309}
+@book{kortevygen2018,
+  author    = {Korte, Bernhard and Vygen, Jens},
+  title     = {Combinatorial Optimization: Theory and Algorithms},
+  edition   = {6},
+  series    = {Algorithms and Combinatorics},
+  volume    = {21},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg},
+  year      = {2018},
+  doi       = {10.1007/978-3-662-56039-6}
 }
 
-@article{granda2025,
-  author  = {Granda, Bibiana and Vitoriano, Beg{\~o}na and Figueira, Jos{\'e} Rui},
-  title   = {A mathematical programming approach for a wildfire suppression problem},
-  journal = {Operational Research},
-  volume  = {25},
+@article{liulayland1973,
+  author  = {Liu, C. L. and Layland, James W.},
+  title   = {Scheduling algorithms for multiprogramming in a hard-real-time environment},
+  journal = {Journal of the ACM},
+  volume  = {20},
   number  = {1},
-  pages   = {16},
-  year    = {2025},
-  doi     = {10.1007/s12351-024-00882-1}
+  pages   = {46--61},
+  year    = {1973},
+  doi     = {10.1145/321738.321743}
+}
+
+@article{lawlermoore1969,
+  author  = {Lawler, E. L. and Moore, J. M.},
+  title   = {A functional equation and its application to resource allocation and sequencing problems},
+  journal = {Management Science},
+  volume  = {16},
+  number  = {1},
+  pages   = {77--84},
+  year    = {1969},
+  doi     = {10.1287/mnsc.16.1.77}
+}
+
+@incollection{lenstra1977,
+  author    = {Lenstra, J. K. and Rinnooy Kan, A. H. G. and Brucker, P.},
+  title     = {Complexity of machine scheduling problems},
+  booktitle = {Studies in Integer Programming},
+  series    = {Annals of Discrete Mathematics},
+  volume    = {1},
+  pages     = {343--362},
+  year      = {1977},
+  doi       = {10.1016/S0167-5060(08)70743-X}
+}
+
+% CORRECTED: author order as on the NIST cover (Mell before Brown); Vihnaneck
+@techreport{nist2021campfire,
+  author      = {Maranghides, Alexander and Link, Eric and Mell, William ``Ruddy'' and Hawks, Steven and Wilson, Mike and Brewer, Will and Brown, Chris and Vihnaneck, Bob and Walton, William D.},
+  title       = {A Case Study of the Camp Fire -- Fire Progression Timeline},
+  type        = {NIST Technical Note},
+  number      = {2135},
+  institution = {National Institute of Standards and Technology},
+  year        = {2021},
+  doi         = {10.6028/NIST.TN.2135}
+}
+
+@article{moore1968,
+  author  = {Moore, J. Michael},
+  title   = {An $n$ job, one machine sequencing algorithm for minimizing the number of late jobs},
+  journal = {Management Science},
+  volume  = {15},
+  number  = {1},
+  pages   = {102--109},
+  year    = {1968},
+  doi     = {10.1287/mnsc.15.1.102}
+}
+
+% CORRECTED: extended abstract in AAMAS 2026 proceedings (starts p. 3392; next paper starts p. 3395); full version arXiv:2606.01309
+@inproceedings{ma2026,
+  author        = {Ma, Qingwen and Peng, Chao and Xu, Changfeng and Xu, Chenyang and Zhang, Ruilong},
+  title         = {Multiagent Matroid Upgrading: Greedy is Fair and Efficient},
+  booktitle     = {Proceedings of the 25th International Conference on Autonomous Agents and Multiagent Systems (AAMAS 2026), Extended Abstracts},
+  publisher     = {IFAAMAS},
+  year          = {2026},
+  eprint        = {2606.01309},
+  archiveprefix = {arXiv}
+}
+
+% CORRECTED: add article number
+@article{rostamian2026,
+  author  = {Rostamian, Paria and Ahmadi Digehsara, Amin and Yildirim, Kibele Sebnem and Ardestani-Jaafari, Amir},
+  title   = {Wildfire management: A systematic review of optimization under uncertainty and complexity},
+  journal = {Operations Research Forum},
+  volume  = {7},
+  number  = {1},
+  pages   = {18},
+  year    = {2026},
+  doi     = {10.1007/s43069-026-00604-7}
+}
+
+@article{sahni1976,
+  author  = {Sahni, Sartaj K.},
+  title   = {Algorithms for scheduling independent tasks},
+  journal = {Journal of the ACM},
+  volume  = {23},
+  number  = {1},
+  pages   = {116--127},
+  year    = {1976},
+  doi     = {10.1145/321921.321934}
 }
 
 @article{tezcan2025,
@@ -209,35 +609,31 @@
   doi     = {10.1007/s11069-025-07227-x}
 }
 
-@misc{delazeri2026,
-  author = {Delazeri, Gustavo and Ritt, Marcus},
-  title  = {Wildfire Suppression: Complexity, Models, and Instances},
-  year   = {2026},
-  note   = {arXiv:2603.29865}
+% CORRECTED: add pages
+@article{terao2025,
+  author  = {Terao, Tatsuya},
+  title   = {Faster matroid partition algorithms},
+  journal = {ACM Transactions on Algorithms},
+  volume  = {21},
+  number  = {2},
+  pages   = {1--26},
+  year    = {2025},
+  doi     = {10.1145/3707208}
 }
 
-@article{rostamian2026,
-  author  = {Rostamian, Paria and Ahmadi Digehsara, Amin and Yildirim, Kibele Sebnem and Ardestani-Jaafari, Amir},
-  title   = {Wildfire Management: A Systematic Review of Optimization Under Uncertainty and Complexity},
-  journal = {Operations Research Forum},
-  volume  = {7},
-  number  = {1},
-  year    = {2026},
-  doi     = {10.1007/s43069-026-00604-7}
-}
-
-@inproceedings{gunzel2022,
-  author    = {G{\"u}nzel, Mario and von der Br{\"u}ggen, Georg and Chen, Kuan-Hsun and Chen, Jian-Jia},
-  title     = {{EDF}-Like Scheduling for Self-Suspending Real-Time Tasks},
-  booktitle = {2022 IEEE Real-Time Systems Symposium (RTSS)},
-  pages     = {172--184},
-  year      = {2022},
-  doi       = {10.1109/RTSS55097.2022.00024}
+@article{wang2020evac,
+  author  = {Wang, Li},
+  title   = {A two-stage stochastic programming framework for evacuation planning in disaster responses},
+  journal = {Computers \& Industrial Engineering},
+  volume  = {145},
+  pages   = {106458},
+  year    = {2020},
+  doi     = {10.1016/j.cie.2020.106458}
 }
 
 @article{wang2025,
   author  = {Wang, Yan and Lv, Bo and Zhou, Quan and Li, Junfei and Tan, Tan},
-  title   = {Schedulability Analysis for Self-Suspending Tasks Under {EDF}-Like Scheduling},
+  title   = {Schedulability analysis for self-suspending tasks under {EDF}-like scheduling},
   journal = {IEEE Transactions on Computers},
   volume  = {74},
   number  = {7},
@@ -246,52 +642,5 @@
   doi     = {10.1109/TC.2025.3558079}
 }
 
-@techreport{nist2021campfire,
-  author      = {Maranghides, Alexander and Link, Eric D. and Brown, Christopher U. and Mell, William and Hawks, Steven and Wilson, Mike and Brewer, Will and Vihnanek, Robert and Walton, William D.},
-  title       = {A Case Study of the Camp Fire -- Fire Progression Timeline},
-  institution = {National Institute of Standards and Technology},
-  type        = {NIST Technical Note},
-  number      = {2135},
-  year        = {2021},
-  doi         = {10.6028/NIST.TN.2135}
-}
+---------------------------------------------------------------------------------------------------
 
-@article{sahni1976,
-  author  = {Sahni, Sartaj K.},
-  title   = {Algorithms for Scheduling Independent Tasks},
-  journal = {Journal of the ACM},
-  volume  = {23},
-  number  = {1},
-  pages   = {116--127},
-  year    = {1976},
-  doi     = {10.1145/321921.321934}
-}
-
-@article{gensl1981,
-  author  = {Gens, G. V. and Levner, E. V.},
-  title   = {Fast Approximation Algorithm for Job Sequencing with Deadlines},
-  journal = {Discrete Applied Mathematics},
-  volume  = {3},
-  pages   = {313--318},
-  year    = {1981}
-}
-
-@article{wang2020evac,
-  author  = {Wang, Li},
-  title   = {A Two-Stage Stochastic Programming Framework for Evacuation Planning in Disaster Responses},
-  journal = {Computers \& Industrial Engineering},
-  volume  = {145},
-  pages   = {106458},
-  year    = {2020},
-  doi     = {10.1016/j.cie.2020.106458}
-}
-
-@article{koca2023,
-  author  = {Koca, Esra},
-  title   = {Two-Stage Stochastic Facility Location Problem with Disruptions and Restricted Shortages},
-  journal = {Computers \& Industrial Engineering},
-  volume  = {183},
-  pages   = {109484},
-  year    = {2023},
-  doi     = {10.1016/j.cie.2023.109484}
-}
