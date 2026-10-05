@@ -45,6 +45,7 @@ Self-contained: imports nothing from BATON/TEMPO/PARCEL.
 """
 from __future__ import annotations
 
+import itertools
 import math
 import random
 from collections import Counter
@@ -130,12 +131,111 @@ def report():
                 print(f"  {label:14s} {v:8.0f}  {[names[i] for i in sorted(S)]}")
 
 
-def sensitivity(draws=5000, seed=20260702):
+def route_optimum(speed, rho=1.0, d_scale=None, delay=0.0, dist_dep=None,
+                  d_min=None):
+    """Chained-route (deadline-TSP) comparison model on the same data.
+
+    One crew leaves the depot at `delay` minutes after time zero and visits
+    an ordered subset of sites by direct travel between consecutive sites
+    (great-circle distance times the road factor `rho`, at `speed` km/h);
+    a site is protected iff the crew ARRIVES no later than its hazard
+    minute. Exhaustive over all ordered subsets (n = 4). Returns
+    (protected weight, visiting order).
+    """
+    if dist_dep is None:
+        dist_dep, d_min, _ = raw_inputs()
+    best = (0, ())
+    for k in range(1, len(NAMES) + 1):
+        for perm in itertools.permutations(NAMES, k):
+            t, pos, got = delay, None, 0
+            for n in perm:
+                km = (dist_dep[n] if pos is None
+                      else haversine_km(*SITES[pos][:2], *SITES[n][:2]))
+                t += rho * km / speed * 60
+                pos = n
+                hz = d_min[n] * (d_scale[n] if d_scale else 1.0)
+                if t <= hz + 1e-9:
+                    got += SITES[n][2]
+            if got > best[0]:
+                best = (got, perm)
+    return best
+
+
+def spoke_optimum(speed, rho=1.0):
+    """The paper's depot-spoke MWHED optimum (arrival reading) with the
+    same road factor (p_i = 2 * rho * great-circle / speed)."""
+    dist_dep, d_min, _ = raw_inputs()
+    scaled = {n: rho * dist_dep[n] for n in NAMES}
+    names, p, d, w = instance(speed, "arrival", dist_dep=scaled, d_min=d_min)
+    if not names:
+        return 0, []
+    v, S = solve_exact(p, d, w)
+    return v, [names[i] for i in sorted(S)]
+
+
+def route_vs_spoke():
+    """Table: depot-spoke optimum versus chained-route optimum."""
+    print("\n=== Depot-spoke model vs chained route (arrival reading) ===")
+    total = sum(SITES[n][2] for n in NAMES)
+    for rho in (1.0, 1.3, 1.6):
+        for speed in (50, 80):
+            sv, ss = spoke_optimum(speed, rho)
+            rv, rs = route_optimum(speed, rho)
+            print(f"  road factor {rho:.1f}, {speed} km/h: spoke {sv:6.0f} "
+                  f"{ss}   route {rv:6d} {list(rs)}   (total {total})")
+
+
+def tipping(speed):
+    """Smallest multiplier x of Paradise's weight at which Paradise leaves
+    the (spoke-model) optimum, by bisection; and the multiplier at which
+    the optimal set changes at all."""
+    dist_dep, d_min, _ = raw_inputs()
+    names, p, d, w = instance(speed, "arrival")
+    ip = names.index("Paradise")
+
+    def opt_set(x):
+        ww = list(w)
+        ww[ip] = w[ip] * x
+        v, S = solve_exact(p, d, ww)
+        return frozenset(names[i] for i in S)
+
+    base = opt_set(1.0)
+    lo, hi = 0.0, 1.0
+    if "Paradise" in opt_set(1e-6):
+        return base, None
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if "Paradise" in opt_set(mid):
+            hi = mid
+        else:
+            lo = mid
+    return base, hi
+
+
+def sensitivity(draws=20000, seed=20260702, correlated=False):
     """Monte-Carlo over uncertain inputs under the arrival reading.
-    Speed ~ U[40, 90] km/h; anchored deadlines scaled by U[0.85, 1.15],
-    extrapolated ones by U[0.70, 1.30]; dispatch delay ~ U[0, 20] min.
-    For each draw compare the plan that is optimal for the NOMINAL
-    instance (80 km/h, no delay) against the optimum of the drawn one."""
+
+    Independent mode: speed ~ U[40, 90] km/h; anchored hazard minutes
+    scaled by U[0.85, 1.15], extrapolated ones by U[0.70, 1.30];
+    dispatch delay ~ U[0, 20] min. Correlated mode: ONE common factor
+    U[0.70, 1.30] scales every hazard minute (a systematic bias of the
+    fire model), plus an independent U[0.95, 1.05] per site.
+
+    Plan evaluation protocol (stated explicitly):
+      * the plan is a FIXED visiting sequence (depot-spoke model: every
+        visit is a round trip and a late visit still consumes its time);
+        a site of the plan that Assumption 1 deletes in a draw is
+        simply not visited;
+      * 'fixed': the plan is executed as is, with sites that Assumption 1
+        deletes in the draw skipped (a hopeless first visit does not
+        consume time; for these data this coincides with a
+        skip-if-late rule, because Concow can only be late when its round
+        trip exceeds its deadline);
+      * 'literal': every site of the plan is visited in order even when
+        its round trip alone exceeds its deadline (no deletion), so a
+        hopeless visit still consumes its time.
+    Reported shares are with Monte-Carlo standard errors.
+    """
     rng = random.Random(seed)
     dist_dep, d_min, _ = raw_inputs()
     nom_names, np_, nd, nw = instance(80, "arrival")
@@ -144,14 +244,25 @@ def sensitivity(draws=5000, seed=20260702):
     plans = {"nominal-optimal plan": nominal_plan,
              "Paradise-only plan": ["Paradise"]}
     sets = Counter()
-    retained = {k: [] for k in plans}
+    ret = {(k, m): [] for k in plans for m in ("fixed", "literal")}
     on_time = {k: 0 for k in plans}
     paradise_in = 0
+    route_full = {1.0: 0, 1.3: 0}
+    route_share = {1.0: [], 1.3: []}
+    total = sum(SITES[n][2] for n in NAMES)
     for _ in range(draws):
         speed = rng.uniform(40, 90)
-        scale = {n: (rng.uniform(0.85, 1.15) if n in ANCHOR
-                     else rng.uniform(0.70, 1.30)) for n in NAMES}
+        if correlated:
+            common = rng.uniform(0.70, 1.30)
+            scale = {n: common * rng.uniform(0.95, 1.05) for n in NAMES}
+        else:
+            scale = {n: (rng.uniform(0.85, 1.15) if n in ANCHOR
+                         else rng.uniform(0.70, 1.30)) for n in NAMES}
         delay = rng.uniform(0, 20)
+        for rho in route_full:
+            rv, _ = route_optimum(speed, rho, scale, delay, dist_dep, d_min)
+            route_full[rho] += rv == total
+            route_share[rho].append(rv / total)
         names, p, d, w = instance(speed, "arrival", scale, delay,
                                   dist_dep, d_min)
         if not names:
@@ -161,7 +272,6 @@ def sensitivity(draws=5000, seed=20260702):
         sets["+".join(sorted(names[i] for i in S)) or "(empty)"] += 1
         paradise_in += "Paradise" in [names[i] for i in S]
         for label, plan_names in plans.items():
-            # dispatch the plan's sites in EDD order; count weight on time
             idx = sorted(names.index(n) for n in plan_names if n in names)
             c, got, all_ok = 0, 0, len(idx) == len(plan_names)
             for i in idx:
@@ -170,20 +280,61 @@ def sensitivity(draws=5000, seed=20260702):
                     got += w[i]
                 else:
                     all_ok = False
-            retained[label].append(got / v if v else 1.0)
+            ret[(label, "fixed")].append(got / v if v else 1.0)
             on_time[label] += all_ok
-    print(f"\n=== Sensitivity ({draws} draws, arrival reading) ===")
-    print(f"nominal plan (80 km/h, no delay): {nominal_plan}, weight {nom_val:.0f}")
+            c, got = 0, 0
+            for n in plan_names:
+                pn = max(1, round(2 * dist_dep[n] / speed * 60))
+                dn = round(d_min[n] * scale[n] - delay + pn / 2)
+                c += pn
+                if c <= dn:
+                    got += SITES[n][2]
+            ret[(label, "literal")].append(got / v if v else 1.0)
+
+    def se(prop):
+        return (prop * (1 - prop) / draws) ** 0.5
+
+    def mean_se(xs):
+        m = sum(xs) / len(xs)
+        var = sum((x - m) ** 2 for x in xs) / (len(xs) - 1)
+        return m, (var / len(xs)) ** 0.5
+
+    mode = "correlated" if correlated else "independent"
+    print(f"\n=== Sensitivity ({draws} draws, arrival reading, "
+          f"{mode} hazard-minute errors) ===")
+    print(f"nominal plan (80 km/h, no delay): {nominal_plan}, "
+          f"weight {nom_val:.0f}")
     for s_, c in sets.most_common():
-        print(f"  optimal set {s_:32s} {c / draws:6.1%}")
+        print(f"  optimal set {s_:32s} {c / draws:6.1%} "
+              f"(se {se(c / draws):.1%})")
     print(f"  Paradise in optimal set:         {paradise_in / draws:6.1%}")
     for label in plans:
-        r = sorted(retained[label])
-        print(f"  {label:22s} fully on time {on_time[label] / draws:6.1%}; "
-              f"share of drawn optimum retained: mean {sum(r) / len(r):.3f}, "
-              f"5th pct {r[int(0.05 * len(r))]:.3f}")
+        f = on_time[label] / draws
+        mf, sf = mean_se(ret[(label, 'fixed')])
+        ms, ss = mean_se(ret[(label, 'literal')])
+        r = sorted(ret[(label, "fixed")])
+        print(f"  {label:22s} fully on time {f:6.1%} (se {se(f):.1%}); "
+              f"retained, fixed route: mean {mf:.3f} (se {sf:.3f}), "
+              f"5th pct {r[int(0.05 * len(r))]:.3f}; "
+              f"literal route: mean {ms:.3f} (se {ss:.3f})")
+    for rho in route_full:
+        m, s = mean_se(route_share[rho])
+        print(f"  chained-route optimum, road factor {rho:.1f}: all four "
+              f"protected in {route_full[rho] / draws:6.1%} of draws; "
+              f"mean protected share {m:.3f} (se {s:.3f})")
 
 
 if __name__ == "__main__":
     report()
+    route_vs_spoke()
+    for sp in (50, 80):
+        base, x = tipping(sp)
+        wp = SITES["Paradise"][2]
+        if x is None:
+            msg = "Paradise stays in the optimum for every positive weight"
+        else:
+            msg = (f"Paradise leaves the optimum when its weight falls "
+                   f"below {x:.3f} x {wp} = {x * wp:.0f} people")
+        print(f"\nTipping, {sp} km/h: optimum {sorted(base)}; {msg}")
     sensitivity()
+    sensitivity(correlated=True)

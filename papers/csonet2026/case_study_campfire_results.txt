@@ -44,14 +44,42 @@ derived hazard spread rate = 13.12 km/h; extrapolated arrival minutes: Concow=52
   EDD with skip       710  ['Concow']
   Naive EDD           710  ['Concow']
 
-=== Sensitivity (5000 draws, arrival reading) ===
+=== Depot-spoke model vs chained route (arrival reading) ===
+  road factor 1.0, 50 km/h: spoke  26218 ['Paradise']   route  38571 ['Concow', 'Yankee Hill', 'Magalia', 'Paradise']   (total 38571)
+  road factor 1.0, 80 km/h: spoke  26928 ['Concow', 'Paradise']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
+  road factor 1.3, 50 km/h: spoke  26218 ['Paradise']   route  27261 ['Concow', 'Yankee Hill', 'Paradise']   (total 38571)
+  road factor 1.3, 80 km/h: spoke  26218 ['Paradise']   route  38571 ['Concow', 'Paradise', 'Magalia', 'Yankee Hill']   (total 38571)
+  road factor 1.6, 50 km/h: spoke  26218 ['Paradise']   route  27261 ['Yankee Hill', 'Concow', 'Paradise']   (total 38571)
+  road factor 1.6, 80 km/h: spoke  26218 ['Paradise']   route  38571 ['Concow', 'Yankee Hill', 'Magalia', 'Paradise']   (total 38571)
+
+Tipping, 50 km/h: optimum ['Paradise']; Paradise leaves the optimum when its weight falls below 0.431 x 26218 = 11310 people
+
+Tipping, 80 km/h: optimum ['Concow', 'Paradise']; Paradise leaves the optimum when its weight falls below 0.404 x 26218 = 10600 people
+
+=== Sensitivity (20000 draws, arrival reading, independent hazard-minute errors) ===
 nominal plan (80 km/h, no delay): ['Concow', 'Paradise'], weight 26928
-  optimal set Paradise                          65.3%
-  optimal set Concow+Paradise                   18.4%
-  optimal set Paradise+Yankee Hill              13.9%
-  optimal set Magalia+Paradise                   2.3%
-  optimal set Yankee Hill                        0.0%
-  optimal set Concow                             0.0%
+  optimal set Paradise                          64.8% (se 0.3%)
+  optimal set Concow+Paradise                   18.1% (se 0.3%)
+  optimal set Paradise+Yankee Hill              14.2% (se 0.2%)
+  optimal set Magalia+Paradise                   2.8% (se 0.1%)
+  optimal set Yankee Hill                        0.0% (se 0.0%)
+  optimal set Concow                             0.0% (se 0.0%)
   Paradise in optimal set:         100.0%
-  nominal-optimal plan   fully on time  20.7%; share of drawn optimum retained: mean 0.266, 5th pct 0.027
-  Paradise-only plan     fully on time 100.0%; share of drawn optimum retained: mean 0.986, 5th pct 0.974
+  nominal-optimal plan   fully on time  20.9% (se 0.3%); retained, fixed route: mean 0.266 (se 0.003), 5th pct 0.027; literal route: mean 0.221 (se 0.003)
+  Paradise-only plan     fully on time 100.0% (se 0.0%); retained, fixed route: mean 0.985 (se 0.000), 5th pct 0.974; literal route: mean 0.985 (se 0.000)
+  chained-route optimum, road factor 1.0: all four protected in  72.5% of draws; mean protected share 0.934 (se 0.001)
+  chained-route optimum, road factor 1.3: all four protected in  43.9% of draws; mean protected share 0.836 (se 0.001)
+
+=== Sensitivity (20000 draws, arrival reading, correlated hazard-minute errors) ===
+nominal plan (80 km/h, no delay): ['Concow', 'Paradise'], weight 26928
+  optimal set Paradise                          65.2% (se 0.3%)
+  optimal set Concow+Paradise                   17.8% (se 0.3%)
+  optimal set Paradise+Yankee Hill               9.7% (se 0.2%)
+  optimal set Magalia+Paradise                   6.3% (se 0.2%)
+  optimal set Yankee Hill                        0.7% (se 0.1%)
+  optimal set (nothing reachable)                0.4% (se 0.0%)
+  Paradise in optimal set:          98.9%
+  nominal-optimal plan   fully on time  24.0% (se 0.3%); retained, fixed route: mean 0.324 (se 0.003), 5th pct 0.027; literal route: mean 0.242 (se 0.003)
+  Paradise-only plan     fully on time  98.9% (se 0.1%); retained, fixed route: mean 0.968 (se 0.001), 5th pct 0.699; literal route: mean 0.968 (se 0.001)
+  chained-route optimum, road factor 1.0: all four protected in  75.4% of draws; mean protected share 0.926 (se 0.001)
+  chained-route optimum, road factor 1.3: all four protected in  49.1% of draws; mean protected share 0.806 (se 0.002)
