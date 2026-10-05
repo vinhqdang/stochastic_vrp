@@ -1,7 +1,7 @@
 %% CSoNet 2026 Journal Track submission (Journal of Combinatorial Optimization)
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL main_old.tex   Mon Oct  5 07:48:20 2026
-%DIF ADD main.tex       Mon Oct  5 07:48:20 2026
+%DIF DEL main_old.tex   Mon Oct  5 12:44:24 2026
+%DIF ADD main.tex       Mon Oct  5 12:44:24 2026
 %% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
 
 \documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}
@@ -830,8 +830,8 @@ General \DIFdelbeginFL \DIFdelFL{instance }\DIFdelendFL & solved exactly & Thm.~
 General \DIFdelbeginFL \DIFdelFL{instance }\DIFdelendFL & $(1-\epsilon)$\DIFdelbeginFL \DIFdelFL{-approximated }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{-approx. }\DIFaddendFL & Thm.~\ref{thm:fptas} & $O(n^3/\epsilon)$ \DIFaddbeginFL & \DIFaddFL{classical type }\DIFaddendFL \\
 Equal deadlines \DIFdelbeginFL \DIFdelFL{($d_i{=}D$) }\DIFdelendFL & weakly NP-hard ($=$ knapsack) & Thm.~\ref{thm:hardness} & --- \DIFaddbeginFL & \DIFaddFL{classical }\DIFaddendFL \\
 Equal \DIFdelbeginFL \DIFdelFL{cost ($p_i{=}p$}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{weights }& \DIFaddFL{solved exactly }& \DIFaddFL{Thm.~\ref{thm:classification}(a}\DIFaddendFL ) & \DIFaddbeginFL \DIFaddFL{$O(n\log n)$ }& \DIFaddFL{Moore }\\
-\DIFaddFL{Equal cost, $m=1$ }& \DIFaddendFL solved exactly & Thm.~\ref{thm:equalp} & $O(n\log n)$ \DIFaddbeginFL & \DIFaddFL{classical }\\
-\DIFaddFL{Equal cost, $m\ge2$ identical vehicles }& \DIFaddFL{solved exactly }& \DIFaddFL{Thm.~\ref{thm:equalp} }& \DIFaddFL{$O(n\log n)$ }& \DIFaddFL{new (proof) }\\
+\DIFaddFL{Equal cost, $m=1$ }& \DIFaddFL{solved exactly }& \DIFaddFL{Thm.~\ref{thm:equalp} }& \DIFaddFL{$O(n\log n)$ }& \DIFaddFL{classical }\\
+\DIFaddFL{Equal cost, $m\ge2$ identical vehicles }& \DIFaddendFL solved exactly & Thm.~\ref{thm:equalp} & $O(n\log n)$ \DIFaddbeginFL & \DIFaddFL{new (proof) }\\
 \DIFaddFL{Which of $p,w,d$ are constant }& \DIFaddFL{polynomial iff $p$ or $w$ constant }& \DIFaddFL{Thm.~\ref{thm:classification} }& \DIFaddFL{--- }& \DIFaddFL{new framing }\DIFaddendFL \\
 Naive EDD, \DIFdelbeginFL \DIFdelFL{no repair }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{EDD with skipping }\DIFaddendFL & unbounded \DIFdelbeginFL \DIFdelFL{worst-case }\DIFdelendFL ratio & Prop.~\ref{prop:naive} & $O(n\log n)$ \DIFaddbeginFL & \DIFaddFL{new }\\
 \DIFaddFL{Weighted greedy repair }& \DIFaddFL{unbounded ratio }& \DIFaddFL{Prop.~\ref{prop:repair} }& \DIFaddFL{--- }& \DIFaddFL{new }\\
@@ -875,10 +875,10 @@ $T(S)$, hence at some time $\le T(S)\le D$, so every site is on time.
 \DIFaddend \begin{theorem}[NP-hardness of MWHED]\label{thm:hardness}
 MWHED is NP-hard. This holds even \DIFdelbegin \DIFdel{restricted to instances in which
 }\DIFdelend \DIFaddbegin \DIFadd{when }\DIFaddend every site shares a common
-hazard deadline, \DIFdelbegin \DIFdel{$d_i = D$ }\DIFdelend \DIFaddbegin \DIFadd{$d_i=D$ }\DIFaddend for all $i$\DIFaddbegin \DIFadd{, and even when $w_i=p_i$ for all
-$i$. Precisely, the decision problem ``is $W^\ast\ge k$?'' is
-NP-complete}\DIFaddend .
-\end{theorem}
+hazard deadline, \DIFdelbegin \DIFdel{$d_i = D$ }\DIFdelend \DIFaddbegin \DIFadd{$d_i=D$ for all $i$, and even when $w_i=p_i$ }\DIFaddend for all
+$i$. \DIFaddbegin \DIFadd{Precisely, the decision problem ``is $W^\ast\ge k$?'' is
+NP-complete.
+}\DIFaddend \end{theorem}
 
 \begin{proof}
 \DIFdelbegin \DIFdel{Consider the restriction $d_i = D$ }\DIFdelend \DIFaddbegin \DIFadd{Membership in NP is clear: a dispatch order is a certificate and
@@ -1010,9 +1010,11 @@ Theorem~\ref{thm:dp} is pseudo-polynomial, not polynomial: $P$ can be
 exponential in the input's bit length. This is consistent with
 Theorem~\ref{thm:hardness}\DIFdelbegin \DIFdel{'s reduction from knapsack, which is itself
 }\DIFdelend \DIFaddbegin \DIFadd{, whose hard instances need large numbers
-(the problem is }\DIFaddend only weakly NP-hard\DIFaddbegin \DIFadd{)}\DIFaddend .
+(the problem is }\DIFaddend only weakly NP-hard\DIFdelbegin \DIFdel{.
+}\DIFdelend \DIFaddbegin \DIFadd{).
+}
 
-\DIFaddbegin \begin{remark}[Relation to Lawler--Moore]\label{rem:lawlermoore}
+\begin{remark}[Relation to Lawler--Moore]\label{rem:lawlermoore}
 \DIFadd{This is the Lawler--Moore dynamic program \mbox{%DIFAUXCMD
 \citep{lawlermoore1969} }\hskip0pt%DIFAUXCMD
 for
@@ -1024,8 +1026,9 @@ earliest-deadline-first lemma in the notation of the dispatch problem.
 Refinements of the $O(nP)$ bound exist (see
 Section~\ref{sec:related}); they apply verbatim to MWHED.
 }\end{remark}
+\DIFaddend 
 
-\DIFaddend \begin{example}[The dynamic program on the running instance]\label{ex:dp}
+\begin{example}[The dynamic program on the running instance]\label{ex:dp}
 Table~\ref{tab:dpwalkthrough} traces $f(i,t)$ for
 Example~\ref{ex:running}, relabeled in increasing-deadline order
 $3,1,2,4$ so that index $i=1$ is site $3$, $i=2$ is site $1$, $i=3$ is
@@ -1278,8 +1281,8 @@ most $4$ for every input size that can occur in practice.
 }
 
 \begin{theorem}[Equal dispatch cost is tractable, for any number of identical vehicles]\DIFaddend \label{thm:equalp}
-If \DIFdelbegin \DIFdel{$p_i = p$ for all }\DIFdelend \DIFaddbegin \DIFadd{$p_i=p$ for all }\DIFaddend $i$\DIFdelbegin \DIFdel{(all sites equidistant from the depot }\DIFdelend , \DIFdelbegin \DIFdel{in
-round-trip dispatch time ), MWHED }\DIFdelend \DIFaddbegin \DIFadd{MWHED-$m$ }\DIFaddend is solvable exactly in \DIFdelbegin \DIFdel{$O(n \log n)$
+If \DIFdelbegin \DIFdel{$p_i = p$ for all }\DIFdelend \DIFaddbegin \DIFadd{$p_i=p$ for all }\DIFaddend $i$\DIFdelbegin \DIFdel{(all sites equidistant from the depot , in
+round-trip dispatch time )}\DIFdelend , \DIFdelbegin \DIFdel{MWHED }\DIFdelend \DIFaddbegin \DIFadd{MWHED-$m$ }\DIFaddend is solvable exactly in \DIFdelbegin \DIFdel{$O(n \log n)$
 time }\DIFdelend \DIFaddbegin \DIFadd{$O(n\log n)$
 time for every $m\ge1$. In particular this holds for MWHED
 ($m=1$)}\DIFaddend .
@@ -1625,7 +1628,8 @@ $1\|\sum U_j$ solved in $O(n\log n)$ time by Moore's algorithm
 . (b) $\mathcal C_{\{d\}}\supseteq$ the instances of
 Theorem~\ref{thm:hardness}, so it is NP-hard, and it is weakly NP-hard
 because }\DIFaddend Theorem~\ref{thm:dp} \DIFdelbegin \DIFdel{)
-versus truly polynomial (Theorem~\ref{thm:fptas})dependence on the instance's numerical magnitude; a sensitivity sweep over }\DIFdelend \DIFaddbegin \DIFadd{solves it in pseudo-polynomial time;
+versus truly polynomial (Theorem~\ref{thm:fptas})dependence on the
+instance's numerical magnitude; a sensitivity sweep over }\DIFdelend \DIFaddbegin \DIFadd{solves it in pseudo-polynomial time;
 $\mathcal C_\emptyset$ contains $\mathcal C_{\{d\}}$.
 }\end{proof}
 
@@ -2197,7 +2201,7 @@ the 2010 census population.}\DIFaddendFL \label{tab:campfire}
 %DIFDELCMD < %%%
 \DIFdelendFL \DIFaddbeginFL \begin{tabular}{@{}lccccccc@{}}
 \DIFaddendFL \toprule
-Site & $p_i$ (50\DIFdelbeginFL \DIFdelFL{km/h}\DIFdelendFL ) & $p_i$ (80\DIFdelbeginFL \DIFdelFL{km/h}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{) }& \DIFaddFL{$d^{\mathrm{haz}}$ }& \DIFaddFL{$d_i$ (50}\DIFaddendFL ) & $d_i$ \DIFaddbeginFL \DIFaddFL{(80) }\DIFaddendFL & $w_i$ \\
+Site & $p_i$ (50\DIFdelbeginFL \DIFdelFL{km/h}\DIFdelendFL ) & $p_i$ (80\DIFdelbeginFL \DIFdelFL{km/h}\DIFdelendFL ) & \DIFaddbeginFL \DIFaddFL{$d^{\mathrm{haz}}$ }& \DIFaddendFL $d_i$ \DIFaddbeginFL \DIFaddFL{(50) }& \DIFaddFL{$d_i$ (80) }\DIFaddendFL & $w_i$ \\
 \midrule
 Concow & 63 & 39 & 52 & \DIFaddbeginFL \DIFaddFL{84 }& \DIFaddFL{72 }& \DIFaddendFL 710 \\
 Magalia & 89 & 55 & 58 & \DIFaddbeginFL \DIFaddFL{102 }& \DIFaddFL{86 }& \DIFaddendFL 11{,}310 \\
@@ -2415,7 +2419,8 @@ not verified this in detail and do not claim it as a result here.
 
 %DIFDELCMD < %%%
 \DIFdel{To see concretely where the $P^m$ term comes from: assign sites to
-vehicles greedily by deadline as in Lemma~\ref{lem:edd}, but now track, for each vehicle $k=1,\dots,m$, its own cumulative dispatch time
+vehicles greedily by deadline as in Lemma~\ref{lem:edd}, but now track,
+for each vehicle $k=1,\dots,m$, its own cumulative dispatch time
 $t_k$. The natural generalization of $f(i,t)$ in Theorem~\ref{thm:dp}'s
 proof becomes $f(i, t_1,\dots,t_m)$: the
 maximum on-time weight
@@ -2519,13 +2524,13 @@ $1$ or $100$ }\DIFaddend with probability $\tfrac12$ \DIFdelbegin \DIFdel{, so $
 \mathbb E[d_A]=2$. Serving }\DIFaddend $A$ first \DIFdelbegin \DIFdel{: $A$ completes at $1\le 2$ (always on time) , and $B$
 completes at $2$, on time only when $d_B=100$, giving expected value
 $1 + 10\cdot\tfrac12 = 6$. Dispatching }\DIFdelend \DIFaddbegin \DIFadd{(the expected-deadline order) gives
-$1+10\cdot\tfrac12=6$; serving }\DIFaddend $B$ \DIFdelbegin \DIFdel{first instead: }\DIFdelend \DIFaddbegin \DIFadd{first gives $10+1=11$, because }\DIFaddend $B$\DIFdelbegin \DIFdel{completes
+$1+10\cdot\tfrac12=6$; serving }\DIFaddend $B$ first \DIFdelbegin \DIFdel{instead: }\DIFdelend \DIFaddbegin \DIFadd{gives $10+1=11$, because }\DIFaddend $B$\DIFdelbegin \DIFdel{completes
 at $1$, on time whenever $d_B\ge 1$, which holds for }\emph{\DIFdel{both}}
 %DIFAUXCMD
 \DIFdel{possible values of $d_B$, and $A$ completes at $2\le 2$, always on
 time, giving expected value $10 + 1 = 11$---nearly double, by visiting
 the site with the }\emph{\DIFdel{larger}} %DIFAUXCMD
-\DIFdel{expected deadline first , because $d_B$}\DIFdelend 's
+\DIFdel{expected deadline first, because $d_B$}\DIFdelend 's
 tight realization \DIFdelbegin \DIFdel{($d_B=1$) is only avoidable }\DIFdelend \DIFaddbegin \DIFadd{is avoidable only }\DIFaddend by acting immediately\DIFdelbegin \DIFdel{,
 information the expected value alone discards. This would couple
 MWHED to exactly the
@@ -2824,23 +2829,31 @@ the first draft of the manuscript, and all authors commented on
 previous versions, reviewed, and approved the final manuscript.
 
 \subsection*{Data Availability}
-The synthetic instance generators\DIFdelbegin \DIFdel{and all code used to produce every table }\DIFdelend \DIFaddbegin \DIFadd{, all algorithms, the exhaustive-search
-verification, and the scripts that regenerate every table and figure }\DIFaddend in
-Section~\ref{sec:experiments} \DIFaddbegin \DIFadd{(}\texttt{\DIFadd{experiment.py}}\DIFadd{,
-}\texttt{\DIFadd{verify\_small.py}}\DIFadd{, }\texttt{\DIFadd{case\_study\_campfire.py}}\DIFadd{, and the
-scripts in }\texttt{\DIFadd{figures/}}\DIFadd{) }\DIFaddend are included with this submission and are
-self-contained \DIFdelbegin \DIFdel{, except for
-}\DIFdelend \DIFaddbegin \DIFadd{and deterministic given their random seeds. The
+The synthetic \DIFdelbegin \DIFdel{instance generators and all code used to produce every
+table }\DIFdelend \DIFaddbegin \DIFadd{instances used }\DIFaddend in Section~\ref{sec:experiments} are
+\DIFdelbegin \DIFdel{included with this
+submission and are self-contained,
+except for
+}\DIFdelend \DIFaddbegin \DIFadd{generated by seeded pseudo-random generators described in that section,
+and every table and figure is deterministic given those seeds. The
 real-world instance of }\DIFaddend Section~\ref{sec:campfire} \DIFdelbegin \DIFdel{'s real-world instance, whose inputs are
 public-domain }\DIFdelend \DIFaddbegin \DIFadd{is derived from
 public }\DIFaddend figures (a NIST technical report and U.S.\ Census data, both
-cited in the text) rather than data collected by the authors; the
-script that derives \DIFdelbegin \DIFdel{the instance from those public }\DIFdelend \DIFaddbegin \DIFadd{it from those }\DIFaddend figures and reproduces
-Tables~\ref{tab:campfire} and~\ref{tab:campfire-results} \DIFaddbegin \DIFadd{and the
-sensitivity analysis }\DIFaddend is also included\DIFdelbegin \DIFdel{with this submission}\DIFdelend .
+cited in the text) rather than data collected by the authors\DIFdelbegin \DIFdel{; the script that derives the instance from those public figures and reproduces Tables~\ref{tab:campfire} and~\ref{tab:campfire-results} is
+also included with this submission}\DIFdelend \DIFaddbegin \DIFadd{. The
+source code (the algorithms, the exhaustive-search verification, and
+the scripts that regenerate every table and figure, including the Camp
+Fire derivation and sensitivity analysis) is available from the
+corresponding author on reasonable request.
+The theoretical results (Lemma~\ref{lem:edd}, Theorems~\ref{thm:hardness}--\ref{thm:equalp}, Propositions~\ref{prop:naive}--\ref{prop:tight},
+the hardness part of Theorem~\ref{thm:classification}, and the worked
+examples) have also been machine-checked in the Lean~4 proof assistant
+with the Mathlib library, with no unproved steps; the formalisation
+does not cover running-time or complexity-class statements, and is
+available from the corresponding author on reasonable request}\DIFaddend .
 
 \subsection*{Use of Large Language Models}
-A generative AI coding assistant was used to assist with
+\DIFdelbegin \DIFdel{An }\DIFdelend \DIFaddbegin \DIFadd{A generative }\DIFaddend AI coding assistant \DIFdelbegin \DIFdel{(Claude, Anthropic) }\DIFdelend was used to assist with
 LaTeX formatting and to run the numerical illustration code reported in
 Section~\ref{sec:experiments}. All theorem statements, proofs, and the
 manuscript text were authored, verified, and are taken responsibility
