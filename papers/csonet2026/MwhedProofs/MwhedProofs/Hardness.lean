@@ -208,7 +208,7 @@ theorem onTimeW_append_ge {D : ℕ} (hD : ∀ i, J.d i = D) (hw : ∀ i, J.w i =
     have := ih (t + J.p i) (by omega)
     simp only [List.cons_append, onTimeW, hD, hw, List.map_cons, List.sum_cons]
     have hc : t + J.p i ≤ D := by omega
-    simp only [hc, if_true]
+    simp only [hc, ite_true]
     omega
 
 /-- On a duplicate-free list, the on-time weight is the weight of some subset of its sites. -/

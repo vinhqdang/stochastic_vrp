@@ -181,6 +181,8 @@ to identify "sublist of `L` with `AllOnTime`" with "feasible set", i.e. Lemma 1)
 
 section PartB
 
+set_option linter.unusedSectionVars false
+
 variable {ι : Type*} [DecidableEq ι] (I : Inst ι) (w' : ι → ℕ)
 
 open scoped Classical in
@@ -207,7 +209,9 @@ theorem gTab_append_singleton (L : List ι) (x : ι) (v : ℕ) :
       min (gTab I w' L v)
         (if w' x ≤ v ∧ gTab I w' L (v - w' x) + (I.p x : ℕ∞) ≤ (I.d x : ℕ∞)
           then gTab I w' L (v - w' x) + (I.p x : ℕ∞) else ⊤) := by
-  simp [gTab, gRev]
+  simp only [gTab, List.reverse_append, List.reverse_cons, List.reverse_nil, List.nil_append,
+    List.singleton_append, gRev]
+  congr
 
 theorem allOnTime_append (t : ℕ) (S T : List ι) :
     AllOnTime I t (S ++ T) ↔ AllOnTime I t S ∧ AllOnTime I (t + (S.map I.p).sum) T := by
@@ -250,11 +254,11 @@ theorem gTab_le (L : List ι) :
       have hsub : v - w' x = (S'.map w').sum := by omega
       have ih' := ih (v - w' x) S' h' hon' hsub.symm
       have hc : gTab I w' L (v - w' x) + (I.p x : ℕ∞) ≤ (I.d x : ℕ∞) :=
-        (add_le_add_left ih' _).trans (by exact_mod_cast hon2)
+        (add_le_add ih' le_rfl).trans (by exact_mod_cast hon2)
       refine (min_le_right _ _).trans ?_
-      rw [if_pos ⟨hle, hc⟩]
-      push_cast
-      exact add_le_add_left ih' _
+      simp only [hle, hc, and_self, ↓reduceIte]
+      rw [Nat.cast_add]
+      exact add_le_add ih' le_rfl
 
 /-- The value `g(L, v)` is `∞` or is attained by a feasible sublist of value `v`. -/
 theorem gTab_attained (L : List ι) :
@@ -324,7 +328,7 @@ theorem gTab_eq_coe_iff (L : List ι) (v t : ℕ) :
     · rw [h] at h1; exact absurd h1 (by simp)
     · refine ⟨⟨S, hS, hon, hv, ?_⟩, fun T hT hon' hv' => ?_⟩
       · rw [h] at hg; exact_mod_cast hg.symm
-      · have := gTab_le I w' L T hS.length_le |> fun _ => gTab_le I w' L v T hT hon' hv'
+      · have := gTab_le I w' L v T hT hon' hv'
         rw [h] at this; exact_mod_cast this
   · rintro ⟨⟨S, hS, hon, hv, hS'⟩, hmin⟩
     apply le_antisymm
@@ -334,5 +338,344 @@ theorem gTab_eq_coe_iff (L : List ι) (v t : ℕ) :
       · rw [hg]; exact_mod_cast hmin T hT hon' hv'
 
 end PartB
+
+
+/-! ## Part C: tightness of the analysis (Proposition 8)
+
+The family of the proposition, over the sites `Fin n` (site `0` of this file is the paper's
+site `1`): `p_i = 1`, `d_i = n`, `w_0 = M`, `w_i = ⌈K⌉ - 1` for `i ≠ 0`, `K = ε M / n`. -/
+
+section PartC
+
+/-- `K = ε M / n`. -/
+noncomputable def tightK (ε : ℝ) (n M : ℕ) : ℝ := ε * M / n
+
+/-- The weight `⌈K⌉ - 1` of the light sites. -/
+noncomputable def tightC (ε : ℝ) (n M : ℕ) : ℕ := ⌈tightK ε n M⌉₊ - 1
+
+/-- The instance of Proposition 8. -/
+noncomputable def tightInst (ε : ℝ) (n M : ℕ) : Inst (Fin n) where
+  p _ := 1
+  d _ := n
+  w i := if i.val = 0 then M else tightC ε n M
+  p_pos _ := Nat.one_pos
+
+/-- Hypotheses of Proposition 8: `ε ∈ (0,1)`, `n ≥ 2`, `M ≥ 2n/ε`. -/
+structure TightHyp (ε : ℝ) (n M : ℕ) : Prop where
+  hn : 2 ≤ n
+  hε0 : 0 < ε
+  hε1 : ε < 1
+  hM : 2 * (n : ℝ) / ε ≤ M
+
+namespace TightHyp
+
+variable {ε : ℝ} {n M : ℕ}
+
+theorem n_pos (h : TightHyp ε n M) : 0 < n := by have := h.hn; omega
+
+theorem n_pos_real (h : TightHyp ε n M) : (0 : ℝ) < n := by exact_mod_cast h.n_pos
+
+theorem M_pos_real (h : TightHyp ε n M) : (0 : ℝ) < M := by
+  have h1 : 0 < 2 * (n : ℝ) / ε := by have := h.n_pos_real; have := h.hε0; positivity
+  exact lt_of_lt_of_le h1 h.hM
+
+/-- `K = εM/n ≥ 2` (in particular the scaling is active). -/
+theorem K_ge_two (h : TightHyp ε n M) : 2 ≤ tightK ε n M := by
+  have h1 : 2 * (n : ℝ) ≤ M * ε := (div_le_iff₀ h.hε0).1 h.hM
+  unfold tightK
+  rw [le_div_iff₀ h.n_pos_real]
+  linarith
+
+theorem K_pos (h : TightHyp ε n M) : 0 < tightK ε n M := by have := h.K_ge_two; linarith
+
+/-- `⌈K⌉ - 1`, as a real, is `⌈K⌉ - 1`, and it is `< K` and `≥ K - 1`. -/
+theorem C_cast (h : TightHyp ε n M) :
+    (tightC ε n M : ℝ) = (⌈tightK ε n M⌉₊ : ℝ) - 1 := by
+  have h1 : 1 ≤ ⌈tightK ε n M⌉₊ := Nat.one_le_iff_ne_zero.2
+    (Nat.pos_iff_ne_zero.1 (Nat.ceil_pos.2 h.K_pos))
+  unfold tightC
+  rw [Nat.cast_sub h1]; simp
+
+theorem C_lt_K (h : TightHyp ε n M) : (tightC ε n M : ℝ) < tightK ε n M := by
+  rw [h.C_cast]
+  have := Nat.ceil_lt_add_one h.K_pos.le
+  linarith
+
+theorem K_sub_one_le_C (h : TightHyp ε n M) : tightK ε n M - 1 ≤ (tightC ε n M : ℝ) := by
+  rw [h.C_cast]
+  have := Nat.le_ceil (tightK ε n M)
+  linarith
+
+end TightHyp
+
+private theorem length_takeWhile_lt {α : Type*} [DecidableEq α] {σ : List α} {i : α}
+    (hi : i ∈ σ) : (σ.takeWhile (· ≠ i)).length < σ.length := by
+  have h := List.takeWhile_append_dropWhile (p := fun x => decide (x ≠ i)) (l := σ)
+  have hnot : i ∉ σ.takeWhile (fun x => decide (x ≠ i)) := by
+    intro hm
+    have := List.mem_takeWhile_imp hm
+    simp at this
+  have hdw : i ∈ σ.dropWhile (fun x => decide (x ≠ i)) := by
+    rw [← h] at hi
+    rcases List.mem_append.1 hi with h1 | h1
+    · exact absurd h1 hnot
+    · exact h1
+  have hpos : 0 < (σ.dropWhile (fun x => decide (x ≠ i))).length :=
+    List.length_pos_of_mem hdw
+  have hlen := congrArg List.length h
+  rw [List.length_append] at hlen
+  omega
+
+variable {ε : ℝ} {n M : ℕ}
+
+/-- **All sets are feasible** (total time `n`, every deadline `n`). -/
+theorem tight_feasible (S : Finset (Fin n)) : Feasible (tightInst ε n M) S := by
+  refine ⟨List.finRange n, ⟨List.nodup_finRange n, List.mem_finRange⟩, fun i _ => ?_⟩
+  have hlt := length_takeWhile_lt (List.mem_finRange i)
+  rw [List.length_finRange] at hlt
+  simp only [completion, tightInst, List.map_const', List.sum_replicate, smul_eq_mul, mul_one]
+  omega
+
+theorem tight_indivFeasible (hn : 1 ≤ n) : IndivFeasible (tightInst ε n M) := by
+  intro i; simpa [tightInst] using hn
+
+theorem tight_weight_univ (h : TightHyp ε n M) :
+    weight (tightInst ε n M) univ = M + (n - 1) * tightC ε n M := by
+  have hz : (⟨0, h.n_pos⟩ : Fin n) ∈ (univ : Finset (Fin n)) := mem_univ _
+  unfold weight
+  rw [← Finset.add_sum_erase _ _ hz]
+  have : ∑ i ∈ univ.erase (⟨0, h.n_pos⟩ : Fin n), (tightInst ε n M).w i
+      = ∑ i ∈ univ.erase (⟨0, h.n_pos⟩ : Fin n), tightC ε n M := by
+    refine Finset.sum_congr rfl fun i hi => ?_
+    have : i.val ≠ 0 := by
+      intro h0
+      exact (Finset.mem_erase.1 hi).1 (Fin.ext h0)
+    simp [tightInst, this]
+  rw [this, Finset.sum_const, Finset.card_erase_of_mem hz]
+  simp [tightInst]
+
+/-- **`W* = M + (n-1)(⌈K⌉-1)`** (Core-free: the whole ground set is feasible and heaviest). -/
+theorem tight_opt_core_free (h : TightHyp ε n M) :
+    (∃ S, Feasible (tightInst ε n M) S ∧ weight (tightInst ε n M) S = M + (n - 1) * tightC ε n M) ∧
+    ∀ S, Feasible (tightInst ε n M) S → weight (tightInst ε n M) S ≤ M + (n - 1) * tightC ε n M := by
+  refine ⟨⟨univ, tight_feasible _, tight_weight_univ h⟩, fun S _ => ?_⟩
+  rw [← tight_weight_univ h]
+  exact Finset.sum_le_sum_of_subset (Finset.subset_univ S)
+
+/-- **`W* = M + (n-1)(⌈K⌉-1)`** in the sense of `IsOPT` (via Core's `isOPT_iff_max_feasible`). -/
+theorem tight_isOPT (h : TightHyp ε n M) :
+    IsOPT (tightInst ε n M) (M + (n - 1) * tightC ε n M) :=
+  (isOPT_iff_max_feasible _ _).2 (tight_opt_core_free h)
+
+/-- Every site `i ≠ 0` has scaled weight `0`. -/
+theorem tight_scaled_light (h : TightHyp ε n M) {i : Fin n} (hi : i.val ≠ 0) :
+    scaledW (tightK ε n M) (tightInst ε n M).w i = 0 := by
+  unfold scaledW
+  rw [Nat.floor_eq_zero]
+  simp only [tightInst, hi, ite_false]
+  rw [div_lt_one h.K_pos]
+  exact h.C_lt_K
+
+/-- Site `0` has scaled weight `⌊n/ε⌋`. -/
+theorem tight_scaled_heavy (h : TightHyp ε n M) {i : Fin n} (hi : i.val = 0) :
+    scaledW (tightK ε n M) (tightInst ε n M).w i = ⌊(n : ℝ) / ε⌋₊ := by
+  unfold scaledW
+  simp only [tightInst, hi, ite_true]
+  congr 1
+  have := h.M_pos_real; have := h.n_pos_real; have := h.hε0
+  unfold tightK
+  field_simp
+
+theorem tight_floor_pos (h : TightHyp ε n M) : 0 < ⌊(n : ℝ) / ε⌋₊ := by
+  apply Nat.floor_pos.2
+  have := h.n_pos_real; have := h.hε0; have := h.hε1; have := h.hn
+  rw [le_div_iff₀ h.hε0]
+  have : (2 : ℝ) ≤ n := by exact_mod_cast h.hn
+  nlinarith
+
+/-- The scaled value of a set `S`: `⌊n/ε⌋` if it contains site `0`, else `0`. -/
+theorem tight_scaled_sum (h : TightHyp ε n M) (S : Finset (Fin n)) :
+    ∑ i ∈ S, scaledW (tightK ε n M) (tightInst ε n M).w i =
+      if (⟨0, h.n_pos⟩ : Fin n) ∈ S then ⌊(n : ℝ) / ε⌋₊ else 0 := by
+  have : ∀ i : Fin n, scaledW (tightK ε n M) (tightInst ε n M).w i =
+      if i = (⟨0, h.n_pos⟩ : Fin n) then ⌊(n : ℝ) / ε⌋₊ else 0 := by
+    intro i
+    by_cases hi : i.val = 0
+    · have hz : i = ⟨0, h.n_pos⟩ := Fin.ext hi
+      simp only [hz, ↓reduceIte]; exact tight_scaled_heavy h (i := ⟨0, h.n_pos⟩) rfl
+    · have : i ≠ ⟨0, h.n_pos⟩ := fun e => hi (by simp [e])
+      simp [this, tight_scaled_light h hi]
+  simp only [this]
+  rw [Finset.sum_ite_eq']
+
+/-- **The scaled-value maximisers are exactly the sets containing site `0`.** -/
+theorem tight_scaledMax_iff (h : TightHyp ε n M) (S : Finset (Fin n)) :
+    IsScaledMax (Feasible (tightInst ε n M)) (tightK ε n M) (tightInst ε n M).w S ↔
+      (⟨0, h.n_pos⟩ : Fin n) ∈ S := by
+  have hp := tight_floor_pos h
+  constructor
+  · rintro ⟨_, hmax⟩
+    by_contra hz
+    have := hmax univ (tight_feasible _)
+    rw [tight_scaled_sum h, tight_scaled_sum h] at this
+    simp only [hz, mem_univ, ↓reduceIte] at this
+    omega
+  · intro hz
+    refine ⟨tight_feasible _, fun T _ => ?_⟩
+    rw [tight_scaled_sum h, tight_scaled_sum h]
+    simp only [hz, ite_true]
+    split_ifs <;> omega
+
+/-- Total dispatch time of a set is its cardinality (`p_i = 1`). -/
+theorem tight_time (S : Finset (Fin n)) : time (tightInst ε n M) S = S.card := by
+  simp [time, tightInst]
+
+/-- **What Algorithm 2 returns on the family** (`v*` maximal, then minimum time `g(n,v*)`):
+a scaled-value maximiser of minimum total dispatch time is exactly `{0}`. -/
+theorem tight_algorithm_output (h : TightHyp ε n M) (S : Finset (Fin n)) :
+    (IsScaledMax (Feasible (tightInst ε n M)) (tightK ε n M) (tightInst ε n M).w S ∧
+      ∀ T, IsScaledMax (Feasible (tightInst ε n M)) (tightK ε n M) (tightInst ε n M).w T →
+        time (tightInst ε n M) S ≤ time (tightInst ε n M) T) ↔
+      S = {(⟨0, h.n_pos⟩ : Fin n)} := by
+  constructor
+  · rintro ⟨hS, hmin⟩
+    have hz := (tight_scaledMax_iff h S).1 hS
+    have h1 := hmin {(⟨0, h.n_pos⟩ : Fin n)} ((tight_scaledMax_iff h _).2 (by simp))
+    rw [tight_time, tight_time] at h1
+    simp only [card_singleton] at h1
+    symm
+    apply Finset.eq_of_subset_of_card_le (by simpa using hz)
+    simpa using h1
+  · rintro rfl
+    refine ⟨(tight_scaledMax_iff h _).2 (by simp), fun T hT => ?_⟩
+    have hz := (tight_scaledMax_iff h T).1 hT
+    rw [tight_time, tight_time]
+    simpa using Finset.card_pos.2 ⟨_, hz⟩
+
+/-- The set returned by Algorithm 2, `{0}`, has weight `M`. -/
+theorem tight_returned_weight (h : TightHyp ε n M) :
+    weight (tightInst ε n M) {(⟨0, h.n_pos⟩ : Fin n)} = M := by
+  simp [weight, tightInst]
+
+/-- **Proposition 8, ratio bound.**  `M / W* ≤ 1 / (1 + ε (n-1)/n - (n-1)/M)`, where the
+denominator is positive and `W* = M + (n-1)(⌈K⌉-1)`. -/
+theorem tight_ratio (h : TightHyp ε n M) :
+    0 < 1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M ∧
+    (M : ℝ) / ((M + (n - 1) * tightC ε n M : ℕ) : ℝ) ≤
+      1 / (1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M) := by
+  have hn := h.n_pos_real
+  have hMp := h.M_pos_real
+  have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast h.n_pos
+  have hε0 := h.hε0
+  -- M > n
+  have hMn : (n : ℝ) < M := by
+    have h1 : 2 * (n : ℝ) ≤ M * ε := (div_le_iff₀ h.hε0).1 h.hM
+    nlinarith [h.hε1]
+  have hD : 0 < 1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M := by
+    have h1 : ((n : ℝ) - 1) / M < 1 := by
+      rw [div_lt_one hMp]; linarith
+    have h2 : 0 ≤ ε * ((n : ℝ) - 1) / n := by
+      apply div_nonneg _ hn.le
+      exact mul_nonneg hε0.le (by linarith)
+    linarith
+  refine ⟨hD, ?_⟩
+  -- W* ≥ M * D
+  have hC := h.K_sub_one_le_C
+  have hcast : ((M + (n - 1) * tightC ε n M : ℕ) : ℝ) = M + ((n : ℝ) - 1) * tightC ε n M := by
+    rw [Nat.cast_add, Nat.cast_mul, Nat.cast_sub h.n_pos]; simp
+  have hlow : (M : ℝ) * (1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M) ≤
+      ((M + (n - 1) * tightC ε n M : ℕ) : ℝ) := by
+    rw [hcast]
+    have hK : tightK ε n M = ε * M / n := rfl
+    have e : (M : ℝ) * (1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M)
+        = M + ((n : ℝ) - 1) * (tightK ε n M - 1) := by
+      rw [hK]; field_simp; ring
+    rw [e]
+    have : (0 : ℝ) ≤ (n : ℝ) - 1 := by linarith
+    nlinarith [mul_le_mul_of_nonneg_left hC this]
+  have hpos : 0 < (M : ℝ) * (1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M) := mul_pos hMp hD
+  calc (M : ℝ) / ((M + (n - 1) * tightC ε n M : ℕ) : ℝ)
+      ≤ (M : ℝ) / ((M : ℝ) * (1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M)) :=
+        div_le_div_of_nonneg_left hMp.le hpos hlow
+    _ = 1 / (1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M) := by
+        field_simp
+
+theorem tight_fptasK (h : TightHyp ε n M) :
+    fptasK ε (tightInst ε n M).w = tightK ε n M := by
+  have hz : (⟨0, h.n_pos⟩ : Fin n) ∈ (univ : Finset (Fin n)) := mem_univ _
+  have hKM : tightK ε n M < M := by
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast h.n_pos
+    have h1 : tightK ε n M ≤ ε * M := div_le_self (mul_nonneg h.hε0.le h.M_pos_real.le) hn1
+    nlinarith [h.hε1, h.M_pos_real]
+  have hsup : (univ.sup (tightInst ε n M).w : ℕ) = M := by
+    apply le_antisymm
+    · refine Finset.sup_le fun i _ => ?_
+      by_cases hi : i.val = 0
+      · simp [tightInst, hi]
+      · have : (tightC ε n M : ℝ) < M := (h.C_lt_K).trans hKM
+        simp only [tightInst, hi, ite_false]
+        exact_mod_cast this.le
+    · have := Finset.le_sup (f := (tightInst ε n M).w) hz
+      simpa [tightInst] using this
+  unfold fptasK
+  rw [hsup, Fintype.card_fin]
+  exact max_eq_right (by have := h.K_ge_two; unfold tightK at this; linarith)
+
+/-- **Sanity check against Theorem 4**: the returned set `{0}` of weight `M` does satisfy
+the guarantee `(1-ε) W* ≤ M` (so Proposition 8 is consistent with the FPTAS bound). -/
+theorem tight_guarantee_holds (h : TightHyp ε n M) :
+    (1 - ε) * ((M + (n - 1) * tightC ε n M : ℕ) : ℝ) ≤ M := by
+  have hSh : IsScaledMax (Feasible (tightInst ε n M)) (fptasK ε (tightInst ε n M).w)
+      (tightInst ε n M).w {(⟨0, h.n_pos⟩ : Fin n)} := by
+    rw [tight_fptasK h]
+    exact (tight_scaledMax_iff h _).2 (by simp)
+  have := fptas_guarantee' (tightInst ε n M) (tight_indivFeasible (by have := h.hn; omega))
+    h.hε0 h.hε1 hSh (tight_opt_core_free h).1 (tight_opt_core_free h).2
+  rw [tight_returned_weight h] at this
+  exact this
+
+/-- **Proposition 8, comparison of the ratio with the guarantee**: for `ε ∈ (0,1)`,
+`(1/(1+ε)) / (1-ε) = 1/(1-ε²)`, and `1 - ε ≤ 1/(1+ε)` (so the guarantee is below the
+limit of the ratio bound, the gap being the factor `1 - ε²`). -/
+theorem tight_limit_identity {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
+    (1 / (1 + ε)) / (1 - ε) = 1 / (1 - ε ^ 2) := by
+  have h1 : (1 + ε) ≠ 0 := by linarith
+  have h2 : (1 - ε) ≠ 0 := by linarith
+  have h3 : (1 - ε ^ 2) ≠ 0 := by nlinarith
+  field_simp
+  ring
+
+theorem tight_guarantee_lt_limit {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε < 1) :
+    1 - ε < 1 / (1 + ε) := by
+  rw [lt_div_iff₀ (by linarith)]
+  nlinarith
+
+end PartC
+
+
+/-! ## Part D: Example 4 (the FPTAS on the running instance) -/
+
+section PartD
+
+/-- Weights of the running instance (Example 1), sites `1..4` as `0..3`. -/
+def exW : Fin 4 → ℕ := ![5, 8, 3, 10]
+
+theorem ex4_wmax : (Finset.univ.sup exW : ℕ) = 10 := by decide
+
+/-- `K = max(1, 0.5 · 10 / 4) = 1.25`. -/
+theorem ex4_K : fptasK (1 / 2 : ℝ) exW = 5 / 4 := by
+  unfold fptasK
+  rw [ex4_wmax, Fintype.card_fin]
+  norm_num
+
+/-- Scaled weights `(⌊5/1.25⌋, ⌊8/1.25⌋, ⌊3/1.25⌋, ⌊10/1.25⌋) = (4, 6, 2, 8)`. -/
+theorem ex4_scaled : (fun i => scaledW (5 / 4 : ℝ) exW i) = ![4, 6, 2, 8] := by
+  funext i
+  fin_cases i <;> simp [scaledW, exW] <;> norm_num
+
+/-- The guaranteed bound `(1 - ε) W* = 11.5` for `W* = 23`, `ε = 1/2`. -/
+theorem ex4_bound : (1 - (1 / 2 : ℝ)) * 23 = 23 / 2 := by norm_num
+
+end PartD
 
 end Mwhed
