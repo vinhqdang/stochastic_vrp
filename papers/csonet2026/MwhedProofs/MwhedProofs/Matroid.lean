@@ -765,4 +765,282 @@ theorem optimum_m2 :
 
 end Example5
 
+/-! ## (g) Step 5: the "latest free slot" implementation
+
+Only the *logic* of Algorithm 3 is formalised: the occupancy array `occ q` (number of
+used slots at position `q`) and the function `findFree` (the largest position
+`q ≤ D i` with a free slot, `0` if none).  The union-find data structure, which merely
+computes `findFree` in near-constant amortised time, and the running time are out of
+scope. -/
+
+section Impl
+
+/-- `findFree m occ D`: the largest position `1 ≤ q ≤ D` with `occ q < m`, or `0`. -/
+def findFree (m : ℕ) (occ : ℕ → ℕ) : ℕ → ℕ
+  | 0 => 0
+  | q + 1 => if occ (q + 1) < m then q + 1 else findFree m occ q
+
+theorem findFree_spec (m : ℕ) (occ : ℕ → ℕ) (D : ℕ) :
+    (findFree m occ D = 0 ∧ ∀ r, 1 ≤ r → r ≤ D → m ≤ occ r) ∨
+    (1 ≤ findFree m occ D ∧ findFree m occ D ≤ D ∧ occ (findFree m occ D) < m ∧
+      ∀ r, findFree m occ D < r → r ≤ D → m ≤ occ r) := by
+  induction D with
+  | zero => left; refine ⟨rfl, fun r h1 h2 => by omega⟩
+  | succ D ih =>
+    by_cases h : occ (D + 1) < m
+    · right
+      simp only [findFree, h, if_true]
+      exact ⟨by omega, le_rfl, h, fun r h1 h2 => by omega⟩
+    · have hm : m ≤ occ (D + 1) := not_lt.1 h
+      simp only [findFree, h, if_false]
+      rcases ih with ⟨h0, h1⟩ | ⟨h0, h1, h2, h3⟩
+      · left
+        refine ⟨h0, fun r hr1 hr2 => ?_⟩
+        by_cases hr : r = D + 1
+        · subst hr; exact hm
+        · exact h1 r hr1 (by omega)
+      · right
+        refine ⟨h0, by omega, h2, fun r hr1 hr2 => ?_⟩
+        by_cases hr : r = D + 1
+        · subst hr; exact hm
+        · exact h3 r hr1 (by omega)
+
+/-- One step of Algorithm 3: find the latest free slot `q`; if `q ≥ 1` keep the site
+and use one slot of position `q`. -/
+def algStep (D : ι → ℕ) (m : ℕ) (s : Finset ι × (ℕ → ℕ)) (i : ι) : Finset ι × (ℕ → ℕ) :=
+  if 1 ≤ findFree m s.2 (D i) then
+    (insert i s.1, Function.update s.2 (findFree m s.2 (D i)) (s.2 (findFree m s.2 (D i)) + 1))
+  else s
+
+/-- Algorithm 3 (without the union-find): returns the kept set. -/
+def algRun (D : ι → ℕ) (m : ℕ) (L : List ι) : Finset ι :=
+  (L.foldl (algStep D m) (∅, fun _ => 0)).1
+
+/-- The invariant of the kept set `A` and occupancy array `occ`: there is a slot
+assignment `f` of `A` whose number of used slots at position `q` is `occ q`, and each
+kept site `j` was given the *latest* free slot: all positions in `(pos j, D j]` are full. -/
+def Inv (D : ι → ℕ) (m : ℕ) (A : Finset ι) (occ : ℕ → ℕ) : Prop :=
+  ∃ f : ι → ℕ × ℕ, Set.InjOn f A ∧ (∀ i ∈ A, (f i).1 < m ∧ 1 ≤ (f i).2 ∧ (f i).2 ≤ D i) ∧
+    (∀ q, occ q = (A.filter (fun j => (f j).2 = q)).card) ∧
+    (∀ j ∈ A, ∀ r, (f j).2 < r → r ≤ D j → m ≤ occ r)
+
+theorem Inv.slotFeasible {D : ι → ℕ} {m : ℕ} {A : Finset ι} {occ : ℕ → ℕ}
+    (h : Inv D m A occ) : SlotFeasible D m A := by
+  obtain ⟨f, hinj, hb, -, -⟩ := h
+  exact ⟨f, hinj, hb⟩
+
+theorem inv_empty (D : ι → ℕ) (m : ℕ) : Inv D m (∅ : Finset ι) (fun _ => 0) :=
+  ⟨fun _ => (0, 0), by simp, by simp, by simp, by simp⟩
+
+theorem inv_insert {D : ι → ℕ} {m : ℕ} {A : Finset ι} {occ : ℕ → ℕ} {i : ι}
+    (hinv : Inv D m A occ) (hi : i ∉ A) {q : ℕ} (hq1 : 1 ≤ q) (hqD : q ≤ D i)
+    (hqocc : occ q < m) (hr : ∀ r, q < r → r ≤ D i → m ≤ occ r) :
+    Inv D m (insert i A) (Function.update occ q (occ q + 1)) := by
+  obtain ⟨f, hinj, hb, hocc, hlat⟩ := hinv
+  -- a free vehicle at position `q`
+  have hfree : ∃ v, v < m ∧ ∀ j ∈ A, (f j).2 = q → (f j).1 ≠ v := by
+    have hlt : ((A.filter (fun j => (f j).2 = q)).image (fun j => (f j).1)).card <
+        (range m).card := by
+      calc _ ≤ (A.filter (fun j => (f j).2 = q)).card := card_image_le
+        _ = occ q := (hocc q).symm
+        _ < (range m).card := by simpa using hqocc
+    obtain ⟨v, hv, hvn⟩ := exists_mem_notMem_of_card_lt_card hlt
+    refine ⟨v, mem_range.1 hv, fun j hj hjq hjv => hvn ?_⟩
+    exact mem_image.2 ⟨j, mem_filter.2 ⟨hj, hjq⟩, hjv⟩
+  obtain ⟨v, hvm, hvfree⟩ := hfree
+  refine ⟨Function.update f i (v, q), ?_, ?_, ?_, ?_⟩
+  · intro a ha b hb' hab
+    rw [coe_insert, Set.mem_insert_iff] at ha hb'
+    rcases ha with rfl | ha <;> rcases hb' with rfl | hb'
+    · rfl
+    · exfalso
+      have hbi : b ≠ a := fun h => hi (h ▸ hb')
+      simp only [Function.update_self, Function.update_of_ne hbi] at hab
+      exact hvfree b hb' (by rw [hab]) (by rw [hab])
+    · exfalso
+      have hai : a ≠ b := fun h => hi (h ▸ ha)
+      simp only [Function.update_self, Function.update_of_ne hai] at hab
+      exact hvfree a ha (by rw [← hab]) (by rw [← hab])
+    · have hai : a ≠ i := fun h => hi (h ▸ ha)
+      have hbi : b ≠ i := fun h => hi (h ▸ hb')
+      simp only [Function.update_of_ne hai, Function.update_of_ne hbi] at hab
+      exact hinj ha hb' hab
+  · intro j hj
+    rw [mem_insert] at hj
+    rcases hj with rfl | hj
+    · simp only [Function.update_self]
+      exact ⟨hvm, hq1, hqD⟩
+    · have hji : j ≠ i := fun h => hi (h ▸ hj)
+      simp only [Function.update_of_ne hji]
+      exact hb j hj
+  · intro r
+    have hcongr : A.filter (fun j => (Function.update f i (v, q) j).2 = r) =
+        A.filter (fun j => (f j).2 = r) := by
+      apply filter_congr
+      intro j hj
+      have hji : j ≠ i := fun h => hi (h ▸ hj)
+      simp [Function.update_of_ne hji]
+    rw [filter_insert]
+    by_cases hrq : r = q
+    · subst hrq
+      simp only [Function.update_self, if_true]
+      rw [card_insert_of_notMem (by simp [hi]), hcongr, ← hocc]
+    · simp only [Function.update_self, if_neg (Ne.symm hrq |>.symm ▸ hrq : ¬ q = r)]
+      rw [hcongr, hocc r, Function.update_of_ne hrq]
+  · intro j hj r hr1 hr2
+    rw [mem_insert] at hj
+    by_cases hrq : r = q
+    · subst hrq
+      simp only [Function.update_self]
+      omega
+    · rw [Function.update_of_ne hrq]
+      rcases hj with rfl | hj
+      · simp only [Function.update_self] at hr1
+        exact hr r hr1 hr2
+      · have hji : j ≠ i := fun h => hi (h ▸ hj)
+        simp only [Function.update_of_ne hji] at hr1
+        exact hlat j hj r hr1 hr2
+
+/-- The rejection half of Step 5 (the argument with `q*`): if every position
+`1..D i` is full then `insert i A` violates the counting criterion. -/
+theorem inv_reject {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finset ι} {occ : ℕ → ℕ} {i : ι}
+    (hinv : Inv D m A occ) (hi : i ∉ A) (hfull : ∀ r, 1 ≤ r → r ≤ D i → m ≤ occ r) :
+    ¬ SlotFeasible D m (insert i A) := by
+  intro hfeas
+  obtain ⟨f, hinj, hb, hocc, hlat⟩ := hinv
+  have hex : ∃ r, D i < r ∧ occ r < m := by
+    refine ⟨A.sup D + D i + 1, by omega, ?_⟩
+    rw [hocc, card_eq_zero.2 ?_]
+    · omega
+    · rw [filter_eq_empty_iff]
+      intro j hj hjr
+      have := (hb j hj).2.2
+      have := le_sup (f := D) hj
+      omega
+  classical
+  obtain ⟨hr0a, hr0b⟩ := Nat.find_spec hex
+  set r0 := Nat.find hex with hr0
+  have hmin : ∀ r, r < r0 → ¬ (D i < r ∧ occ r < m) := fun r hr => Nat.find_min hex hr
+  have hfull' : ∀ r, 1 ≤ r → r < r0 → m ≤ occ r := by
+    intro r h1 h2
+    by_cases hr : r ≤ D i
+    · exact hfull r h1 hr
+    · have := hmin r h2
+      push_neg at this
+      exact this (by omega)
+  have hclaim : ∀ j ∈ A, (f j).2 < r0 → D j < r0 := by
+    intro j hj hjr
+    by_contra hcon
+    have := hlat j hj r0 hjr (by omega)
+    omega
+  set k := r0 - 1 with hk
+  have hS1 : (A.filter (fun j => (f j).2 < r0)).card =
+      ∑ r ∈ Icc 1 k, (A.filter (fun j => (f j).2 = r)).card := by
+    rw [card_eq_sum_card_fiberwise (f := fun j => (f j).2) (t := Icc 1 k)]
+    · apply sum_congr rfl
+      intro r hr
+      rw [mem_Icc] at hr
+      congr 1
+      ext j
+      simp only [mem_filter]
+      constructor
+      · rintro ⟨⟨hj, _⟩, h⟩; exact ⟨hj, h⟩
+      · rintro ⟨hj, h⟩; exact ⟨⟨hj, by omega⟩, h⟩
+    · intro j hj
+      rw [mem_filter] at hj
+      rw [mem_Icc]
+      exact ⟨(hb j hj.1).2.1, by omega⟩
+  have hsum : m * k ≤ ∑ r ∈ Icc 1 k, (A.filter (fun j => (f j).2 = r)).card := by
+    calc m * k = ∑ r ∈ Icc 1 k, m := by simp [mul_comm]
+      _ ≤ _ := by
+        apply sum_le_sum
+        intro r hr
+        rw [mem_Icc] at hr
+        rw [← hocc r]
+        exact hfull' r hr.1 (by omega)
+  have hNA : m * k ≤ N D A k := by
+    refine hsum.trans (hS1 ▸ card_le_card ?_)
+    intro j hj
+    rw [mem_filter] at hj ⊢
+    exact ⟨hj.1, by have := hclaim j hj.1 hj.2; omega⟩
+  have := count_le_of_slotFeasible hfeas k
+  rw [N_insert hi] at this
+  rw [if_pos (by omega)] at this
+  omega
+
+theorem algStep_spec {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finset ι} {occ : ℕ → ℕ} {i : ι}
+    (hinv : Inv D m A occ) (hi : i ∉ A) :
+    (SlotFeasible D m (insert i A) ↔ 1 ≤ findFree m occ (D i)) ∧
+    (1 ≤ findFree m occ (D i) →
+      Inv D m (algStep D m (A, occ) i).1 (algStep D m (A, occ) i).2) ∧
+    (¬ 1 ≤ findFree m occ (D i) → algStep D m (A, occ) i = (A, occ)) := by
+  have hspec := findFree_spec m occ (D i)
+  by_cases hq : 1 ≤ findFree m occ (D i)
+  · have : (1 ≤ findFree m occ (D i) ∧ findFree m occ (D i) ≤ D i ∧
+        occ (findFree m occ (D i)) < m ∧
+        ∀ r, findFree m occ (D i) < r → r ≤ D i → m ≤ occ r) := by
+      rcases hspec with ⟨h0, -⟩ | h
+      · omega
+      · exact h
+    obtain ⟨h1, h2, h3, h4⟩ := this
+    have hnew := inv_insert hinv hi h1 h2 h3 h4
+    have hstep : algStep D m (A, occ) i = (insert i A,
+        Function.update occ (findFree m occ (D i)) (occ (findFree m occ (D i)) + 1)) := by
+      simp [algStep, hq]
+    refine ⟨⟨fun _ => hq, fun _ => hnew.slotFeasible⟩, fun _ => ?_, fun h => absurd hq h⟩
+    rw [hstep]; exact hnew
+  · have h0 : findFree m occ (D i) = 0 := by omega
+    have hfull : ∀ r, 1 ≤ r → r ≤ D i → m ≤ occ r := by
+      rcases hspec with ⟨-, h⟩ | h
+      · exact h
+      · omega
+    refine ⟨⟨fun h => absurd h (inv_reject hm hinv hi hfull), fun h => absurd h hq⟩,
+      fun h => absurd h hq, fun _ => ?_⟩
+    simp [algStep, hq]
+
+theorem algRun_from {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) :
+    ∀ (L : List ι) (A : Finset ι) (occ : ℕ → ℕ), L.Nodup → (∀ y ∈ L, y ∉ A) →
+      Inv D m A occ →
+      (L.foldl (algStep D m) (A, occ)).1 = greedyFrom (SlotFeasible D m) A L := by
+  intro L
+  induction L with
+  | nil => intro A occ _ _ _; rfl
+  | cons x L ih =>
+    intro A occ hnd hdisj hinv
+    rw [List.nodup_cons] at hnd
+    have hxA : x ∉ A := hdisj x (by simp)
+    obtain ⟨h1, h2, h3⟩ := algStep_spec hm hinv hxA
+    rw [List.foldl_cons]
+    by_cases hq : 1 ≤ findFree m occ (D x)
+    · have hfe : SlotFeasible D m (insert x A) := h1.2 hq
+      rw [greedyFrom_cons_of_indep L hfe]
+      have hinv' := h2 hq
+      apply ih _ _ hnd.2 _ hinv'
+      have hstep : (algStep D m (A, occ) x).1 = insert x A := by simp [algStep, hq]
+      rw [hstep]
+      intro y hy hy'
+      rw [mem_insert] at hy'
+      rcases hy' with rfl | hy'
+      · exact hnd.1 hy
+      · exact hdisj y (List.mem_cons_of_mem _ hy) hy'
+    · have hfe : ¬ SlotFeasible D m (insert x A) := fun h => hq (h1.1 h)
+      rw [greedyFrom_cons_of_not L hfe, h3 hq]
+      exact ih A occ hnd.2 (fun y hy => hdisj y (List.mem_cons_of_mem _ hy)) hinv
+
+/-- **Step 5 of Theorem 5.**  Algorithm 3's "latest free slot" rule keeps exactly the
+sites that the greedy algorithm over the slot-feasible family keeps; i.e. it keeps `i`
+exactly when (kept set) `∪ {i}` is slot-feasible.  (Needs `m ≥ 1`.) -/
+theorem algRun_eq_greedy {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) (L : List ι) (hnd : L.Nodup) :
+    algRun D m L = greedy (SlotFeasible D m) L :=
+  algRun_from hm L ∅ (fun _ => 0) hnd (by simp) (inv_empty D m)
+
+/-- Per-step form: with `A` the kept set so far, `i ∉ A` is accepted by the
+latest-free-slot rule iff `insert i A` is slot-feasible. -/
+theorem algStep_accepts_iff {D : ι → ℕ} {m : ℕ} (hm : 1 ≤ m) {A : Finset ι} {occ : ℕ → ℕ}
+    {i : ι} (hinv : Inv D m A occ) (hi : i ∉ A) :
+    1 ≤ findFree m occ (D i) ↔ SlotFeasible D m (insert i A) :=
+  (algStep_spec hm hinv hi).1.symm
+
+end Impl
+
 end Mwhed.EqualDispatch

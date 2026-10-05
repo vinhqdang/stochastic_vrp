@@ -1,2 +1,9 @@
 import MwhedProofs.Defs
 import MwhedProofs.Core
+import MwhedProofs.Dp
+import MwhedProofs.Fptas
+import MwhedProofs.Hardness
+import MwhedProofs.Heuristics
+import MwhedProofs.Examples
+import MwhedProofs.Classification
+import MwhedProofs.Matroid
