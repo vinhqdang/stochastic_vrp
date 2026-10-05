@@ -358,7 +358,7 @@ theorem fptas_refined (I : Inst ι) (hI : IndivFeasible I) (hn : 2 ≤ Fintype.c
         rw [hh] at this
         have h3 : (0 : ℝ) < ((I.w h : ℕ) : ℝ) := by
           by_contra hc
-          push_neg at hc
+          push Not at hc
           nlinarith
         exact h3
       have : (I.w h : ℝ) ≤ v := by exact_mod_cast h1
@@ -526,26 +526,26 @@ theorem tight2_scaled_sum (h : TightHyp ε n M) (S : Finset (Fin n)) :
         intro e; have := congrArg Fin.val e; simp [siteH] at this; omega
       have hs : scaledW (tightK ε n M) (tight2Inst ε n M).w i = ⌊(n : ℝ) / ε⌋₊ := by
         unfold scaledW
-        simp only [tight2Inst, h0, if_true]
+        simp only [tight2Inst, h0, ↓reduceIte]
         exact tight2B_scaled h
-      rw [hs, if_pos hb, if_neg hh, add_zero]
+      rw [hs]; simp [hb, hh, siteB_ne_siteH h.hn, (siteB_ne_siteH h.hn).symm]
     · by_cases h1 : i.val = 1
       · have hh : i = siteH h.hn := Fin.ext h1
         have hb : i ≠ siteB h.hn := by
           intro e; have := congrArg Fin.val e; simp [siteB] at this; omega
         have hs : scaledW (tightK ε n M) (tight2Inst ε n M).w i = ⌊(n : ℝ) / ε⌋₊ := by
           unfold scaledW
-          simp only [tight2Inst, h0, h1, if_true, if_false]
+          simp only [tight2Inst, h1, ↓reduceIte, h0]
           exact tight2H_scaled h
-        rw [hs, if_neg hb, if_pos hh, zero_add]
+        rw [hs]; simp [hb, hh, siteB_ne_siteH h.hn, (siteB_ne_siteH h.hn).symm]
       · have hb : i ≠ siteB h.hn := fun e => h0 (by simp [e, siteB])
         have hh : i ≠ siteH h.hn := fun e => h1 (by simp [e, siteH])
         have hs : scaledW (tightK ε n M) (tight2Inst ε n M).w i = 0 := by
           unfold scaledW
-          simp only [tight2Inst, h0, h1, if_false]
+          simp only [tight2Inst, h0, h1, ↓reduceIte]
           rw [Nat.floor_eq_zero, div_lt_one h.K_pos]
           exact h.C_lt_K
-        rw [hs, if_neg hb, if_neg hh, add_zero]
+        rw [hs]; simp [hb, hh, siteB_ne_siteH h.hn, (siteB_ne_siteH h.hn).symm]
   simp only [key, Finset.sum_add_distrib, Finset.sum_ite_eq']
 
 /-- `b` and `h` are incompatible (`1 + 2 > 2`). -/
@@ -598,7 +598,7 @@ theorem tight2_feasible_erase (h : TightHyp ε n M) :
       · have : x.val ≠ 1 := fun e => hx (Fin.ext e)
         simp [tight2Inst, hx, this]
     simp only [e, Finset.sum_add_distrib, Finset.sum_const, Finset.sum_ite_eq', hmem,
-      card_erase_of_mem (mem_univ _), card_univ, Fintype.card_fin, if_true, smul_eq_mul, mul_one]
+      card_erase_of_mem (mem_univ _), card_univ, Fintype.card_fin, ↓reduceIte, smul_eq_mul, mul_one]
     omega
   rw [feasible_iff_thr]
   intro t
@@ -666,7 +666,7 @@ theorem tight2_scaledMax_iff (h : TightHyp ε n M) (S : Finset (Fin n)) :
     rw [not_or] at hc
     have hne' : siteH h.hn ∉ ({siteB h.hn} : Finset (Fin n)) := by
       simpa using (siteB_ne_siteH h.hn).symm
-    rw [if_pos (mem_singleton_self _), if_neg hne', if_neg hc.1, if_neg hc.2] at h1
+    simp only [mem_singleton_self, hne', hc.1, hc.2, ↓reduceIte, add_zero] at h1
     omega
   · rintro ⟨hF, hbh⟩
     refine ⟨hF, fun T hT => ?_⟩
@@ -674,8 +674,278 @@ theorem tight2_scaledMax_iff (h : TightHyp ε n M) (S : Finset (Fin n)) :
     rw [tight2_scaled_sum h, tight2_scaled_sum h]
     by_cases hb : siteB h.hn ∈ S <;> by_cases hh : siteH h.hn ∈ S <;>
       by_cases hb' : siteB h.hn ∈ T <;> by_cases hh' : siteH h.hn ∈ T <;>
-      simp [hb, hh, hb', hh'] at hnb hbh hF ⊢ <;> first | omega | exact absurd ⟨hb, hh⟩ (tight2_not_both h hF)
+      simp [hb, hh, hb', hh'] at hnb hbh hF ⊢
+
+theorem tight2_time_singleton_b (h : TightHyp ε n M) :
+    time (tight2Inst ε n M) {siteB h.hn} = 1 := by
+  simp [time, tight2Inst, siteB]
+
+theorem tight2_weight_b (h : TightHyp ε n M) :
+    weight (tight2Inst ε n M) {siteB h.hn} = tight2B ε n M := by
+  simp [weight, tight2Inst, siteB]
+
+/-- **What Algorithm 2 returns on Family 2**: the minimum-time maximiser of the scaled value is
+exactly `{b}` (scaled maximisers have value `N` and contain `b` or `h`; `{b}` has time `1`,
+every set containing `h` has time `≥ 2`, every other maximiser strictly contains `b`). -/
+theorem tight2_algOutput_iff (h : TightHyp ε n M) (S : Finset (Fin n)) :
+    IsAlgOutput (tight2Inst ε n M) (tightK ε n M) S ↔ S = {siteB h.hn} := by
+  have hbmax : IsScaledMax (Feasible (tight2Inst ε n M)) (tightK ε n M) (tight2Inst ε n M).w
+      {siteB h.hn} :=
+    (tight2_scaledMax_iff h _).2 ⟨tight2_feasible_singleton_b h, Or.inl (mem_singleton_self _)⟩
+  have hcard : ∀ T : Finset (Fin n), T.card ≤ time (tight2Inst ε n M) T := by
+    intro T
+    unfold time
+    rw [Finset.card_eq_sum_ones]
+    exact Finset.sum_le_sum fun i _ => (tight2Inst ε n M).p_pos i
+  constructor
+  · rintro ⟨hS, hmin⟩
+    have hS' := (tight2_scaledMax_iff h S).1 hS
+    have h1 := hmin {siteB h.hn} hbmax
+    rw [tight2_time_singleton_b h] at h1
+    have hbS : siteB h.hn ∈ S := by
+      rcases hS'.2 with hb | hh
+      · exact hb
+      · exfalso
+        have : 2 ≤ time (tight2Inst ε n M) S := by
+          calc 2 = (tight2Inst ε n M).p (siteH h.hn) := by simp [tight2Inst, siteH]
+            _ ≤ time (tight2Inst ε n M) S := by
+              unfold time
+              exact Finset.single_le_sum (f := (tight2Inst ε n M).p) (fun _ _ => Nat.zero_le _) hh
+        omega
+    symm
+    apply Finset.eq_of_subset_of_card_le (by simpa using hbS)
+    have := hcard S
+    simp only [card_singleton]; omega
+  · rintro rfl
+    refine ⟨hbmax, fun T hT => ?_⟩
+    have hT' := (tight2_scaledMax_iff h T).1 hT
+    rw [tight2_time_singleton_b h]
+    have hpos : 0 < T.card := Finset.card_pos.2 (by
+      rcases hT'.2 with hb | hh
+      · exact ⟨_, hb⟩
+      · exact ⟨_, hh⟩)
+    have := hcard T; omega
+
+theorem tight2_fptasK (h : TightHyp ε n M) :
+    fptasK ε (tight2Inst ε n M).w = tightK ε n M := by
+  have hz : siteH h.hn ∈ (univ : Finset (Fin n)) := mem_univ _
+  have hsup : (univ.sup (tight2Inst ε n M).w : ℕ) = M := by
+    apply le_antisymm
+    · refine Finset.sup_le fun i _ => ?_
+      by_cases h0 : i.val = 0
+      · simp only [tight2Inst, h0, ↓reduceIte]; exact tight2B_le h
+      · by_cases h1 : i.val = 1
+        · simp [tight2Inst, h0, h1]
+        · simp only [tight2Inst, h0, h1, ↓reduceIte]
+          have : (tightC ε n M : ℝ) < M := h.C_lt_K.trans h.K_lt_M
+          exact_mod_cast this.le
+    · have := Finset.le_sup (f := (tight2Inst ε n M).w) hz
+      simpa [tight2Inst, siteH] using this
+  unfold fptasK
+  rw [hsup, Fintype.card_fin]
+  exact max_eq_right (by have := h.K_ge_two; unfold tightK at this; linarith)
+
+/-- `D2(M) = 1 + (n-2)ε/n - (n-2)/M`. -/
+noncomputable def tight2D (ε : ℝ) (n M : ℕ) : ℝ :=
+  1 + ((n : ℝ) - 2) * ε / n - ((n : ℝ) - 2) / M
+
+/-- `B2(M) = (εN/n + 1/M) / D2(M)`. -/
+noncomputable def tightB2 (ε : ℝ) (n M : ℕ) : ℝ :=
+  (ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n + 1 / M) / tight2D ε n M
+
+theorem tight2D_pos (h : TightHyp ε n M) : 0 < tight2D ε n M := by
+  have hn := h.n_pos_real
+  have hn2 : (2 : ℝ) ≤ n := by exact_mod_cast h.hn
+  have hMp := h.M_pos_real
+  have hMn : (n : ℝ) < M := by
+    have h1 : 2 * (n : ℝ) ≤ M * ε := (div_le_iff₀ h.hε0).1 h.hM
+    nlinarith [h.hε1]
+  have h1 : ((n : ℝ) - 2) / M < 1 := by rw [div_lt_one hMp]; linarith
+  have h2 : 0 ≤ ((n : ℝ) - 2) * ε / n :=
+    div_nonneg (mul_nonneg (by linarith) h.hε0.le) hn.le
+  unfold tight2D; linarith
+
+/-- **Family 2, ratio bound**: `W({b}) ≤ B2(M) · W*` for every optimal value `W*`. -/
+theorem tight2_bound (h : TightHyp ε n M) {v : ℕ} (hv : IsOPT (tight2Inst ε n M) v) :
+    (weight (tight2Inst ε n M) {siteB h.hn} : ℝ) ≤ tightB2 ε n M * v := by
+  have hn := h.n_pos_real
+  have hn2 : (2 : ℝ) ≤ n := by exact_mod_cast h.hn
+  have hMp := h.M_pos_real
+  have hDpos := tight2D_pos h
+  obtain ⟨-, hvmax⟩ := (isOPT_iff_max_feasible _ v).1 hv
+  have hvW : M + (n - 2) * tightC ε n M ≤ v := by
+    have := hvmax _ (tight2_feasible_erase h)
+    rwa [tight2_weight_erase h] at this
+  have hC := h.K_sub_one_le_C
+  have hcast : ((M + (n - 2) * tightC ε n M : ℕ) : ℝ) = M + ((n : ℝ) - 2) * tightC ε n M := by
+    rw [Nat.cast_add, Nat.cast_mul, Nat.cast_sub h.hn]; simp
+  have hlow : (M : ℝ) * tight2D ε n M ≤ ((M + (n - 2) * tightC ε n M : ℕ) : ℝ) := by
+    rw [hcast]
+    have e : (M : ℝ) * tight2D ε n M = M + ((n : ℝ) - 2) * (tightK ε n M - 1) := by
+      unfold tight2D tightK; have := h.hε0; field_simp; ring
+    rw [e]
+    nlinarith [mul_le_mul_of_nonneg_left hC (by linarith : (0 : ℝ) ≤ (n : ℝ) - 2)]
+  have hvW' : ((M + (n - 2) * tightC ε n M : ℕ) : ℝ) ≤ (v : ℝ) := by exact_mod_cast hvW
+  have hwb : (weight (tight2Inst ε n M) {siteB h.hn} : ℝ) ≤
+      tightK ε n M * (⌊(n : ℝ) / ε⌋₊ : ℝ) + 1 := by
+    rw [tight2_weight_b h]
+    unfold tight2B
+    have h0 : (0 : ℝ) ≤ tightK ε n M * (⌊(n : ℝ) / ε⌋₊ : ℝ) := by
+      have := h.K_pos; positivity
+    exact (Nat.ceil_lt_add_one h0).le
+  have hnum : tightK ε n M * (⌊(n : ℝ) / ε⌋₊ : ℝ) + 1
+      = M * (ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n + 1 / M) := by
+    unfold tightK; have := h.hε0; field_simp
+  have hnn : 0 ≤ ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n + 1 / M := by
+    have := h.hε0; positivity
+  have hB2 : tightB2 ε n M * ((M : ℝ) * tight2D ε n M)
+      = M * (ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n + 1 / M) := by
+    unfold tightB2; field_simp
+  have hB2nn : 0 ≤ tightB2 ε n M := div_nonneg hnn hDpos.le
+  calc (weight (tight2Inst ε n M) {siteB h.hn} : ℝ)
+      ≤ tightK ε n M * (⌊(n : ℝ) / ε⌋₊ : ℝ) + 1 := hwb
+    _ = tightB2 ε n M * ((M : ℝ) * tight2D ε n M) := by rw [hnum, hB2]
+    _ ≤ tightB2 ε n M * ((M + (n - 2) * tightC ε n M : ℕ) : ℝ) :=
+        mul_le_mul_of_nonneg_left hlow hB2nn
+    _ ≤ tightB2 ε n M * v := mul_le_mul_of_nonneg_left hvW' hB2nn
 
 end Tight2
+
+/-! ### Limits and the proposition -/
+
+section TightLimit
+
+open Filter
+
+variable {ε : ℝ} {n : ℕ}
+
+theorem tendsto_tightB1 (hn : 2 ≤ n) (hε0 : 0 < ε) :
+    Tendsto (fun M : ℕ => tightB1 ε n M) atTop
+      (nhds (1 / (1 + ε * ((n : ℝ) - 1) / n))) := by
+  have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (by omega : 1 ≤ n)
+  have hpos : 0 < 1 + ε * ((n : ℝ) - 1) / n :=
+    add_pos_of_pos_of_nonneg one_pos
+      (div_nonneg (mul_nonneg hε0.le (by linarith)) (by linarith))
+  have h0 : Tendsto (fun M : ℕ => ((n : ℝ) - 1) / M) atTop (nhds 0) :=
+    tendsto_const_div_atTop_nhds_zero_nat _
+  have h1 := (tendsto_const_nhds (x := (1 : ℝ))).div
+    ((tendsto_const_nhds (x := 1 + ε * ((n : ℝ) - 1) / n)).sub h0) (by simpa using hpos.ne')
+  have h2 : Tendsto (fun M : ℕ => 1 / (1 + ε * ((n : ℝ) - 1) / n - ((n : ℝ) - 1) / M))
+      atTop (nhds (1 / (1 + ε * ((n : ℝ) - 1) / n - 0))) := h1
+  simpa [tightB1] using h2
+
+theorem tendsto_tightB2 (hn : 2 ≤ n) (hε0 : 0 < ε) :
+    Tendsto (fun M : ℕ => tightB2 ε n M) atTop
+      (nhds ((ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n) / (1 + ((n : ℝ) - 2) * ε / n))) := by
+  have hn2 : (2 : ℝ) ≤ n := by exact_mod_cast hn
+  have hpos : 0 < 1 + ((n : ℝ) - 2) * ε / n :=
+    add_pos_of_pos_of_nonneg one_pos
+      (div_nonneg (mul_nonneg (by linarith) hε0.le) (by linarith))
+  have h0 : Tendsto (fun M : ℕ => ((n : ℝ) - 2) / M) atTop (nhds 0) :=
+    tendsto_const_div_atTop_nhds_zero_nat _
+  have h0' : Tendsto (fun M : ℕ => (1 : ℝ) / M) atTop (nhds 0) :=
+    tendsto_const_div_atTop_nhds_zero_nat _
+  have hden := (tendsto_const_nhds (x := 1 + ((n : ℝ) - 2) * ε / n)).sub h0
+  have hnum := (tendsto_const_nhds (x := ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n)).add h0'
+  have h1 := hnum.div hden (by simpa using hpos.ne')
+  have h2 : Tendsto (fun M : ℕ => (ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n + 1 / M) /
+      (1 + ((n : ℝ) - 2) * ε / n - ((n : ℝ) - 2) / M)) atTop
+      (nhds ((ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n + 0) / (1 + ((n : ℝ) - 2) * ε / n - 0))) := h1
+  simpa [tightB2, tight2D] using h2
+
+/-- Algebra: `1/(1 + ε(n-1)/n) = (1 + (n-1)/y)⁻¹`, the first term of `ρ`. -/
+theorem limit1_eq (hn : 2 ≤ n) (hε0 : 0 < ε) :
+    1 / (1 + ε * ((n : ℝ) - 1) / n) = (1 + ((n : ℝ) - 1) / ((n : ℝ) / ε))⁻¹ := by
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast (by omega : 0 < n)
+  rw [one_div]
+  congr 1
+  field_simp
+
+/-- Algebra: `(εN/n)/(1 + (n-2)ε/n) = (1 + (n-2+f)/N)⁻¹`, the second term of `ρ`. -/
+theorem limit2_eq (hn : 2 ≤ n) (hε0 : 0 < ε) (hε1 : ε < 1) :
+    (ε * (⌊(n : ℝ) / ε⌋₊ : ℝ) / n) / (1 + ((n : ℝ) - 2) * ε / n)
+      = (1 + ((n : ℝ) - 2 + ((n : ℝ) / ε - ⌊(n : ℝ) / ε⌋₊)) / ⌊(n : ℝ) / ε⌋₊)⁻¹ := by
+  obtain ⟨hy2, hN1, -, -⟩ := rho_facts hn hε0 hε1
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast (by omega : 0 < n)
+  have hNpos : (0 : ℝ) < ⌊(n : ℝ) / ε⌋₊ := by exact_mod_cast hN1
+  have hn2 : (2 : ℝ) ≤ n := by exact_mod_cast hn
+  have h1 : (1 : ℝ) + ((n : ℝ) - 2 + ((n : ℝ) / ε - ⌊(n : ℝ) / ε⌋₊)) / ⌊(n : ℝ) / ε⌋₊
+      = ((n : ℝ) - 2 + (n : ℝ) / ε) / ⌊(n : ℝ) / ε⌋₊ := by
+    field_simp; ring
+  have hd : (0 : ℝ) < (n : ℝ) - 2 + (n : ℝ) / ε := by linarith
+  have h3 : (0 : ℝ) < 1 + ((n : ℝ) - 2) * ε / n := by
+    have : 0 ≤ ((n : ℝ) - 2) * ε / n := div_nonneg (mul_nonneg (by linarith) hε0.le) hn0.le
+    linarith
+  rw [h1, inv_div, div_eq_div_iff (ne_of_gt h3) hd.ne']
+  field_simp
+  ring
+
+/-- Eventually-statement for Family 1. -/
+theorem tight1_eventually (hn : 2 ≤ n) (hε0 : 0 < ε) (hε1 : ε < 1) {η : ℝ} (hη : 0 < η) :
+    ∃ M0 : ℕ, ∀ M : ℕ, M0 ≤ M →
+      TightHyp ε n M ∧ tightB1 ε n M < (1 + ((n : ℝ) - 1) / ((n : ℝ) / ε))⁻¹ + η := by
+  have ht := tendsto_tightB1 hn hε0
+  rw [limit1_eq hn hε0] at ht
+  have hev : ∀ᶠ M : ℕ in atTop, tightB1 ε n M < (1 + ((n : ℝ) - 1) / ((n : ℝ) / ε))⁻¹ + η :=
+    ht.eventually (gt_mem_nhds (lt_add_of_pos_right _ hη))
+  obtain ⟨M0, hM0⟩ := eventually_atTop.1 (hev.and (eventually_ge_atTop ⌈2 * (n : ℝ) / ε⌉₊))
+  refine ⟨M0, fun M hM => ?_⟩
+  obtain ⟨h1, h2⟩ := hM0 M hM
+  exact ⟨⟨hn, hε0, hε1, (Nat.le_ceil _).trans (by exact_mod_cast h2)⟩, h1⟩
+
+/-- Eventually-statement for Family 2. -/
+theorem tight2_eventually (hn : 2 ≤ n) (hε0 : 0 < ε) (hε1 : ε < 1) {η : ℝ} (hη : 0 < η) :
+    ∃ M0 : ℕ, ∀ M : ℕ, M0 ≤ M →
+      TightHyp ε n M ∧ tightB2 ε n M <
+        (1 + ((n : ℝ) - 2 + ((n : ℝ) / ε - ⌊(n : ℝ) / ε⌋₊)) / ⌊(n : ℝ) / ε⌋₊)⁻¹ + η := by
+  have ht := tendsto_tightB2 hn hε0
+  rw [limit2_eq hn hε0 hε1] at ht
+  have hev : ∀ᶠ M : ℕ in atTop, tightB2 ε n M <
+      (1 + ((n : ℝ) - 2 + ((n : ℝ) / ε - ⌊(n : ℝ) / ε⌋₊)) / ⌊(n : ℝ) / ε⌋₊)⁻¹ + η :=
+    ht.eventually (gt_mem_nhds (lt_add_of_pos_right _ hη))
+  obtain ⟨M0, hM0⟩ := eventually_atTop.1 (hev.and (eventually_ge_atTop ⌈2 * (n : ℝ) / ε⌉₊))
+  refine ⟨M0, fun M hM => ?_⟩
+  obtain ⟨h1, h2⟩ := hM0 M hM
+  exact ⟨⟨hn, hε0, hε1, (Nat.le_ceil _).trans (by exact_mod_cast h2)⟩, h1⟩
+
+/-- **Proposition 8 (the refined guarantee is asymptotically tight).**  For `ε ∈ (0,1)`, `n ≥ 2` and
+every `η > 0` there is `M₀` such that for every `M ≥ M₀` there is an `n`-site instance satisfying
+Assumption 1 (Family 1 if `(n-1)/y ≥ (n-2+f)/N`, Family 2 otherwise), with the scaling factor
+`K = fptasK ε w` of the algorithm, on which the output `Ŝ` of Algorithm 2 (a minimum-time maximiser of
+the scaled value) satisfies `W(Ŝ) ≤ (ρ_{n,ε} + η) · W*` for every optimal value `W*`. -/
+theorem prop_tight (hn : 2 ≤ n) (hε0 : 0 < ε) (hε1 : ε < 1) {η : ℝ} (hη : 0 < η) :
+    ∃ M0 : ℕ, ∀ M : ℕ, M0 ≤ M → ∃ (I : Inst (Fin n)) (Sh : Finset (Fin n)),
+      IndivFeasible I ∧ IsAlgOutput I (fptasK ε I.w) Sh ∧
+      ∀ v : ℕ, IsOPT I v → (weight I Sh : ℝ) ≤ (rhoRef n ε + η) * v := by
+  by_cases hab : ((n : ℝ) - 2 + ((n : ℝ) / ε - ⌊(n : ℝ) / ε⌋₊)) / ⌊(n : ℝ) / ε⌋₊ ≤
+      ((n : ℝ) - 1) / ((n : ℝ) / ε)
+  · -- Family 1 realises the first term
+    have hρ : rhoRef n ε = (1 + ((n : ℝ) - 1) / ((n : ℝ) / ε))⁻¹ := by
+      unfold rhoRef refinedMax; rw [max_eq_left hab]
+    obtain ⟨M0, hM0⟩ := tight1_eventually hn hε0 hε1 hη
+    refine ⟨M0, fun M hM => ?_⟩
+    obtain ⟨hT, hlt⟩ := hM0 M hM
+    refine ⟨tightInst ε n M, {(⟨0, hT.n_pos⟩ : Fin n)}, tight_indivFeasible (by omega), ?_, ?_⟩
+    · rw [tight_fptasK hT]; exact (tight1_algOutput_iff hT _).2 rfl
+    · intro v hv
+      refine (tight1_bound hT hv).trans ?_
+      rw [hρ]
+      exact mul_le_mul_of_nonneg_right hlt.le (Nat.cast_nonneg _)
+  · -- Family 2 realises the second term
+    push Not at hab
+    have hρ : rhoRef n ε =
+        (1 + ((n : ℝ) - 2 + ((n : ℝ) / ε - ⌊(n : ℝ) / ε⌋₊)) / ⌊(n : ℝ) / ε⌋₊)⁻¹ := by
+      unfold rhoRef refinedMax; rw [max_eq_right hab.le]
+    obtain ⟨M0, hM0⟩ := tight2_eventually hn hε0 hε1 hη
+    refine ⟨M0, fun M hM => ?_⟩
+    obtain ⟨hT, hlt⟩ := hM0 M hM
+    refine ⟨tight2Inst ε n M, {siteB hT.hn}, tight2_indivFeasible hT, ?_, ?_⟩
+    · rw [tight2_fptasK hT]; exact (tight2_algOutput_iff hT _).2 rfl
+    · intro v hv
+      refine (tight2_bound hT hv).trans ?_
+      rw [hρ]
+      exact mul_le_mul_of_nonneg_right hlt.le (Nat.cast_nonneg _)
+
+end TightLimit
 
 end Mwhed

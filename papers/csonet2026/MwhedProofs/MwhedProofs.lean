@@ -1,9 +1,13 @@
 import MwhedProofs.Defs
 import MwhedProofs.Core
 import MwhedProofs.Dp
+import MwhedProofs.DpLemmas
 import MwhedProofs.Fptas
+import MwhedProofs.FptasRefined
 import MwhedProofs.Hardness
+import MwhedProofs.HazardHardness
 import MwhedProofs.Heuristics
 import MwhedProofs.Examples
 import MwhedProofs.Classification
 import MwhedProofs.Matroid
+import MwhedProofs.MatroidSpeeds
