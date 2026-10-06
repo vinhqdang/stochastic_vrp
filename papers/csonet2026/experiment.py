@@ -3,13 +3,13 @@
 
 Algorithms (all take sites in non-decreasing deadline order, after the
 Assumption-1 preprocessing in `preprocess`):
-  solve_exact        -- Theorem 3's time-indexed DP (exact optimum)
-  solve_fptas        -- Theorem 4's value-scaled FPTAS, implemented as in
+  solve_exact        -- Theorem 5's time-indexed DP (exact optimum)
+  solve_fptas        -- Theorem 7's value-scaled FPTAS, implemented as in
                         the proof (value-indexed dual DP); optional
                         `complete=True` adds the post-processing step of
                         Section 5.3 (greedily re-insert rejected sites)
-  solve_equal_cost   -- Theorem 5's matroid greedy (union-find), for any
-                        number m of identical vehicles (Theorem 6)
+  solve_equal_cost   -- Theorem 8's matroid greedy (union-find), for any
+                        number m of identical vehicles (Theorem 8)
   solve_greedy_repair-- weighted Moore-Hodgson-style repair heuristic
                         (no guarantee; unbounded ratio, Proposition 7)
   solve_edd_naive    -- EDD with no reconsideration: every site is
@@ -63,7 +63,7 @@ def edd_feasible(subset, p, d):
 
 # ------------------------------------------------------------- algorithms
 def solve_exact(p, d, w):
-    """Theorem 3: time-indexed DP, O(nP). Returns (value, subset)."""
+    """Theorem 5: time-indexed DP, O(nP). Returns (value, subset)."""
     n = len(p)
     if n == 0:
         return 0.0, set()
@@ -92,7 +92,7 @@ def solve_exact(p, d, w):
 
 
 def solve_fptas(p, d, w, eps, complete=False, info=None):
-    """Theorem 4: scale weights by K = max(1, eps*max(w)/n), run the
+    """Theorem 7: scale weights by K = max(1, eps*max(w)/n), run the
     value-indexed dual DP g(i, v) = min dispatch time reaching scaled
     value v with a feasible subset of sites 1..i. Returns the TRUE
     (unscaled) weight of the returned subset. If `complete`, rejected
@@ -173,7 +173,7 @@ def solve_greedy_repair(p, d, w):
 
 
 def solve_equal_cost(d, w, p, m=1):
-    """Theorems 5/6. All dispatch times equal p; m identical vehicles.
+    """Theorem 8. All dispatch times equal p; m identical vehicles.
     Sort by decreasing weight; give each site the latest free slot at a
     position <= D_i = floor(d_i/p) (m slots per position), found with a
     union-find over positions. Returns (value, subset of indices)."""

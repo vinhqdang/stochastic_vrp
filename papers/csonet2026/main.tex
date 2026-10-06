@@ -27,8 +27,8 @@
 \begin{document}
 
 \title[Minimum Weighted Hazard-Exposure Dispatch]{Minimum Weighted
-Hazard-Exposure Dispatch: A Scheduling View with Machine-Checked Proofs
-and a Wildfire Case Study}
+Hazard-Exposure Dispatch: Scheduling Structure, Hazard Geometry, and a
+Camp Fire Illustration}
 
 \author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
 \author[2]{\fnm{Minh Ngoc} \sur{Dinh}}\email{minh.dinh@maeducation.com}
@@ -42,41 +42,32 @@ City}, \country{Vietnam}}}
 \affil[3]{\orgname{UEH University}, \orgaddress{\city{Ho Chi Minh
 City}, \country{Vietnam}}}
 
-\abstract{We study a dispatch-scheduling problem arising when a single
-depot must send a vehicle or crew to sites before a spreading hazard
-(flood, wildfire, contamination plume) reaches them. Each site has a
-round-trip dispatch time, a hazard-arrival deadline and a criticality
-weight; the objective is a dispatch order maximizing the total weight of
-sites served in time. We call this Minimum Weighted Hazard-Exposure
-Dispatch (MWHED) and show it is exactly the classical problem
-$1\|\sum w_jU_j$, so most of its theory is inherited: weak
-NP-hardness, a Lawler--Moore dynamic program, a value-scaling FPTAS, and
-a matroid greedy algorithm for equal dispatch times with any number of
-vehicles. We present these in a self-contained form for a transportation
-audience and mark precisely what is classical. What the dispatch setting
-adds is modest and specific: hardness persists when the hazard-arrival
-time is the same at every site (with weights proportional to dispatch
-times); the depot round-trip model is a conservative bound on a chained
-route; and the FPTAS has a guarantee, best possible for the scheme, that
-is sharper than the textbook $1-\epsilon$. Natural heuristics have unbounded worst-case ratio.
-Looking behind the scheduling abstraction, we show that the loss of the
-round-trip model against a chained route is at most a factor $n$ and that
-the bound is attained, bracket it by a speed-augmentation argument
-controlled by a clustering ratio, show that chained routing on a line is
-pseudo-polynomial with an FPTAS yet weakly NP-hard with weights, and
-classify deadlines produced by an affine hazard front, which stay NP-hard
-even for a front that starts at the depot. For a front slower than the
-crew we give a polynomial-time constant-factor approximation of the
-chained route, whose ratio depends only on the front's speed and which uses
-a point-to-point orienteering algorithm as a subroutine. The algorithms are checked against exhaustive
-search, the scheduling theory of Sections~\ref{sec:model}--\ref{sec:structure} is
-machine-checked in Lean~4, and the geometry results are checked by
-exhaustive search only. A case study of the
-2018 Camp Fire, built from hazard-arrival times that NIST documents for
-each community, shows in this model that the exact optimum inherits the
-assumed response speed: planned at a speed above $68$~km/h it is on time
-in only $16\%$ of perturbed scenarios, planned at any lower speed it
-retains $99.7\%$ of the optimum.}
+\abstract{We study a dispatch problem that arises when a single depot must send
+a crew to sites before a spreading hazard (wildfire, flood, contamination
+plume) reaches them: each site has a dispatch time, a hazard-arrival
+deadline and a criticality weight, and the goal is to maximize the weight of
+the sites served in time. We call it Minimum Weighted Hazard-Exposure
+Dispatch (MWHED). When every visit is a round trip from the depot, MWHED is
+exactly the classical problem $1\|\sum w_jU_j$, so its weak NP-hardness,
+Lawler--Moore dynamic program, value-scaling FPTAS and equal-size matroid
+greedy algorithm are inherited; we restate them with machine-checked proofs
+(Lean~4) as a foundation. The new results concern what this abstraction
+hides, the geometry of the hazard. The round-trip model can lose a factor
+$n$ against a route that chains the sites, and this is attained even by a
+front that chases the crew along a road. Chained routing on a line is
+pseudo-polynomial with an FPTAS but NP-hard with weights, and deadlines
+induced by a front of constant speed are classified by slope and offset,
+remaining NP-hard even for a front that starts at the depot. For a front
+slower than the crew we give a polynomial-time constant-factor
+approximation of the chained route, whose ratio depends only on the front's
+speed (it calls a point-to-point orienteering algorithm), and we show that
+the unit-weight problem is strongly NP-hard even for equidistant sites, so
+no FPTAS exists. The geometry results are checked against exhaustive search,
+not formalized. A Camp Fire illustration, built from hazard-arrival times
+that NIST documents for each community, shows that the exact optimum
+inherits the assumed response speed: planned at a speed above $68$~km/h it
+is on time in only $16\%$ of perturbed scenarios, planned at any lower
+speed it retains $99.7\%$ of the optimum.}
 
 \keywords{scheduling under deadlines, computational complexity,
 approximation algorithms, matroids, disaster response, formal
@@ -133,94 +124,86 @@ is typically organized, and is what lets us give a precise
 complexity and algorithmic picture of the ordering question alone,
 rather than a heuristic for the joint problem.
 
-We formalize this as Minimum Weighted Hazard-Exposure Dispatch
-(MWHED). It is worth saying at the outset, and Section~\ref{sec:model}
-proves it, that MWHED is \emph{exactly} the classical single-machine
-problem $1\|\sum w_jU_j$ of maximizing the weighted number of on-time
-jobs. Most of its theory is therefore inherited from scheduling theory,
-and we do not claim a new algorithmic technique. The paper is a
-self-contained and carefully verified treatment of this problem in
-transportation vocabulary, with a small number of additions that depend
-on the dispatch setting. We separate the two kinds of content.
+We formalize this as Minimum Weighted Hazard-Exposure Dispatch (MWHED).
+Section~\ref{sec:model} proves that when every visit is a round trip from
+the depot, MWHED is \emph{exactly} the classical single-machine problem
+$1\|\sum w_jU_j$ of maximizing the weighted number of on-time jobs. The
+scheduling component is therefore classical, and we treat it as a
+foundation: it is restated in dispatch vocabulary with complete,
+machine-checked proofs (Sections~\ref{sec:model}--\ref{sec:structure}). The
+new results concern the interaction between this scheduling abstraction and
+the geometry of a spreading hazard, which the round-trip premise hides: what
+a crew loses against a route that chains the sites, what the problem looks
+like when the deadlines are produced by an actual hazard front, and how
+well the chained route can be approximated.
 
-\emph{Classical results, restated with complete proofs} (marked
-``classical'' in Table~\ref{tab:summary}):
+\emph{Main results: hazard geometry (Section~\ref{sec:geometry}).}
 \begin{enumerate}
-\item MWHED is weakly NP-hard, by a direct reduction from
-\textsc{Partition} that uses only the equal-deadline case, which is the
-0/1 knapsack problem (Theorem~\ref{thm:hardness}); the hardness of job
-sequencing with penalties is already in \citet{karp1972}.
-\item An exact pseudo-polynomial dynamic program derived from an
-earliest-deadline-first exchange argument (Theorem~\ref{thm:dp}); this is
-the Lawler--Moore program \citep{lawlermoore1969}.
-\item A value-scaling FPTAS (Theorem~\ref{thm:fptas}); approximation
-schemes for this problem are classical \citep{sahni1976,gensl1981}.
-\item A matroid greedy algorithm for equal dispatch times and any number
-of vehicles, identical or with different dispatch times
-(Theorem~\ref{thm:equalp}). This is the scheduling of unit-time jobs on
-identical or uniform machines, for which $O(n\log n)$ algorithms are
-known \citep{lawler1976,dessouky1990}; we include a self-contained proof.
-\item A classification of the restrictions in which some of the dispatch
-times, weights and deadlines are constant
-(Theorem~\ref{thm:classification}); it is an elementary corollary of
-items~1 and~4 and of Moore's algorithm.
+\item \emph{Approximating the chained route for a front.} For a front that
+moves slower than the crew ($h_i=\beta+\lambda a_i$, $\lambda>1$) a
+polynomial-time algorithm protects a fraction of the optimum that depends
+only on $\lambda$, not on $n$, on the spread of the distances or on the
+weights (Theorem~\ref{thm:frontapprox}); it calls a point-to-point
+orienteering algorithm as a subroutine and rests on a monotone ``excess'' of
+the route, which turns the front's deadlines into a budget proportional to
+the distance. The round-trip surrogate cannot give such a guarantee at any
+fixed speed (Proposition~\ref{prop:nosurrogate}), and no FPTAS is possible,
+because the unit-weight problem is strongly NP-hard even when all sites are
+equally far from the depot (Theorem~\ref{thm:frontnp}). General deadlines,
+for which only an $O(\log n)$ guarantee is known, are not covered.
+\item \emph{What the round-trip abstraction costs.} The ratio between the
+best chained route and the best round-trip plan is at most $n$ and the bound
+is attained, even by a front that chases the crew along one road; a
+clustering ratio and an aspect ratio control it
+(Theorems~\ref{thm:gap}, \ref{thm:speedaug}, Proposition~\ref{prop:twopar}).
+\item \emph{Chained routing on a line.} A pseudo-polynomial algorithm and an
+FPTAS (a selective version of a classical dynamic program), and NP-hardness
+with weights (Theorems~\ref{thm:linealg}, \ref{thm:linehard}).
+\item \emph{Hazard fronts and affine deadlines.} When the front moves at
+constant speed the deadlines are affine in the dispatch time, and the
+complexity is classified by the slope and the offset; even a front that
+starts at the depot gives an NP-hard problem
+(Theorems~\ref{thm:affine}, \ref{thm:annulus}).
 \end{enumerate}
-\emph{What the dispatch setting adds.} These additions are modest, and
-we state them as such:
-\begin{enumerate}
-\setcounter{enumi}{5}
-\item \emph{A refined FPTAS analysis.} The textbook guarantee
-$1-\epsilon$ is not attained: the scheme of Theorem~\ref{thm:fptas}
-guarantees $\rho_{n,\epsilon}>1/(1+\epsilon)$, and this constant is
-best possible for the scheme as stated, without the optional completion
-step (Proposition~\ref{prop:tight}); rescaling $\epsilon$ recovers the
-classical bound, so the gain is a constant, not an order.
-\item \emph{The two readings of a deadline.} Under the arrival reading
-(the crew must arrive before the hazard does), MWHED stays weakly
-NP-hard even when the hazard-arrival time is the same at every site and
-weights are proportional to dispatch times
-(Proposition~\ref{prop:consth}; to our knowledge not stated before); and the depot round-trip model is a
-conservative bound on a route that chains the sites
-(Proposition~\ref{prop:spoke}), which says when the round-trip premise is
-appropriate and when it is not (when travel times form a metric).
-\item \emph{Worst-case examples.} Dispatching in deadline order, with or
-without skipping, and a weighted greedy repair all have unbounded
-worst-case ratio (Propositions~\ref{prop:naive} and~\ref{prop:repair});
-the examples are elementary, and on random instances the greedy repair is
-within $1\%$ of the optimum on average.
-\item \emph{Hazard geometry.} Section~\ref{sec:geometry} quantifies what the
-round-trip abstraction costs: the ratio between the best chained route and
-the best round-trip plan is at most $n$ and the bound is attained, even by
-a front that chases the crew along one road; a bracket in terms of a
-clustering ratio and a two-parameter bound explain when it is small; chained
-routing on a line has a pseudo-polynomial algorithm and an FPTAS (a
-selective version of a classical dynamic program) and is NP-hard with
-weights; and for deadlines induced by a front moving at constant speed
-we classify the complexity by the slope and the offset of the deadline
-as a function of the dispatch time, including the case of a front
-starting at the depot. For a front slower than the crew we also give a
-polynomial-time approximation algorithm for the chained route whose ratio
-is a constant depending only on the front's speed, not on $n$ or on the
-spread of the distances (Theorem~\ref{thm:frontapprox}), and no FPTAS is possible, because the unit-weight problem is strongly NP-hard even
-for equidistant sites (Theorem~\ref{thm:frontnp}); it calls a
-point-to-point orienteering algorithm as a subroutine, and general
-deadlines, for which only an $O(\log n)$ guarantee is known, are not
-covered. These results are, as far as we found, not in the literature;
-apart from the orienteering subroutine they use only exchange arguments,
-a monotone ``excess'' of the route and reductions from Partition and
+To our knowledge these results are not in the literature; Section~\ref{sec:related}
+says what is close. Apart from the orienteering subroutine they use only
+exchange arguments, the excess of a route and reductions from Partition and
 Hamiltonian path.
-\item \emph{Verification.} Every algorithm is checked against exhaustive
-search (Section~\ref{sec:verify}), and the statements and proofs of the
-lemmas, theorems and propositions of Sections~\ref{sec:model}--\ref{sec:structure}
-(not those of Section~\ref{sec:geometry}), except complexity-class and
-running-time claims, are machine-checked in Lean~4 (see the Data
-Availability statement for the precise scope; the algorithms'
-implementations are checked by testing, not by Lean).
-\item \emph{A case study on documented data.} A Camp Fire instance built
-from the hazard-arrival times that NIST documents for each community,
-compared with a chained-route model, with a sensitivity analysis and a
-sample-average plan (Section~\ref{sec:campfire}).
-\end{enumerate}
+
+\emph{Smaller additions in the scheduling part.} Under the arrival reading of
+the deadline, MWHED stays weakly NP-hard when the hazard-arrival time is the
+same at every site and weights are proportional to dispatch times
+(Proposition~\ref{prop:consth}); the round-trip model is a conservative bound
+on a chained route when travel times form a metric
+(Proposition~\ref{prop:spoke}); the FPTAS guarantee is
+$\rho_{n,\epsilon}>1/(1+\epsilon)$, best possible for the scheme as stated, a
+gain of a constant and not of an order (Proposition~\ref{prop:tight}); and
+deadline-order dispatch and a weighted greedy repair have unbounded
+worst-case ratio (Propositions~\ref{prop:naive}, \ref{prop:repair}).
+
+\emph{The classical foundation} (marked ``classical'' in
+Table~\ref{tab:summary}): weak NP-hardness by a direct reduction from
+\textsc{Partition}, already in \citet{karp1972} (Theorem~\ref{thm:hardness});
+the Lawler--Moore dynamic program \citep{lawlermoore1969}
+(Theorem~\ref{thm:dp}); a value-scaling FPTAS \citep{sahni1976,gensl1981}
+(Theorem~\ref{thm:fptas}); a matroid greedy algorithm for equal dispatch
+times and any number of vehicles, identical or with different dispatch times
+\citep{lawler1976,dessouky1990} (Theorem~\ref{thm:equalp}); and an elementary
+classification of the restrictions in which some of $p$, $w$, $d$ are
+constant (Theorem~\ref{thm:classification}).
+
+\emph{Verification and illustration.} Every algorithm is checked against
+exhaustive search (Section~\ref{sec:verify}). The statements and proofs of
+the lemmas, theorems and propositions of
+Sections~\ref{sec:model}--\ref{sec:structure}, except complexity-class and
+running-time claims, are machine-checked in Lean~4; the results of
+Section~\ref{sec:geometry} are checked against brute force only and are not
+formalized (see the Data Availability statement for the precise scope). A
+Camp Fire illustration, built from the hazard-arrival times that NIST
+documents for each community, shows how the optimum of the model inherits the
+assumed response speed, with a sensitivity analysis and a sample-average
+subset plan (Section~\ref{sec:campfire}); it illustrates the model and is not
+a validation.
 To keep the argument concrete, Sections~\ref{sec:model}
 and~\ref{sec:theory} carry a single four-site running example through the
 results, worked out by hand alongside each proof.
@@ -2045,7 +2028,11 @@ instance sizes and generators, and to show, in a regime where the
 FPTAS's rounding is genuinely active, how its accuracy and cost behave
 as $\epsilon$ shrinks (Sections~\ref{sec:acc}--\ref{sec:robust}); and
 to illustrate the model on a real wildfire, with a sensitivity analysis
-over its uncertain inputs (Section~\ref{sec:campfire}). All code is
+over its uncertain inputs (Section~\ref{sec:campfire}). The heuristic comparisons illustrate structural failures and the
+approximation behavior of the algorithms; they are not intended to establish
+state-of-the-art computational performance for the classical problem
+$1\|\sum w_jU_j$, for which specialised methods exist
+\citep[e.g.][]{antonov2026}. All code is
 self-contained and deterministic given its seeds (see the Data
 Availability statement); every table below is regenerated by
 \texttt{python3 experiment.py} (about a minute) and
@@ -2069,7 +2056,8 @@ no violation in $4{,}500$ runs ($2{,}923$ of which had active scaling).
 dynamic program on $300$ instances for $m=1$, and equals exhaustive
 search over all assignments to $m=2,3$ vehicles on the instances with
 $n\le7$. (iv) Proposition~\ref{prop:repair}'s ratio $2/(2k-1)$ is
-reproduced for $k=3,10,100$. (v) The results added in the revision are checked by
+reproduced for $k=3,10,100$. (v) The results on several vehicles, on the arrival reading and on the refined
+FPTAS bound are checked by
 \texttt{verify\_extensions.py}: the slot algorithm of
 Theorem~\ref{thm:equalp} for vehicles with different dispatch times agrees
 with the counting criterion and with exhaustive search over all
@@ -2555,14 +2543,16 @@ $16.2\%$ of the draws, retaining on average $31.9\%$ of the drawn optimum
 (fifth percentile $2.8\%$), because a delay or a slower road lets the
 Concow visit make Paradise late; Paradise has only $12$ minutes of slack.
 The plans that are optimal at $65$ or $50$~km/h, and the sample-average
-plan described next, all drop Concow: Paradise, Magalia and Yankee Hill.
+subset plan described next, all drop Concow: Paradise, Magalia and Yankee Hill.
 That plan is fully on time in $79.3\%$ of the draws and retains $99.7\%$
 of the drawn optimum on average (fifth percentile $98.2\%$); since Concow
 carries $1.8\%$ of the total weight, any plan that drops it retains at
 least $98.2\%$ of an optimum that includes it. The \emph{sample-average
-plan} is the subset (in the same visiting order) with the largest average
-protected weight over an independent sample of $2{,}000$ draws; it
-coincides with the conservative-speed optimum, so here the scenario
+subset plan} is the subset, visited in the same fixed nominal order, with the
+largest average protected weight over an independent sample of $2{,}000$
+draws. It is not the optimum of the full stochastic sequencing problem: the
+order is held fixed so that the experiment isolates subset selection under
+uncertainty. It coincides with the conservative-speed optimum, so here the scenario
 sample confirms what a conservative nominal speed already gives, and its
 value would lie in problems where the right nominal is not obvious. Under
 correlated errors the figures are $26.0\%$ and $37.2\%$ for the
@@ -2571,7 +2561,7 @@ chained route with road factor $1.0$ (resp.\ $1.3$) protects all four
 communities in $96.1\%$ (resp.\ $79.5\%$) of the independent draws.
 
 \textbf{What the case study does and does not show.} The finding is
-conditional and modest: in this model the exact optimum inherits whatever
+conditional: in this model the exact optimum inherits whatever
 nominal speed (that is, slack) is assumed. When the assumption is
 optimistic, the plan spends Paradise's slack on a small community and
 fails under timing errors; planning for a conservative speed removes the
@@ -2785,47 +2775,43 @@ retains $99.7\%$ (Section~\ref{sec:campfire}).
 % ══════════════════════════════════════════════════════════════════
 \section{Conclusion}\label{sec:conclusion}
 
-We have studied Minimum Weighted Hazard-Exposure Dispatch, a scheduling
-problem that arises whenever a single depot must choose a dispatch order
-against a spreading hazard with site-specific arrival deadlines. The
-problem is exactly the classical weighted on-time-jobs problem
-$1\|\sum w_jU_j$ in transportation language; consequently its weak
-NP-hardness, the pseudo-polynomial dynamic program, the approximation
-scheme and the matroid greedy algorithm for equal-size sites (for any
-number of vehicles, identical or not) are classical, and we have presented
-them with complete, machine-checked proofs rather than as new techniques.
-The classification of the homogeneous restrictions is an elementary
-corollary, and not the natural tractability boundary of the scheduling
-literature, where agreeable weights are the classical polynomial case.
+We have studied Minimum Weighted Hazard-Exposure Dispatch, a problem that
+arises whenever a single depot must choose a dispatch order against a
+spreading hazard with site-specific arrival deadlines. With round-trip visits
+it is exactly the classical weighted on-time-jobs problem
+$1\|\sum w_jU_j$; its weak NP-hardness, the pseudo-polynomial dynamic
+program, the approximation scheme and the matroid greedy algorithm for
+equal-size sites (for any number of vehicles, identical or not) are
+classical, and we have presented them with complete, machine-checked proofs
+as the foundation of the paper.
 
-What the dispatch setting adds is modest. Under the arrival reading of
-the deadline, hardness persists when the hazard-arrival time is the same
-at every site; the depot round-trip model is a conservative bound on a
-chained route, which says when its premise is costly (clustered sites);
-and the FPTAS has the guarantee
-$\rho_{n,\epsilon}>1/(1+\epsilon)$, best possible for the scheme as
-stated and sharper than the textbook $1-\epsilon$, which is not attained. Natural heuristics (deadline order
-with or without skipping, a weighted greedy repair) have unbounded
-worst-case ratio, although the greedy repair is within $1\%$ of the
-optimum on random instances; a guarantee requires a rule that reconsiders
-earlier commitments in light of both weights and dispatch times, and the
-dynamic program and the FPTAS are two such rules, not the only ones.
+The new results concern the geometry behind that abstraction
+(Section~\ref{sec:geometry}). The round-trip model can lose a factor $n$
+against a chained route, and this is attained even by a front that chases the
+crew along a road, but the loss is controlled by a clustering ratio and an
+aspect ratio of the sites. Chained routing on a line is pseudo-polynomial and
+has an FPTAS, yet is NP-hard with weights, and deadlines induced by a front of
+constant speed remain NP-hard however the front starts, so a hazard front does
+not make dispatch easy. For a front slower than the crew the chained route can
+be approximated within a constant that depends only on the front's speed
+(Theorem~\ref{thm:frontapprox}); for general deadlines a polynomial-time
+constant factor is a long-standing open question. The exact approximability of
+the front problem lies between strong NP-hardness (Theorem~\ref{thm:frontnp}:
+unit weights, equidistant sites; with an offset, APX-hardness by a sketched
+argument) and the logarithmic dependence on $\lambda-1$ of our algorithm.
 
-The geometry behind the abstraction gives the most specific findings of
-the paper. The round-trip model can lose a factor $n$ against a chained
-route, and this is attained even by a front that chases the crew along a
-road, but the loss is controlled by a clustering ratio and an aspect ratio
-of the sites; chained routing on a line is pseudo-polynomial and has an
-FPTAS, yet is NP-hard with weights; and deadlines induced by a front that
-moves at constant speed remain NP-hard, so that a hazard front does not
-make dispatch easy (Section~\ref{sec:geometry}). For a front slower
-than the crew the chained route can be approximated within a constant
-that depends only on the front's speed (Theorem~\ref{thm:frontapprox}),
-whereas for general deadlines a polynomial-time constant factor is a
-long-standing open question, and the exact approximability of the front problem lies between
-strong NP-hardness (Theorem~\ref{thm:frontnp}: unit weights, equidistant
-sites; with an offset, APX-hardness by a sketched argument) and the logarithmic dependence
-on $\lambda-1$ of our algorithm.
+In the scheduling part, the classification of the homogeneous restrictions is
+an elementary corollary and not the natural tractability boundary of the
+scheduling literature, where agreeable weights are the classical polynomial
+case. Under the arrival reading of the deadline, hardness persists when the
+hazard-arrival time is the same at every site; and the FPTAS has the
+guarantee $\rho_{n,\epsilon}>1/(1+\epsilon)$, best possible for the scheme as
+stated and sharper than the textbook $1-\epsilon$, which is not attained.
+Natural heuristics (deadline order with or without skipping, a weighted greedy
+repair) have unbounded worst-case ratio, although the greedy repair is within
+$1\%$ of the optimum on random instances; a guarantee requires a rule that
+reconsiders earlier commitments in light of both weights and dispatch times,
+and the dynamic program and the FPTAS are two such rules, not the only ones.
 
 The numerical study and the case study carry two lessons beyond the
 theorems. The reading of the deadline (the crew must arrive before the
@@ -3088,7 +3074,7 @@ scripts that regenerate every table and figure, including the Camp Fire
 derivation and sensitivity analysis) and the Lean~4 formalisation are
 publicly available at \url{https://github.com/vinhqdang/stochastic_vrp}, in
 the directory \texttt{papers/csonet2026} (the version corresponding to
-this manuscript is the latest one at the time of the revision).
+this manuscript is the latest one at the time of resubmission).
 The statements and proofs of Proposition~\ref{prop:spoke},
 Lemmas~\ref{lem:edd} and~\ref{lem:g}, Theorems~\ref{thm:hardness}--\ref{thm:equalp},
 Propositions~\ref{prop:consth}--\ref{prop:tight}, the arithmetic of the

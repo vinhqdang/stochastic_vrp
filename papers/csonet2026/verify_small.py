@@ -2,7 +2,7 @@
 and structural claim in the MWHED paper, against exhaustive search.
 
   A  (n <= 7)  the DP optimum equals the optimum over ALL n! dispatch
-               orders (checks Lemma 2 and Theorem 3 from the definition,
+               orders (checks Lemma 2 and Theorem 5 from the definition,
                without using the earliest-deadline reduction).
   B  (n <= 14) DP == best feasible subset (EDD-checked); the FPTAS
                returns >= (1-eps) * OPT and a feasible set, with and
@@ -10,7 +10,7 @@ and structural claim in the MWHED paper, against exhaustive search.
                weights are large enough that scaling is active and
                instances containing individually infeasible sites.
   C  (n <= 8)  equal-cost greedy == DP (m = 1) and == exhaustive search
-               over assignments to m = 2, 3 identical vehicles (Thm 6).
+               over assignments to m = 2, 3 identical vehicles (Thm 8).
   D            the greedy-repair heuristic's worst-case family
                (Proposition 7) has ratio 2/(2k-1).
 

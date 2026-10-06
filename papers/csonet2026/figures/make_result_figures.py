@@ -29,9 +29,9 @@ def fig_runtime_scaling():
 
     fig, ax = plt.subplots(figsize=(5.2, 3.6))
     ax.plot(p_max, exact_ms, color=BLUE, marker="o", markersize=6,
-            linewidth=2, linestyle="-", label="Exact DP (Theorem 3)")
+            linewidth=2, linestyle="-", label="Exact DP (Theorem 5)")
     ax.plot(p_max, fptas_ms, color=ORANGE, marker="s", markersize=6,
-            linewidth=2, linestyle="--", label="FPTAS (Theorem 4)")
+            linewidth=2, linestyle="--", label="FPTAS (Theorem 7)")
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$p_{\max}$ (processing-time range)")
