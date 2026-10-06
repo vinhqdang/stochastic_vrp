@@ -56,7 +56,11 @@
     point-to-point orienteering oracle (cited, not reimplemented);
     surrogate cannot give a bound at any speed (Prop 23); unit weights
     strongly NP-hard at Gamma=1 (Thm 24). `verify_front_approx.py`.
-    General deadlines remain open (O(log n) known).
+    General deadlines remain open (O(log n) known). Positioning after a
+    novelty search: Thm 22 refines Bansal-Blum-Chawla-Meyerson (STOC 2004)
+    small-margin scheme (strictly feasible, lambda-only ratio); Thm 24 is
+    the folklore hardness of rooted orienteering; the gap/line/affine
+    results were not found in the literature (search is evidence, not proof).
   - **Bibliography** verified/corrected (59 entries, ~49 cited);
     `verify_extensions.py` checks the added results; `experiment.py`
     gained a HiGHS MIP baseline; code + Lean library are public in this

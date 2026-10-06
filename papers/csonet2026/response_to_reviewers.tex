@@ -101,12 +101,15 @@ front that starts at the depot gives an NP-hard problem. Finally, for a
 front slower than the crew we give a polynomial-time approximation algorithm
 for the chained route whose ratio depends only on the front's speed
 (Theorem~22; it uses a point-to-point orienteering algorithm from the
-literature as a subroutine and says nothing about general deadlines, for
-which only an $O(\log n)$ guarantee is known), show that the round-trip
+literature as a subroutine, refines the scheme of Bansal et al.\ (STOC 2004)
+for the ``small margin'' case of deadline-TSP, which as we read it is
+bicriteria for these deadlines, by making the route strictly feasible, and says
+nothing about general deadlines, for which only an $O(\log n)$ guarantee is
+known), show that the round-trip
 surrogate cannot give such a guarantee at any fixed speed (Proposition~23),
-and prove that the unit-weight chained problem is strongly NP-hard even for
-equidistant sites (Theorem~24), so no scheme better than a constant is
-possible. These statements
+and observe that the unit-weight chained problem is strongly NP-hard even for
+equidistant sites (Theorem~24; this is the hardness of rooted orienteering,
+and we say so), so no FPTAS exists. These statements
 are checked against brute force (\texttt{verify\_geometry.py}); they are
 \emph{not} formalised in Lean, and the manuscript says so.
 \item \textbf{Hardness proof} (Theorem~3 (2)): a direct reduction from
@@ -200,7 +203,8 @@ $\beta=0$, i.e.\ for a front that starts at the depot (Theorems~20
 and~21). The proofs use exchange arguments and Partition reductions and
 are not deep; we claim them as new only in the sense that we found no
 source stating them (the line algorithm itself is a selective version of
-Tsitsiklis's dynamic program, and we say so).
+Tsitsiklis's dynamic program, Theorem~22 refines the scheme of Bansal et al.,
+and Theorem~24 is the hardness of rooted orienteering, and we say so).
 \item \textbf{A sharper, exactly tight FPTAS analysis} (Theorem~7,
 Proposition~11): the scheme of Theorem~7 guarantees a constant
 $\rho_{n,\epsilon}$ that exceeds both $1-\epsilon$ and $1/(1+\epsilon)$,

@@ -144,12 +144,14 @@ moves slower than the crew ($h_i=\beta+\lambda a_i$, $\lambda>1$) a
 polynomial-time algorithm protects a fraction of the optimum that depends
 only on $\lambda$, not on $n$, on the spread of the distances or on the
 weights (Theorem~\ref{thm:frontapprox}); it calls a point-to-point
-orienteering algorithm as a subroutine and rests on a monotone ``excess'' of
-the route, which turns the front's deadlines into a budget proportional to
-the distance. The round-trip surrogate cannot give such a guarantee at any
+orienteering algorithm as a subroutine and follows the excess-and-distance-class
+scheme that \citet{bansal2004} use for the ``small margin'' case of
+deadline-TSP; for a front it yields a route that is strictly feasible, with a
+ratio that depends explicitly only on $\lambda$. The round-trip surrogate cannot give such a guarantee at any
 fixed speed (Proposition~\ref{prop:nosurrogate}), and no FPTAS is possible,
 because the unit-weight problem is strongly NP-hard even when all sites are
-equally far from the depot (Theorem~\ref{thm:frontnp}). General deadlines,
+equally far from the depot (Theorem~\ref{thm:frontnp}; this is the hardness
+of rooted orienteering). General deadlines,
 for which only an $O(\log n)$ guarantee is known, are not covered.
 \item \emph{What the round-trip abstraction costs.} The ratio between the
 best chained route and the best round-trip plan is at most $n$ and the bound
@@ -165,10 +167,12 @@ complexity is classified by the slope and the offset; even a front that
 starts at the depot gives an NP-hard problem
 (Theorems~\ref{thm:affine}, \ref{thm:annulus}).
 \end{enumerate}
-To our knowledge these results are not in the literature; Section~\ref{sec:related}
-says what is close. Apart from the orienteering subroutine they use only
-exchange arguments, the excess of a route and reductions from Partition and
-Hamiltonian path.
+To our knowledge results 2--4 are not in the literature
+(Section~\ref{sec:related} says what is close); result~1 refines a scheme of
+\citet{bansal2004}, and the hardness in it is that of rooted orienteering
+\citep{golden1987,blum2007}. Apart from the orienteering subroutine the proofs
+use only exchange arguments, the excess of a route and reductions from
+Partition and Hamiltonian path.
 
 \emph{Smaller additions in the scheduling part.} Under the arrival reading of
 the deadline, MWHED stays weakly NP-hard when the hazard-arrival time is the
@@ -653,8 +657,8 @@ Constant hazard-arrival time (arrival reading) & weakly NP-hard & Prop.~\ref{pro
 Round-trip vs.\ chained route & round trip is conservative & Prop.~\ref{prop:spoke} & --- & new (elementary) \\
 Gap round trip / chained & at most $n$, attained; bracket via $\kappa$ & Thms.~\ref{thm:gap}, \ref{thm:speedaug} & $O(nP)$ per end & new \\
 Chained route on a line & pseudo-poly., FPTAS; NP-hard with weights & Thms.~\ref{thm:linealg}, \ref{thm:linehard} & $O(n^2W)$ & selective version of a classical DP; hardness new \\
-Chained route, unit weights, equidistant sites & strongly NP-hard (no FPTAS) & Thm.~\ref{thm:frontnp} & --- & new (elementary) \\
-Chained route, front slower than the crew ($\lambda>1$) & $\omega\ell m$-approx., $O(\log\frac1{\lambda-1})$ & Thm.~\ref{thm:frontapprox} & $n$ oracle calls & new; uses an orienteering oracle \\
+Chained route, unit weights, equidistant sites & strongly NP-hard (no FPTAS) & Thm.~\ref{thm:frontnp} & --- & folklore (rooted orienteering) \\
+Chained route, front slower than the crew ($\lambda>1$) & $\omega\ell m$-approx., $O(\log\frac1{\lambda-1})$ & Thm.~\ref{thm:frontapprox} & $n$ oracle calls & refines \citet{bansal2004}; uses an orienteering oracle \\
 Affine front deadlines $d=\beta+\alpha p$ & classified; NP-hard for $\alpha>1$, $\beta=0$ & Thm.~\ref{thm:affine} & --- & new (elementary) \\
 Naive EDD, EDD with skipping & unbounded ratio & Prop.~\ref{prop:naive} & $O(n\log n)$ & illustrative \\
 Weighted greedy repair & unbounded ratio & Prop.~\ref{prop:repair} & --- & illustrative \\
@@ -1828,7 +1832,12 @@ consecutive sites $i_r,\dots,i_s$ is started afresh from the depot, its excess
 at $i_j$ becomes $e_j-e_r$ (restarting). The route in which every
 site is protected needs, by~\eqref{eq:excess}, an excess budget that grows
 linearly with the distance from the depot: this is what a front gives, and
-what a general deadline does not.
+what a general deadline does not. The excess, its monotonicity and the
+dyadic distance classes below are the machinery of the analysis of
+\citet{bansal2004} for the ``small margin'' case, which for these deadlines
+gives a constant fraction of the reward but meets the deadlines only up to a
+constant factor; what we add is a route that violates none, with a ratio that
+depends explicitly only on $\lambda$.
 
 \emph{Oracle.} We use a point-to-point orienteering algorithm as a black
 box: given the metric, non-negative node prizes, the depot as source, a site
@@ -1937,11 +1946,13 @@ directed acyclic graph, solved exactly. For $\lambda=1$ and $\beta>0$ a route
 is protected iff its last excess is at most $\beta$, which is one point-to-point
 orienteering instance per last site, with ratio $\omega$. For $\lambda<1$ and $\beta=0$ no site
 can be reached in time; $\lambda<1$ with $\beta>0$ is not covered. (iii) The theorem is
-an application of an orienteering algorithm; the new ingredient is the
-excess~\eqref{eq:excess}, which turns the front's deadlines into a budget that
-is proportional to the distance and so lets dyadic distance classes be
-decoupled. It does not say anything about general deadlines, for which
-a polynomial-time constant factor remains open. (iv) We ran the algorithm with an exact oracle on $450$ random instances
+an application of an orienteering algorithm within the scheme of
+\citet{bansal2004} (excess, distance classes, one orienteering call per
+class, selection of classes at a fixed gap); as we read it, that analysis gives
+a bicriteria guarantee for these deadlines. What the proof above adds is the
+splitting of a class by restarting, which makes the output strictly feasible,
+and an explicit ratio in $\lambda$. It says nothing about general
+deadlines, for which a polynomial-time constant factor remains open. (iv) We ran the algorithm with an exact oracle on $450$ random instances
 with $n\le9$ and compared it with the exact chained optimum
 (Section~\ref{sec:verify}); the route was always protected and the weight
 always above the guaranteed fraction (the worst observed ratio to the
@@ -2004,7 +2015,10 @@ problem is strongly NP-hard, and an FPTAS would distinguish
 $W^\ast=n$ from $W^\ast\le n-1$.
 \end{proof}
 
-(On these instances the round-trip surrogate protects only
+This is the hardness of rooted orienteering \citep{golden1987,blum2007}: with
+equidistant sites all deadlines coincide. We include the Hamiltonian-path
+version because it gives strong NP-hardness with unit weights and distances in
+$\{1,2\}$ in one line. (On these instances the round-trip surrogate protects only
 $\lfloor(\lambda+1)/2\rfloor$ sites.) The same instances with a positive offset $\beta=T-(n-1)$, i.e.\ with
 every possible budget $T\ge n-1$ in place of $n-1$, turn an $r$-approximation of
 the protected count into a $(1+2(1-1/r)n/(n-1))$-approximation of the

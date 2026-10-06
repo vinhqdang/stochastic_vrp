@@ -144,12 +144,14 @@ moves slower than the crew ($h_i=\beta+\lambda a_i$, $\lambda>1$) a
 polynomial-time algorithm protects a fraction of the optimum that depends
 only on $\lambda$, not on $n$, on the spread of the distances or on the
 weights (Theorem~\ref{thm:frontapprox}); it calls a point-to-point
-orienteering algorithm as a subroutine and rests on a monotone ``excess'' of
-the route, which turns the front's deadlines into a budget proportional to
-the distance. The round-trip surrogate cannot give such a guarantee at any
+orienteering algorithm as a subroutine and follows the excess-and-distance-class
+scheme that \citet{bansal2004} use for the ``small margin'' case of
+deadline-TSP; for a front it yields a route that is strictly feasible, with a
+ratio that depends explicitly only on $\lambda$. The round-trip surrogate cannot give such a guarantee at any
 fixed speed (Proposition~\ref{prop:nosurrogate}), and no FPTAS is possible,
 because the unit-weight problem is strongly NP-hard even when all sites are
-equally far from the depot (Theorem~\ref{thm:frontnp}). General deadlines,
+equally far from the depot (Theorem~\ref{thm:frontnp}; this is the hardness
+of rooted orienteering). General deadlines,
 for which only an $O(\log n)$ guarantee is known, are not covered.
 \item \emph{What the round-trip abstraction costs.} The ratio between the
 best chained route and the best round-trip plan is at most $n$ and the bound
@@ -165,10 +167,12 @@ complexity is classified by the slope and the offset; even a front that
 starts at the depot gives an NP-hard problem
 (Theorems~\ref{thm:affine}, \ref{thm:annulus}).
 \end{enumerate}
-To our knowledge these results are not in the literature; Section~\ref{sec:related}
-says what is close. Apart from the orienteering subroutine they use only
-exchange arguments, the excess of a route and reductions from Partition and
-Hamiltonian path.
+To our knowledge results 2--4 are not in the literature
+(Section~\ref{sec:related} says what is close); result~1 refines a scheme of
+\citet{bansal2004}, and the hardness in it is that of rooted orienteering
+\citep{golden1987,blum2007}. Apart from the orienteering subroutine the proofs
+use only exchange arguments, the excess of a route and reductions from
+Partition and Hamiltonian path.
 
 \emph{Smaller additions in the scheduling part.} Under the arrival reading of
 the deadline, MWHED stays weakly NP-hard when the hazard-arrival time is the
@@ -653,8 +657,8 @@ Constant hazard-arrival time (arrival reading) & weakly NP-hard & Prop.~\ref{pro
 Round-trip vs.\ chained route & round trip is conservative & Prop.~\ref{prop:spoke} & --- & new (elementary) \\
 Gap round trip / chained & at most $n$, attained; bracket via $\kappa$ & Thms.~\ref{thm:gap}, \ref{thm:speedaug} & $O(nP)$ per end & new \\
 Chained route on a line & pseudo-poly., FPTAS; NP-hard with weights & Thms.~\ref{thm:linealg}, \ref{thm:linehard} & $O(n^2W)$ & selective version of a classical DP; hardness new \\
-Chained route, unit weights, equidistant sites & strongly NP-hard (no FPTAS) & Thm.~\ref{thm:frontnp} & --- & new (elementary) \\
-Chained route, front slower than the crew ($\lambda>1$) & $\omega\ell m$-approx., $O(\log\frac1{\lambda-1})$ & Thm.~\ref{thm:frontapprox} & $n$ oracle calls & new; uses an orienteering oracle \\
+Chained route, unit weights, equidistant sites & strongly NP-hard (no FPTAS) & Thm.~\ref{thm:frontnp} & --- & folklore (rooted orienteering) \\
+Chained route, front slower than the crew ($\lambda>1$) & $\omega\ell m$-approx., $O(\log\frac1{\lambda-1})$ & Thm.~\ref{thm:frontapprox} & $n$ oracle calls & refines \citet{bansal2004}; uses an orienteering oracle \\
 Affine front deadlines $d=\beta+\alpha p$ & classified; NP-hard for $\alpha>1$, $\beta=0$ & Thm.~\ref{thm:affine} & --- & new (elementary) \\
 Naive EDD, EDD with skipping & unbounded ratio & Prop.~\ref{prop:naive} & $O(n\log n)$ & illustrative \\
 Weighted greedy repair & unbounded ratio & Prop.~\ref{prop:repair} & --- & illustrative \\
@@ -1828,7 +1832,12 @@ consecutive sites $i_r,\dots,i_s$ is started afresh from the depot, its excess
 at $i_j$ becomes $e_j-e_r$ (restarting). The route in which every
 site is protected needs, by~\eqref{eq:excess}, an excess budget that grows
 linearly with the distance from the depot: this is what a front gives, and
-what a general deadline does not.
+what a general deadline does not. The excess, its monotonicity and the
+dyadic distance classes below are the machinery of the analysis of
+\citet{bansal2004} for the ``small margin'' case, which for these deadlines
+gives a constant fraction of the reward but meets the deadlines only up to a
+constant factor; what we add is a route that violates none, with a ratio that
+depends explicitly only on $\lambda$.
 
 \emph{Oracle.} We use a point-to-point orienteering algorithm as a black
 box: given the metric, non-negative node prizes, the depot as source, a site
@@ -1937,11 +1946,13 @@ directed acyclic graph, solved exactly. For $\lambda=1$ and $\beta>0$ a route
 is protected iff its last excess is at most $\beta$, which is one point-to-point
 orienteering instance per last site, with ratio $\omega$. For $\lambda<1$ and $\beta=0$ no site
 can be reached in time; $\lambda<1$ with $\beta>0$ is not covered. (iii) The theorem is
-an application of an orienteering algorithm; the new ingredient is the
-excess~\eqref{eq:excess}, which turns the front's deadlines into a budget that
-is proportional to the distance and so lets dyadic distance classes be
-decoupled. It does not say anything about general deadlines, for which
-a polynomial-time constant factor remains open. (iv) We ran the algorithm with an exact oracle on $450$ random instances
+an application of an orienteering algorithm within the scheme of
+\citet{bansal2004} (excess, distance classes, one orienteering call per
+class, selection of classes at a fixed gap); as we read it, that analysis gives
+a bicriteria guarantee for these deadlines. What the proof above adds is the
+splitting of a class by restarting, which makes the output strictly feasible,
+and an explicit ratio in $\lambda$. It says nothing about general
+deadlines, for which a polynomial-time constant factor remains open. (iv) We ran the algorithm with an exact oracle on $450$ random instances
 with $n\le9$ and compared it with the exact chained optimum
 (Section~\ref{sec:verify}); the route was always protected and the weight
 always above the guaranteed fraction (the worst observed ratio to the
@@ -2004,7 +2015,10 @@ problem is strongly NP-hard, and an FPTAS would distinguish
 $W^\ast=n$ from $W^\ast\le n-1$.
 \end{proof}
 
-(On these instances the round-trip surrogate protects only
+This is the hardness of rooted orienteering \citep{golden1987,blum2007}: with
+equidistant sites all deadlines coincide. We include the Hamiltonian-path
+version because it gives strong NP-hardness with unit weights and distances in
+$\{1,2\}$ in one line. (On these instances the round-trip surrogate protects only
 $\lfloor(\lambda+1)/2\rfloor$ sites.) The same instances with a positive offset $\beta=T-(n-1)$, i.e.\ with
 every possible budget $T\ge n-1$ in place of $n-1$, turn an $r$-approximation of
 the protected count into a $(1+2(1-1/r)n/(n-1))$-approximation of the
@@ -3107,7 +3121,7 @@ responsibility for them.
 
 %% BioMed_Central_Bib_Style_v1.01
 
-\begin{thebibliography}{58}
+\begin{thebibliography}{60}
 % BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
 \ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
 \ifx \binits  \undefined \def \binits#1{#1}\fi
@@ -3281,6 +3295,25 @@ pp. \bfpage{166}--\blpage{174}
 \endbibitem
 
 %%% 9
+\bibitem[\protect\citeauthoryear{Blum et~al.}{2007}]{blum2007}
+\begin{barticle}
+\bauthor{\bsnm{Blum}, \binits{A.}},
+\bauthor{\bsnm{Chawla}, \binits{S.}},
+\bauthor{\bsnm{Karger}, \binits{D.R.}},
+\bauthor{\bsnm{Lane}, \binits{T.}},
+\bauthor{\bsnm{Meyerson}, \binits{A.}},
+\bauthor{\bsnm{Minkoff}, \binits{M.}}:
+\batitle{Approximation algorithms for orienteering and discounted-reward
+  {TSP}}.
+\bjtitle{SIAM Journal on Computing}
+\bvolume{37}(\bissue{2}),
+\bfpage{653}--\blpage{670}
+(\byear{2007})
+\doiurl{10.1137/050645464}
+\end{barticle}
+\endbibitem
+
+%%% 10
 \bibitem[\protect\citeauthoryear{Bringmann et~al.}{2022}]{bringmann2022}
 \begin{barticle}
 \bauthor{\bsnm{Bringmann}, \binits{K.}},
@@ -3297,7 +3330,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 10
+%%% 11
 \bibitem[\protect\citeauthoryear{Brucker and
   Kravchenko}{2006}]{bruckerkravchenko2006}
 \begin{barticle}
@@ -3313,7 +3346,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 11
+%%% 12
 \bibitem[\protect\citeauthoryear{Bar-Yehuda et~al.}{2005}]{baryehuda2005}
 \begin{barticle}
 \bauthor{\bsnm{Bar-Yehuda}, \binits{R.}},
@@ -3329,7 +3362,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 12
+%%% 13
 \bibitem[\protect\citeauthoryear{Chekuri and Khanna}{2005}]{chekuri2005}
 \begin{barticle}
 \bauthor{\bsnm{Chekuri}, \binits{C.}},
@@ -3344,7 +3377,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 13
+%%% 14
 \bibitem[\protect\citeauthoryear{Chekuri et~al.}{2012}]{chekuri2012}
 \begin{barticle}
 \bauthor{\bsnm{Chekuri}, \binits{C.}},
@@ -3359,7 +3392,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 14
+%%% 15
 \bibitem[\protect\citeauthoryear{Chen et~al.}{2025}]{chen2025fptas}
 \begin{barticle}
 \bauthor{\bsnm{Chen}, \binits{L.}},
@@ -3374,7 +3407,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 15
+%%% 16
 \bibitem[\protect\citeauthoryear{Dessouky et~al.}{1990}]{dessouky1990}
 \begin{barticle}
 \bauthor{\bsnm{Dessouky}, \binits{M.I.}},
@@ -3390,7 +3423,7 @@ pp. \bfpage{166}--\blpage{174}
 \end{barticle}
 \endbibitem
 
-%%% 16
+%%% 17
 \bibitem[\protect\citeauthoryear{Delazeri and Ritt}{2026}]{delazeri2026}
 \begin{botherref}
 \oauthor{\bsnm{Delazeri}, \binits{G.}},
@@ -3401,7 +3434,7 @@ arXiv:2603.29865
 \end{botherref}
 \endbibitem
 
-%%% 17
+%%% 18
 \bibitem[\protect\citeauthoryear{Edmonds}{1971}]{edmonds1971}
 \begin{barticle}
 \bauthor{\bsnm{Edmonds}, \binits{J.}}:
@@ -3414,7 +3447,7 @@ arXiv:2603.29865
 \end{barticle}
 \endbibitem
 
-%%% 18
+%%% 19
 \bibitem[\protect\citeauthoryear{Feillet et~al.}{2005}]{feillet2005}
 \begin{barticle}
 \bauthor{\bsnm{Feillet}, \binits{D.}},
@@ -3429,7 +3462,7 @@ arXiv:2603.29865
 \end{barticle}
 \endbibitem
 
-%%% 19
+%%% 20
 \bibitem[\protect\citeauthoryear{Farbstein and Levin}{2019}]{farbstein2019}
 \begin{barticle}
 \bauthor{\bsnm{Farbstein}, \binits{B.}},
@@ -3443,7 +3476,7 @@ arXiv:2603.29865
 \end{barticle}
 \endbibitem
 
-%%% 20
+%%% 21
 \bibitem[\protect\citeauthoryear{Friggstad and Swamy}{2021}]{friggstad2021}
 \begin{bchapter}
 \bauthor{\bsnm{Friggstad}, \binits{Z.}},
@@ -3462,7 +3495,7 @@ vol. \bseriesno{198}.
 \end{bchapter}
 \endbibitem
 
-%%% 21
+%%% 22
 \bibitem[\protect\citeauthoryear{Fischer and
   Wennmann}{2025}]{fischer2025theoretics}
 \begin{botherref}
@@ -3476,7 +3509,7 @@ TheoretiCS
 \end{botherref}
 \endbibitem
 
-%%% 22
+%%% 23
 \bibitem[\protect\citeauthoryear{Garey and Johnson}{1979}]{gareyjohnson1979}
 \begin{bbook}
 \bauthor{\bsnm{Garey}, \binits{M.R.}},
@@ -3489,7 +3522,7 @@ TheoretiCS
 \end{bbook}
 \endbibitem
 
-%%% 23
+%%% 24
 \bibitem[\protect\citeauthoryear{Gens and Levner}{1981}]{gensl1981}
 \begin{barticle}
 \bauthor{\bsnm{Gens}, \binits{G.V.}},
@@ -3503,7 +3536,22 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 24
+%%% 25
+\bibitem[\protect\citeauthoryear{Golden et~al.}{1987}]{golden1987}
+\begin{barticle}
+\bauthor{\bsnm{Golden}, \binits{B.L.}},
+\bauthor{\bsnm{Levy}, \binits{L.}},
+\bauthor{\bsnm{Vohra}, \binits{R.}}:
+\batitle{The orienteering problem}.
+\bjtitle{Naval Research Logistics}
+\bvolume{34}(\bissue{3}),
+\bfpage{307}--\blpage{318}
+(\byear{1987})
+\doiurl{10.1002/1520-6750(198706)34:3<307::AID-NAV3220340302>3.0.CO;2-D}
+\end{barticle}
+\endbibitem
+
+%%% 26
 \bibitem[\protect\citeauthoryear{Gabow and Tarjan}{1985}]{gabow1985}
 \begin{barticle}
 \bauthor{\bsnm{Gabow}, \binits{H.N.}},
@@ -3517,7 +3565,7 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 25
+%%% 27
 \bibitem[\protect\citeauthoryear{Granda et~al.}{2025}]{granda2025}
 \begin{barticle}
 \bauthor{\bsnm{Granda}, \binits{B.}},
@@ -3533,7 +3581,7 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 26
+%%% 28
 \bibitem[\protect\citeauthoryear{Harris et~al.}{2023}]{harris2023}
 \begin{barticle}
 \bauthor{\bsnm{Harris}, \binits{M.G.}},
@@ -3548,7 +3596,7 @@ TheoretiCS
 \end{barticle}
 \endbibitem
 
-%%% 27
+%%% 29
 \bibitem[\protect\citeauthoryear{Heeger and
   Hermelin}{2024}]{heegerhermelin2024}
 \begin{bchapter}
@@ -3566,7 +3614,7 @@ vol. \bseriesno{308}.
 \end{bchapter}
 \endbibitem
 
-%%% 28
+%%% 30
 \bibitem[\protect\citeauthoryear{Heeger and Molter}{2025}]{heegermolter2025}
 \begin{bchapter}
 \bauthor{\bsnm{Heeger}, \binits{K.}},
@@ -3585,7 +3633,7 @@ vol. \bseriesno{327}.
 \end{bchapter}
 \endbibitem
 
-%%% 29
+%%% 31
 \bibitem[\protect\citeauthoryear{Hermelin et~al.}{2024}]{hermelin2024}
 \begin{barticle}
 \bauthor{\bsnm{Hermelin}, \binits{D.}},
@@ -3601,7 +3649,7 @@ vol. \bseriesno{327}.
 \end{barticle}
 \endbibitem
 
-%%% 30
+%%% 32
 \bibitem[\protect\citeauthoryear{Hejl et~al.}{2022}]{hejl2022}
 \begin{barticle}
 \bauthor{\bsnm{Hejl}, \binits{L.}},
@@ -3618,7 +3666,7 @@ vol. \bseriesno{327}.
 \end{barticle}
 \endbibitem
 
-%%% 31
+%%% 33
 \bibitem[\protect\citeauthoryear{Ibarra and Kim}{1975}]{ibarrakim1975}
 \begin{barticle}
 \bauthor{\bsnm{Ibarra}, \binits{O.H.}},
@@ -3633,7 +3681,7 @@ vol. \bseriesno{327}.
 \end{barticle}
 \endbibitem
 
-%%% 32
+%%% 34
 \bibitem[\protect\citeauthoryear{Jin}{2019}]{jin2019}
 \begin{bchapter}
 \bauthor{\bsnm{Jin}, \binits{C.}}:
@@ -3650,7 +3698,7 @@ vol. \bseriesno{132}.
 \end{bchapter}
 \endbibitem
 
-%%% 33
+%%% 35
 \bibitem[\protect\citeauthoryear{Karp}{1972}]{karp1972}
 \begin{bchapter}
 \bauthor{\bsnm{Karp}, \binits{R.M.}}:
@@ -3666,7 +3714,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{bchapter}
 \endbibitem
 
-%%% 34
+%%% 36
 \bibitem[\protect\citeauthoryear{Koca}{2023}]{koca2023}
 \begin{barticle}
 \bauthor{\bsnm{Koca}, \binits{E.}}:
@@ -3680,7 +3728,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{barticle}
 \endbibitem
 
-%%% 35
+%%% 37
 \bibitem[\protect\citeauthoryear{Kellerer and Pferschy}{1999}]{kellerer1999}
 \begin{barticle}
 \bauthor{\bsnm{Kellerer}, \binits{H.}},
@@ -3695,7 +3743,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{barticle}
 \endbibitem
 
-%%% 36
+%%% 38
 \bibitem[\protect\citeauthoryear{Kellerer and Pferschy}{2004}]{kellerer2004}
 \begin{barticle}
 \bauthor{\bsnm{Kellerer}, \binits{H.}},
@@ -3710,7 +3758,7 @@ pp. \bfpage{85}--\blpage{103}.
 \end{barticle}
 \endbibitem
 
-%%% 37
+%%% 39
 \bibitem[\protect\citeauthoryear{Klein et~al.}{2023}]{klein2023}
 \begin{bchapter}
 \bauthor{\bsnm{Klein}, \binits{K.-M.}},
@@ -3726,7 +3774,7 @@ pp. \bfpage{2947}--\blpage{2960}
 \end{bchapter}
 \endbibitem
 
-%%% 38
+%%% 40
 \bibitem[\protect\citeauthoryear{Korte and Vygen}{2018}]{kortevygen2018}
 \begin{bbook}
 \bauthor{\bsnm{Korte}, \binits{B.}},
@@ -3742,7 +3790,7 @@ vol. \bseriesno{21}.
 \end{bbook}
 \endbibitem
 
-%%% 39
+%%% 41
 \bibitem[\protect\citeauthoryear{Kravchenko and
   Werner}{2011}]{kravchenkowerner2011}
 \begin{barticle}
@@ -3757,7 +3805,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 40
+%%% 42
 \bibitem[\protect\citeauthoryear{K{\"u}hn et~al.}{2024}]{kuhn2024}
 \begin{barticle}
 \bauthor{\bsnm{K{\"u}hn}, \binits{R.}},
@@ -3773,7 +3821,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 41
+%%% 43
 \bibitem[\protect\citeauthoryear{Lawler}{1976}]{lawler1976}
 \begin{barticle}
 \bauthor{\bsnm{Lawler}, \binits{E.L.}}:
@@ -3785,7 +3833,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 42
+%%% 44
 \bibitem[\protect\citeauthoryear{Lawler}{1979}]{lawler1979}
 \begin{barticle}
 \bauthor{\bsnm{Lawler}, \binits{E.L.}}:
@@ -3798,7 +3846,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 43
+%%% 45
 \bibitem[\protect\citeauthoryear{Liu and Layland}{1973}]{liulayland1973}
 \begin{barticle}
 \bauthor{\bsnm{Liu}, \binits{C.L.}},
@@ -3813,7 +3861,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 44
+%%% 46
 \bibitem[\protect\citeauthoryear{Lawler and Moore}{1969}]{lawlermoore1969}
 \begin{barticle}
 \bauthor{\bsnm{Lawler}, \binits{E.L.}},
@@ -3828,7 +3876,7 @@ vol. \bseriesno{21}.
 \end{barticle}
 \endbibitem
 
-%%% 45
+%%% 47
 \bibitem[\protect\citeauthoryear{Lenstra et~al.}{1977}]{lenstra1977}
 \begin{bchapter}
 \bauthor{\bsnm{Lenstra}, \binits{J.K.}},
@@ -3844,7 +3892,7 @@ pp. \bfpage{343}--\blpage{362}
 \end{bchapter}
 \endbibitem
 
-%%% 46
+%%% 48
 \bibitem[\protect\citeauthoryear{Maranghides et~al.}{2021}]{nist2021campfire}
 \begin{botherref}
 \oauthor{\bsnm{Maranghides}, \binits{A.}},
@@ -3864,7 +3912,7 @@ National Institute of Standards and Technology
 \end{botherref}
 \endbibitem
 
-%%% 47
+%%% 49
 \bibitem[\protect\citeauthoryear{Moore}{1968}]{moore1968}
 \begin{barticle}
 \bauthor{\bsnm{Moore}, \binits{J.M.}}:
@@ -3878,7 +3926,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 48
+%%% 50
 \bibitem[\protect\citeauthoryear{Psaraftis et~al.}{1990}]{psaraftis1990}
 \begin{barticle}
 \bauthor{\bsnm{Psaraftis}, \binits{H.N.}},
@@ -3894,7 +3942,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 49
+%%% 51
 \bibitem[\protect\citeauthoryear{Papadimitriou and
   Yannakakis}{1993}]{papadimitriou1993}
 \begin{barticle}
@@ -3909,7 +3957,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 50
+%%% 52
 \bibitem[\protect\citeauthoryear{Rostamian et~al.}{2026}]{rostamian2026}
 \begin{barticle}
 \bauthor{\bsnm{Rostamian}, \binits{P.}},
@@ -3926,7 +3974,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 51
+%%% 53
 \bibitem[\protect\citeauthoryear{Rachaniotis and
   Pappis}{2006}]{rachaniotis2006}
 \begin{barticle}
@@ -3942,7 +3990,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 52
+%%% 54
 \bibitem[\protect\citeauthoryear{Sahni}{1976}]{sahni1976}
 \begin{barticle}
 \bauthor{\bsnm{Sahni}, \binits{S.K.}}:
@@ -3955,7 +4003,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 53
+%%% 55
 \bibitem[\protect\citeauthoryear{Shabtay et~al.}{2013}]{shabtay2013}
 \begin{barticle}
 \bauthor{\bsnm{Shabtay}, \binits{D.}},
@@ -3970,7 +4018,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 54
+%%% 56
 \bibitem[\protect\citeauthoryear{Tezcan and Eren}{2025}]{tezcan2025}
 \begin{barticle}
 \bauthor{\bsnm{Tezcan}, \binits{B.}},
@@ -3985,7 +4033,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 55
+%%% 57
 \bibitem[\protect\citeauthoryear{Tsitsiklis}{1992}]{tsitsiklis1992}
 \begin{barticle}
 \bauthor{\bsnm{Tsitsiklis}, \binits{J.N.}}:
@@ -3999,7 +4047,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 56
+%%% 58
 \bibitem[\protect\citeauthoryear{Vansteenwegen
   et~al.}{2011}]{vansteenwegen2011}
 \begin{barticle}
@@ -4015,7 +4063,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 57
+%%% 59
 \bibitem[\protect\citeauthoryear{Wang}{2020}]{wang2020evac}
 \begin{barticle}
 \bauthor{\bsnm{Wang}, \binits{L.}}:
@@ -4029,7 +4077,7 @@ National Institute of Standards and Technology
 \end{barticle}
 \endbibitem
 
-%%% 58
+%%% 60
 \bibitem[\protect\citeauthoryear{Woeginger}{2000}]{woeginger2000}
 \begin{barticle}
 \bauthor{\bsnm{Woeginger}, \binits{G.J.}}:
