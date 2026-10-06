@@ -50,6 +50,13 @@
     ratio), chained route on a line (pseudo-poly., FPTAS, weighted
     NP-hard), affine-deadline classification, thin ring. Checked by
     `verify_geometry.py`; not formalised in Lean.
+    - **Approximation for a front** (Section 4.7, Theorems 22-24): constant
+    factor (depending on lambda only) for the chained route when the
+    front is slower than the crew, via dyadic distance classes and a
+    point-to-point orienteering oracle (cited, not reimplemented);
+    surrogate cannot give a bound at any speed (Prop 23); unit weights
+    strongly NP-hard at Gamma=1 (Thm 24). `verify_front_approx.py`.
+    General deadlines remain open (O(log n) known).
   - **Bibliography** verified/corrected (59 entries, ~49 cited);
     `verify_extensions.py` checks the added results; `experiment.py`
     gained a HiGHS MIP baseline; code + Lean library are public in this

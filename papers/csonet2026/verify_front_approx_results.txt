@@ -1,0 +1,69 @@
+== indep.py 1 150 (exit 0)
+instances 150 violations 0 worst ratio 0.3125
+== indep.py 2 150 (exit 0)
+instances 150 violations 0 worst ratio 0.375
+== indep.py 3 150 (exit 0)
+instances 150 violations 0 worst ratio 0.3157894736842105
+== tests.py 0 (exit 0)
+T0-T2 done 0.5 s
+T3 done 0.8 s
+T4/T5 done 3.3 s
+
+T0 chain DP == brute force                    tests=  120 failures=0
+T1 W_spoke <= W_chain                         tests=  300 failures=0
+T2a excess nondecreasing & >=0                tests=  500 failures=0
+T2b shortcut B' <= B                          tests=  500 failures=0
+T2c restart excess = e_j - e_start            tests=  500 failures=0
+T2d e_s = e_u + c(u,s)                        tests=  500 failures=0
+T3 stand(C_k) <= P*V_unif                     tests=  744 failures=0
+T3b OPT = sum of class parts                  tests=  250 failures=0
+T4[exact] ALG route fully protected           tests=  600 failures=0
+T4[exact] chosen gaps >= m                    tests=  600 failures=0
+T4[exact] e_j <= beta+rho a_j                 tests=  600 failures=0
+T4[weak] ALG route fully protected            tests=  600 failures=0
+T4[weak] chosen gaps >= m                     tests=  600 failures=0
+T4[weak] e_j <= beta+rho a_j                  tests=  600 failures=0
+T5 ALG >= OPT/(P m)  (alpha=1)                tests=  600 failures=0
+T5b ALG >= max residue sum                    tests=  600 failures=0
+T5c max residue sum >= OPT/(P m)              tests=  600 failures=0
+T5d ALG <= OPT                                tests=  600 failures=0
+T6 ray: W_chain = n                           tests=   12 failures=0
+TOTAL 9426 FAIL 0 time 3.4
+== tests.py 1 (exit 0)
+T0-T2 done 0.5 s
+T3 done 0.8 s
+T4/T5 done 3.3 s
+
+T0 chain DP == brute force                    tests=  120 failures=0
+T1 W_spoke <= W_chain                         tests=  300 failures=0
+T2a excess nondecreasing & >=0                tests=  500 failures=0
+T2b shortcut B' <= B                          tests=  500 failures=0
+T2c restart excess = e_j - e_start            tests=  500 failures=0
+T2d e_s = e_u + c(u,s)                        tests=  500 failures=0
+T3 stand(C_k) <= P*V_unif                     tests=  761 failures=0
+T3b OPT = sum of class parts                  tests=  250 failures=0
+T4[exact] ALG route fully protected           tests=  600 failures=0
+T4[exact] chosen gaps >= m                    tests=  600 failures=0
+T4[exact] e_j <= beta+rho a_j                 tests=  600 failures=0
+T4[weak] ALG route fully protected            tests=  600 failures=0
+T4[weak] chosen gaps >= m                     tests=  600 failures=0
+T4[weak] e_j <= beta+rho a_j                  tests=  600 failures=0
+T5 ALG >= OPT/(P m)  (alpha=1)                tests=  600 failures=0
+T5b ALG >= max residue sum                    tests=  600 failures=0
+T5c max residue sum >= OPT/(P m)              tests=  600 failures=0
+T5d ALG <= OPT                                tests=  600 failures=0
+T6 ray: W_chain = n                           tests=   12 failures=0
+TOTAL 9443 FAIL 0 time 3.3
+== g3.py (exit 0)
+ray spoke bound checks 299 violations 0
+star legs 2^k, K=10, lam=1.1: OPT=2, sum_k standalone = 10, ratio 5.00, m(theta=.5)=7, log2(1/rho)=3.32
+star legs 2^k, K=12, lam=1.1: OPT=3, sum_k standalone = 12, ratio 4.00, m(theta=.5)=7, log2(1/rho)=3.32
+star legs 2^k, K=10, lam=1.25: OPT=3, sum_k standalone = 10, ratio 3.33, m(theta=.5)=6, log2(1/rho)=2.00
+star legs 2^k, K=12, lam=1.25: OPT=4, sum_k standalone = 12, ratio 3.00, m(theta=.5)=6, log2(1/rho)=2.00
+star legs 2^k, K=10, lam=1.5: OPT=4, sum_k standalone = 10, ratio 2.50, m(theta=.5)=5, log2(1/rho)=1.00
+star legs 2^k, K=12, lam=1.5: OPT=5, sum_k standalone = 12, ratio 2.40, m(theta=.5)=5, log2(1/rho)=1.00
+== ham.py 7 (exit 0)
+instances 300 (Hamiltonian-path yes: 146) violations 0
+== ham.py 8 (exit 0)
+instances 300 (Hamiltonian-path yes: 156) violations 0
+ALL FRONT-APPROXIMATION CHECKS PASSED

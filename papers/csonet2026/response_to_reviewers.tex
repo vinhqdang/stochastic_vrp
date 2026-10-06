@@ -57,7 +57,7 @@ order) $\to$ Proposition~9. New in the revision: Proposition~1 (the
 round-trip model is conservative), Fact~1, Proposition~4 (constant
 hazard-arrival time), Lemma~6 (value-indexed table), Propositions~10
 and~11 (greedy repair; FPTAS tightness), Theorem~12 (classification) and,
-in the new Section~4.7 (hazard geometry) and Appendix~C, Theorems~13--21.
+in the new Section~4.7 (hazard geometry) and Appendix~C, Theorems~13--24.
 Below, ``Theorem~$a$ ($b$)'' means Theorem~$a$ now and Theorem~$b$ in the
 version you reviewed. Section numbers refer to the revised manuscript;
 the Camp Fire study is Section~5.7.
@@ -92,7 +92,16 @@ dynamic program of Tsitsiklis 1992) and is NP-hard with weights (Theorem~18);
 and for deadlines induced by a front at constant speed we classify the
 complexity by the slope and offset of the deadline as a function of the
 dispatch time (Proposition~19, Theorems~20--21), which shows that even a
-front that starts at the depot gives an NP-hard problem. These statements
+front that starts at the depot gives an NP-hard problem. Finally, for a
+front slower than the crew we give a polynomial-time approximation algorithm
+for the chained route whose ratio depends only on the front's speed
+(Theorem~22; it uses a point-to-point orienteering algorithm from the
+literature as a subroutine and says nothing about general deadlines, for
+which only an $O(\log n)$ guarantee is known), show that the round-trip
+surrogate cannot give such a guarantee at any fixed speed (Proposition~23),
+and prove that the unit-weight chained problem is strongly NP-hard even for
+equidistant sites (Theorem~24), so no scheme better than a constant is
+possible. These statements
 are checked against brute force (\texttt{verify\_geometry.py}); they are
 \emph{not} formalised in Lean, and the manuscript says so.
 \item \textbf{Hardness proof} (Theorem~3 (2)): a direct reduction from
@@ -177,7 +186,9 @@ quantified on our case study.
 material: the round-trip surrogate can lose a factor $n$ against a chained
 route (attained), with a bracket controlled by a clustering ratio
 (Theorems~13 and~14); chained routing on a line is pseudo-polynomial and
-has an FPTAS but is NP-hard with weights (Theorems~17 and~18); and for
+has an FPTAS but is NP-hard with weights (Theorems~17 and~18); a constant-factor
+approximation for a front slower than the crew, with strong NP-hardness of
+the unit-weight problem (Theorems~22 and~24); and for
 affine deadlines $d=\beta+\alpha p$ (a constant-speed front) the
 complexity is classified, with NP-hardness for $\alpha>1$ even at
 $\beta=0$, i.e.\ for a front that starts at the depot (Theorems~20

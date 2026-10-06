@@ -1,7 +1,7 @@
 %% CSoNet 2026 Journal Track submission (Journal of Combinatorial Optimization)
 %DIF LATEXDIFF DIFFERENCE FILE
 %DIF DEL main_old.tex   Mon Oct  5 23:41:50 2026
-%DIF ADD main.tex       Mon Oct  5 23:41:50 2026
+%DIF ADD main.tex       Tue Oct  6 01:56:16 2026
 %% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
 
 \documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}
@@ -176,7 +176,10 @@ the bound is attained, bracket it by a speed-augmentation argument
 controlled by a clustering ratio, show that chained routing on a line is
 pseudo-polynomial with an FPTAS yet weakly NP-hard with weights, and
 classify deadlines produced by an affine hazard front, which stay NP-hard
-even for a front that starts at the depot. The algorithms are checked against exhaustive
+even for a front that starts at the depot. For a front slower than the
+crew we give a polynomial-time constant-factor approximation of the
+chained route, whose ratio depends only on the front's speed and which uses
+a point-to-point orienteering algorithm as a subroutine. The algorithms are checked against exhaustive
 search and the theory is machine-checked in Lean~4. A case study of the
 2018 Camp Fire, built from hazard-arrival times that NIST documents for
 each community, shows in this model that the exact optimum inherits the
@@ -283,27 +286,24 @@ the Lawler--Moore program \mbox{%DIFAUXCMD
 }\DIFaddend .
 \item \DIFdelbegin \DIFdel{We adapt the classical }\DIFdelend \DIFaddbegin \DIFadd{A }\DIFaddend value-scaling \DIFdelbegin \DIFdel{technique to obtain a fully
 polynomial-time approximation scheme (FPTAS ) for MWHED
-}\DIFdelend \DIFaddbegin \DIFadd{FPTAS }\DIFaddend (Theorem~\ref{thm:fptas})\DIFdelbegin \DIFdel{, so that a solution within any desired factor
-$1-\epsilon$ of optimal is computable in time polynomial in the }\DIFdelend \DIFaddbegin \DIFadd{; approximation
+}\DIFdelend \DIFaddbegin \DIFadd{FPTAS (Theorem~\ref{thm:fptas}); approximation
 schemes for this problem are classical \mbox{%DIFAUXCMD
 \citep{sahni1976,gensl1981}}\hskip0pt%DIFAUXCMD
 .
-}\item \DIFadd{A matroid greedy algorithm for equal dispatch times and any }\DIFaddend number
-of \DIFdelbegin \DIFdel{sites and $1/\epsilon$}\DIFdelend \DIFaddbegin \DIFadd{vehicles, identical or with different dispatch times
-(Theorem~\ref{thm:equalp}). This is the scheduling of unit-time jobs on
+}\item \DIFadd{A matroid greedy algorithm for equal dispatch times and any number
+of vehicles, identical or with different dispatch times
+}\DIFaddend (Theorem~\DIFdelbegin \DIFdel{\ref{thm:fptas}), so that a solution within any desired factor
+$1-\epsilon$ of optimal is computable in time polynomial in the number
+of
+sites and$1/\epsilon$.
+}\DIFdelend \DIFaddbegin \DIFadd{\ref{thm:equalp}). This is the scheduling of unit-time jobs on
 identical or uniform machines, for which $O(n\log n)$ algorithms are
 known \mbox{%DIFAUXCMD
 \citep{lawler1976,dessouky1990}}\hskip0pt%DIFAUXCMD
-; we include a self-contained proof}\DIFaddend .
-\item \DIFdelbegin \DIFdel{We identify a second special case---equal round-trip }\DIFdelend \DIFaddbegin \DIFadd{A classification of the restrictions in which some of the }\DIFaddend dispatch
-times, \DIFdelbegin \DIFdel{i.e., sites equidistant from the depot---that is solvable
-}\emph{\DIFdel{exactly}} %DIFAUXCMD
-\DIFdel{in $O(n \log n)$ time via a matroid greedy algorithm
-}\DIFdelend \DIFaddbegin \DIFadd{weights and deadlines are constant
-}\DIFaddend (Theorem~\DIFdelbegin \DIFdel{\ref{thm:equalp}), showing that heterogeneity in dispatch cost
-}\emph{\DIFdel{alone}} %DIFAUXCMD
-\DIFdel{does not cause hardness:
-it is the combination of heterogeneous dispatch cost and heterogeneous criticality, under a shared deadline structure, that does}\DIFdelend \DIFaddbegin \DIFadd{\ref{thm:classification}); it is an elementary corollary of
+; we include a self-contained proof.
+}\DIFaddend \item \DIFdelbegin \DIFdel{We identify a second special case---equal }\DIFdelend \DIFaddbegin \DIFadd{A classification of the restrictions in which some of the dispatch
+times, weights and deadlines are constant
+(Theorem~\ref{thm:classification}); it is an elementary corollary of
 items~1 and~4 and of Moore's algorithm.
 }\end{enumerate}
 \emph{\DIFadd{What the dispatch setting adds.}} \DIFadd{These additions are modest, and
@@ -315,42 +315,30 @@ $1-\epsilon$ is not attained: the scheme of Theorem~\ref{thm:fptas}
 guarantees $\rho_{n,\epsilon}>1/(1+\epsilon)$, and this constant is
 best possible for the scheme as stated, without the optional completion
 step (Proposition~\ref{prop:tight}); rescaling $\epsilon$ recovers the
-classical bound, so the gain is a constant, not an order}\DIFaddend .
-\item \DIFdelbegin \DIFdel{We show the natural fallback for a planner who declines to
-optimize at all---dispatching sites
-in increasing-deadline orderand
-simply accepting whichever remain on time---has }\emph{\DIFdel{unbounded}}
-%DIFAUXCMD
-\DIFdel{worst-case loss relative to $W^\ast$ (Proposition~\ref{prop:naive} ), so
-Theorems~\ref{thm:dp} and ~\ref{thm:fptas} are not merely convenient but
-necessary for any }\DIFdelend \DIFaddbegin \emph{\DIFadd{The two readings of a deadline.}} \DIFadd{Under the arrival reading
+classical bound, so the gain is a constant, not an order.
+}\item \emph{\DIFadd{The two readings of a deadline.}} \DIFadd{Under the arrival reading
 (the crew must arrive before the hazard does), MWHED stays weakly
 NP-hard even when the hazard-arrival time is the same at every site and
 weights are proportional to dispatch times
-(Proposition~\ref{prop:consth}; to our knowledge not stated before); and the depot round-trip model is a
+(Proposition~\ref{prop:consth}; to our knowledge not stated before); and the depot }\DIFaddend round-trip \DIFdelbegin \DIFdel{dispatch
+times, i.e.
+, sites equidistant from the depot---that is
+solvable
+}\DIFdelend \DIFaddbegin \DIFadd{model is a
 conservative bound on a route that chains the sites
 (Proposition~\ref{prop:spoke}), which says when the round-trip premise is
 appropriate and when it is not (when travel times form a metric).
-}\item \emph{\DIFadd{Worst-case examples.}} \DIFadd{Dispatching in deadline order, with or
+}\item \DIFaddend \emph{\DIFdelbegin \DIFdel{exactly}%DIFDELCMD < \MBLOCKRIGHTBRACE %%%
+\DIFdel{in $O(n \log n)$ time via a matroid greedy algorithm
+(Theorem~\ref{thm:equalp}), showing that heterogeneity in dispatch cost
+}\emph{\DIFdel{alone}} %DIFAUXCMD
+\DIFdel{does not cause hardness: it is the combination of heterogeneous dispatch cost and heterogeneous criticality, under a shared deadline
+structure, that does. }\DIFdelend \DIFaddbegin \DIFadd{Worst-case examples.}} \DIFadd{Dispatching in deadline order, with or
 without skipping, and a weighted greedy repair all have unbounded
-}\DIFaddend worst-case \DIFdelbegin \DIFdel{guarantee at all.
-}%DIFDELCMD < \end{enumerate}
-%DIFDELCMD < 
-
-%DIFDELCMD < %%%
-\DIFdel{Together, Theorems~\ref{thm:hardness} and ~\ref{thm:equalp} give a sharp
-structural picture of where the difficulty in this problem lives, Theorems~\ref{thm:dp} and ~\ref{thm:fptas} give planners exact and provably near-exact tools for the general, hard case, }\DIFdelend \DIFaddbegin \DIFadd{ratio (Propositions~\ref{prop:naive} and~\ref{prop:repair});
-the examples are elementary, }\DIFaddend and \DIFdelbegin \DIFdel{Proposition~\ref{prop:naive} shows those tools are not optional: the
-obvious do-nothing alternative can be made to fail arbitrarily badly.
-A
-numerical illustration in Section~\ref{sec:experiments} confirms the
-FPTAS tracks the true optimum closely well before its worst-case
-guarantee requires,
-while a naive dispatch order (no optimization at
-all, just visiting sites in deadline order)degrades as instances grow.
-}\DIFdelend \DIFaddbegin \DIFadd{on random instances the greedy repair is
+worst-case ratio (Propositions~\ref{prop:naive} and~\ref{prop:repair});
+the examples are elementary, and on random instances the greedy repair is
 within $1\%$ of the optimum on average.
-}\item \emph{\DIFadd{Hazard geometry.}} \DIFadd{Section~\ref{sec:geometry} quantifies what the
+}\DIFaddend \item \DIFdelbegin \DIFdel{We show the natural fallback for }\DIFdelend \DIFaddbegin \emph{\DIFadd{Hazard geometry.}} \DIFadd{Section~\ref{sec:geometry} quantifies what the
 round-trip abstraction costs: the ratio between the best chained route and
 the best round-trip plan is at most $n$ and the bound is attained, even by
 a front that chases the crew along one road; a bracket in terms of a
@@ -360,9 +348,23 @@ selective version of a classical dynamic program) and is NP-hard with
 weights; and for deadlines induced by a front moving at constant speed
 we classify the complexity by the slope and the offset of the deadline
 as a function of the dispatch time, including the case of a front
-starting at the depot. These results are, as far as we found, not in the
-literature, and they use no tool beyond exchange arguments and
-reductions from Partition.
+starting at the depot. For a front slower than the crew we also give a
+polynomial-time approximation algorithm for the chained route whose ratio
+is a constant depending only on the front's speed, not on $n$ or on the
+spread of the distances (Theorem~\ref{thm:frontapprox}), which cannot be
+improved to a scheme because the unit-weight problem is strongly NP-hard even
+for equidistant sites (Theorem~\ref{thm:frontnp}); it calls a
+point-to-point orienteering algorithm as a subroutine, and general
+deadlines, for which only an $O(\log n)$ guarantee is known, are not
+covered. These results are, as far as we found, not in the literature;
+apart from the orienteering subroutine they use only exchange arguments,
+}\DIFaddend a \DIFdelbegin \DIFdel{planner who declines to
+optimize at all---dispatching sites in increasing-deadline order and
+simply accepting whichever remain on time---has }\emph{\DIFdel{unbounded}}
+%DIFAUXCMD
+\DIFdel{worst-case loss relative to $W^\ast$ (Proposition~\ref{prop:naive}), so
+Theorems~\ref{thm:dp} and ~\ref{thm:fptas} are not merely convenient but
+necessary for any worst-case guarantee at all. }\DIFdelend \DIFaddbegin \DIFadd{monotone ``excess'' of the route and reductions from Partition.
 }\item \emph{\DIFadd{Verification.}} \DIFadd{Every algorithm is checked against exhaustive
 search (Section~\ref{sec:verify}), and the statements and proofs of the
 lemmas, theorems and propositions above, except complexity-class and
@@ -373,8 +375,23 @@ implementations are checked by testing, not by Lean).
 from the hazard-arrival times that NIST documents for each community,
 compared with a chained-route model, with a sensitivity analysis and a
 sample-average plan (Section~\ref{sec:campfire}).
-}\end{enumerate}
-\DIFaddend To keep the argument concrete\DIFdelbegin \DIFdel{rather than purely symbolic}\DIFdelend , Sections~\ref{sec:model}
+}\DIFaddend \end{enumerate}
+\DIFdelbegin %DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Together,
+Theorems~\ref{thm:hardness} and~\ref{thm:equalp} give a sharp
+structural picture of where the difficulty in this problem lives,
+Theorems~\ref{thm:dp} and ~\ref{thm:fptas} give planners exact and provably near-exact tools for the general, hard case, and
+Proposition~\ref{prop:naive} shows those tools are not optional: the
+obvious do-nothing alternative can be made to fail arbitrarily badly.
+A
+numerical illustration in Section~\ref{sec:experiments} confirms the
+FPTAS tracks the true optimum closely well before its worst-case
+guarantee requires,
+while a naive dispatch order (no optimization at
+all, just visiting sites in deadline order)degrades as instances grow.
+}\DIFdelend To keep the argument concrete\DIFdelbegin \DIFdel{rather than purely symbolic}\DIFdelend , Sections~\ref{sec:model}
 and~\ref{sec:theory} carry a single four-site running example through \DIFdelbegin \DIFdel{every result}\DIFdelend \DIFaddbegin \DIFadd{the
 results}\DIFaddend , worked out by hand alongside each proof.
 
@@ -981,28 +998,28 @@ kinds of exchanges, each of which preserves feasibility of }\DIFdelend \DIFaddbe
 \DIFdel{First, suppose some site $j \notin S$ precedes some site $i \in S$ in
 }\DIFdelend \DIFaddbegin \DIFadd{be on time under some order }\DIFaddend $\sigma$ \DIFdelbegin \DIFdel{. Moving $j$ to immediately after the last element of $S$
 (and shifting the intervening sites earlier by $p_j$) strictly decreases
-the completion time of every site of $S$ that came after $j$, }\DIFdelend and \DIFdelbegin \DIFdel{leaves the completion time of every site }\DIFdelend \DIFaddbegin \DIFadd{let $\tau$
-be any order that serves the sites }\DIFaddend of $S$ \DIFdelbegin \DIFdel{that came before $j$
+the completion time of every site of $S$ that came after $j$, }\DIFdelend and \DIFdelbegin \DIFdel{leaves the completion time of every site of $S$ that came before $j$
 unchanged; it therefore preserves feasibility of every site in $S$, and after repeating this for every $j \notin S$ that precedes some element
-of $S$, all }\DIFdelend \DIFaddbegin \DIFadd{first, by non-decreasing
-deadline. Fix $i\in S$ and let $J$ be the set of sites }\DIFaddend of $S$ \DIFdelbegin \DIFdel{forms a prefix of the schedule.
+of $S$, all }\DIFdelend \DIFaddbegin \DIFadd{let $\tau$
+be any order that serves the sites }\DIFaddend of $S$ \DIFdelbegin \DIFdel{forms a prefix of the schedule.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{Second, with $S$ now a prefix, suppose two adjacent sites $i, i' \in S$
 appear in the order with $i$ immediately before $i'$, yet $d_i >
 d_{i'}$---the later-deadline site is scheduled first.
-Let $t_0$ be the cumulative dispatch time immediately before this pair is served
+Let $t_0$ }\DIFdelend \DIFaddbegin \DIFadd{first, by non-decreasing
+deadline. Fix $i\in S$ and let $J$ }\DIFaddend be the \DIFdelbegin \DIFdel{cumulative dispatch time immediately before this pair is served
 (unaffected by how the pair is internally ordered, since it depends
 only on the sites preceding them). Under the current order, $i$
 completes at $t_0+p_i$ and $i'$ completes at $t_0+p_i+p_{i'}$; since
-the order is feasible for $S$,
-in particular $t_0+p_i+p_{i'} \le
+the order is feasible for }\DIFdelend \DIFaddbegin \DIFadd{set of sites of }\DIFaddend $S$ \DIFdelbegin \DIFdel{, in particular $t_0+p_i+p_{i'} \le
 d_{i'}$. Swap the pair so that $i'$ precedes }\DIFdelend \DIFaddbegin \DIFadd{that $\tau$
 serves up to and including }\DIFaddend $i$\DIFdelbegin \DIFdel{: every other site in
-$S$ still finishes at the same time as before, $i'$ now completesat
+$S$ still finishes at the same time as before,
+$i'$ now completes at
 $t_0+p_{i'}$, and }\DIFdelend \DIFaddbegin \DIFadd{; then $d_j\le d_i$ for all $j\in J$, and
-the completion time of }\DIFaddend $i$ \DIFdelbegin \DIFdel{now completes at $t_0+p_{i'}+p_i$---the same
+the completion time of }\DIFaddend $i$ \DIFdelbegin \DIFdel{now completesat $t_0+p_{i'}+p_i$---the same
 total as before, since the pair's combined processing time is
 unchanged by reordering it. Because $p_i>0$}\DIFdelend \DIFaddbegin \DIFadd{under $\tau$ is $C_i(\tau)=\sum_{j\in J}p_j$.
 Under $\sigma$ the vehicle serves all of $J$ before the last of them}\DIFaddend ,
@@ -1110,6 +1127,8 @@ Constant hazard-arrival time (arrival reading) & weakly NP-hard & Prop.~\ref{pro
 Round-trip vs.\ chained route & round trip is conservative & Prop.~\ref{prop:spoke} & --- & new (elementary) \\
 Gap round trip / chained & at most $n$, attained; bracket via $\kappa$ & Thms.~\ref{thm:gap}, \ref{thm:speedaug} & $O(nP)$ per end & new \\
 Chained route on a line & pseudo-poly., FPTAS; NP-hard with weights & Thms.~\ref{thm:linealg}, \ref{thm:linehard} & $O(n^2W)$ & selective version of a classical DP; hardness new \\
+Chained route, unit weights, equidistant sites & strongly NP-hard (no FPTAS) & Thm.~\ref{thm:frontnp} & --- & new (elementary) \\
+Chained route, front slower than the crew ($\lambda>1$) & $\alpha Pm$-approx., $O(\log\frac{1}{\lambda-1})$ & Thm.~\ref{thm:frontapprox} & $n$ oracle calls & new; uses an orienteering oracle \\
 Affine front deadlines $d=\beta+\alpha p$ & classified; NP-hard for $\alpha>1$, $\beta=0$ & Thm.~\ref{thm:affine} & --- & new (elementary) \\
 Naive EDD, EDD with skipping & unbounded ratio & Prop.~\ref{prop:naive} & $O(n\log n)$ & illustrative \\
 Weighted greedy repair & unbounded ratio & Prop.~\ref{prop:repair} & --- & illustrative \\
@@ -1369,9 +1388,11 @@ Theorem~\ref{thm:dp} is pseudo-polynomial, not polynomial: $P$ can be
 exponential in the input's bit length. This is consistent with
 Theorem~\ref{thm:hardness}\DIFdelbegin \DIFdel{'s reduction from knapsack, which is itself
 }\DIFdelend \DIFaddbegin \DIFadd{, whose hard instances need large numbers
-(the problem is }\DIFaddend only weakly NP-hard\DIFaddbegin \DIFadd{)}\DIFaddend .
+(the problem is }\DIFaddend only weakly NP-hard\DIFdelbegin \DIFdel{.
+}\DIFdelend \DIFaddbegin \DIFadd{).
+}
 
-\DIFaddbegin \begin{remark}[Relation to Lawler--Moore]\label{rem:lawlermoore}
+\begin{remark}[Relation to Lawler--Moore]\label{rem:lawlermoore}
 \DIFadd{This is the Lawler--Moore dynamic program \mbox{%DIFAUXCMD
 \citep{lawlermoore1969} }\hskip0pt%DIFAUXCMD
 for
@@ -1383,8 +1404,9 @@ earliest-deadline-first lemma in the notation of the dispatch problem.
 Refinements of the $O(nP)$ bound exist (see
 Section~\ref{sec:related}); they apply verbatim to MWHED.
 }\end{remark}
+\DIFaddend 
 
-\DIFaddend \begin{example}[The dynamic program on the running instance]\label{ex:dp}
+\begin{example}[The dynamic program on the running instance]\label{ex:dp}
 Table~\ref{tab:dpwalkthrough} traces $f(i,t)$ for
 Example~\ref{ex:running}, relabeled in increasing-deadline order
 $3,1,2,4$ so that index $i=1$ is site $3$, $i=2$ is site $1$, $i=3$ is
@@ -1427,11 +1449,37 @@ achieving subset $S^\ast$, not merely its value.
 
 \begin{algorithm}
 \caption{Exact dynamic program for MWHED (Theorem~\ref{thm:dp})}\label{alg:exact}
-\begin{algorithmic}[1]
-\Require sites \DIFdelbegin \DIFdel{$1,\dots,n$ with $d_1 \le d_2 \le \dots \le d_n$ (relabeled per Lemma~\ref{lem:edd}), }\DIFdelend \DIFaddbegin \DIFadd{with }\DIFaddend dispatch times $p_i$, \DIFaddbegin \DIFadd{deadlines $d_i$, }\DIFaddend weights $w_i$
+\DIFdelbegin %DIFDELCMD < \begin{algorithmic}[1]
+%DIFDELCMD < \Require sites $1,\dots,n$ with $d_1 \le d_2 \le \dots \le d_n$ (relabeled per Lemma~\ref{lem:edd}), dispatch times $p_i$, weights $w_i$
+%DIFDELCMD < \Ensure optimal on-time weight $W^\ast$ and an achieving subset $S^\ast$
+%DIFDELCMD < \State $P \gets \sum_{i=1}^n p_i$
+%DIFDELCMD < \State $f[0][0] \gets 0$; \ $f[0][t] \gets -\infty$ for $t=1,\dots,P$
+%DIFDELCMD < \For{$i = 1,\dots,n$}
+%DIFDELCMD <   \For{$t = 0,\dots,P$}
+%DIFDELCMD <     \State $f[i][t] \gets f[i-1][t]$ \Comment{exclude site $i$}
+%DIFDELCMD <     \If{$t \ge p_i$ \textbf{and} $t \le d_i$ \textbf{and} $f[i-1][t-p_i] > -\infty$}
+%DIFDELCMD <       \If{$f[i-1][t-p_i] + w_i > f[i][t]$}
+%DIFDELCMD <         \State $f[i][t] \gets f[i-1][t-p_i] + w_i$
+%DIFDELCMD <         \State $\mathit{choice}[i][t] \gets \textsc{true}$ \Comment{site $i$ included to reach this value}
+%DIFDELCMD <       \EndIf
+%DIFDELCMD <     \EndIf
+%DIFDELCMD <   \EndFor
+%DIFDELCMD < \EndFor
+%DIFDELCMD < \State $t^\ast \gets \arg\max_{t \in \{0,\dots,P\}} f[n][t]$; \ $W^\ast \gets f[n][t^\ast]$
+%DIFDELCMD < \State $S^\ast \gets \emptyset$; \ $t \gets t^\ast$
+%DIFDELCMD < \For{$i = n,\dots,1$} \Comment{backtrack}
+%DIFDELCMD <   \If{$\mathit{choice}[i][t]$}
+%DIFDELCMD <     \State $S^\ast \gets S^\ast \cup \{i\}$; \ $t \gets t - p_i$
+%DIFDELCMD <   \EndIf
+%DIFDELCMD < \EndFor
+%DIFDELCMD < \State \Return $W^\ast$, $S^\ast$
+%DIFDELCMD < \end{algorithmic}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \begin{algorithmic}[1]
+\Require sites with dispatch times $p_i$, deadlines $d_i$, weights $w_i$
 \Ensure optimal on-time weight $W^\ast$ and an achieving subset $S^\ast$
-\State \DIFaddbegin \DIFadd{delete every site with $p_i > d_i$ (Assumption~\ref{as:feasible}); relabel the rest so $d_1 \le \dots \le d_n$ (Lemma~\ref{lem:edd})
-}\State \DIFaddend $P \gets \sum_{i=1}^n p_i$
+\State delete every site with $p_i > d_i$ (Assumption~\ref{as:feasible}); relabel the rest so $d_1 \le \dots \le d_n$ (Lemma~\ref{lem:edd})
+\State $P \gets \sum_{i=1}^n p_i$
 \State $f[0][0] \gets 0$; \ $f[0][t] \gets -\infty$ for $t=1,\dots,P$
 \For{$i = 1,\dots,n$}
   \For{$t = 0,\dots,P$}
@@ -1453,7 +1501,7 @@ achieving subset $S^\ast$, not merely its value.
 \EndFor
 \State \Return $W^\ast$, $S^\ast$
 \end{algorithmic}
-\end{algorithm}
+\DIFaddend \end{algorithm}
 
 \subsection{A fully polynomial-time approximation scheme}
 
@@ -1662,12 +1710,38 @@ which is why its table size no longer depends on $P$.
 
 \begin{algorithm}
 \caption{FPTAS for MWHED (Theorem~\ref{thm:fptas})}\label{alg:fptas}
-\begin{algorithmic}[1]
-\Require sites \DIFdelbegin \DIFdel{$1,\dots,n$ with $d_1\le\dots\le d_n$, }\DIFdelend \DIFaddbegin \DIFadd{with }\DIFaddend dispatch times $p_i$, \DIFaddbegin \DIFadd{deadlines $d_i$, }\DIFaddend weights $w_i$, accuracy $\epsilon\in(0,1)$
-\Ensure a dispatch order with on-time weight \DIFdelbegin \DIFdel{$\ge (1-\epsilon)W^\ast$
-}\DIFdelend \DIFaddbegin \DIFadd{$\ge \rho_{n,\epsilon}W^\ast>(1-\epsilon)W^\ast$
-}\State \DIFadd{delete every site with $p_i > d_i$; relabel so $d_1\le\dots\le d_n$
-}\DIFaddend \State $w_{\max} \gets \max_i w_i$; \ $K \gets \max(1,\, \epsilon\, w_{\max}/n)$
+\DIFdelbegin %DIFDELCMD < \begin{algorithmic}[1]
+%DIFDELCMD < \Require sites $1,\dots,n$ with $d_1\le\dots\le d_n$, dispatch times $p_i$, weights $w_i$, accuracy $\epsilon\in(0,1)$
+%DIFDELCMD < \Ensure a dispatch order with on-time weight $\ge (1-\epsilon)W^\ast$
+%DIFDELCMD < \State $w_{\max} \gets \max_i w_i$; \ $K \gets \max(1,\, \epsilon\, w_{\max}/n)$
+%DIFDELCMD < \State $w_i' \gets \lfloor w_i/K \rfloor$ for $i=1,\dots,n$; \ $V \gets \sum_{i=1}^n w_i'$
+%DIFDELCMD < \State $g[0][0] \gets 0$; \ $g[0][v] \gets +\infty$ for $v=1,\dots,V$
+%DIFDELCMD < \For{$i = 1,\dots,n$}
+%DIFDELCMD <   \For{$v = 0,\dots,V$}
+%DIFDELCMD <     \State $g[i][v] \gets g[i-1][v]$ \Comment{exclude site $i$}
+%DIFDELCMD <     \If{$v \ge w_i'$ \textbf{and} $g[i-1][v-w_i'] < +\infty$ \textbf{and} $g[i-1][v-w_i'] + p_i \le d_i$}
+%DIFDELCMD <       \If{$g[i-1][v-w_i'] + p_i < g[i][v]$}
+%DIFDELCMD <         \State $g[i][v] \gets g[i-1][v-w_i'] + p_i$
+%DIFDELCMD <         \State $\mathit{choice}[i][v] \gets \textsc{true}$
+%DIFDELCMD <       \EndIf
+%DIFDELCMD <     \EndIf
+%DIFDELCMD <   \EndFor
+%DIFDELCMD < \EndFor
+%DIFDELCMD < \State $v^\ast \gets \max\{v : g[n][v] < +\infty\}$
+%DIFDELCMD < \State $\hat S \gets \emptyset$; \ $v \gets v^\ast$
+%DIFDELCMD < \For{$i = n,\dots,1$} \Comment{backtrack, as in Algorithm~\ref{alg:exact}}
+%DIFDELCMD <   \If{$\mathit{choice}[i][v]$}
+%DIFDELCMD <     \State $\hat S \gets \hat S \cup \{i\}$; \ $v \gets v - w_i'$
+%DIFDELCMD <   \EndIf
+%DIFDELCMD < \EndFor
+%DIFDELCMD < \State \Return $\hat S$, dispatched in increasing-deadline order
+%DIFDELCMD < \end{algorithmic}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \begin{algorithmic}[1]
+\Require sites with dispatch times $p_i$, deadlines $d_i$, weights $w_i$, accuracy $\epsilon\in(0,1)$
+\Ensure a dispatch order with on-time weight $\ge \rho_{n,\epsilon}W^\ast>(1-\epsilon)W^\ast$
+\State delete every site with $p_i > d_i$; relabel so $d_1\le\dots\le d_n$
+\State $w_{\max} \gets \max_i w_i$; \ $K \gets \max(1,\, \epsilon\, w_{\max}/n)$
 \State $w_i' \gets \lfloor w_i/K \rfloor$ for $i=1,\dots,n$; \ $V \gets \sum_{i=1}^n w_i'$
 \State $g[0][0] \gets 0$; \ $g[0][v] \gets +\infty$ for $v=1,\dots,V$
 \For{$i = 1,\dots,n$}
@@ -1690,7 +1764,7 @@ which is why its table size no longer depends on $P$.
 \EndFor
 \State \Return $\hat S$, dispatched in increasing-deadline order
 \end{algorithmic}
-\end{algorithm}
+\DIFaddend \end{algorithm}
 
 \DIFaddbegin \begin{remark}[Zero-scaled sites and an optional completion step]\label{rem:completion}
 \DIFadd{When $K>1$ a site with $w_i<K$ has scaled weight $w_i'=0$ and, because
@@ -1914,33 +1988,37 @@ at $2$ and $4$).
 
 \begin{algorithm}
 \caption{Matroid greedy for \DIFdelbegin \DIFdel{equal-cost MWHED }\DIFdelend \DIFaddbegin \DIFadd{equal-size MWHED-$m$ }\DIFaddend (Theorem~\ref{thm:equalp})}\label{alg:matroid}
-\begin{algorithmic}[1]
-\Require sites \DIFdelbegin \DIFdel{$1,\dots,n$, common dispatch time $p$, }\DIFdelend \DIFaddbegin \DIFadd{with }\DIFaddend deadlines $d_i$ \DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{and }\DIFaddend weights $w_i$\DIFaddbegin \DIFadd{; vehicle dispatch times $p_1,\dots,p_m$ (all equal for identical vehicles)
-}\DIFaddend \Ensure an optimal on-time subset $S^\ast$ \DIFaddbegin \DIFadd{and an explicit schedule
-}\DIFaddend \State \DIFdelbegin \DIFdel{$D_i \gets \lfloor d_i/p \rfloor$ for $i=1,\dots,n$ }%DIFDELCMD < \Comment{latest feasible position for site $i$}
+\DIFdelbegin %DIFDELCMD < \begin{algorithmic}[1]
+%DIFDELCMD < \Require sites $1,\dots,n$, common dispatch time $p$, deadlines $d_i$, weights $w_i$
+%DIFDELCMD < \Ensure an optimal on-time subset $S^\ast$
+%DIFDELCMD < \State $D_i \gets \lfloor d_i/p \rfloor$ for $i=1,\dots,n$ \Comment{latest feasible position for site $i$}
+%DIFDELCMD < \State sort sites into order $\pi_1,\dots,\pi_n$ with $w_{\pi_1} \ge w_{\pi_2} \ge \dots \ge w_{\pi_n}$
+%DIFDELCMD < \State $\mathit{available} \gets \{1,\dots,n\}$; \ $S^\ast \gets \emptyset$
+%DIFDELCMD < \For{$k = 1,\dots,n$}
+%DIFDELCMD <   \State $i \gets \pi_k$
+%DIFDELCMD <   \If{$\exists$ position $q \in \mathit{available}$ with $q \le D_i$}
+%DIFDELCMD <     \State $q^\ast \gets \max\{q \in \mathit{available} : q \le D_i\}$ \Comment{latest such position}
+%DIFDELCMD <     \State $S^\ast \gets S^\ast \cup \{i\}$; \ $\mathit{available} \gets \mathit{available} \setminus \{q^\ast\}$
+%DIFDELCMD <   \EndIf
+%DIFDELCMD < \EndFor
+%DIFDELCMD < \State \Return $S^\ast$, dispatched in increasing-deadline order
+%DIFDELCMD < \end{algorithmic}
 %DIFDELCMD < %%%
-\DIFdelend \DIFaddbegin \DIFadd{generate the $n$ earliest slots $\sigma_1,\dots,\sigma_n$, with times $\tau_1\le\dots\le\tau_n$, using a heap over the vehicles' next slot times
-}\DIFaddend \State \DIFdelbegin \DIFdel{sort sites into order $\pi_1,\dots,\pi_n$ with $w_{\pi_1} \ge w_{\pi_2} \ge \dots \ge w_{\pi_n}$
-}\DIFdelend \DIFaddbegin \DIFadd{$D_i\gets|\{k:\tau_k\le d_i\}|$ (binary search); discard sites with $D_i=0$
-}\DIFaddend \State \DIFdelbegin \DIFdel{$\mathit{available} \gets \{1,\dots,n\}$}\DIFdelend \DIFaddbegin \DIFadd{$\textsc{find}$ over $\{0,\dots,n\}$: every $q$ its own block}\DIFaddend ; \ \DIFdelbegin \DIFdel{$S^\ast \gets \emptyset$
-}%DIFDELCMD < \For{$k = 1,\dots,n$}
-%DIFDELCMD <   \State %%%
-\DIFdel{$i \gets \pi_k$
-  }%DIFDELCMD < \If{$\exists$ position $q \in \mathit{available}$ with $q \le D_i$}
-%DIFDELCMD <     %%%
-\DIFdelend \DIFaddbegin \DIFadd{$S^\ast\gets\emptyset$
-}\For{each site $i$ in order of non-increasing $w_i$}
-  \DIFaddend \State \DIFdelbegin \DIFdel{$q^\ast \gets \max\{q \in \mathit{available} : q \le D_i\}$ }%DIFDELCMD < \Comment{latest such position}
-%DIFDELCMD <     %%%
-\DIFdelend \DIFaddbegin \DIFadd{$q \gets \textsc{find}(D_i)$ }\Comment{largest free position $\le D_i$, or $0$}
+\DIFdelend \DIFaddbegin \begin{algorithmic}[1]
+\Require sites with deadlines $d_i$ and weights $w_i$; vehicle dispatch times $p_1,\dots,p_m$ (all equal for identical vehicles)
+\Ensure an optimal on-time subset $S^\ast$ and an explicit schedule
+\State generate the $n$ earliest slots $\sigma_1,\dots,\sigma_n$, with times $\tau_1\le\dots\le\tau_n$, using a heap over the vehicles' next slot times
+\State $D_i\gets|\{k:\tau_k\le d_i\}|$ (binary search); discard sites with $D_i=0$
+\State $\textsc{find}$ over $\{0,\dots,n\}$: every $q$ its own block; \ $S^\ast\gets\emptyset$
+\For{each site $i$ in order of non-increasing $w_i$}
+  \State $q \gets \textsc{find}(D_i)$ \Comment{largest free position $\le D_i$, or $0$}
   \If{$q\ge1$}
-    \DIFaddend \State \DIFdelbegin \DIFdel{$S^\ast \gets S^\ast \cup \{i\}$}\DIFdelend \DIFaddbegin \DIFadd{$S^\ast\gets S^\ast\cup\{i\}$}\DIFaddend ; \ \DIFdelbegin \DIFdel{$\mathit{available} \gets \mathit{available} \setminus \{q^\ast\}$
-  }\DIFdelend \DIFaddbegin \DIFadd{assign $i$ to slot $\sigma_q$; \ }\textsc{\DIFadd{union}}\DIFadd{$(q,q-1)$ }\Comment{$q$ is now represented by $q-1$}
-  \DIFaddend \EndIf
+    \State $S^\ast\gets S^\ast\cup\{i\}$; \ assign $i$ to slot $\sigma_q$; \ \textsc{union}$(q,q-1)$ \Comment{$q$ is now represented by $q-1$}
+  \EndIf
 \EndFor
-\State \Return $S^\ast$, \DIFdelbegin \DIFdel{dispatched in increasing-deadline order }\DIFdelend \DIFaddbegin \DIFadd{each vehicle serving its assigned sites in order of slot time
-}\DIFaddend \end{algorithmic}
-\end{algorithm}
+\State \Return $S^\ast$, each vehicle serving its assigned sites in order of slot time
+\end{algorithmic}
+\DIFaddend \end{algorithm}
 
 \begin{remark}\label{rem:hardness-boundary}
 Theorems~\ref{thm:hardness} and~\ref{thm:equalp} \DIFdelbegin \DIFdel{together }\DIFdelend show that neither
@@ -2007,93 +2085,34 @@ program and Theorem~\ref{thm:fptas}'s
 FPTAS perform, and that Example~\ref{ex:running}
 already previewed at a modest scale. Section~\ref{sec:experiments}
 confirms the same qualitative gap persists, if less extremely, on
-random instances of realistic size.
-}%DIFDELCMD < 
-
-%DIFDELCMD < %%%
-%DIF <  ══════════════════════════════════════════════════════════════════
-\section{\DIFdel{Numerical illustration}}%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{sec:experiments}
-%DIFDELCMD < 
-
-%DIFDELCMD < %%%
-\DIFdel{We illustrate Theorems~\ref{thm:dp} and~\ref{thm:fptas} and
-Proposition~\ref{prop:naive} in five complementary experiments: an
-accuracy comparison across four algorithms on synthetic instances; a
-runtime comparison isolating the pseudo-polynomial (Theorem~\ref{thm:dp}) versus truly polynomial (Theorem~\ref{thm:fptas}) dependence on the instance's numerical magnitude; a sensitivity sweep over the FPTAS's
-accuracy parameter $\epsilon$; a robustness check repeating the accuracy comparison under two alternative synthetic instance-generation
-regimes; and, finally, a small instance built directly from public
-records of a real wildfire (Section~\ref{sec:campfire}), to confirm
-the synthetic findings are not an artifact of how the synthetic
-instances are generated.
-}%DIFDELCMD < 
-
-%DIFDELCMD < %%%
-\subsection{\DIFdel{Accuracy across instance sizes}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
-%DIFDELCMD < 
-
-%DIFDELCMD < %%%
-\DIFdel{For $n \in \{10,15,20,25,30,50,75,100\}$ we generate 20 random
-instances each ($p_i$ uniform on $\{1,\dots,20\}$, $w_i$ uniform on $\{1,\dots,100\}$, $d_i$ uniform on $\{1,\dots,\sum_i p_i\}$) , and
-compare four algorithms: the true optimum via Theorem~\ref{thm:dp}'s
-exact dynamic program ; the FPTAS of Theorem~\ref{thm:fptas} at
-$\epsilon \in \{0.1,0.2\}$, implemented exactly as
-in the proof (the
-value-indexed dual DP, not a shortcut); a weighted Moore--Hodgson-style
-greedy repair heuristic (dispatch in earliest-deadline order,
-and
-}\DIFdelend \DIFaddbegin \DIFadd{one; skipping doomed sites removes only the waste of
+random instances of realistic size}\DIFdelend \DIFaddbegin \DIFadd{one; skipping doomed sites removes only the waste of
 serving a site that is already late. It is natural to ask whether a
 local repair rule avoids the problem. The weighted generalization of
 Moore--Hodgson's rule used as a heuristic in
 Section~\ref{sec:experiments}---process sites in deadline order and,
-}\DIFaddend whenever the \DIFdelbegin \DIFdel{running schedule becomes infeasible, repeatedly drop the
-scheduled site with the }\DIFdelend \DIFaddbegin \DIFadd{running schedule becomes infeasible, discard the scheduled
-site of }\DIFaddend smallest weight-to-time \DIFdelbegin \DIFdel{ratio until feasible again---a natural, always-feasible heuristic generalizing
-\mbox{%DIFAUXCMD
-\citeauthor{moore1968}}\hskip0pt%DIFAUXCMD
-'s unweighted rule, for which we claim no
-approximation guarantee); and the naive baseline of Proposition~\ref{prop:naive} (dispatch in earliest-deadline order, simply keep whichever sites happen to still be on time, with no
-repair at all ). Table~\ref{tab:illustration} reports the ratio of each
-method's on-time weight to the true optimum , averaged over the 20
-instances at each size.
-Algorithm~\ref{alg:repair} states the
-greedy
-repair heuristic precisely; feasibility of its output is
-guaranteed by
-the same inductive argument used for the unweighted Moore--Hodgson
-algorithm (each repair step can only shorten, never lengthen, the
-completion time of every remaining scheduled site), but---unlike
-Algorithms~\ref{alg:exact}--\ref{alg:matroid}---we prove noapproximation ratio for it; it is included as a
-realistic, easy-to-implement point of
-comparison, not as a fifth theorem. }\DIFdelend \DIFaddbegin \DIFadd{ratio---does very well on random
+whenever the running schedule becomes infeasible, discard the scheduled
+site of smallest weight-to-time ratio---does very well on random
 instances, but it too has no guarantee.
-}\DIFaddend 
+}
 
 \begin{algorithm}
-\DIFdelbegin %DIFDELCMD < \caption{%
-{%DIFAUXCMD
-\DIFdel{Weighted greedy repair (heuristic; no proven guarantee)}}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \caption{\DIFadd{Weighted greedy repair (heuristic; no guarantee)}}\DIFaddend \label{alg:repair}
+\caption{\DIFadd{Weighted greedy repair (heuristic; no guarantee)}}\label{alg:repair}
 \begin{algorithmic}[1]
-\Require \DIFdelbegin \DIFdel{sites $1,\dots,n$ with $d_1\le\dots\le d_n$, dispatch times }\DIFdelend \DIFaddbegin \DIFadd{sites with $d_1\le\dots\le d_n$ (after deleting sites with $p_i>d_i$), dispatch times }\DIFaddend $p_i$\DIFdelbegin \DIFdel{, weights }\DIFdelend \DIFaddbegin \DIFadd{, weights }\DIFaddend $w_i$
-\Ensure a feasible \DIFdelbegin \DIFdel{on-time subset $\mathit{kept}$ (not necessarily optimal)}\DIFdelend \DIFaddbegin \DIFadd{on-time subset $\mathit{kept}$ (not necessarily optimal)
-}\DIFaddend \State \DIFdelbegin \DIFdel{$\mathit{kept} \gets \emptyset$; }\DIFdelend \DIFaddbegin \DIFadd{$\mathit{kept} \gets \emptyset$; }\DIFaddend \ $\mathit{total} \gets 0$
+\Require sites with $d_1\le\dots\le d_n$ (after deleting sites with $p_i>d_i$), dispatch times $p_i$, weights $w_i$
+\Ensure a feasible on-time subset $\mathit{kept}$ (not necessarily optimal)
+\State $\mathit{kept} \gets \emptyset$; \ $\mathit{total} \gets 0$
 \For{$i = 1,\dots,n$}
-  \State \DIFdelbegin \DIFdel{$\mathit{kept} \gets \mathit{kept} \cup \{i\}$; }\DIFdelend \DIFaddbegin \DIFadd{$\mathit{kept} \gets \mathit{kept} \cup \{i\}$; }\DIFaddend \ $\mathit{total} \gets \mathit{total} + p_i$
+  \State $\mathit{kept} \gets \mathit{kept} \cup \{i\}$; \ $\mathit{total} \gets \mathit{total} + p_i$
   \While{$\mathit{total} > d_i$ \textbf{and} $\mathit{kept} \ne \emptyset$}
     \State $j \gets \arg\min_{j' \in \mathit{kept}} w_{j'}/p_{j'}$ \Comment{smallest weight-to-time ratio}
-    \State \DIFdelbegin \DIFdel{$\mathit{kept} \gets \mathit{kept} \setminus \{j\}$; }\DIFdelend \DIFaddbegin \DIFadd{$\mathit{kept} \gets \mathit{kept} \setminus \{j\}$; }\DIFaddend \ $\mathit{total} \gets \mathit{total} - p_j$
+    \State $\mathit{kept} \gets \mathit{kept} \setminus \{j\}$; \ $\mathit{total} \gets \mathit{total} - p_j$
   \EndWhile
 \EndFor
-\State \Return \DIFdelbegin \DIFdel{$\mathit{kept}$, dispatched in }\DIFdelend \DIFaddbegin \DIFadd{$\mathit{kept}$, dispatched in }\DIFaddend increasing-deadline order
+\State \Return $\mathit{kept}$, dispatched in increasing-deadline order
 \end{algorithmic}
 \end{algorithm}
 
-\DIFaddbegin \DIFadd{Its output is always feasible, by the same inductive argument as for the
+\DIFadd{Its output is always feasible, by the same inductive argument as for the
 unweighted algorithm: removing a site can only shorten the completion
 time of every site that remains.
 }
@@ -2102,10 +2121,16 @@ time of every site that remains.
 \DIFadd{For every integer $k\ge2$ the two-site instance $p=(1,k)$, $d=(1,k)$,
 $w=(2,2k-1)$ satisfies Assumption~\ref{as:feasible} and the weighted
 greedy repair of Algorithm~\ref{alg:repair} returns on-time weight $2$,
-while $W^\ast=2k-1$; the ratio $2/(2k-1)\to0$.
-}\end{proposition}
+while $W^\ast=2k-1$; the ratio $2/(2k-1)\to0$}\DIFaddend .
+\DIFaddbegin \end{proposition}
+\DIFaddend 
 
-\begin{proof}
+%DIF <  ══════════════════════════════════════════════════════════════════
+\DIFdelbegin \section{\DIFdel{Numerical illustration}}%DIFAUXCMD
+\addtocounter{section}{-1}%DIFAUXCMD
+%DIFDELCMD < \label{sec:experiments}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \begin{proof}
 \DIFadd{The algorithm keeps site $1$ (total $1\le d_1$). On adding site $2$ the
 total becomes $1+k>d_2=k$, so it discards the kept site of smallest
 ratio $w_j/p_j$: site $1$ has ratio $2$ and site $2$ has ratio
@@ -2113,8 +2138,12 @@ $(2k-1)/k<2$, so site $2$ is discarded and the result is $\{1\}$ with
 weight $2$. Site $2$ alone completes at $k\le d_2$, so $W^\ast\ge2k-1$,
 and the two sites cannot both be on time, so $W^\ast=2k-1$ for $k\ge2$.
 }\end{proof}
+\DIFaddend 
 
-\DIFadd{These two propositions are elementary two-site examples and we offer
+\DIFdelbegin \DIFdel{We illustrate Theorems~\ref{thm:dp} and~\ref{thm:fptas} and
+Proposition~\ref{prop:naive} in five complementary experiments: an
+accuracy comparison across four algorithms on synthetic instances; a
+runtime comparison isolating the pseudo-polynomial (}\DIFdelend \DIFaddbegin \DIFadd{These two propositions are elementary two-site examples and we offer
 them as illustrations, not as deep results; on random instances the
 greedy repair is far better than its worst case
 (Section~\ref{sec:acc}). They do say that some form of reconsideration
@@ -2126,14 +2155,21 @@ guarantees may exist, and we do not claim otherwise.
 
 \subsection{\DIFadd{Further structural results}}\label{sec:structure}
 
-\paragraph{\DIFadd{Tightness of the FPTAS guarantee.}} \DIFadd{Theorem~\ref{thm:fptas}
+\paragraph{\DIFadd{Tightness of the FPTAS guarantee.}} \DIFaddend Theorem~\DIFdelbegin \DIFdel{\ref{thm:dp}) versus truly polynomial (Theorem~\ref{thm:fptas}) dependence on the instance's numerical magnitude;
+a sensitivity sweep over the FPTAS's
+accuracy parameter $\epsilon$; a robustness check repeating the accuracy comparison under two alternative synthetic instance-generation
+regimes; }\DIFdelend \DIFaddbegin \DIFadd{\ref{thm:fptas}
 guarantees the constant $\rho_{n,\epsilon}$, which exceeds both the
-classical $1-\epsilon$ and $1/(1+\epsilon)$. The next result shows that
+classical $1-\epsilon$ }\DIFaddend and \DIFaddbegin \DIFadd{$1/(1+\epsilon)$. The next result shows that
 it cannot be improved for Algorithm~\ref{alg:fptas} as stated.
 }
 
 \begin{proposition}[The refined guarantee is asymptotically tight]\label{prop:tight}
-\DIFadd{Let $\epsilon\in(0,1)$, $n\ge2$, and $y=n/\epsilon$, $N=\lfloor y\rfloor$,
+\DIFadd{Let $\epsilon\in(0,1)$}\DIFaddend , \DIFdelbegin \DIFdel{finally, a small instance built directly from public
+records of a real wildfire (Section~\ref{sec:campfire}), to confirm
+the synthetic findings are not an artifact of how the synthetic
+instances are generated.
+}\DIFdelend \DIFaddbegin \DIFadd{$n\ge2$, and $y=n/\epsilon$, $N=\lfloor y\rfloor$,
 $\varphi=y-N$. For every $\eta>0$ there is an instance with $n$ sites satisfying
 Assumption~\ref{as:feasible} on which Algorithm~\ref{alg:fptas} returns a
 set of weight at most $(\rho_{n,\epsilon}+\eta)W^\ast$. Hence the constant
@@ -2142,8 +2178,12 @@ tends to $1/(1+\epsilon)$ as $n\to\infty$; the classical guarantee
 $1-\epsilon$ is not attained (it is loose by the factor
 $1/(1-\epsilon^2)$ in the limit).
 }\end{proposition}
+\DIFaddend 
 
-\begin{proof}
+\DIFdelbegin \subsection{\DIFdel{Accuracy across instance sizes}}
+%DIFAUXCMD
+\addtocounter{subsection}{-1}%DIFAUXCMD
+\DIFdelend \DIFaddbegin \begin{proof}
 \DIFadd{Let $M$ be a large integer and $K=\epsilon M/n$ (so $K\to\infty$ with
 $M$). }\emph{\DIFadd{Family~1}} \DIFadd{(the term $\tfrac{n-1}{y}$): $p_i=1$, $d_i=n$ for
 all $i$, $w_1=M$ and $w_i=\lceil K\rceil-1$ for $i\ge2$. All sites fit, so
@@ -2178,12 +2218,13 @@ $\epsilon=10/13$ the two limits are $0.661$ and $0.612$). The optional
 completion step of Remark~\ref{rem:completion} repairs Family~1
 completely, which is why we report both variants in
 Section~\ref{sec:scaling}.
-}
+}\DIFaddend 
 
-\paragraph{\DIFadd{Which heterogeneity causes hardness?}} \DIFadd{Theorems~\ref{thm:hardness}
+\DIFaddbegin \paragraph{\DIFadd{Which heterogeneity causes hardness?}} \DIFadd{Theorems~\ref{thm:hardness}
 and~\ref{thm:equalp} and Moore's algorithm together settle the
 complexity of every restriction obtained by making some of the three
-data vectors constant. For $T\subseteq\{p,w,d\}$ let $\mathcal C_T$ be
+data vectors constant. }\DIFaddend For \DIFdelbegin \DIFdel{$n \in \{10,15,20,25,30,50,75,100\}$ we generate 20 random
+instances each }\DIFdelend \DIFaddbegin \DIFadd{$T\subseteq\{p,w,d\}$ let $\mathcal C_T$ be
 the class of MWHED instances in which each vector named in $T$ is
 constant ($p_i=p$, $w_i=w$, $d_i=D$ for all $i$).
 }
@@ -2237,12 +2278,13 @@ place of ``constant deadline'' (Proposition~\ref{prop:consth}).
 \subsection{\DIFadd{Hazard geometry: when the round-trip premise is costly, and what a front does}}\label{sec:geometry}
 
 \DIFadd{The model abstracts the geometry into the pairs $(p_i,d_i)$. This
-subsection asks three questions about what that abstraction hides and
+subsection asks four questions about what that abstraction hides and
 what it keeps: how much a crew gains by chaining sites instead of making
 round trips (Section~\ref{sec:model} claims only a one-sided bound); what
-the chained problem looks like on the simplest network, a line; and which
+the chained problem looks like on the simplest network, a line; which
 hardness survives when the deadlines are produced by an actual hazard
-front, in particular a front that starts at the depot. All results are
+front, in particular a front that starts at the depot; and how well the
+chained route can be approximated for such a front. All results are
 for the arrival reading of Remark~\ref{rem:reading}. They are checked by
 independent brute-force code (Section~\ref{sec:verify}) and their proofs
 are in this subsection and Appendix~\ref{app:geometry}.
@@ -2274,7 +2316,9 @@ $W^\ast_{\mathrm{chain}}\le n\,W^\ast_{\mathrm{spoke}}$.
 instances with unit weights, $W^\ast_{\mathrm{chain}}=n$ and
 $W^\ast_{\mathrm{spoke}}=1$, among them (i) }\emph{\DIFadd{clusters}}\DIFadd{, with all
 $a_i=R$ and $\delta(i,j)=\varepsilon<2R/(n-1)$, and (ii) a }\emph{\DIFadd{ray}}\DIFadd{, with sites at
-distances $r^j$ ($r>1$) on a half-line, which is a hazard front that
+distances $r^j$ }\DIFaddend (\DIFdelbegin \DIFdel{$p_i$ uniform on $\{1,\dots,20\}$,
+$w_i$ uniform on
+$\{1,\dots,100\}$, $d_i$ uniform on $\{1,\dots,\sum_i p_i\}$) }\DIFdelend \DIFaddbegin \DIFadd{$r>1$) on a half-line, which is a hazard front that
 starts at the depot and moves at exactly the crew's speed.
 }\item[\DIFadd{(c)}] \DIFadd{$W^\ast_{\mathrm{chain}}=W^\ast_{\mathrm{spoke}}$ for all
 hazard times and weights if and only if $\delta(i,j)=a_i+a_j$ for all
@@ -2297,8 +2341,9 @@ $B_j=r^j=h_j$. In the spoke model the later of two protected sites
 $i<j$ arrives at $2a_i+a_j>a_j=h_j$.
 (c) If $\delta(i,j)=a_i+a_j$ for all pairs then
 $B_j=a_{i_1}+\sum_{l<j}(a_{i_l}+a_{i_{l+1}})=A_j$ for every order. If
-$\delta(i,j)<a_i+a_j$, set $h_i=a_i$, $h_j=a_i+\delta(i,j)$, $w_i=w_j=1$ and
-$h_k=0$ for the other sites. The chain order $(i,j)$ gives $B_1=a_i\le h_i$,
+$\delta(i,j)<a_i+a_j$, set $h_i=a_i$, $h_j=a_i+\delta(i,j)$}\DIFaddend , \DIFaddbegin \DIFadd{$w_i=w_j=1$ }\DIFaddend and
+\DIFdelbegin \DIFdel{compare four algorithms: the true optimum via Theorem~\ref{thm:dp}'s
+exact dynamic program ; the FPTAS of }\DIFdelend \DIFaddbegin \DIFadd{$h_k=0$ for the other sites. The chain order $(i,j)$ gives $B_1=a_i\le h_i$,
 $B_2=h_j$, so both are protected; in the spoke model order $(i,j)$ gives
 $A_2=2a_i+a_j>h_j$ and order $(j,i)$ gives $A_2=2a_j+a_i>a_i=h_i$, so only
 one site is protected. }\end{proof}
@@ -2412,7 +2457,10 @@ sites by distance $r_1\le\dots$.
 a dynamic program over the states (left prefix, right prefix, side) with the minimum time for each protected weight $v$
 solves the problem in $O(n^2W)$ time, $W=\sum_iw_i$.
 }\item[\DIFadd{(b)}] \DIFadd{With equal weights the value is the number of protected sites and the program runs in $O(n^3)$ time.
-}\item[\DIFadd{(c)}] \DIFadd{Scaling the weights as in Theorem~\ref{thm:fptas} gives an FPTAS in $O(n^4/\epsilon)$ time.
+}\item[\DIFadd{(c)}] \DIFadd{Scaling the weights as in }\DIFaddend Theorem~\ref{thm:fptas} \DIFdelbegin \DIFdel{at
+$\epsilon \in \{0.1,0.2\}$, implemented exactly as
+in the proof (the
+value-indexed dual DP, not a shortcut)}\DIFdelend \DIFaddbegin \DIFadd{gives an FPTAS in $O(n^4/\epsilon)$ time.
 }\end{enumerate}
 \end{theorem}
 
@@ -2537,11 +2585,280 @@ constraint at $D$ is $P(S\setminus D)\le\mu H=kK+t$, so
 $W(S)\le\lambda H$, with equality iff $P(S\setminus D)=kK+t$. If
 $T\subseteq[n]$ with $|T|\le k$ and $x(T)=t$, adding $k-|T|$ dummies and
 $D$ attains $\lambda H$. Conversely, if $W(S)\ge\lambda H$ then $S\setminus D$
-consists of $m$ band sites with $mK+x(T)=kK+t$; $m\ge k+1$ would give
+consists of $m$ band sites with $mK+x(T)=kK+t$}\DIFaddend ; \DIFdelbegin \DIFdel{a weighted Moore--Hodgson-style
+greedy repair heuristic (dispatch in earliest-deadline order,
+}\DIFdelend \DIFaddbegin \DIFadd{$m\ge k+1$ would give
 $(k+1)K>kK+t$ as $K>t$, and $m\le k-1$ would give
-$x(T)\le(k-1)X<K$ and a total below $kK$, so $m=k$ and $x(T)=t$. For
+$x(T)\le(k-1)X<K$ and a total below $kK$, so $m=k$ }\DIFaddend and \DIFdelbegin \DIFdel{whenever the running schedule becomes infeasible, repeatedly drop the
+scheduled site }\DIFdelend \DIFaddbegin \DIFadd{$x(T)=t$. For
 }\textsc{\DIFadd{Partition}} \DIFadd{take $k=n$, $x=a$ and $t=A/2$. After multiplying all
 sizes by $2(2k-1)$ every $p_i$, $d_i$ is an integer. }\end{proof}
+
+
+\paragraph{\DIFadd{Approximating the chained route for a front.}} \DIFadd{The chained
+problem with arbitrary deadlines is the maximum-weight version of
+deadline-TSP, for which the best polynomial-time guarantee known is
+$O(\log n)$ \mbox{%DIFAUXCMD
+\citep{bansal2004}}\hskip0pt%DIFAUXCMD
+, and a constant factor is known only in
+quasi-polynomial time \mbox{%DIFAUXCMD
+\citep{friggstad2021}}\hskip0pt%DIFAUXCMD
+. For the deadlines that a front
+induces we can do better, with a guarantee that does not depend on $n$,
+on the aspect ratio $\Gamma$, on $\kappa$ or on the weights. Let
+$h_i=\beta+\lambda a_i$ }\DIFaddend with \DIFaddbegin \DIFadd{$\lambda=1+\rho>1$ (a front that moves at
+speed $1/\lambda<1$ of the crew's; the other cases are discussed after the
+theorem) and $\beta\ge0$. For a route $(i_1,\dots,i_k)$ call
+$e_j:=B_j-a_{i_j}\ge0$ the }\emph{\DIFadd{excess}} \DIFadd{of }\DIFaddend the \DIFdelbegin \DIFdel{smallest weight-to-time ratio until feasible again---a natural, always-feasible heuristic generalizing
+\mbox{%DIFAUXCMD
+\citeauthor{moore1968}}\hskip0pt%DIFAUXCMD
+'s unweighted rule}\DIFdelend \DIFaddbegin \DIFadd{$j$-th site. Put
+$c(u,s):=\delta(u,s)+a_u-a_s$, which is non-negative by the triangle
+inequality ($a_0:=0$). Then $e_1=0$ and $e_{j+1}=e_j+c(i_j,i_{j+1})$, so
+}\emph{\DIFadd{the excess never decreases along a route}}\DIFadd{, and
+}\begin{equation}\DIFadd{\label{eq:excess}
+\text{site } i_j \text{ is protected}\iff e_j\le\beta+\rho\,a_{i_j}.
+}\end{equation}
+\DIFadd{Deleting sites from a route does not increase any remaining arrival
+time (triangle inequality), hence no excess (shortcutting). If a block of
+consecutive sites $i_r,\dots,i_s$ is started afresh from the depot, its excess
+at $i_j$ becomes $e_j-e_r$ (restarting). The route in which every
+site is protected needs, by~\eqref{eq:excess}, an excess budget that grows
+linearly with the distance from the depot: this is what a front gives, and
+what a general deadline does not.
+}
+
+\emph{\DIFadd{Oracle.}} \DIFadd{We use a point-to-point orienteering algorithm as a black
+box: given the metric, non-negative node prizes, the depot as source, a site
+$t$ as sink and a length $L$, it returns a walk from the depot to $t$
+of length at most $L$ whose collected prize is at least $1/\alpha$ of the
+best such walk. Chekuri, Korula and P\'al \mbox{%DIFAUXCMD
+\citep{chekuri2012} }\hskip0pt%DIFAUXCMD
+give
+$\alpha=2+\varepsilon$ in time $n^{O(1/\varepsilon^2)}$ for the
+unweighted version, and Bansal et al.\ \mbox{%DIFAUXCMD
+\citep{bansal2004} }\hskip0pt%DIFAUXCMD
+give $\alpha=3$ in
+strictly polynomial time; node prizes are reduced to the unweighted case by
+discarding sites lighter than $\varepsilon/n$ times the heaviest one (in each
+call the heaviest site alone is a feasible walk, so this loses at most an
+$\varepsilon$-fraction) and replicating the rest at distance zero in
+proportion to their rounded weights. We have not re-derived these results.
+}
+
+\emph{\DIFadd{Algorithm.}} \DIFadd{Fix $\theta\in(0,1)$, put $P:=\lceil2/\theta\rceil$ and let
+$m$ be the least integer with $2\theta+4/\rho\le(1-\theta)(2^m-1)$. Let
+$a_0:=\beta/\rho$ if $\beta>0$ and $a_0:=1$ if $\beta=0$. }\emph{\DIFadd{Class}} \DIFadd{$k$
+consists of the sites with $a_i\in[a_02^k,a_02^{k+1})$; if $\beta>0$ the sites
+with $a_i<a_0$ form class $-1$. Write $\alpha_k:=a_02^k$ ($\alpha_{-1}:=0$),
+$f_k:=\beta+\rho\alpha_k$ (so that $f_k\le\beta+\rho a_i<2f_k$ for every
+site $i$ of class $k$), $\Phi_k:=\theta f_k$ and $U_k:=a_02^{k+1}$ ($U_{-1}:=a_0$).
+}\begin{enumerate}
+\item \DIFadd{For every non-empty class $k$ and every site $t$ in it call the oracle
+with the prizes $w_i$ on the sites of class $k$ (zero elsewhere), sink $t$ and
+length $a_t+\Phi_k$. Let $R_k$ be the best of the resulting routes of
+class-$k$ sites in order of first visit, with weight $V_k$.
+}\item \DIFadd{Choose a set $K$ of classes whose indices differ pairwise by at
+least $m$ so as to maximise $\sum_{k\in K}V_k$ (a dynamic program on the line).
+}\item \DIFadd{Output the concatenation of the routes $R_k$}\DIFaddend , \DIFaddbegin \DIFadd{$k\in K$, in
+increasing $k$.
+}\end{enumerate}
+\DIFadd{This is $n$ oracle calls and a linear-time dynamic program.
+}
+
+\begin{theorem}[A constant-factor approximation for a front]\label{thm:frontapprox}
+\DIFadd{For $\lambda>1$ and $\beta\ge0$ the route returned protects every site it
+contains, and its weight is at least $W^\ast_{\mathrm{chain}}/(\alpha Pm)$. With
+$\theta=\tfrac12$ the factor is $4\alpha\lceil\log_2(3+8/\rho)\rceil$, which
+is $16\alpha$ }\DIFaddend for \DIFdelbegin \DIFdel{which we claim no
+approximation guarantee ); }\DIFdelend \DIFaddbegin \DIFadd{$\lambda=2$, $12\alpha$ for $\lambda=3$ }\DIFaddend and \DIFdelbegin \DIFdel{the naive baseline of Proposition~\ref{prop:naive} (dispatch in earliest-deadline order, simply keep whichever sites happen to still be on time }\DIFdelend \DIFaddbegin \DIFadd{$8\alpha$ for every
+$\lambda\ge9$. The guarantee depends only on $\lambda$: it is independent of
+$n$, of $\Gamma$, of $\kappa$ and of the weights, and for fixed $\lambda$ it is a
+constant.
+}\end{theorem}
+
+\begin{proof}
+\DIFadd{Call a route of class-$k$ sites }\emph{\DIFadd{$\Phi$-bounded}} \DIFadd{if all its excesses are
+at most $\Phi$ (by monotonicity it suffices that the last one is), and let
+$V(\Phi)$ be the largest weight of such a route.
+}
+
+\emph{\DIFadd{(A) The oracle step.}} \DIFadd{Let $W$ be the walk returned for the sink $t$, of length
+$L\le a_t+\Phi_k$, and let $j$ be a class-$k$ site first visited at time
+$\tau_j$ in $W$. The arrival time $B_j$ of the route $R(W)$ of first visits is at
+most $\tau_j$ (shortcutting), and the rest of $W$ leads from $j$ to $t$, so
+$\tau_j+\delta(j,t)\le L$ with $\delta(j,t)\ge a_t-a_j$. Hence
+$e_j\le\tau_j-a_j\le L-(a_t-a_j)-a_j\le\Phi_k$: every candidate route is
+$\Phi_k$-bounded. Conversely, an optimal $\Phi_k$-bounded route with last site
+$t^\ast$ is itself a walk from the depot to $t^\ast$ of length $B_{t^\ast}=a_{t^\ast}+e_{t^\ast}\le a_{t^\ast}+\Phi_k$,
+so the call with sink $t^\ast$ returns weight at least $V(\Phi_k)/\alpha$. Thus
+$V_k\ge V(\Phi_k)/\alpha$.
+}
+
+\emph{\DIFadd{(B) Splitting.}} \DIFadd{Let $Q$ be a route of class-$k$ sites in which every site
+is protected. By~\eqref{eq:excess} and $f_k\le\beta+\rho a<2f_k$, all its excesses lie in
+$[0,2f_k)=[0,(2/\theta)\Phi_k)$. Cut $Q$ greedily: a new piece starts at the first
+site whose excess exceeds the excess at the start of the current piece by
+more than $\Phi_k$. Then at most $P$ pieces arise
+(the $r$-th piece starts at excess $>(r-1)\Phi_k$), and by restarting each is a
+$\Phi_k$-bounded route, so $w(Q)\le P\,V(\Phi_k)$.
+}
+
+\emph{\DIFadd{(C) Feasibility of the concatenation.}} \DIFadd{Let $k_1<\dots<k_s$ be the classes of $K$ (gaps at least $m$),
+$R_{k_i}$ the routes with first and last sites $s_i,u_i$, and let $e(\cdot)$ denote
+excesses in the concatenated route. By restarting and by (A),
+$e(u_i)\le e(s_i)+\Phi_{k_i}$, and $e(s_{i+1})=e(u_i)+c(u_i,s_{i+1})$ with
+$c(u,s)\le2a_u<2U_{k_i}$ (triangle inequality). With $e(s_1)=0$ this gives
+$e(s_i)\le\sum_{l<i}g_{k_l}$}\DIFaddend , \DIFdelbegin \DIFdel{with no repair at all). Table~\ref{tab:illustration} reports the ratio of each
+method's on-time weight to the true optimum, averaged over the 20
+instances at each size. Algorithm~\ref{alg:repair} states the greedy
+repair heuristic precisely; feasibility of
+its output is guaranteed by the same inductive argument used for the unweighted Moore--Hodgson
+algorithm (each repair step can only shorten, never lengthen, the
+completion time of every remaining scheduled site
+)}\DIFdelend \DIFaddbegin \DIFadd{$g_k:=\Phi_k+2U_k$. For $\beta>0$ one checks
+$g_k\le\beta2^k(2\theta+4/\rho)$ for all $k\ge-1$ (using $a_0=\beta/\rho$ and
+$1+2^k\le2^{k+1}$); for $\beta=0$}\DIFaddend , \DIFdelbegin \DIFdel{but---unlike
+Algorithms~\ref{alg:exact}--\ref{alg:matroid}---we prove no
+approximation ratio for it; it }\DIFdelend \DIFaddbegin \DIFadd{$g_k\le\rho2^k(2\theta+4/\rho)$.
+As $k_l\le k_i-m(i-l)$,
+}\[
+\DIFadd{e(s_i)\le\beta2^{k_i}(2\theta+4/\rho)\sum_{j\ge1}2^{-mj}
+=\frac{\beta2^{k_i}(2\theta+4/\rho)}{2^m-1}\le(1-\theta)\beta2^{k_i}\le(1-\theta)f_{k_i}
+}\]
+\DIFadd{by the choice of $m$ (for $\beta=0$ replace $\beta$ by $\rho$ and $f_{k_i}=\rho2^{k_i}$).
+Hence every site $j$ of $R_{k_i}$ has $e(j)\le(1-\theta)f_{k_i}+\Phi_{k_i}=f_{k_i}\le\beta+\rho a_j$,
+i.e.\ it is protected by~\eqref{eq:excess}. The weight of the output is $\sum_{k\in K}V_k$.
+}
+
+\emph{\DIFadd{(D) Comparison with the optimum.}} \DIFadd{Let $Q^\ast$ be an optimal route; by shortcutting we may
+assume that all its sites are protected. Its restriction to class $k$ is a route
+of protected class-$k$ sites (shortcutting), of weight $\mathrm{st}_k$ say, and by (B) and (A)
+$\mathrm{st}_k\le PV(\Phi_k)\le\alpha PV_k$. The $\mathrm{st}_k$ add up to $W^\ast_{\mathrm{chain}}$,
+so for some residue $r$ modulo $m$ the classes $k\equiv r$ carry at least
+$W^\ast_{\mathrm{chain}}/m$. This family has gaps at least $m$, so it is admissible in
+step~2, and the output has weight at least $\sum_{k\equiv r}V_k\ge W^\ast_{\mathrm{chain}}/(\alpha Pm)$.
+}\end{proof}
+
+\emph{\DIFadd{Remarks.}} \DIFadd{(i) The factor grows like $\log_2(1/(\lambda-1))$ as
+$\lambda\downarrow1$, and this growth is real for the analysis (decoupling the
+classes loses $\Theta(\log(1/\rho))$ on stars with legs of lengths $2^k$);
+whether an absolute constant exists is open to us. (ii) For $\lambda=1$ and
+$\beta=0$ a route is protected iff all its excesses vanish, i.e.\ iff
+every leg satisfies $a_u+\delta(u,s)=a_s$; this is a longest-path problem in a
+directed acyclic graph, solved exactly. For $\lambda=1$ and $\beta>0$ a route
+is protected iff its last excess is at most $\beta$, which is one point-to-point
+orienteering instance per last site, with ratio $\alpha$. For $\lambda<1$ and $\beta=0$ no site
+can be reached in time; $\lambda<1$ with $\beta>0$ is not covered. (iii) The theorem is
+an application of an orienteering algorithm; the new ingredient is the
+excess~\eqref{eq:excess}, which turns the front's deadlines into a budget that
+is proportional to the distance and so lets dyadic distance classes be
+decoupled. It does not say anything about general deadlines, for which
+a polynomial-time constant factor remains open. (iv) We ran the algorithm with an exact oracle on $450$ random instances
+with $n\le9$ and compared it with the exact chained optimum
+(Section~\ref{sec:verify}); the route was always protected and the weight
+always above the guaranteed fraction (the worst observed ratio to the
+optimum was $0.31$). The lemmas of the proof were also checked with a
+deliberately weak oracle. The bound is not tight.
+}
+
+\DIFadd{The round-trip surrogate cannot deliver such a guarantee at any fixed speed.
+}
+
+\begin{proposition}[No surrogate bound for a front]\label{prop:nosurrogate}
+\DIFadd{Let the sites lie at the positions $1,\dots,n$ of a half-line, with unit
+weights and $h_i=\lambda a_i$. Then $W^\ast_{\mathrm{chain}}=n$, while for every
+speed multiplier $c$ with $c\lambda>1$ and $q:=(c\lambda-1)/2$,
+}\[
+\DIFadd{W^\ast_{\mathrm{spoke}}(c)\ \le\ 1+\frac{\ln\bigl(n(n+1)/2\bigr)}{\ln(1+1/q)} ,
+}\]
+\DIFadd{and $W^\ast_{\mathrm{spoke}}(c)\le1$ if $c\lambda\le1$. So for fixed $\lambda$ and $c$ the
+ratio $W^\ast_{\mathrm{chain}}/W^\ast_{\mathrm{spoke}}(c)$ }\DIFaddend is \DIFdelbegin \DIFdel{included as
+a realistic, easy-to-implement point of comparison, not as a fifth theorem}\DIFdelend \DIFaddbegin \DIFadd{$\Omega(n/\log n)$}\DIFaddend .
+\DIFaddbegin \end{proposition}
+\DIFaddend 
+
+\DIFdelbegin %DIFDELCMD < \begin{algorithm}
+%DIFDELCMD < %%%
+%DIFDELCMD < \caption{%
+{%DIFAUXCMD
+\DIFdel{Weighted greedy repair (heuristic; no proven guarantee)}}%DIFAUXCMD
+%DIFDELCMD < \label{alg:repair}
+%DIFDELCMD < \begin{algorithmic}[1]
+%DIFDELCMD < \Require sites $1,\dots,n$ with $d_1\le\dots\le d_n$, dispatch times $p_i$, weights $w_i$
+%DIFDELCMD < \Ensure a feasible on-time subset $\mathit{kept}$ (not necessarily optimal)
+%DIFDELCMD < \State $\mathit{kept} \gets \emptyset$; \ $\mathit{total} \gets 0$
+%DIFDELCMD < \For{$i = 1,\dots,n$}
+%DIFDELCMD <   \State $\mathit{kept} \gets \mathit{kept} \cup \{i\}$; \ $\mathit{total} \gets \mathit{total} + p_i$
+%DIFDELCMD <   \While{$\mathit{total} > d_i$ \textbf{and} $\mathit{kept} \ne \emptyset$}
+%DIFDELCMD <     \State $j \gets \arg\min_{j' \in \mathit{kept}} w_{j'}/p_{j'}$ \Comment{smallest weight-to-time ratio}
+%DIFDELCMD <     \State $\mathit{kept} \gets \mathit{kept} \setminus \{j\}$; \ $\mathit{total} \gets \mathit{total} - p_j$
+%DIFDELCMD <   \EndWhile
+%DIFDELCMD < \EndFor
+%DIFDELCMD < \State \Return $\mathit{kept}$, dispatched in increasing-deadline order
+%DIFDELCMD < \end{algorithmic}
+%DIFDELCMD < \end{algorithm}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \begin{proof}
+\DIFadd{The chained route walks out and arrives at the $j$-th site at time $j\le\lambda j$.
+A set of positions $p_1<\dots<p_k$ is protected in the surrogate iff
+$(2S_{j-1}+p_j)/c\le\lambda p_j$ for all $j$ (earliest-deadline order is the outward order),
+where $S_j=p_1+\dots+p_j$, i.e.\ $S_{j-1}\le q(S_j-S_{j-1})$. For $j\ge2$ this
+forces $q>0$ and $S_j\ge(1+1/q)S_{j-1}$, so $S_k\ge(1+1/q)^{k-1}$, while
+$S_k\le n(n+1)/2$ because the $p_l$ are distinct integers in $[1,n]$.
+}\end{proof}
+
+\DIFadd{Thus Theorem~\ref{thm:speedaug}(a) cannot be strengthened to a bracket with a speed
+multiplier that depends on $\lambda$ alone, and the algorithm above must
+use the chained structure.
+}
+
+\DIFadd{How good can a guarantee for a front be? Not arbitrarily good, even when
+all the weights are equal and all the sites are equally far from the
+depot. Then every route has $B_j=R+L_j$, where $R$ is the common distance
+and $L_j$ the length of the path through the first $j$ sites, so
+$h_i=\beta+\lambda R$ turns the problem into path-orienteering with budget
+$\beta+(\lambda-1)R$.
+}
+
+\begin{theorem}[Unit weights are strongly NP-hard]\label{thm:frontnp}
+\DIFadd{For every fixed rational $\lambda>1$ the chained problem with unit weights,
+$\beta=0$ and $h_i=\lambda a_i$ is strongly NP-hard, even if all sites are at
+the same distance from the depot ($\Gamma=1$) and the metric is a graph
+metric with inter-site distances in $\{1,2\}$. Consequently there is no
+FPTAS and no pseudo-polynomial algorithm for it unless $\mathrm P=\mathrm{NP}$.
+}\end{theorem}
+
+\begin{proof}
+\DIFadd{Reduce from }\textsc{\DIFadd{Hamiltonian path}} \DIFadd{on a graph $G$ with $n\ge\lambda$
+vertices. The sites are the vertices; $\delta(i,j)=1$ if $ij\in E(G)$ and $2$
+otherwise; $a_i=R:=(n-1)/(\lambda-1)$ for all $i$; all weights are $1$ and
+$h_i=\lambda R$. The triangle inequalities hold because the inter-site
+distances are in $\{1,2\}$ and $2\le2R$ when $n\ge\lambda$. For a route of
+$k$ sites, $B_j=R+L_j$ and site $i_j$ is protected iff $L_j\le(\lambda-1)R=n-1$.
+A route of all $n$ sites has $L_n\ge n-1$ with equality iff every leg has
+length~$1$, i.e.\ iff it is a Hamiltonian path of $G$. So $W^\ast_{\mathrm{chain}}=n$
+iff $G$ has one. Multiplying all distances by the denominator of
+$\lambda-1$ makes the data integer and polynomially bounded; hence the
+problem is strongly NP-hard, and an FPTAS would distinguish
+$W^\ast=n$ from $W^\ast\le n-1$.
+}\end{proof}
+
+\DIFadd{(On these instances the round-trip surrogate protects only
+$\lfloor(\lambda+1)/2\rfloor$ sites.) The same instances with the
+budget $n-1$ replaced by every possible length $T$ turn a
+$\rho$-approximation of the protected count into a
+$(1+2(1-1/\rho)n/(n-1))$-approximation of the $(1,2)$-travelling-salesman
+path (complete the path greedily, at cost at most $2$ per missing site);
+as the $(1,2)$-TSP is APX-hard \mbox{%DIFAUXCMD
+\citep{papadimitriou1993}}\hskip0pt%DIFAUXCMD
+, there is
+no polynomial-time approximation scheme unless $\mathrm P=\mathrm{NP}$. We
+only sketch this, we have not checked the path version of the hardness
+result separately, and the constant it excludes is very small. The achievable ratio therefore lies
+between a number just above $1$ and $O(\log(1/(\lambda-1)))$ for fixed
+$\alpha$.
+}
 
 %DIF >  ══════════════════════════════════════════════════════════════════
 \section{\DIFadd{Numerical study}}\label{sec:experiments}
@@ -2601,7 +2918,11 @@ chained and round-trip routes: the gap bounds and the characterisation
 of equality, the speed-augmentation bracket, the two-parameter bound, the
 line algorithms against enumeration of walks, the two reductions of
 Appendix~\ref{app:geometry} against a Partition oracle, the feasibility
-criteria for affine deadlines and the thin-ring reduction. These checks are
+criteria for affine deadlines and the thin-ring reduction; and
+}\texttt{\DIFadd{verify\_front\_approx.py}} \DIFadd{checks Theorem~\ref{thm:frontapprox}
+(the protected route and the guaranteed fraction against the exact
+chained optimum, and each lemma of the proof) Proposition~\ref{prop:nosurrogate} and the reduction of
+Theorem~\ref{thm:frontnp} ($600$ random graphs against Hamiltonian paths). These checks are
 tests, not proofs, and Section~\ref{sec:geometry} is not formalised in
 Lean. The statements of Sections~\ref{sec:model} and~\ref{sec:theory}
 are in addition machine-checked in Lean~4 (Data Availability).
@@ -2622,17 +2943,21 @@ keeps dispatching to sites that are already late, so it is a weak
 anchor; EDD with skipping is the fairer simple baseline.
 Table~\ref{tab:illustration} reports mean ratios to the optimum, and
 Figure~\ref{fig:accuracy} plots them.
-}
+}\DIFaddend 
 
-\DIFaddend \begin{table}[h]
-\caption{Mean ratio to the true optimum, by instance size \DIFdelbeginFL \DIFdelFL{(}\DIFdelendFL $n$\DIFdelbeginFL \DIFdelFL{)}\DIFdelendFL , over \DIFdelbeginFL \DIFdelFL{20 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{$50$
-}\DIFaddendFL random instances per \DIFdelbeginFL \DIFdelFL{row}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{column (weights $\le100$)}\DIFaddendFL . \DIFdelbeginFL \DIFdelFL{``M--H style'' is }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{The last three rows give
-}\DIFaddendFL the \DIFdelbeginFL \DIFdelFL{weighted
-Moore--Hodgson-style }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{worst ratio over the $50$ instances for }\DIFaddendFL greedy repair \DIFdelbeginFL \DIFdelFL{heuristic}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{and for naive
+\begin{table}[h]
+\DIFdelbeginFL %DIFDELCMD < \caption{%
+{%DIFAUXCMD
+\DIFdelFL{Mean ratio to the true optimum, by instance size ($n$), over
+20 random instances per row. ``M--H style'' is the weighted
+Moore--Hodgson-style greedy repair heuristic.}}%DIFAUXCMD
+\DIFdelendFL \DIFaddbeginFL \caption{\DIFaddFL{Mean ratio to the true optimum, by instance size $n$, over $50$
+random instances per column (weights $\le100$). The last three rows give
+the worst ratio over the $50$ instances for greedy repair and for naive
 EDD, and the share of instances on which the FPTAS's scaling factor was
 $K=1$ (no rounding at all), for $\epsilon=0.2$ and $\epsilon=0.1$; here
 $n$ is the number of sites that remain after individually infeasible ones
-are deleted, so the nominal size of the instance is slightly larger}\DIFaddendFL .}\label{tab:illustration}
+are deleted, so the nominal size of the instance is slightly larger.}}\DIFaddendFL \label{tab:illustration}
 \small
 \DIFdelbeginFL %DIFDELCMD < \begin{tabular}{@{}lcccccccc@{}}
 %DIFDELCMD < \toprule
@@ -2665,32 +2990,53 @@ share with $K=1$, $\epsilon=0.2$ / $0.1$ & 0/.54 & .60/1 & 1/1 & 1/1 & 1/1 & 1/1
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.72\textwidth]{figures/accuracy_vs_n.pdf}
-\caption{Table~\ref{tab:illustration} plotted\DIFdelbeginFL \DIFdelFL{: mean ratio to the true
-optimum against instance size $n$}\DIFdelendFL . The FPTAS and \DIFdelbeginFL \DIFdelFL{greedy-repair curves
-}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{greedy
-repair }\DIFaddendFL sit \DIFdelbeginFL \DIFdelFL{on top of each other }\DIFdelendFL at $1.0$; \DIFaddbeginFL \DIFaddFL{EDD with skipping improves slowly with $n$; }\DIFaddendFL naive
-EDD fluctuates \DIFaddbeginFL \DIFaddFL{around $0.6$ }\DIFaddendFL with no trend \DIFdelbeginFL \DIFdelFL{of improving as $n$ grows}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{and}\DIFaddendFL , \DIFdelbeginFL \DIFdelFL{exactly as
-Proposition~\ref{prop:naive} predicts}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{on individual instances,
-captures only a few percent of the optimum}\DIFaddendFL .}\label{fig:accuracy}
+\DIFdelbeginFL %DIFDELCMD < \caption{%
+{%DIFAUXCMD
+\DIFdelFL{Table~\ref{tab:illustration} plotted: mean ratio to the true
+optimum against instance size $n$. The FPTAS and greedy-repair curves
+sit on top of each other at $1.0$; naive EDD fluctuates with no
+trend of improving as $n$ grows, exactly as
+Proposition~\ref{prop:naive} predicts.}}%DIFAUXCMD
+\DIFdelendFL \DIFaddbeginFL \caption{\DIFaddFL{Table~\ref{tab:illustration} plotted. The FPTAS and greedy
+repair sit at $1.0$; EDD with skipping improves slowly with $n$; naive
+EDD fluctuates around $0.6$ with no trend and, on individual instances,
+captures only a few percent of the optimum.}}\DIFaddendFL \label{fig:accuracy}
 \end{figure}
 
-\DIFdelbegin \DIFdel{At both approximation levels tested, the }\DIFdelend \DIFaddbegin \DIFadd{The }\DIFaddend FPTAS recovers the \DIFdelbegin \DIFdel{true
+\DIFdelbegin \DIFdel{At both approximation levels tested, the FPTAS recovers the true
 optimum on essentially every one of the 160 random instances (mean
-ratio rounds to $1.000$ throughout), far outperforming its }\DIFdelend \DIFaddbegin \DIFadd{optimum on every instance, but this is
+ratio rounds to }\DIFdelend \DIFaddbegin \DIFadd{The FPTAS recovers the optimum on every instance, but this is
 }\emph{\DIFadd{not}} \DIFadd{evidence about the approximation scheme. With weights at most
 $100$ the scaling factor $K=\max(1,\epsilon w_{\max}/n)$ equals $1$ for
 $\epsilon=0.1$ at every $n\ge15$ and for $\epsilon=0.2$ at every
 $n\ge25$ (last row of Table~\ref{tab:illustration}), so no rounding
 takes place and the FPTAS coincides with the exact value-indexed
-dynamic program; a ratio of $1.000$ is then guaranteed, not
+dynamic program; a ratio of }\DIFaddend $1.000$ \DIFdelbegin \DIFdel{throughout), far outperforming its worst-case
+$(1-\epsilon)$ guarantee, consistent with the well-documented empirical
+looseness of knapsack-style FPTAS
+worst-case bounds
+\mbox{%DIFAUXCMD
+\citep{ibarrakim1975}}\hskip0pt%DIFAUXCMD
+: the scaling construction is designed to
+guarantee the
+worst case, not to describe the typical one. The greedy
+repair heuristic, despite carrying noproven guarantee, is a
+substantial practical improvement over doing nothing---capturing
+99.3--99.9\% of the optimum---because reconsidering even a single
+locally-worst commitment when infeasibility first arises already
+recovers most of the value a full optimization would. The naive
+EDD baseline, which never reconsiders anything, captures only
+32--62\% of the optimal on-time weight and }\DIFdelend \DIFaddbegin \DIFadd{is then guaranteed, not
 informative. The next subsection therefore uses weights large enough
 that the rounding is active. Among the heuristics, the greedy repair
 captures $99.3$--$100\%$ of the optimum on average but has a worst
 ratio of $0.93$ at $n=10$, consistent with its having no guarantee
-(Proposition~\ref{prop:repair}); naive EDD shows no trend with $n$, as
-a rule that never reconsiders would not, though a }\DIFaddend worst-case \DIFdelbegin \DIFdel{$(1-\epsilon)$ guarantee, consistent with the well-documented empirical
-looseness of knapsack-style FPTAS }\DIFdelend \DIFaddbegin \DIFadd{result such
-as Proposition~\ref{prop:naive} does not by itself predict average
+(Proposition~\ref{prop:repair}); naive EDD }\DIFaddend shows no trend \DIFdelbegin \DIFdel{of improving
+with instance size, exactly }\DIFdelend \DIFaddbegin \DIFadd{with $n$, as
+a rule that never reconsiders would not, though a worst-case result such
+}\DIFaddend as Proposition~\ref{prop:naive} \DIFdelbegin \DIFdel{predicts: its
+worst-case ratio does not shrink with $n$, it is simply unbounded
+below on adversarial instances and highly variable on random ones}\DIFdelend \DIFaddbegin \DIFadd{does not by itself predict average
 behavior on random instances.
 }
 
@@ -2776,23 +3122,8 @@ $1$, and it is the answer to the question of why accuracy is near $1$ in
 all earlier tables. Second, the guarantee is }\emph{\DIFadd{not}} \DIFadd{vacuous: on the
 adversarial family, which Proposition~\ref{prop:tight} shows is the
 worst case, the ratio falls to $0.669$ at $\epsilon=0.5$ and follows
-the guarantee as $\epsilon$ shrinks, so a planner who needs a }\DIFaddend worst-case
-\DIFdelbegin \DIFdel{bounds
-\mbox{%DIFAUXCMD
-\citep{ibarrakim1975}}\hskip0pt%DIFAUXCMD
-: the scaling construction is designed to
-guarantee the worst case, not
-to describe the typical one. The greedy
-repair heuristic, despite carrying no proven guarantee, is a
-substantial practical improvement over doing nothing---capturing
-99.3--99.9\% of the optimum---because reconsidering even a single
-locally-worst commitment when infeasibility first arises already
-recovers most of the value a full optimization would. The naive EDD baseline, which never reconsiders anything, captures only
-32--62\% of the
-optimal on-time weight and shows no trend of improving
-with instance size, exactly as Proposition~\ref{prop:naive} predicts: its
-worst-case ratio does not shrink with $n$, it is simply unbounded
-below on adversarial instances and highly variable on random ones}\DIFdelend \DIFaddbegin \DIFadd{bound cannot do better than an $\epsilon$-dependent cost. The inexpensive
+the guarantee as $\epsilon$ shrinks, so a planner who needs a worst-case
+bound cannot do better than an $\epsilon$-dependent cost. The inexpensive
 completion step removes this failure on the family. Cost grows in
 proportion to $1/\epsilon$ (Table~\ref{tab:epscost}), as predicted, and
 is independent of $P$ (next subsection)}\DIFaddend .
@@ -3051,7 +3382,7 @@ extrapolated. For each of four real communities in the fire's path we use
 the earliest documented event of the kind NIST reports for it: the first
 structures burning and spot fires igniting in }\emph{\DIFadd{Concow}} \DIFadd{(07:25 on
 8~November), the first spot fires arriving in }\emph{\DIFadd{Paradise}} \DIFaddend (\DIFdelbegin \DIFdel{Concow, Paradise,
-Magalia, }\DIFdelend \DIFaddbegin \DIFadd{07:44; the
+Magalia}\DIFdelend \DIFaddbegin \DIFadd{07:44; the
 detailed sections of the report put the first 911 call about a Paradise
 spot fire at 07:49, which lies inside the sensitivity range below), spot
 fires in Old Magalia, the earliest-affected part of }\emph{\DIFadd{Magalia}}
@@ -3060,7 +3391,7 @@ fires in Old Magalia, the earliest-affected part of }\emph{\DIFadd{Magalia}}
 9~November, about a day after ignition and therefore an almost
 unconstraining deadline. The events are therefore not identical across
 communities, which is a limitation of the data, not of the model; the
-documentation is also uneven across communities, }\DIFaddend and Yankee Hill\DIFdelbegin \DIFdel{, Butte County)with their real geographic
+documentation is also uneven across communities}\DIFaddend , and Yankee Hill\DIFdelbegin \DIFdel{, Butte County)with their real geographic
 coordinates and }\DIFdelend \DIFaddbegin \DIFadd{'s event
 is an upper bound on the fire's arrival there (the instance is in effect
 a three-site one, as Yankee Hill's deadline never binds).
@@ -3696,29 +4027,31 @@ earlier commitments in light of both weights and dispatch times, and }\DIFaddend
 dynamic program \DIFdelbegin \DIFdel{'s state space, or both) each
 relaxation breaks, rather than leaving them as an unexamined list}\DIFdelend \DIFaddbegin \DIFadd{and the FPTAS are two such rules, not the only ones}\DIFaddend .
 
-\DIFdelbegin \DIFdel{More broadly, MWHED is a small, self-contained illustration of a pattern that recurs across combinatorial optimization: a
-transportation-network reparametrization of a decades-old scheduling
-problem reveals both that the classical hardness and algorithmic
-machinery transfer over essentially unchanged (Theorems~\ref{thm:hardness}--\ref{thm:fptas}),
-and that the
-specific structural question of which restriction
-restores tractability (Theorem~\ref{thm:equalp}) has a clean, network-interpretable answer---sites equidistant from the depot---that
-was not visible in the
-original scheduling formulation's language of abstract jobs and machines. We see this as the paper's main
-methodological contribution alongside its specific results: reframing
-a classical scheduling question in transportation terms did not just
-relabel it, it surfaced a distinction (dispatch-cost heterogeneity
-versus deadline heterogeneity) that determines tractability, and that distinction is
-exactly what }\DIFdelend \DIFaddbegin \DIFadd{The geometry behind the abstraction gives the most specific findings of
+\DIFdelbegin \DIFdel{More broadly, MWHED is a small, self-contained illustration of }\DIFdelend \DIFaddbegin \DIFadd{The geometry behind the abstraction gives the most specific findings of
 the paper. The round-trip model can lose a factor $n$ against a chained
 route, and this is attained even by a front that chases the crew along a
 road, but the loss is controlled by a clustering ratio and an aspect ratio
 of the sites; chained routing on a line is pseudo-polynomial and has an
 FPTAS, yet is NP-hard with weights; and deadlines induced by a front that
-moves at constant speed remain NP-hard, so that a hazard front does not
-make dispatch easy (Section~\ref{sec:geometry}). Whether the chained
-problem on general networks admits a constant-factor approximation, and the
-complexity of the unit-weight chained problem beyond a line, are open.
+moves at constant speed remain NP-hard, so that }\DIFaddend a \DIFdelbegin \DIFdel{pattern that recurs across combinatorial optimization: a transportation-network reparametrization of a decades-old scheduling
+problem reveals both that }\DIFdelend \DIFaddbegin \DIFadd{hazard front does not
+make dispatch easy (Section~\ref{sec:geometry}). For a front slower
+than the crew the chained route can be approximated within a constant
+that depends only on the front's speed (Theorem~\ref{thm:frontapprox}),
+whereas for general deadlines a polynomial-time constant factor is a
+long-standing open question, and }\DIFaddend the \DIFdelbegin \DIFdel{classical hardness and algorithmic
+machinery transfer over essentially unchanged (Theorems~\ref{thm:hardness}--\ref{thm:fptas}),
+and that the specific structural question of which restriction
+restores tractability }\DIFdelend \DIFaddbegin \DIFadd{exact approximability of the front problem lies between
+a constant just above one }\DIFaddend (Theorem~\DIFdelbegin \DIFdel{\ref{thm:equalp}) has a clean, network-interpretable answer---sites equidistant from the depot---that
+was not visible in the original scheduling formulation's language of abstract jobs and machines. We see this as the paper's main
+methodological contribution alongside its specific results: reframing
+a classical scheduling question in transportation terms did not just
+relabel it, it surfaced a distinction (dispatch-cost heterogeneity
+versus deadline heterogeneity) that determines tractability, and that distinction is
+exactly what }\DIFdelend \DIFaddbegin \DIFadd{\ref{thm:frontnp}, unit weights are
+strongly NP-hard even for equidistant sites) and the logarithmic dependence
+on $\lambda-1$ of our algorithm.
 }
 
 \DIFadd{The numerical study and the case study carry two lessons beyond the
@@ -3962,9 +4295,7 @@ $\tau_{j+1}-\tau_j=X_j+X_{j+1}>b_j+A$. (3) Hence in the disjoint windows
 $[t_j,t_{j+1}]$ the walk goes $S_j\to O_j\to S_{j+1}$, of length at least
 $X_j+X_{j+1}+2b_j$ if $j\in C$ and $X_j+X_{j+1}$ otherwise, and
 $[0,t_1]$ has length at least $X_1$. Summing, $t_K\ge X_1+\sum_{j<K}(X_j+X_{j+1})+2b(C)=\tau_K+2b(C)$,
-and $t_K\le\tau_K+A$ }\DIFaddend gives \DIFdelbegin \DIFdel{$W(\hat S) > (1-\epsilon)W^\ast$ in this case, and
-$W(\hat S) = W^\ast$ in
-the vacuous-scaling case; either way, $W(\hat S) \ge (1-\epsilon)W^\ast$, matching Theorem~\ref{thm:fptas}. }\DIFdelend \DIFaddbegin \DIFadd{$b(C)\le A/2$, so $w(U)=KM+b(C)$.
+and $t_K\le\tau_K+A$ }\DIFaddend gives \DIFdelbegin \DIFdel{$W(\hat S) > (1-\epsilon)W^\ast$ in this case, }\DIFdelend \DIFaddbegin \DIFadd{$b(C)\le A/2$, so $w(U)=KM+b(C)$.
 }
 
 \emph{\DIFadd{Front-induced deadlines.}} \DIFadd{By the recursion for $X_k$,
@@ -3983,8 +4314,9 @@ $\tau_{j+1}-\tau_j>\tfrac32b_j+A$). }\hfill\DIFadd{$\square$
 $\gamma=c-m\in(0,1]$, $z\ge3$ an integer with $z>1+1/c$, and
 $\theta=c-\frac{1}{z-1}>0$. Reduce from }\textsc{\DIFadd{Partition}} \DIFadd{$a_1,\dots,a_n$,
 $n\ge2$, $A=\sum a_i$ even. Put $M_0=\lceil A/\theta\rceil+A+1$,
-$X_i=M_0z^i$ ($i=1,\dots,n$), $\mathrm{cap}=\sum_iX_i+A/2$ and
-$g=\mathrm{cap}/\gamma$. The sites, all with $d=\alpha p$ (we work in
+$X_i=M_0z^i$ ($i=1,\dots,n$), $\mathrm{cap}=\sum_iX_i+A/2$ }\DIFaddend and
+\DIFdelbegin \DIFdel{$W(\hat S) = W^\ast$ in
+the vacuous-scaling case; either way, $W(\hat S) \ge (1-\epsilon)W^\ast$, matching Theorem~\ref{thm:fptas}. }\DIFdelend \DIFaddbegin \DIFadd{$g=\mathrm{cap}/\gamma$. The sites, all with $d=\alpha p$ (we work in
 rational units and finally multiply all sizes by a common integer), are
 }\emph{\DIFadd{level sites}} \DIFadd{$\mathrm{lo}_i$ and $\mathrm{hi}_i$ with $p=X_i$ and
 $p=X_i+a_i$ and weight $p$, and $m+1$ }\emph{\DIFadd{ballast}} \DIFadd{sites with $p=g$ and
@@ -4057,7 +4389,9 @@ from }\DIFaddend a NIST technical report \DIFdelbegin \DIFdel{and }\DIFdelend \D
 \citep{nist2021campfire} }\hskip0pt%DIFAUXCMD
 and 2010 }\DIFaddend U.S.\
 Census \DIFdelbegin \DIFdel{data}\DIFdelend \DIFaddbegin \DIFadd{populations}\DIFaddend , both cited in the text\DIFdelbegin \DIFdel{) }\DIFdelend \DIFaddbegin \DIFadd{, }\DIFaddend rather than data collected by
-the authors\DIFdelbegin \DIFdel{; the script that derives the instance from those public figures and reproduces Tables~\ref{tab:campfire} and ~\ref{tab:campfire-results} is also included with this submission}\DIFdelend \DIFaddbegin \DIFadd{. All source code (the algorithms, the generators, the
+the authors\DIFdelbegin \DIFdel{; the script that derives the
+instance from those public figures and reproduces Tables~\ref{tab:campfire} and
+~\ref{tab:campfire-results} is also included with this submission}\DIFdelend \DIFaddbegin \DIFadd{. All source code (the algorithms, the generators, the
 exhaustive-search verification, the checks of the added results, and the
 scripts that regenerate every table and figure, including the Camp Fire
 derivation and sensitivity analysis) and the Lean~4 formalisation are
@@ -4080,8 +4414,11 @@ weights of Example~\ref{ex:fptas} selects the stated set, or the modelling
 remarks; the file }\texttt{\DIFadd{MwhedProofs/README.md}} \DIFadd{lists, theorem by theorem, what is and
 is not formalised. The results of Section~\ref{sec:geometry} and
 Appendix~\ref{app:geometry} are not formalised; they are checked against
-brute force by }\texttt{\DIFadd{verify\_geometry.py}} \DIFadd{(and the scripts in
-}\texttt{\DIFadd{checks/geometry}}\DIFadd{)}\DIFaddend .
+brute force by }\texttt{\DIFadd{verify\_geometry.py}} \DIFadd{and
+}\texttt{\DIFadd{verify\_front\_approx.py}} \DIFadd{(and the scripts in
+}\texttt{\DIFadd{checks/geometry}} \DIFadd{and }\texttt{\DIFadd{checks/front}}\DIFadd{); the orienteering
+approximation algorithm that Theorem~\ref{thm:frontapprox} takes as a
+black box is cited, not reimplemented}\DIFaddend .
 
 \subsection*{Use of Large Language Models}
 \DIFdelbegin \DIFdel{An }\DIFdelend \DIFaddbegin \DIFadd{A generative }\DIFaddend AI coding assistant \DIFdelbegin \DIFdel{(Claude, Anthropic) }\DIFdelend was used to assist with

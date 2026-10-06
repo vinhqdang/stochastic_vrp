@@ -67,7 +67,7 @@ first version of the manuscript.)
 * The limit `n -> infinity` of `rho_{n,eps}` as a filter statement (the
   exact limits as `M -> infinity` for each family are proved).
 * That the DP on the scaled weights of Example 4 selects `{1,2,4}`.
-* Section 4.7 and Appendix C of the paper (Theorems 13-21: spoke-chain
+* Section 4.7 and Appendix C of the paper (Theorems 13-24: spoke-chain
   gap, speed augmentation, line algorithms and hardness, affine-deadline
   classification, thin-ring reduction); these are checked against brute
   force by `../verify_geometry.py`, not by Lean.
