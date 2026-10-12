@@ -192,3 +192,20 @@ share of intra-route moves with Var(D) = 0 (55% on city, 50% on CMT).
   cost is max(z²v/ε², 3/ε); this changes the city cells of the cost table.
 - **End-load lemma scope:** it covers every reordering of the same customers,
   hence also alternative-position comparisons.
+
+## M3 closing decisions (2026-10-12)
+
+- **Factor grid per route.** Preparing a 6-qubit factor register with
+  arbitrary weights costs about 63 rotations, negligible next to the oracle's
+  Toffoli count, so the grid is chosen for accuracy, not circuit cost.
+  Gauss–Hermite is stable from 32 nodes on short and low-probability routes
+  and is not converged at 64 nodes on long routes; bin-averaged
+  equal-probability bins converge on long routes (64 bins within 6e−5 of 128)
+  and not yet on short ones. Rule: use the grid on which the two converging
+  sequences (GH128 and bin-averaged 128) agree for the route class; the
+  residual disagreement (up to 2.6e−4 in P(F > Q), about 2–4e−4 in P(D = ±1))
+  is stated as the factor-grid error budget.
+- **Demand levels:** b = 6 under the stated rule; b = 5 as the cheaper option
+  with median 0.5 % and max 8 % relative bias.
+- M3 is closed; STATUS.md lists its findings.
+

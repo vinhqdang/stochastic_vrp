@@ -16,17 +16,17 @@ Family groups: CON/SCA (random-generator instances, families CON and SCA), CMT (
 
 Population by group and class (the whole M3a file; the last three columns show what the eligible sample can and cannot speak to):
 
-| group | class | moves in M3a | zero difference | side below 200 hits | eligible | share with P(D != 0) < 1e-3 | eligible: min P(D != 0) | eligible: median P(D != 0) |
-|---|---|---|---|---|---|---|---|---|
-| CON/SCA | 1 | 482628 | 4413 | 19713 | 458502 | 0.050 | 0.001 | 0.115 |
-| CON/SCA | 2 | 125225 | 12261 | 96568 | 16396 | 0.579 | 0.001 | 0.0077 |
-| CON/SCA | 3 | 482628 | 30702 | 337191 | 114735 | 0.379 | 0.001 | 0.0109 |
-| CMT | 1 | 18200 | 251 | 223 | 17726 | 0.026 | 0.00103 | 0.0695 |
-| CMT | 2 | 17116 | 8607 | 5018 | 3491 | 0.694 | 0.001 | 0.0173 |
-| CMT | 3 | 18200 | 8235 | 4910 | 5055 | 0.651 | 0.001 | 0.0157 |
-| city | 1 | 77994 | 3586 | 1815 | 72593 | 0.069 | 0.00101 | 0.0465 |
-| city | 2 | 69473 | 38144 | 30355 | 974 | 0.949 | 0.001 | 0.00227 |
-| city | 3 | 77994 | 43037 | 33881 | 1076 | 0.951 | 0.001 | 0.00228 |
+| group | class | moves in M3a | zero difference | side below 200 hits | eligible | excluded (200-hit rule or zero), share | share with P(D != 0) < 1e-3 | excluded share among moves with P(D != 0) >= 1e-3 | eligible: min P(D != 0) | eligible: median P(D != 0) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| CON/SCA | 1 | 482628 | 4413 | 19713 | 458502 | 0.050 | 0.050 | 0.000 | 0.001 | 0.115 |
+| CON/SCA | 2 | 125225 | 12261 | 96568 | 16396 | 0.869 | 0.579 | 0.689 | 0.001 | 0.0077 |
+| CON/SCA | 3 | 482628 | 30702 | 337191 | 114735 | 0.762 | 0.379 | 0.617 | 0.001 | 0.0109 |
+| CMT | 1 | 18200 | 251 | 223 | 17726 | 0.026 | 0.026 | 0.000 | 0.00103 | 0.0695 |
+| CMT | 2 | 17116 | 8607 | 5018 | 3491 | 0.796 | 0.694 | 0.334 | 0.001 | 0.0173 |
+| CMT | 3 | 18200 | 8235 | 4910 | 5055 | 0.722 | 0.651 | 0.205 | 0.001 | 0.0157 |
+| city | 1 | 77994 | 3586 | 1815 | 72593 | 0.069 | 0.069 | 0.000 | 0.00101 | 0.0465 |
+| city | 2 | 69473 | 38144 | 30355 | 974 | 0.986 | 0.949 | 0.723 | 0.001 | 0.00227 |
+| city | 3 | 77994 | 43037 | 33881 | 1076 | 0.986 | 0.951 | 0.718 | 0.001 | 0.00228 |
 
 Stratified sample: class x stand-alone p' band x family group, up to 20 moves per cell (drawn at random from the eligible pool). Cells with fewer eligible moves than 20 contribute all of them and are marked.
 
@@ -274,37 +274,39 @@ For class 1 (insertion; P(D = -1) = 0) the one-sided prediction is rho_q = sqrt(
 
 ## 6. Claims by family group
 
-Cost ratio = difference / stand-alone, medians over ok rows; n_ok in brackets.
+Cost ratio = difference / stand-alone, medians over ok rows; (ok rows / floor rows) in brackets. The pooled medians are not results (see the caveat under the table).
 
 | group | sampled moves | population P(D != 0) < 1e-3 (classes 1 / 2 / 3) | target | qae median ratio (n_ok) | mlae_S64 median ratio (n_ok) | classical direct median ratio (n_ok) | classical_2est median ratio (n_ok) |
 |---|---|---|---|---|---|---|---|
-| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | abs 0.001 | 0.652 (180) | 0.595 (180) | 0.163 (180) | 0.319 (180) |
-| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | abs 0.0001 | 0.613 (180) | 0.729 (156) | 0.162 (173) | 0.31 (172) |
-| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | rel 0.1 | 3.68 (174) | 3.23 (137) | 8.06 (178) | 9.32 (178) |
-| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | rel 0.01 | 4.89 (179) | 3.32 (155) | 8.24 (180) | 9.55 (180) |
-| CMT | 153 | 0.03 / 0.69 / 0.65 | abs 0.001 | 0.462 (153) | 0.449 (153) | 0.23 (153) | 0.231 (153) |
-| CMT | 153 | 0.03 / 0.69 / 0.65 | abs 0.0001 | 0.452 (153) | 0.512 (135) | 0.247 (130) | 0.26 (130) |
-| CMT | 153 | 0.03 / 0.69 / 0.65 | rel 0.1 | 3.16 (138) | 2.18 (94) | 10.1 (153) | 10 (153) |
-| CMT | 153 | 0.03 / 0.69 / 0.65 | rel 0.01 | 3.59 (152) | 3.18 (135) | 9.74 (153) | 9.79 (153) |
-| city | 112 | 0.07 / 0.95 / 0.95 | abs 0.001 | 0.285 (112) | 0.38 (112) | 0.155 (112) | 0.161 (112) |
-| city | 112 | 0.07 / 0.95 / 0.95 | abs 0.0001 | 0.319 (112) | 0.505 (98) | 0.239 (90) | 0.242 (90) |
-| city | 112 | 0.07 / 0.95 / 0.95 | rel 0.1 | 5.51 (106) | 1.44 (54) | 19.5 (112) | 20 (112) |
-| city | 112 | 0.07 / 0.95 / 0.95 | rel 0.01 | 5.02 (112) | 4.05 (100) | 19.7 (112) | 19.5 (112) |
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | abs 0.001 | 0.652 (180 ok / 0 floor) | 0.595 (180 ok / 0 floor) | 0.163 (180 ok / 0 floor) | 0.319 (180 ok / 0 floor) |
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | abs 0.0001 | 0.613 (180 ok / 0 floor) | 0.729 (156 ok / 0 floor) | 0.162 (173 ok / 0 floor) | 0.31 (172 ok / 0 floor) |
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | rel 0.1 | 3.68 (174 ok / 6 floor) | 3.23 (137 ok / 41 floor) | 8.06 (178 ok / 2 floor) | 9.32 (178 ok / 2 floor) |
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | rel 0.01 | 4.89 (179 ok / 1 floor) | 3.32 (155 ok / 0 floor) | 8.24 (180 ok / 0 floor) | 9.55 (180 ok / 0 floor) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | abs 0.001 | 0.462 (153 ok / 0 floor) | 0.449 (153 ok / 0 floor) | 0.23 (153 ok / 0 floor) | 0.231 (153 ok / 0 floor) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | abs 0.0001 | 0.452 (153 ok / 0 floor) | 0.512 (135 ok / 0 floor) | 0.247 (130 ok / 0 floor) | 0.26 (130 ok / 0 floor) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | rel 0.1 | 3.16 (138 ok / 15 floor) | 2.18 (94 ok / 56 floor) | 10.1 (153 ok / 0 floor) | 10 (153 ok / 0 floor) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | rel 0.01 | 3.59 (152 ok / 1 floor) | 3.18 (135 ok / 0 floor) | 9.74 (153 ok / 0 floor) | 9.79 (153 ok / 0 floor) |
+| city | 112 | 0.07 / 0.95 / 0.95 | abs 0.001 | 0.285 (112 ok / 0 floor) | 0.38 (112 ok / 0 floor) | 0.155 (112 ok / 0 floor) | 0.161 (112 ok / 0 floor) |
+| city | 112 | 0.07 / 0.95 / 0.95 | abs 0.0001 | 0.319 (112 ok / 0 floor) | 0.505 (98 ok / 0 floor) | 0.239 (90 ok / 0 floor) | 0.242 (90 ok / 0 floor) |
+| city | 112 | 0.07 / 0.95 / 0.95 | rel 0.1 | 5.51 (106 ok / 6 floor) | 1.44 (54 ok / 56 floor) | 19.5 (112 ok / 0 floor) | 20 (112 ok / 0 floor) |
+| city | 112 | 0.07 / 0.95 / 0.95 | rel 0.01 | 5.02 (112 ok / 0 floor) | 4.05 (100 ok / 0 floor) | 19.7 (112 ok / 0 floor) | 19.5 (112 ok / 0 floor) |
 
-Read with the table above. Every cost ratio divides a difference estimate by a stand-alone estimate of the same paradigm; ratios are not quantum-versus-classical comparisons. The sample covers P(D != 0) >= 1e-3 only.
+Read with the table above. Every cost ratio divides a difference estimate by a stand-alone estimate of the same paradigm; ratios are not quantum-versus-classical comparisons. The sample covers eligible moves only (zero differences and any nonzero side with fewer than 200 hits are excluded, Section 2).
 
-**Supported (eligible sample, medians over ok rows, n_ok in the table):**
+Group medians in Section 6 pool the sampled moves of all cells. There are about 20 moves per cell, so each cell has roughly equal weight whatever its population; the pooled medians mix classes and bands and are not results. Quote the per-cell values of Section 5b, restricted to cells with n_ok >= 10.
 
-- CRN lowers the quantum cost of the difference at absolute 1e-3 in all three groups. QAE: 0.65 (CON/SCA, n = 180), 0.46 (CMT, n = 153), 0.29 (city, n = 112). MLAE S = 64: 0.60, 0.45, 0.38. The same direction holds at 1e-4 for QAE (0.61, 0.45, 0.32).
+**Supported (per cell, cells with n_ok >= 10):**
+
+- CRN lowers the quantum cost of the difference at absolute 1e-3: the QAE cost ratio (difference / stand-alone) is below 1 in 23 of 23 cells (range 0.0828 to 0.877); MLAE S = 64 is below 1 in 23 of 23 cells (range 0.0687 to 0.928). At absolute 1e-4 the QAE ratio is below 1 in 22 of 23 cells (range 0.0898 to 1.24), so the 1e-4 direction is not a general statement for every cell; the cells above 1 are in Section 5b.
 - At absolute 1e-4 MLAE S = 32 fails for most moves (111, 102 and 77 of the 180, 153 and 112 moves; Section 5a), so its medians are not quoted. MLAE S = 64 fails for 24, 18 and 14 moves.
-- Relative targets (T_D = r P(D != 0), so the target shrinks with the difference): the difference costs more than the stand-alone estimate in all three groups. QAE 3.2 to 5.5, MLAE S = 64 1.4 to 4.1, direct classical 8 to 20 (r = 0.1 and 0.01). Supported for the sampled moves only.
+- Relative targets (T_D = r P(D != 0), so the target shrinks with the difference): the difference costs more than the stand-alone estimate (median ratio above 1) in all 23 cells for QAE at r = 0.1 (range 1.05 to 22.3); in all 14 cells with n_ok >= 10 for MLAE S = 64 at r = 0.1 (range 1.03 to 14.1; 9 cells have n_ok < 10); in all 23 cells for the classical direct estimator (range 1.17 to 450). MLAE S = 64 at r = 0.1 has 153 floor rows of 445 sampled rows (7 fail): its medians use the ok rows only, which removes the easy moves, so they are biased upward and are not comparable with the classical column, which has few floor rows.
 - Scaling: the quantum slope of the 90 % quantile is -1 and the classical slope -0.5, in every group (Section 3, group table).
 - The sqrt(v) law for the quantum difference cost holds on class 1: ratio / rho_q for MLAE S = 64 and 128 lies between 0.94 and 1.11 across bands and absolute targets. QAE has alignment scatter (0.72 to 1.29). Classes 2 and 3 are not tested against rho_q.
 - The direct classical estimator agrees with its Var(D) / T^2 prediction (ratio / rho_c 0.97 to 1.04). This is a consistency check, not evidence about the quantum law.
 
 **Not supported by M3b:**
 
-- The regime where P(D != 0) is tiny (below 1e-3). Such moves are zero-difference or have a side below 200 hits and are excluded. In the M3a file they are 38 to 95 % of the classes 2 and 3 moves of every group (table above) and 3 to 7 % of class 1. M3b makes no claim about the floor regime or about the Var(D) = 0 share.
+- The regime where P(D != 0) is tiny (below 1e-3). Two different shares, both in Section 2, for classes 2 and 3 across the three groups: the eligibility rule (zero difference, or a nonzero side with fewer than 200 hits) excludes 0.72 to 0.99 of the moves; P(D != 0) < 1e-3 holds for 0.38 to 0.95. The two are not the same: among moves with P(D != 0) >= 1e-3 the rule still excludes 0.20 to 0.72, because it drops a move when any nonzero side has fewer than 200 hits. M3b makes no claim about the floor regime or about the Var(D) = 0 share.
 - City classes 2 and 3. Eligible city moves are 974 (class 2) and 1076 (class 3), with median P(D != 0) of 0.0023. The class 2 low and decision cells are empty, the class 3 decision cell has 12 moves, and the class 2 and 3 high cells have 20 each. Only the high-band city numbers for classes 2 and 3 have usable n.
 - Any claim from the cells with n_ok below 10 (listed in Section 5b, e.g. MLAE S = 32 at 1e-4 on cls1/high/CMT, cls1/high/city, cls2/high/CMT, cls2/high/city, with 0 ok rows). Their medians are shown only for completeness.
 - A quantum-versus-classical cost comparison, which M3b does not compute; the classical columns here measure the classical difference against the classical stand-alone, not against the quantum estimator.
@@ -322,8 +324,8 @@ v2 included S = 1 and S = 8. v3 keeps S in {32, 64, 128} only and does not rerun
 ## 8. Run
 
 - validation: reused from v2 (no circuits rerun)
-- simulation time: 3 s with 2 workers
-- total time: 28 s
+- simulation time: saved run (not re-measured in summary-only mode)
+- total time: 13 s
 - QAE: exact pmf, m = 3..22
 - MLAE: J = 1..10, S in [32, 64, 128], 4000 seeds, grid 20001 points + golden-section
 - classical: N = 2^4..2^26, 4000 seeds

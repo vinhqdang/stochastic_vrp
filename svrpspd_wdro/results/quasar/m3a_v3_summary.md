@@ -151,7 +151,7 @@ Moves with p' in (0.02, 0.5). Stand-alone: p' estimated at eps (quantum: canonic
 | alt-position | CMT | 6263 | 0 | 0 | 0.0111 | 0.510 |
 | alt-position | city | 51874 | 0 | 0 | 0.0158 | 0.634 |
 
-Reading. rho_q is the ratio of the CRN amplitude standard deviation to the stand-alone one, so the quantum query count of the CRN difference is about rho_q times the stand-alone count. Insertions keep most of their variance (rho_q near 0.9), because an inserted customer shifts the load of the whole suffix. Intra-route and alternative-position moves reorder the same customers, so Var(D) is small: on CON/SCA the medians are 0.13-0.16, and on CMT/city they are zero in the sample for more than half of the moves. The zero is an in-sample value and is bounded by the upper-bound column.
+Reading. rho_q is the ratio of the CRN amplitude standard deviation to the stand-alone one, so the quantum query count of the CRN difference is about rho_q times the stand-alone count. For insertions (class 1, median rho_q by family in the band: CON 0.92, SCA 0.92, CMT 0.39, city 0.67) the value is near 0.9 only on CON/SCA; on CMT and city a substantial part of the variance is removed by the common draws. Intra-route and alternative-position moves reorder the same customers, so Var(D) is small: on CON/SCA the medians are 0.13-0.16, and on CMT/city they are zero in the sample for more than half of the moves. The zero is an in-sample value and is bounded by the upper-bound column.
 
 ### 3b. Cost sums (queries) by class and family, certified classical counts
 
@@ -212,13 +212,13 @@ Nq/Nq_sa and Nc/Nc_sa: within-paradigm CRN gain (CRN cost over stand-alone cost)
 
 Unit costs and what the ratios mean. Nq counts applications of the amplitude-estimation unitary A. In the circuit one application of a stand-alone peak oracle is one coherent oracle call with T(L, c, m) Toffolis (DESIGN_M2.md, Section 'Toffoli count'). A difference oracle evaluates two route predicates on one scenario register, so one of its applications costs more Toffolis than a stand-alone one; the tables do not convert counts to Toffolis. Nc counts classical scenario evaluations, each a full route evaluation. A ratio Nq/Nc below 1 therefore says that the quantum count is smaller; it is not a runtime ratio.
 
-Conservativeness of the quantum count. The count uses canonical amplitude estimation with the bound 2 pi sqrt(v)/M + pi^2/M^2, which holds with probability at least 8/pi^2, and R = 5 repetitions with the median (failure probability about 0.05, so about 95 % confidence). The bound is a worst case over the position of the phase on the grid. In a check on the exact QPE distribution at the same M, the 81 % quantile of the actual error was smaller than the bound by factors of 1.6, 2.0 and 4.6 in the three non-aligned cases checked (a = 0.05 with eps = 1e-2; a = 0.2 with eps = 1e-3; a = 0.2 with eps = 1e-2), and by much more when the phase falls on the grid. The factor depends on alignment; about 2x is the conservative reading, so the quantum counts here are at least about 2x conservative.
+Conservativeness of the quantum count. The count uses canonical amplitude estimation with the bound 2 pi sqrt(v)/M + pi^2/M^2, which holds with probability at least 8/pi^2, and R = 5 repetitions with the median (failure probability about 0.05, so about 95 % confidence). The bound is a worst case over the position of the phase on the grid. In a check on the exact QPE distribution at the same M, the 81 % quantile of the actual error was smaller than the bound by factors of 1.6, 2.0 and 4.6 in the three non-aligned cases checked (a = 0.05 with eps = 1e-2; a = 0.2 with eps = 1e-3; a = 0.2 with eps = 1e-2), and by much more when the phase falls on the grid. The factor depends on alignment and is not a general constant: the quantum counts here are conservative by 1.6-4.6x in the three cases checked, and no larger factor is claimed.
 
-Absolute eps = 1e-3 (classical certified). Quantum-to-classical ratios of the sums: insertions 0.069 to 0.11 across families, intra moves 0.42 to 1.7, alternative-position moves 0.42 to 1.7. The city cells, which the CLT count made 7 to 19 times worse in the previous table, are now 1.7 (alternative) and 1.7 (intra). Both paradigms are floor-dominated on CMT and city moves whose Var(D) is zero in the sample (0.53 of city intra moves and 0.63 of city alternative moves), so the honest statement is comparable cost at 1e-3 and quantum ahead at 1e-4, not a quantum penalty. At eps = 1e-4 the ratios are 0.0063 to 0.011 (insertions), 0.035 to 0.31 (intra) and 0.034 to 0.5 (alternative).
+Absolute eps = 1e-3 (classical certified). Quantum-to-classical ratios of the sums: insertions 0.069 to 0.11 across families, intra moves 0.42 to 1.7, alternative-position moves 0.42 to 1.7. The city cells, which the CLT count made 7 to 19 times worse in the previous table, are now 1.7 (alternative) and 1.7 (intra). The city ratio is a ratio of two constants of the floor regime, not a property of the problem: a move with no event in the sample costs 2 R (2M + 1) = 5130 applications at eps = 1e-3 (R = 5, M = 256, two estimates), against the classical floor 3 / eps = 3000, and 5130 / 3000 = 1.71. At eps = 1e-4 the same count is 20490 against 30000 (0.68). Floor moves are a large share of city moves (Var(D) = 0 share 0.53 of city intra and 0.63 of city alternative moves), so the city cells mostly measure the floor. The honest statement is comparable cost at 1e-3 (the floor constants set the ratio) and a lower quantum count at 1e-4 in every class and family of this table, not a quantum penalty. At eps = 1e-4 the ratios are 0.0063 to 0.011 (insertions), 0.035 to 0.31 (intra) and 0.034 to 0.5 (alternative).
 
 Within-paradigm CRN gain. Insertions gain little from CRN in the quantum count (Nq/Nq_sa 0.86 on CON) and in the classical count (Nc/Nc_sa 0.77). Signed moves gain a lot in both: quantum Nq/Nq_sa 0.44 and classical Nc/Nc_sa 0.047 on CON intra moves, because the stand-alone variance is much larger than Var(D).
 
-Relative precision (eps = 0.1 p'). Here the classical direct estimator is cheaper on signed moves: Nq/Nc is 3.44 to 7.27 over the signed (intra and alternative-position) cells, so the quantum count is that many times the classical count in these sums (the unit costs differ, see above). The mechanism: a quantum count grows like sqrt(variance)/eps and a classical count like variance/eps^2, so the classical estimator wins when eps is large compared with the standard deviation of the indicators. At eps = 0.1 p' this holds for the signed moves here, while at absolute eps = 1e-4 (where eps is small against those deviations) the quantum count is the lower one. Insertions are the exception in the relative block: Nq/Nc is 0.81 to 2.1 there. The relative cells must be reported next to the absolute ones; the relative signed cells alone would read as a quantum win or loss depending on which one is quoted.
+Relative precision (eps = 0.1 p'). Here the classical direct estimator is cheaper on signed moves: Nq/Nc is 3.44 to 7.27 over the signed (intra and alternative-position) cells, so the quantum count is that many times the classical count in these sums (the unit costs differ, see above). The mechanism: a quantum count grows like sqrt(variance)/eps and a classical count like variance/eps^2, so the classical estimator wins when eps is large compared with the standard deviation of the indicators. Here eps_i = 0.1 p'_i is relative to the stand-alone p'_i of each move, not to E[D]. At eps = 0.1 p' this holds for the signed moves here, while at absolute eps = 1e-4 (where eps is small against those deviations) the quantum count is the lower one. Insertions are the exception in the relative block: Nq/Nc is 0.81 to 2.1 there. Recommendation: the absolute blocks (1e-3 and 1e-4) are the main comparison; the relative block answers a different question (precision relative to p'), and its signed-move ratios favour the classical direct estimator. Quote it only with that label.
 
 ### 3c. Convention for one-sided moves (classes 2-3, absolute eps = 1e-3)
 
@@ -290,66 +290,163 @@ By route length (nearest rule; bands of the route length L, the number of custom
 
 Level rule (a choice, stated as such): median |rel bias| <= 1% and max |rel bias| <= 5% (p >= 0.01). Under this rule the recommended b is 6. The rule is met at b = 6 (median 0.12%, max 3.48%). At b = 5 the median meets the rule (0.59%) but the maximum does not (8.42%; 2 route(s) above 5 %, of length L = 5, 8). The worst relative cases are short routes with few large demands; the relative bias falls with L, while the median absolute bias is larger on the 16-25 band than on the short routes (see the length table). At b = 6 the largest absolute bias is 6.71e-03, so the level error is small in relative terms but not below 1e-3 absolute on every route. Cost of b = 6: 6 qubits per customer and per demand type (12 per customer for delivery and pickup), against 5 (10) at b = 5.
 
-### 4b. Quadrature: Gauss-Hermite nodes against equal-probability factor bins
+### 4b. Quadrature of the copula window probability
 
-Method. The copula window probability P(F_r > Q) is the exact double sum over factor values sum_t sum_s w_t w_s P(F > Q | z_t, z_s), computed without Monte Carlo (batched exact recursion, validated against classical.chance). Two factor grids per copula factor: Gauss-Hermite nodes (GH n, n = 16, 32, 64, 128) and equal-probability bins (EM 2^f, f = 3..7): bin t has probability 1/2^f and node z_t = Phi^-1((t + 1/2) / 2^f), weights 1/2^f (Hadamard-prepared register). Nine routes: the three longest (CMT11X r2, HCMC-100-3 r11, CON3-4 r15) and six of mixed length (two each with L in 3-8, 9-15, 16-25, seeded). Continuous Monte Carlo is the same N = 200000 common scenarios as the rest of M3a. Deviations are measured from the finest equal-probability grid computed for the same route and b (the reference): EM 128 for b = 5 on all nine routes; EM 64 for b = 6 on all nine routes (a 128-point b = 6 pair grid costs about 55 ms per pair, about 15 min per route on one core, and was dropped for time). The reference is not a certified limit: its convergence is shown by the 32 to 64 to 128 sequence at b = 5.
+Method. The window probability P(F_r > Q) is the exact double sum over factor values sum_t sum_s w_t w_s P(F > Q | z_t, z_s), computed by the batched exact recursion (no Monte Carlo inside the quadrature; validated against classical.chance). Three factor grids per copula factor, with the same nine routes as before (three longest, six of mixed length, seeded; base p in (0.05, 0.95) for the mixed ones):
+- GH n: Gauss-Hermite nodes, n = 16, 32, 64, 128.
+- EMm 2^f: equal-probability bins, conditional pmf at the bin midpoint (the Revision 3 grid).
+- EMa 2^f: equal-probability bins, conditional pmf averaged over each bin, P(l | t) = 2^f integral over bin t of P(l | z) phi(z) dz, with 32-point Gauss-Legendre in z per bin (outer bins cut at |z| = 9). The mixture over bins reproduces the marginal level pmf to about 1e-15 (unit test).
+f = 3..7 at b = 5 and f = 3..5 at b = 6 (EMa 64 at b = 6 was not run for all routes: about four times the cost of EMa 32 per route, too slow for the time available). Gauss-Hermite and EMm at b = 6 are as before (up to 64).
+Reference. No grid is the reference. For each route and b the two converging sequences are shown side by side: the largest Gauss-Hermite grid (GH 128 at b = 5, GH 64 at b = 6) and the largest bin-averaged grid (EMa 128 at b = 5, EMa 32 at b = 6). Their disagreement is the quadrature uncertainty indicator. Continuous Monte Carlo is the same N = 200000 common scenarios as the rest of M3a; it contains the level error of Section 4a and is not a quadrature check.
 
-Why Gauss-Hermite fails here. Given the delivery factor z, the conditional overflow indicator is a step in z. Its transition width is about sqrt((1 - rho) / (rho L)) (the spread of the L-term sum given z shrinks relative to the shift of its mean), which is 0.174 at L = 22 and 0.154 at L = 28 (rho = 0.6). Gauss-Hermite nodes in the bulk are spaced pi / sqrt(n): 0.785 at 16 nodes, 0.555 at 32 nodes, 0.393 at 64 nodes, 0.278 at 128 nodes. At 64 nodes the spacing (0.39) is more than twice the transition width, so the step is not resolved, and the quadrature error need not decrease monotonically in n (see Table 4b-1). Equal-probability bins are dense where the mass and the step lie: the central spacing is 2.5066 / 2^f, i.e. 0.313 at 2^3 bins, 0.157 at 2^4 bins, 0.078 at 2^5 bins, 0.039 at 2^6 bins, 0.020 at 2^7 bins. The number of bins across one transition width (about 0.17) is 0.6 at 2^3, 1.1 at 2^4, 2.2 at 2^5, 4.4 at 2^6, 8.9 at 2^7. The tails are coarser, but they carry little mass.
+Table 4b-1, b = 5: absolute probability of each configuration per route (6 decimals; '-' not computed).
 
-Table 4b-1, b = 5: deviation of each grid from the reference (absolute probability; '-' where the configuration was not computed for this route):
+| route | family | L | p_MC (SE) | GH16 | GH32 | GH64 | GH128 | EMa8 | EMa16 | EMa32 | EMa64 | EMa128 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| CMT11X r2 | CMT | 28 | 0.6315 (0.0011) | 0.633211 | 0.633728 | 0.632329 | 0.631561 | 0.632399 | 0.631810 | 0.631623 | 0.631576 | 0.631565 |
+| HCMC-100-3 r11 | city | 27 | 0.4606 (0.0011) | 0.487908 | 0.477270 | 0.473105 | 0.472719 | 0.472520 | 0.472391 | 0.472387 | 0.472408 | 0.472464 |
+| CON3-4 r15 | CON | 22 | 0.6579 (0.0011) | 0.668088 | 0.654097 | 0.653016 | 0.653022 | 0.653887 | 0.653237 | 0.653075 | 0.653035 | 0.653025 |
+| HCMC-400-1 r4 | city | 20 | 0.4616 (0.0011) | 0.480008 | 0.467847 | 0.464316 | 0.464122 | 0.464517 | 0.464209 | 0.464133 | 0.464116 | 0.464113 |
+| HANOI-400-1 r32 | city | 18 | 0.4569 (0.0011) | 0.470010 | 0.457398 | 0.454790 | 0.454713 | 0.454974 | 0.454639 | 0.454557 | 0.454538 | 0.454542 |
+| SCA3-1 r17 | SCA | 15 | 0.0625 (0.0005) | 0.064671 | 0.062362 | 0.062233 | 0.062231 | 0.050870 | 0.068765 | 0.066621 | 0.063481 | 0.062499 |
+| SCA3-7 r7 | SCA | 14 | 0.3860 (0.0011) | 0.378284 | 0.385339 | 0.385576 | 0.385562 | 0.397628 | 0.387147 | 0.385892 | 0.385646 | 0.385583 |
+| SCA8-1 r85 | SCA | 5 | 0.1694 (0.0008) | 0.164626 | 0.164652 | 0.164653 | 0.164653 | 0.168555 | 0.167357 | 0.165762 | 0.165013 | 0.164756 |
+| CON8-7 r67 | CON | 3 | 0.0522 (0.0005) | 0.052857 | 0.052870 | 0.052870 | 0.052870 | 0.050548 | 0.052677 | 0.053002 | 0.053010 | 0.052982 |
 
-| route (instance r, id) | family | L | p_MC (SE) | ref | GH16 - ref | GH32 - ref | GH64 - ref | GH128 - ref | EM8 - ref | EM16 - ref | EM32 - ref | EM64 - ref | EM128 - ref |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| CMT11X r2 | CMT | 28 | 0.6315 (0.0011) | EM128 | +1.65e-03 | +2.17e-03 | +7.68e-04 | -2.68e-08 | -1.58e-04 | -1.45e-08 | +2.50e-09 | +3.00e-10 | +0.00e+00 |
-| HCMC-100-3 r11 | city | 27 | 0.4606 (0.0011) | EM128 | +1.55e-02 | +4.90e-03 | +7.36e-04 | +3.50e-04 | -3.80e-04 | -2.43e-04 | -1.35e-04 | -5.88e-05 | +0.00e+00 |
-| CON3-4 r15 | CON | 22 | 0.6579 (0.0011) | EM128 | +1.51e-02 | +1.08e-03 | -5.75e-06 | -1.27e-07 | +2.48e-05 | +5.64e-06 | +1.12e-06 | +1.93e-07 | +0.00e+00 |
-| HCMC-400-1 r4 | city | 20 | 0.4616 (0.0011) | EM128 | +1.59e-02 | +3.74e-03 | +2.09e-04 | +1.49e-05 | -1.03e-05 | -7.29e-06 | -4.95e-06 | -2.41e-06 | +0.00e+00 |
-| HANOI-400-1 r32 | city | 18 | 0.4569 (0.0011) | EM128 | +1.55e-02 | +2.87e-03 | +2.60e-04 | +1.83e-04 | -2.63e-06 | -3.44e-06 | -2.94e-06 | -2.16e-06 | +0.00e+00 |
-| SCA3-1 r17 | SCA | 15 | 0.0625 (0.0005) | EM128 | +2.42e-03 | +1.09e-04 | -2.04e-05 | -2.20e-05 | -3.81e-02 | -1.01e-02 | -8.48e-04 | +4.79e-05 | +0.00e+00 |
-| SCA3-7 r7 | SCA | 14 | 0.3860 (0.0011) | EM128 | -7.28e-03 | -2.23e-04 | +1.40e-05 | -8.10e-09 | +3.18e-03 | +2.02e-04 | -7.44e-06 | -3.44e-08 | +0.00e+00 |
-| SCA8-1 r85 | SCA | 5 | 0.1694 (0.0008) | EM128 | -1.01e-05 | +1.63e-05 | +1.64e-05 | +1.64e-05 | -1.47e-02 | -3.48e-03 | -6.63e-04 | -9.63e-05 | +0.00e+00 |
-| CON8-7 r67 | CON | 3 | 0.0522 (0.0005) | EM128 | +5.75e-04 | +5.87e-04 | +5.87e-04 | +5.87e-04 | -1.54e-02 | -6.46e-03 | -2.52e-03 | -8.00e-04 | +0.00e+00 |
+Table 4b-2, b = 5: the two converging references side by side and their agreement (absolute probability; difference = GH128 minus EMa128; EMa increments show the convergence rate of the bin-averaged sequence).
 
-Table 4b-1, b = 6: deviation of each grid from the reference (absolute probability; '-' where the configuration was not computed for this route):
+| route | L | GH128 | EMa128 | GH128 - EMa128 | EMa128 - EMa64 | EMa64 - EMa32 |
+|---|---|---|---|---|---|---|
+| CMT11X r2 | 28 | 0.631561 | 0.631565 | -3.92e-06 | -1.17e-05 | -4.68e-05 |
+| HCMC-100-3 r11 | 27 | 0.472719 | 0.472464 | +2.56e-04 | +5.59e-05 | +2.09e-05 |
+| CON3-4 r15 | 22 | 0.653022 | 0.653025 | -3.41e-06 | -1.00e-05 | -4.02e-05 |
+| HCMC-400-1 r4 | 20 | 0.464122 | 0.464113 | +9.42e-06 | -3.25e-06 | -1.75e-05 |
+| HANOI-400-1 r32 | 18 | 0.454713 | 0.454542 | +1.71e-04 | +3.76e-06 | -1.90e-05 |
+| SCA3-1 r17 | 15 | 0.062231 | 0.062499 | -2.68e-04 | -9.82e-04 | -3.14e-03 |
+| SCA3-7 r7 | 14 | 0.385562 | 0.385583 | -2.10e-05 | -6.32e-05 | -2.46e-04 |
+| SCA8-1 r85 | 5 | 0.164653 | 0.164756 | -1.03e-04 | -2.57e-04 | -7.49e-04 |
+| CON8-7 r67 | 3 | 0.052870 | 0.052982 | -1.12e-04 | -2.82e-05 | +7.74e-06 |
 
-| route (instance r, id) | family | L | p_MC (SE) | ref | GH16 - ref | GH32 - ref | GH64 - ref | GH128 - ref | EM8 - ref | EM16 - ref | EM32 - ref | EM64 - ref | EM128 - ref |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| CMT11X r2 | CMT | 28 | 0.6315 (0.0011) | EM64 | +1.54e-03 | +2.13e-03 | +1.05e-03 | - | -2.04e-04 | -2.04e-08 | +2.00e-10 | +0.00e+00 | - |
-| HCMC-100-3 r11 | city | 27 | 0.4606 (0.0011) | EM64 | +2.49e-02 | +7.90e-03 | +1.08e-03 | - | -3.01e-04 | -1.68e-04 | -7.03e-05 | +0.00e+00 | - |
-| CON3-4 r15 | CON | 22 | 0.6579 (0.0011) | EM64 | +1.66e-02 | +1.47e-03 | +4.79e-06 | - | +1.64e-05 | +4.17e-06 | +7.41e-07 | +0.00e+00 | - |
-| HCMC-400-1 r4 | city | 20 | 0.4616 (0.0011) | EM64 | +1.90e-02 | +5.06e-03 | +3.54e-04 | - | -8.44e-06 | -3.85e-06 | -1.97e-06 | +0.00e+00 | - |
-| HANOI-400-1 r32 | city | 18 | 0.4569 (0.0011) | EM64 | +1.55e-02 | +3.04e-03 | +2.68e-04 | - | -4.72e-07 | -1.22e-06 | -7.51e-07 | +0.00e+00 | - |
-| SCA3-1 r17 | SCA | 15 | 0.0625 (0.0005) | EM64 | +2.26e-03 | +7.25e-07 | -1.14e-04 | - | -3.84e-02 | -1.04e-02 | -7.67e-04 | +0.00e+00 | - |
-| SCA3-7 r7 | SCA | 14 | 0.3860 (0.0011) | EM64 | -7.76e-03 | -2.23e-04 | +1.73e-05 | - | +3.50e-03 | +1.67e-04 | -7.47e-06 | +0.00e+00 | - |
-| SCA8-1 r85 | SCA | 5 | 0.1694 (0.0008) | EM64 | +1.05e-04 | +1.17e-04 | +1.17e-04 | - | -1.45e-02 | -3.44e-03 | -5.90e-04 | +0.00e+00 | - |
-| CON8-7 r67 | CON | 3 | 0.0522 (0.0005) | EM64 | +1.38e-03 | +1.39e-03 | +1.39e-03 | - | -1.46e-02 | -5.66e-03 | -1.72e-03 | +0.00e+00 | - |
+Table 4b-1, b = 6: absolute probability of each configuration per route (6 decimals; '-' not computed).
 
-Table 4b-2: summary over the routes of each b (max and median of |deviation| from the reference; routes counted are those where the configuration was computed; the last column is the largest |p(config) - p_MC| over those routes, in units of the Monte Carlo standard error):
+| route | family | L | p_MC (SE) | GH16 | GH32 | GH64 | EMa8 | EMa16 | EMa32 |
+|---|---|---|---|---|---|---|---|---|---|
+| CMT11X r2 | CMT | 28 | 0.6315 (0.0011) | 0.635497 | 0.636087 | 0.635009 | 0.634703 | 0.634197 | 0.634021 |
+| HCMC-100-3 r11 | city | 27 | 0.4606 (0.0011) | 0.481468 | 0.464422 | 0.457609 | 0.456920 | 0.456649 | 0.456609 |
+| CON3-4 r15 | CON | 22 | 0.6579 (0.0011) | 0.676549 | 0.661463 | 0.659993 | 0.660778 | 0.660185 | 0.660037 |
+| HCMC-400-1 r4 | city | 20 | 0.4616 (0.0011) | 0.480903 | 0.466993 | 0.462289 | 0.462333 | 0.462036 | 0.461963 |
+| HANOI-400-1 r32 | city | 18 | 0.4569 (0.0011) | 0.472657 | 0.460178 | 0.457405 | 0.457562 | 0.457243 | 0.457165 |
+| SCA3-1 r17 | SCA | 15 | 0.0625 (0.0005) | 0.065038 | 0.062780 | 0.062665 | 0.051439 | 0.069349 | 0.067243 |
+| SCA3-7 r7 | SCA | 14 | 0.3860 (0.0011) | 0.377596 | 0.385130 | 0.385370 | 0.397566 | 0.386871 | 0.385679 |
+| SCA8-1 r85 | SCA | 5 | 0.1694 (0.0008) | 0.166175 | 0.166186 | 0.166186 | 0.170120 | 0.168898 | 0.167316 |
+| CON8-7 r67 | CON | 3 | 0.0522 (0.0005) | 0.052624 | 0.052636 | 0.052636 | 0.050307 | 0.052445 | 0.052767 |
 
-| b | configuration | routes | max |p - ref| | median |p - ref| | max |p - p_MC| / SE_MC |
-|---|---|---|---|---|---|
-| 5 | GH16 | 9 | 1.590e-02 | 7.279e-03 | 24.50 |
-| 5 | GH32 | 9 | 4.901e-03 | 1.076e-03 | 14.96 |
-| 5 | GH64 | 9 | 7.685e-04 | 2.092e-04 | 11.22 |
-| 5 | GH128 | 9 | 5.875e-04 | 1.637e-05 | 10.87 |
-| 5 | EM8 | 9 | 3.807e-02 | 3.804e-04 | 70.75 |
-| 5 | EM16 | 9 | 1.009e-02 | 2.015e-04 | 19.04 |
-| 5 | EM32 | 9 | 2.518e-03 | 7.440e-06 | 10.44 |
-| 5 | EM64 | 9 | 7.996e-04 | 2.414e-06 | 10.51 |
-| 5 | EM128 | 9 | 0.000e+00 | 0.000e+00 | 10.56 |
-| 6 | GH16 | 9 | 2.494e-02 | 7.757e-03 | 18.72 |
-| 6 | GH32 | 9 | 7.895e-03 | 1.474e-03 | 4.82 |
-| 6 | GH64 | 9 | 1.391e-03 | 2.678e-04 | 3.80 |
-| 6 | EM8 | 9 | 3.838e-02 | 3.014e-04 | 70.35 |
-| 6 | EM16 | 9 | 1.039e-02 | 1.670e-04 | 18.63 |
-| 6 | EM32 | 9 | 1.717e-03 | 7.468e-06 | 5.35 |
-| 6 | EM64 | 9 | 0.000e+00 | 0.000e+00 | 3.94 |
+Table 4b-2, b = 6: the two converging references side by side and their agreement (absolute probability; difference = GH64 minus EMa32; EMa increments show the convergence rate of the bin-averaged sequence).
 
-Rule. The smallest grid whose max |p - ref| over the reference routes is at most 0.0001: equal-probability bins: 2^3 = 8: 3.81e-02, 2^4 = 16: 1.01e-02, 2^5 = 32: 2.52e-03, 2^6 = 64: 8.00e-04; Gauss-Hermite: 16: 1.59e-02, 32: 4.90e-03, 64: 7.68e-04, 128: 5.87e-04. No equal-probability grid up to 2^6 meets the tolerance. No Gauss-Hermite grid up to 128 nodes meets it (the 128-node value is itself compared with the equal-probability reference).
+| route | L | GH64 | EMa32 | GH64 - EMa32 | EMa32 - EMa16 | EMa16 - EMa8 |
+|---|---|---|---|---|---|---|
+| CMT11X r2 | 28 | 0.635009 | 0.634021 | +9.88e-04 | -1.77e-04 | -5.06e-04 |
+| HCMC-100-3 r11 | 27 | 0.457609 | 0.456609 | +1.00e-03 | -4.06e-05 | -2.71e-04 |
+| CON3-4 r15 | 22 | 0.659993 | 0.660037 | -4.41e-05 | -1.48e-04 | -5.93e-04 |
+| HCMC-400-1 r4 | 20 | 0.462289 | 0.461963 | +3.26e-04 | -7.35e-05 | -2.96e-04 |
+| HANOI-400-1 r32 | 18 | 0.457405 | 0.457165 | +2.40e-04 | -7.86e-05 | -3.19e-04 |
+| SCA3-1 r17 | 15 | 0.062665 | 0.067243 | -4.58e-03 | -2.11e-03 | +1.79e-02 |
+| SCA3-7 r7 | 14 | 0.385370 | 0.385679 | -3.09e-04 | -1.19e-03 | -1.07e-02 |
+| SCA8-1 r85 | 5 | 0.166186 | 0.167316 | -1.13e-03 | -1.58e-03 | -1.22e-03 |
+| CON8-7 r67 | 3 | 0.052636 | 0.052767 | -1.31e-04 | +3.22e-04 | +2.14e-03 |
 
-Within-tolerance counts at b = 5 (routes within 0.0001 of the EM 128 reference, of 9): equal-probability bins 2^3: 3, 2^4: 4, 2^5: 5, 2^6: 8; Gauss-Hermite 128 nodes: 6. Recommended factor register: f = 6 (64 equal-probability bins per factor) as the smallest grid that is within tolerance on all but at most one route; the exception is the shortest route (L = 3), where the equal-probability sequence converges slowly (about a factor 0.3 per doubling), so that route needs more bins to meet the tolerance. Gauss-Hermite does not converge to the reference at 128 nodes within the tolerance on the city routes and the shortest route.
+Reading of the two references (b = 5). (i) Short, low-probability routes (CON8-7, SCA8-1, SCA3-1): the Gauss-Hermite sequence is stable from 32 nodes (GH 64 and GH 128 differ by 2e-6 on SCA3-1 and SCA8-1, and agree on CON8-7), while the bin-averaged sequence is not yet stable at 128 bins (EMa 128 minus GH 128 is +1.1e-4 on CON8-7; the EMa increments on SCA3-1 are -3.1e-3 then -9.8e-4). The earlier attribution of the short-route discrepancy to Gauss-Hermite is withdrawn: the Gauss-Hermite values are the converged ones there, and the bin-averaged sequence is the open item. (ii) Long routes (L >= 16): Gauss-Hermite 64 is not converged (GH 64 minus GH 128 is 7.7e-4 on CMT11X and 3.9e-4 on HCMC-100-3), while the bin-averaged grid is within 1e-4 of EMa 128 from 32 to 64 bins. The two references agree within 1e-5 to 1e-4 on CMT11X, CON3-4, HCMC-400-1 and HANOI-400-1, and disagree by 2.6e-4 on HCMC-100-3, which neither grid resolves. (iii) Heuristic, not established by the data: the conditional overflow step has width about sqrt((1 - rho) / (rho L)) (0.17 at L = 22, 0.15 at L = 28 for rho = 0.6), which is narrower than the Gauss-Hermite bulk spacing pi / sqrt(n) at 64 nodes (0.39), so the long-route Gauss-Hermite error is consistent with the step being unresolved; the same argument does not explain the short routes, where the step is wider.
 
-Caveats. (i) Node count of the reference (EM 128) is not certified; the sequence 32 to 64 to 128 gives its convergence. (ii) The tolerance 1e-4 is a choice; the table gives the full deviations. (iii) At b = 6 the reference is EM 64 on every route, so the b = 6 deviations bound convergence only to 64 bins. (iii') The Monte Carlo column of Table 4b-2 compares the quadrature with the continuous model, so it contains the level (discretisation) error of Section 4a and is not a quadrature error. (iv) The factor-grid comparison is for the window probability of a single route; the level error of Section 4a is separate and is not reduced by finer factor grids.
+Recommended bin count for the bin-averaged grid: f = 6 (64 bins) for long routes (L >= 16). On the five long routes, 32 bins are already within 7.7e-5 of EMa 128 (HCMC-100-3, the largest) and 64 bins within 5.6e-5 (HCMC-100-3 again), so f = 5 is the smallest grid that passes the 1e-4 tolerance there, and f = 6 lowers the largest gap; f = 6 is the recommendation for the register. The rule table above reports the smallest bin count within tolerance on all nine routes, which is not reached on the short low-probability routes (SCA3-1 and SCA8-1 are 9.8e-4 and 2.6e-4 from EMa 128 at 64 bins and still moving at 128 bins). For those routes Gauss-Hermite 64 to 128 is the converged rule, and no bin-averaged grid is recommended on the evidence here.\n
+Recommendation of the bin count (b = 5, reference EMa 128, tolerance 0.0001):
+
+| bin count 2^f | max |EMa - EMa128| all 9 routes | short routes (L <= 8) | long routes (L >= 16) |
+|---|---|---|---|
+| 2^3 = 8 | 1.20e-02 | 3.80e-03 | 8.62e-04 |
+| 2^4 = 16 | 6.27e-03 | 2.60e-03 | 2.46e-04 |
+| 2^5 = 32 | 4.12e-03 | 1.01e-03 | 7.68e-05 |
+| 2^6 = 64 | 9.82e-04 | 2.57e-04 | 5.59e-05 |
+| 2^7 = 128 | 0.00e+00 | 0.00e+00 | 0.00e+00 |
+
+Largest gap between the two references at b = 5 (GH 128 and EMa 128) over the nine routes: 2.68e-04. Within 0.0001 of EMa 128 on all nine routes, the smallest bin count is 2^7 = 128, but 2^7 is the reference itself, so this is not a convergence check: on the short low-probability routes the 2^6 deviation is 2.6e-4 and EMa 128 is still moving, so no bin count up to 2^6 is shown to meet the tolerance there.
+
+### 4c. Factor-grid error on the CRN quantities P(D = +1), P(D = -1)
+
+Method. For three routes (short, medium, long) and 6 intra and 6 alternative-position moves each (seeded, among moves with P(D != 0) > 0.001 in the continuous MC), P(D = +1) and P(D = -1) are computed in the discrete copula model at b = 5 on the grids EMa 8..64 and GH 64 and 128. The exact identity P(D = +1) = sum_ts w_t w_s P(D = +1 | t, s) holds on the discrete model, but no exact conditional computation of the joint of two routes is available in reasonable time, so each factor pair (t, s) is a conditional Monte Carlo with K = 4000 common draws (customers independent given the pair, pmfs of the discrete model). Both routes of a pair use the same draws. The standard error of each grid sum is written in Table 4c-2. The per-pair budget is K = 4000, not the 2e5 of the scenario MC, because the grids contain up to 16384 pairs per route. Per draw, P(D = +1) - P(D = -1) = P(F_b > Q) - P(F_a > Q) exactly, and the tail p_base of each base route is checked against the exact DP (chance_copula) in Table 4c-1.
+
+Table 4c-1: per route and grid, the largest |deviation| over the 12 moves of P(D = +1) and P(D = -1), against the two converging references GH 128 and EMa 64 (the largest bin-averaged grid computed for every route); the base tail is the exact DP minus the conditional MC, in units of its standard error.
+
+| route | role | L | grid | max |dP(D=+1)| vs GH128 | max |dP(D=-1)| vs GH128 | max |dP(D=+1)| vs EMa64 | max |dP(D=-1)| vs EMa64 | median SE of P(D=+1) | base p exact - MC (SE units) |
+|---|---|---|---|---|---|---|---|---|---|
+| CON8-7 r67 | short | 3 | EMa8 | 1.15e-03 | 7.99e-04 | 7.88e-04 | 5.82e-04 | 7.9e-05 | +0.25 |
+| CON8-7 r67 | short | 3 | EMa16 | 6.86e-04 | 7.15e-04 | 3.23e-04 | 3.62e-04 | 3.8e-05 | +0.07 |
+| CON8-7 r67 | short | 3 | EMa32 | 4.01e-04 | 3.49e-04 | 4.68e-05 | 7.92e-05 | 1.9e-05 | -0.02 |
+| CON8-7 r67 | short | 3 | EMa64 | 3.63e-04 | 3.52e-04 | 0.00e+00 | 0.00e+00 | 9.3e-06 | -0.00 |
+| CON8-7 r67 | short | 3 | GH64 | 4.64e-04 | 7.89e-04 | 3.26e-04 | 4.37e-04 | 6.0e-05 | -0.00 |
+| CON8-7 r67 | short | 3 | GH128 | 0.00e+00 | 0.00e+00 | 3.63e-04 | 3.52e-04 | 4.3e-05 | +0.02 |
+| SCA3-7 r7 | medium | 14 | EMa8 | 2.18e-03 | 4.97e-04 | 1.85e-03 | 4.78e-04 | 5.0e-05 | +0.15 |
+| SCA3-7 r7 | medium | 14 | EMa16 | 5.01e-04 | 1.05e-04 | 1.70e-04 | 1.10e-04 | 2.4e-05 | +0.02 |
+| SCA3-7 r7 | medium | 14 | EMa32 | 3.56e-04 | 9.56e-05 | 3.17e-05 | 5.58e-05 | 1.2e-05 | -0.01 |
+| SCA3-7 r7 | medium | 14 | EMa64 | 3.31e-04 | 1.20e-04 | 0.00e+00 | 0.00e+00 | 6.1e-06 | +0.00 |
+| SCA3-7 r7 | medium | 14 | GH64 | 3.28e-04 | 2.85e-04 | 3.58e-04 | 4.05e-04 | 5.3e-05 | -0.02 |
+| SCA3-7 r7 | medium | 14 | GH128 | 0.00e+00 | 0.00e+00 | 3.31e-04 | 1.20e-04 | 3.7e-05 | +0.00 |
+| CMT11X r2 | long | 28 | EMa8 | 1.96e-04 | 1.44e-04 | 8.53e-05 | 1.20e-04 | 3.8e-05 | -0.05 |
+| CMT11X r2 | long | 28 | EMa16 | 1.40e-04 | 2.21e-04 | 1.28e-04 | 9.42e-05 | 2.0e-05 | -0.01 |
+| CMT11X r2 | long | 28 | EMa32 | 1.34e-04 | 1.90e-04 | 6.39e-05 | 9.56e-05 | 9.9e-06 | -0.01 |
+| CMT11X r2 | long | 28 | EMa64 | 1.77e-04 | 1.54e-04 | 0.00e+00 | 0.00e+00 | 4.9e-06 | -0.00 |
+| CMT11X r2 | long | 28 | GH64 | 2.43e-04 | 1.31e-04 | 2.76e-04 | 1.79e-04 | 4.3e-05 | -0.06 |
+| CMT11X r2 | long | 28 | GH128 | 0.00e+00 | 0.00e+00 | 1.77e-04 | 1.54e-04 | 3.3e-05 | -0.09 |
+
+Table 4c-2: per move, P(D = +1) and P(D = -1) on each grid (6 decimals; standard error of the largest grid in brackets; the continuous MC of M3a for the same move in the last column, P(D=+1) / P(D=-1)).
+
+Route short: CON8-7 r67 (L = 3).
+
+| move | class | kind | +1 EMa8 | +1 EMa16 | +1 EMa32 | +1 EMa64 | +1 GH64 | +1 GH128 | -1 EMa8 | -1 EMa16 | -1 EMa32 | -1 EMa64 | -1 GH64 | -1 GH128 | continuous MC +1 / -1 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 2 | relocate | 0.004020 | 0.003680 | 0.003553 | 0.003544 | 0.003572 | 0.003623 | 0.000078 | 0.000038 | 0.000031 | 0.000030 | 0.000032 | 0.000032 | 0.003695 / 0.000010 |
+| 2 | 2 | relocate | 0.005254 | 0.004845 | 0.004635 | 0.004589 | 0.004614 | 0.004654 | 0.000707 | 0.000609 | 0.000572 | 0.000548 | 0.000489 | 0.000553 | 0.004510 / 0.000455 |
+| 3 | 2 | swap | 0.001820 | 0.001654 | 0.001557 | 0.001519 | 0.001498 | 0.001484 | 0.000949 | 0.000854 | 0.000822 | 0.000787 | 0.000720 | 0.000772 | 0.001165 / 0.000695 |
+| 4 | 2 | relocate | 0.000758 | 0.000632 | 0.000535 | 0.000514 | 0.000507 | 0.000510 | 0.000945 | 0.000858 | 0.000831 | 0.000797 | 0.000726 | 0.000780 | 0.000360 / 0.000695 |
+| 5 | 3 | alt-position | 0.000145 | 0.000118 | 0.000119 | 0.000123 | 0.000138 | 0.000145 | 0.024094 | 0.024178 | 0.024544 | 0.024540 | 0.024103 | 0.024892 | 0.000110 / 0.025255 |
+| 6 | 3 | alt-position | 0.000809 | 0.000734 | 0.000664 | 0.000676 | 0.000696 | 0.000676 | 0.012918 | 0.012438 | 0.012444 | 0.012523 | 0.012396 | 0.012567 | 0.000705 / 0.012520 |
+| 7 | 3 | alt-position | 0.028645 | 0.029109 | 0.029394 | 0.029432 | 0.029331 | 0.029795 | 0.000035 | 0.000032 | 0.000030 | 0.000030 | 0.000023 | 0.000028 | 0.029900 / 0.000050 |
+| 8 | 3 | alt-position | 0.000855 | 0.000859 | 0.000734 | 0.000700 | 0.000718 | 0.000676 | 0.002703 | 0.002293 | 0.002123 | 0.002121 | 0.002224 | 0.002044 | 0.000685 / 0.002265 |
+| 9 | 3 | alt-position | 0.007402 | 0.007396 | 0.007468 | 0.007470 | 0.007144 | 0.007534 | 0.000285 | 0.000167 | 0.000180 | 0.000187 | 0.000168 | 0.000191 | 0.007580 / 0.000165 |
+| 10 | 3 | alt-position | 0.001473 | 0.001427 | 0.001368 | 0.001370 | 0.001355 | 0.001432 | 0.000840 | 0.000889 | 0.000910 | 0.000899 | 0.000882 | 0.000860 | 0.001485 / 0.000895 |
+
+Route medium: SCA3-7 r7 (L = 14).
+
+| move | class | kind | +1 EMa8 | +1 EMa16 | +1 EMa32 | +1 EMa64 | +1 GH64 | +1 GH128 | -1 EMa8 | -1 EMa16 | -1 EMa32 | -1 EMa64 | -1 GH64 | -1 GH128 | continuous MC +1 / -1 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 2 | swap | 0.001066 | 0.001342 | 0.001393 | 0.001388 | 0.001459 | 0.001482 | 0.000645 | 0.000758 | 0.000812 | 0.000803 | 0.000747 | 0.000835 | 0.001205 / 0.000645 |
+| 2 | 2 | relocate | 0.000207 | 0.000271 | 0.000250 | 0.000247 | 0.000260 | 0.000295 | 0.001277 | 0.001396 | 0.001496 | 0.001441 | 0.001361 | 0.001497 | 0.000140 / 0.001025 |
+| 3 | 2 | relocate | 0.016797 | 0.018478 | 0.018623 | 0.018648 | 0.018735 | 0.018979 | 0.000000 | 0.000002 | 0.000002 | 0.000002 | 0.000003 | 0.000000 | 0.017730 / 0.000005 |
+| 4 | 2 | 2opt | 0.000168 | 0.000176 | 0.000192 | 0.000169 | 0.000165 | 0.000194 | 0.001840 | 0.002256 | 0.002329 | 0.002318 | 0.002242 | 0.002337 | 0.000170 / 0.002250 |
+| 5 | 2 | 2opt | 0.000188 | 0.000240 | 0.000229 | 0.000231 | 0.000206 | 0.000268 | 0.001465 | 0.001787 | 0.001814 | 0.001783 | 0.001722 | 0.001809 | 0.000145 / 0.001760 |
+| 6 | 2 | 2opt | 0.000324 | 0.000425 | 0.000428 | 0.000424 | 0.000429 | 0.000445 | 0.001746 | 0.002007 | 0.002051 | 0.001995 | 0.001958 | 0.002095 | 0.000320 / 0.001910 |
+| 7 | 3 | alt-position | 0.000363 | 0.000288 | 0.000298 | 0.000291 | 0.000258 | 0.000254 | 0.001145 | 0.001222 | 0.001288 | 0.001273 | 0.001180 | 0.001327 | 0.000305 / 0.001265 |
+| 8 | 3 | alt-position | 0.003441 | 0.003440 | 0.003507 | 0.003476 | 0.003366 | 0.003588 | 0.005055 | 0.005057 | 0.005082 | 0.005036 | 0.004988 | 0.004995 | 0.003490 / 0.005015 |
+| 9 | 3 | alt-position | 0.000805 | 0.000698 | 0.000715 | 0.000713 | 0.000707 | 0.000688 | 0.014184 | 0.013767 | 0.013828 | 0.013860 | 0.013456 | 0.013741 | 0.000565 / 0.014130 |
+| 10 | 3 | alt-position | 0.007164 | 0.007026 | 0.007151 | 0.007171 | 0.007299 | 0.007032 | 0.001098 | 0.001016 | 0.001044 | 0.001009 | 0.001064 | 0.001116 | 0.006955 / 0.000990 |
+| 11 | 3 | alt-position | 0.002941 | 0.002870 | 0.002885 | 0.002859 | 0.002501 | 0.002830 | 0.000191 | 0.000155 | 0.000149 | 0.000153 | 0.000132 | 0.000126 | 0.003175 / 0.000165 |
+| 12 | 3 | alt-position | 0.000484 | 0.000508 | 0.000515 | 0.000518 | 0.000548 | 0.000504 | 0.002957 | 0.003249 | 0.003163 | 0.003139 | 0.003250 | 0.003259 | 0.000520 / 0.003320 |
+
+Route long: CMT11X r2 (L = 28).
+
+| move | class | kind | +1 EMa8 | +1 EMa16 | +1 EMa32 | +1 EMa64 | +1 GH64 | +1 GH128 | -1 EMa8 | -1 EMa16 | -1 EMa32 | -1 EMa64 | -1 GH64 | -1 GH128 | continuous MC +1 / -1 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 2 | 2opt | 0.003387 | 0.003362 | 0.003444 | 0.003425 | 0.003149 | 0.003393 | 0.002445 | 0.002403 | 0.002379 | 0.002390 | 0.002434 | 0.002420 | 0.003275 / 0.002145 |
+| 2 | 2 | swap | 0.002418 | 0.002299 | 0.002406 | 0.002427 | 0.002235 | 0.002357 | 0.000246 | 0.000252 | 0.000256 | 0.000262 | 0.000271 | 0.000312 | 0.002030 / 0.000205 |
+| 3 | 2 | swap | 0.000008 | 0.000008 | 0.000013 | 0.000013 | 0.000010 | 0.000011 | 0.002699 | 0.002822 | 0.002769 | 0.002794 | 0.002615 | 0.002745 | 0.000000 / 0.002595 |
+| 4 | 2 | relocate | 0.000707 | 0.000770 | 0.000776 | 0.000752 | 0.000717 | 0.000832 | 0.000734 | 0.000778 | 0.000734 | 0.000726 | 0.000754 | 0.000799 | 0.000815 / 0.000740 |
+| 5 | 2 | relocate | 0.004684 | 0.004605 | 0.004642 | 0.004706 | 0.004443 | 0.004639 | 0.000000 | 0.000001 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.004460 / 0.000000 |
+| 6 | 2 | relocate | 0.002969 | 0.002793 | 0.002820 | 0.002883 | 0.002836 | 0.002773 | 0.000000 | 0.000001 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.002755 / 0.000000 |
+| 7 | 3 | alt-position | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.006582 | 0.006781 | 0.006606 | 0.006702 | 0.006606 | 0.006642 | 0.000000 / 0.005910 |
+| 8 | 3 | alt-position | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.001363 | 0.001428 | 0.001354 | 0.001387 | 0.001277 | 0.001353 | 0.000000 / 0.001325 |
+| 9 | 3 | alt-position | 0.000000 | 0.000003 | 0.000002 | 0.000002 | 0.000000 | 0.000000 | 0.004332 | 0.004479 | 0.004449 | 0.004413 | 0.004312 | 0.004259 | 0.000000 / 0.004305 |
+| 10 | 3 | alt-position | 0.002445 | 0.002426 | 0.002420 | 0.002463 | 0.002409 | 0.002286 | 0.000043 | 0.000041 | 0.000042 | 0.000037 | 0.000039 | 0.000052 | 0.002670 / 0.000045 |
+| 11 | 3 | alt-position | 0.000148 | 0.000156 | 0.000153 | 0.000151 | 0.000141 | 0.000170 | 0.001316 | 0.001388 | 0.001375 | 0.001368 | 0.001305 | 0.001337 | 0.000115 / 0.001220 |
+| 12 | 3 | alt-position | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.008824 | 0.008986 | 0.008866 | 0.008892 | 0.009036 | 0.008968 | 0.000000 / 0.008660 |
 
 ## 5. Alternative-position moves by position distance
 

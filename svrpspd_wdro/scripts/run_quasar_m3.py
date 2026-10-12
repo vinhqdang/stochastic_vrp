@@ -62,6 +62,7 @@ from quantum.experiments import (  # noqa: E402
     chance_copula,
     class_costs_array,
     copula_demand,
+    crn_factor_grid,
     end_load_violations,
     gate_distance,
     insertion_candidates,
@@ -852,7 +853,9 @@ GH_TOL = 1e-4                  # rule: max |p(n) - p_ref| over the routes <= GH_
 GH_DIR = OUT_DIR / "m3a_v3_gh_parts"
 GH_CSV = OUT_DIR / "m3a_v3_gh.csv"
 GH_COST_B6 = 7                 # b = 6 pair cost relative to b = 5 (measured)
-GH_CFG_ORDER = ("GH16", "GH32", "GH64", "GH128", "EM8", "EM16", "EM32", "EM64", "EM128")
+GH_EMAVG_MAX_B6 = 32       # bin-averaged grids at b = 6 up to 32 bins (64 bins: too slow for all routes)
+GH_CFG_ORDER = ("GH16", "GH32", "GH64", "GH128", "EMm8", "EMm16", "EMm32", "EMm64", "EMm128",
+                "EMa8", "EMa16", "EMa32", "EMa64", "EMa128")
 
 
 def _gh_selection(routes: pd.DataFrame, seed: int = GH_SEED) -> list[dict]:
@@ -880,11 +883,14 @@ def _gh_selection(routes: pd.DataFrame, seed: int = GH_SEED) -> list[dict]:
 
 
 def _gh_configs(b: int) -> list[tuple[str, int]]:
-    """(grid, points) for one b: 128 points at b = 5; up to 64 points at b = 6 (a 128-point
-    b = 6 pair grid was measured at about 55 ms per pair, too slow for the time available)."""
-    out = [("gh", n) for n in GH_NODES] + [("em", 2 ** f) for f in GH_EM_F]
+    """(grid, points) for one b: 128 points at b = 5; up to 64 points at b = 6 (a 128-bin
+    b = 6 pair grid was too slow for the time available). Grids: "gh" Gauss-Hermite nodes,
+    "em" equal-probability bins with midpoint pmfs, "em_avg" equal-probability bins with
+    bin-averaged pmfs (Revision 3b)."""
+    out = ([("gh", n) for n in GH_NODES] + [("em", 2 ** f) for f in GH_EM_F]
+           + [("em_avg", 2 ** f) for f in GH_EM_F])
     if b == 6:
-        out = [c for c in out if c[1] <= 64]
+        out = [c for c in out if c[1] <= 64 and (c[0] != "em_avg" or c[1] <= GH_EMAVG_MAX_B6)]
     return out
 
 
@@ -901,7 +907,7 @@ def _work_gh(task: tuple) -> dict:
     p_disc = chance_copula(route, cd)
     row = {"instance": inst, "family": fam, "route_id": int(rid), "L": int(L), "long": bool(long_route),
            "b": int(b), "grid": grid, "points": int(points),
-           "f": int(round(math.log2(points))) if grid == "em" else None,
+           "f": int(round(math.log2(points))) if grid.startswith("em") else None,
            "p_disc": float(p_disc), "p_mc": float(p_mc), "mc_se": float(mc_se),
            "K": int(cd.Q_level), "unit": float(cd.unit), "seconds": time.time() - t0}
     Path(out_path).write_text(json.dumps(row))
@@ -920,9 +926,17 @@ def run_part_gh(args) -> None:
         plan = json.loads(plan_path.read_text())
         route = [int(c) for c in routes[(routes["instance"] == inst) & (routes["route_id"] == rid)]["route"]
                  .iloc[0].split()]
-        dsc, psc = draw_scenarios(plan, N, DEFAULT_RHO, SCEN_SEED)
-        p_mc = float(route_peak_flags(route, dsc, psc, float(plan["Q"])).mean())
-        mc_se = math.sqrt(max(p_mc * (1 - p_mc), 0.0) / N)
+        # The Monte Carlo reference (same N and seed for every grid) is stored in each cached task file;
+        # read it from there when a file exists, so that the scenario draws are not repeated.
+        cached = [_gh_task_file(inst, rid, b0, g0, p0) for b0 in GH_B for g0, p0 in _gh_configs(b0)]
+        cached = [f for f in cached if f.exists()]
+        if cached:
+            prev = json.loads(cached[0].read_text())
+            p_mc, mc_se = float(prev["p_mc"]), float(prev["mc_se"])
+        else:
+            dsc, psc = draw_scenarios(plan, N, DEFAULT_RHO, SCEN_SEED)
+            p_mc = float(route_peak_flags(route, dsc, psc, float(plan["Q"])).mean())
+            mc_se = math.sqrt(max(p_mc * (1 - p_mc), 0.0) / N)
         for b in GH_B:
             for grid, points in _gh_configs(b):
                 out_path = _gh_task_file(inst, rid, b, grid, points)
@@ -953,6 +967,161 @@ def write_outputs_gh(sel: list[dict]) -> None:
     df = pd.DataFrame(rows)
     df.to_csv(GH_CSV, index=False, float_format="%.10g")
     log(f"wrote m3a_v3_gh.csv: {len(df)} rows")
+
+
+# ------------------------------------------------------------ v3crn: CRN on the factor grid
+
+# Revision 3b: the window probabilities of the CRN quantities P(D = +1), P(D = -1) on the
+# discrete copula model, for a short, a medium and a long route, 6 intra and 6 alternative-
+# position moves each (seeded, among moves with P(D != 0) > 1e-3 in the continuous MC),
+# under the bin-averaged grids (2^f, f = 3..6) and Gauss-Hermite 64 and 128 nodes. Each factor
+# pair is a conditional Monte Carlo with CRN_K draws (see crn_factor_grid); the standard error
+# of each grid sum is written next to it. One JSON per (route, grid) under m3a_v3_crn_parts/.
+
+CRN_DIR = OUT_DIR / "m3a_v3_crn_parts"
+CRN_CSV = OUT_DIR / "m3a_v3_crn.csv"
+CRN_B = 5
+CRN_K = 4000                       # scenarios per factor pair
+CRN_SEED = 11
+CRN_PER_CLASS = 6
+CRN_MIN_NONZERO = 1e-3
+CRN_GRIDS = (("em_avg", 8), ("em_avg", 16), ("em_avg", 32), ("em_avg", 64), ("gh", 64), ("gh", 128))
+CRN_COST = {"em_avg": 1.0, "gh": 1.0}
+
+
+def _insert_seq(seq: list[int], j: int, pos: int) -> list[int]:
+    return seq[: pos - 1] + [int(j)] + seq[pos - 1:]
+
+
+def _crn_routes(routes: pd.DataFrame) -> list[dict]:
+    """Short (smallest L of the nine-route selection), medium (9 <= L <= 15), long (largest L)."""
+    sel = _gh_selection(routes, GH_SEED)
+    short = min(sel, key=lambda r: routes_L(routes, r))
+    long_ = max(sel, key=lambda r: routes_L(routes, r))
+    med = [r for r in sel if 9 <= routes_L(routes, r) <= 15]
+    out = []
+    for role, r in (("short", short), ("medium", med[0] if med else None), ("long", long_)):
+        if r is None:
+            continue
+        row = routes[(routes["instance"] == r["instance"]) & (routes["route_id"] == r["route_id"])].iloc[0]
+        out.append({"role": role, "instance": r["instance"], "route_id": int(r["route_id"]),
+                    "family": r["family"], "L": int(row["L"]),
+                    "route": [int(c) for c in str(row["route"]).split()]})
+    return out
+
+
+def routes_L(routes: pd.DataFrame, r: dict) -> int:
+    return int(routes[(routes["instance"] == r["instance"]) & (routes["route_id"] == r["route_id"])]["L"].iloc[0])
+
+
+def _crn_moves(mv: pd.DataFrame, rt: dict) -> list[dict]:
+    """6 intra and 6 alternative-position moves of one route, seeded, with P(D != 0) > CRN_MIN_NONZERO."""
+    rows = mv[(mv["instance"] == rt["instance"]) & (mv["route_id"] == rt["route_id"])]
+    key = rt["route"]
+    out: list[dict] = []
+    for cls in (2, 3):
+        sub = rows[(rows["cls"] == cls) & ((rows["P_D1"] + rows["P_Dm1"]) > CRN_MIN_NONZERO)]
+        sub = sub.sort_values(["j", "pos", "pos2", "kind"]).reset_index(drop=True)
+        n_el = len(sub)
+        rng = np.random.default_rng([CRN_SEED, rt["route_id"], cls, rt["L"]])
+        pick = sorted(rng.choice(n_el, size=min(CRN_PER_CLASS, n_el), replace=False)) if n_el else []
+        for i in pick:
+            r = sub.iloc[int(i)]
+            if cls == 2:
+                a = key
+                b = reconstruct_intra(key, str(r["kind"]), int(r["pos"]), int(r["pos2"]))
+                j = -1
+            else:
+                j = int(r["j"])
+                a = _insert_seq(key, j, int(r["pos"]))
+                b = _insert_seq(key, j, int(r["pos2"]))
+            out.append({"cls": cls, "kind": str(r["kind"]), "j": j, "pos": int(r["pos"]), "pos2": int(r["pos2"]),
+                        "a": [int(c) for c in a], "b": [int(c) for c in b], "n_eligible": n_el,
+                        "P_D1_cont": float(r["P_D1"]), "P_Dm1_cont": float(r["P_Dm1"])})
+    return out
+
+
+def _crn_task_file(rt: dict, grid: str, points: int) -> Path:
+    return CRN_DIR / f"{rt['instance']}_r{rt['route_id']}_{grid}{points}.json"
+
+
+def _work_crn(task: tuple) -> dict:
+    plan_path, rt, moves, grid, points, out_path = task
+    plan = json.loads(Path(plan_path).read_text())
+    t0 = time.time()
+    cd = copula_demand(plan, CRN_B, DEFAULT_RHO, points, DEFAULT_CV, "nearest", grid)
+    p_exact = float(chance_copula(rt["route"], cd))
+    pairs = [(rt["route"], rt["route"])] + [(m["a"], m["b"]) for m in moves]
+    seed = int(np.random.default_rng([CRN_SEED, rt["route_id"], len(rt["route"])]).integers(2**31))
+    res = crn_factor_grid(pairs, cd, CRN_K, seed)
+    row = {"role": rt["role"], "instance": rt["instance"], "route_id": rt["route_id"], "L": rt["L"],
+           "family": rt["family"], "grid": grid, "points": int(points), "K": int(cd.Q_level),
+           "p_base_exact": p_exact, "p_base_mc": float(res["p_a"][0]), "p_base_se": float(np.sqrt(
+               max(res["p_a"][0] * (1 - res["p_a"][0]), 0.0) / CRN_K)),
+           "moves": [], "seconds": time.time() - t0}
+    for k, m in enumerate(moves, start=1):
+        row["moves"].append({**{x: m[x] for x in ("cls", "kind", "j", "pos", "pos2", "n_eligible",
+                                                  "P_D1_cont", "P_Dm1_cont")},
+                             "P_D1": float(res["P_D1"][k]), "se_D1": float(res["se_D1"][k]),
+                             "P_Dm1": float(res["P_Dm1"][k]), "se_Dm1": float(res["se_Dm1"][k]),
+                             "p_a": float(res["p_a"][k]), "p_b": float(res["p_b"][k])})
+    Path(out_path).write_text(json.dumps(row))
+    return row
+
+
+def run_part_crn(args) -> None:
+    routes = pd.read_csv(OUT_DIR / "m3a_v2_routes.csv")
+    mv = pd.read_csv(OUT_DIR / "m3a_v2_moves.csv.gz")
+    CRN_DIR.mkdir(parents=True, exist_ok=True)
+    rts = _crn_routes(routes)
+    tasks = []
+    for rt in rts:
+        moves = _crn_moves(mv, rt)
+        rt["moves_n"] = len(moves)
+        plan_path = PLANS_DIR / f"{rt['instance']}.json"
+        for grid, points in CRN_GRIDS:
+            out_path = _crn_task_file(rt, grid, points)
+            if args.force or not out_path.exists():
+                tasks.append((str(plan_path), rt, moves, grid, points, str(out_path)))
+        log(f"v3crn route {rt['role']}: {rt['instance']} r{rt['route_id']} L={rt['L']} "
+            f"moves={len(moves)} (eligible per class: "
+            + ", ".join(str(sorted({m['n_eligible'] for m in moves if m['cls'] == c})) for c in (2, 3)) + ")")
+    tasks.sort(key=lambda t: -t[4] ** 2)
+    log(f"v3crn: {len(tasks)} tasks (K = {CRN_K} per factor pair, workers = {args.workers})")
+    t0 = time.time()
+    if tasks:
+        ctx = mp.get_context("fork")
+        with ctx.Pool(args.workers) as pool:
+            for k, row in enumerate(pool.imap_unordered(_work_crn, tasks), 1):
+                log(f"  v3crn [{k}/{len(tasks)}] {row['instance']} r{row['route_id']} "
+                    f"{row['grid']}{row['points']}: p_base exact {row['p_base_exact']:.6f} "
+                    f"MC {row['p_base_mc']:.6f} ({row['seconds']:.1f} s)")
+    log(f"v3crn compute finished in {time.time() - t0:.1f} s; aggregating")
+    write_outputs_crn(rts, mv)
+
+
+def write_outputs_crn(rts: list[dict], mv: pd.DataFrame) -> None:
+    rows = []
+    for rt in rts:
+        moves = _crn_moves(mv, rt)
+        for grid, points in CRN_GRIDS:
+            f = _crn_task_file(rt, grid, points)
+            if not f.exists():
+                continue
+            d = json.loads(f.read_text())
+            # the pair (route, route) carries no move: its D is 0 and p_base_* is the base tail
+            for k, m in enumerate(d["moves"]):
+                rows.append({"role": rt["role"], "instance": rt["instance"], "route_id": rt["route_id"],
+                             "L": rt["L"], "family": rt["family"], "move_no": k + 1, "cls": m["cls"],
+                             "kind": m["kind"], "j": m["j"], "pos": m["pos"], "pos2": m["pos2"],
+                             "grid": grid, "points": points, "p_base_exact": d["p_base_exact"],
+                             "p_base_mc": d["p_base_mc"], "p_base_se": d["p_base_se"],
+                             "P_D1": m["P_D1"], "se_D1": m["se_D1"], "P_Dm1": m["P_Dm1"],
+                             "se_Dm1": m["se_Dm1"], "P_D1_cont": m["P_D1_cont"], "P_Dm1_cont": m["P_Dm1_cont"],
+                             "p_a": m["p_a"], "p_b": m["p_b"]})
+    df = pd.DataFrame(rows)
+    df.to_csv(CRN_CSV, index=False, float_format="%.10g")
+    log(f"wrote m3a_v3_crn.csv: {len(df)} rows")
 
 
 # ------------------------------------------------------------ v3 summary
@@ -1096,16 +1265,195 @@ def _one_sided_rows(band: pd.DataFrame, eps: float, N: int) -> list[list]:
     return rows
 
 
-def _gh_summary(gh: pd.DataFrame) -> dict:
-    """Per (route, b): reference = the finest equal-mass grid computed for that route and b."""
-    gh = gh.copy()
-    gh["cfg"] = [("GH" if g == "gh" else "EM") + str(int(p)) for g, p in zip(gh["grid"], gh["points"])]
-    out = {"gh": gh, "refs": {}}
-    for (inst, rid, b), s in gh.groupby(["instance", "route_id", "b"]):
-        em = s[s["grid"] == "em"]
-        ref = em.sort_values("points").iloc[-1]
-        out["refs"][(inst, rid, b)] = (ref["cfg"], float(ref["p_disc"]), float(ref["p_mc"]), float(ref["mc_se"]))
-    return out
+def _cfg_label(grid: str, points) -> str:
+    """GH16 (Gauss-Hermite), EMm8 (equal-probability bins, midpoint pmfs), EMa8 (bin-averaged pmfs)."""
+    prefix = {"gh": "GH", "em": "EMm", "em_avg": "EMa"}[grid]
+    return f"{prefix}{int(points)}"
+
+
+def _section_4b(gh: pd.DataFrame) -> list[str]:
+    gh = gh.assign(cfg=[_cfg_label(g, p) for g, p in zip(gh["grid"], gh["points"])])
+    L: list[str] = []
+    A = L.append
+    A("### 4b. Quadrature of the copula window probability\n")
+    A("Method. The window probability P(F_r > Q) is the exact double sum over factor values "
+      "sum_t sum_s w_t w_s P(F > Q | z_t, z_s), computed by the batched exact recursion (no Monte Carlo inside the "
+      "quadrature; validated against classical.chance). Three factor grids per copula factor, with the same nine routes "
+      "as before (three longest, six of mixed length, seeded; base p in (0.05, 0.95) for the mixed ones):\n"
+      "- GH n: Gauss-Hermite nodes, n = 16, 32, 64, 128.\n"
+      "- EMm 2^f: equal-probability bins, conditional pmf at the bin midpoint (the Revision 3 grid).\n"
+      "- EMa 2^f: equal-probability bins, conditional pmf averaged over each bin, P(l | t) = 2^f integral over bin t of "
+      "P(l | z) phi(z) dz, with 32-point Gauss-Legendre in z per bin (outer bins cut at |z| = 9). The mixture over bins "
+      "reproduces the marginal level pmf to about 1e-15 (unit test).\n"
+      "f = 3..7 at b = 5 and f = 3..5 at b = 6 (EMa 64 at b = 6 was not run for all routes: about four times the cost of "
+      "EMa 32 per route, too slow for the time available). Gauss-Hermite and EMm at b = 6 are as before (up to 64).\n"
+      "Reference. No grid is the reference. For each route and b the two converging sequences are shown side by side: "
+      "the largest Gauss-Hermite grid (GH 128 at b = 5, GH 64 at b = 6) and the largest bin-averaged grid (EMa 128 at "
+      "b = 5, EMa 32 at b = 6). Their disagreement is the quadrature uncertainty indicator. Continuous Monte Carlo is "
+      "the same N = 200000 common scenarios as the rest of M3a; it contains the level error of Section 4a and is not a "
+      "quadrature check.\n")
+    cfg5 = ("GH16", "GH32", "GH64", "GH128", "EMa8", "EMa16", "EMa32", "EMa64", "EMa128")
+    cfg6 = ("GH16", "GH32", "GH64", "EMa8", "EMa16", "EMa32")
+    for b, cfgs, ghmax, emmax in ((5, cfg5, "GH128", "EMa128"), (6, cfg6, "GH64", "EMa32")):
+        sub = gh[gh["b"] == b]
+        A(f"Table 4b-1, b = {b}: absolute probability of each configuration per route (6 decimals; '-' not computed).\n")
+        head = ["route", "family", "L", "p_MC (SE)"] + list(cfgs)
+        rows = []
+        for (inst_n, rid), s in sorted(sub.groupby(["instance", "route_id"]), key=lambda kv: -int(kv[1].iloc[0]["L"])):
+            r0 = s.iloc[0]
+            cells = []
+            for cfg in cfgs:
+                m = s[s["cfg"] == cfg]
+                cells.append(f"{float(m['p_disc'].iloc[0]):.6f}" if len(m) else "-")
+            rows.append([f"{inst_n} r{int(rid)}", r0["family"], int(r0["L"]),
+                         f"{float(r0['p_mc']):.4f} ({float(r0['mc_se']):.4f})"] + cells)
+        L += _md(head, rows)
+        L.append("")
+        A(f"Table 4b-2, b = {b}: the two converging references side by side and their agreement (absolute probability; "
+          f"difference = {ghmax} minus {emmax}; EMa increments show the convergence rate of the bin-averaged sequence).\n")
+        inc_lab = ([f"EMa128 - EMa64", "EMa64 - EMa32"] if b == 5 else [f"EMa32 - EMa16", "EMa16 - EMa8"])
+        head2 = ["route", "L", ghmax, emmax, f"{ghmax} - {emmax}", inc_lab[0], inc_lab[1]]
+        rows2 = []
+        for (inst_n, rid), s in sorted(sub.groupby(["instance", "route_id"]), key=lambda kv: -int(kv[1].iloc[0]["L"])):
+            v = {cfg: (float(s[s["cfg"] == cfg]["p_disc"].iloc[0]) if (s["cfg"] == cfg).any() else float("nan"))
+                 for cfg in cfgs}
+            if emmax == "EMa128":
+                inc = [v["EMa128"] - v["EMa64"], v["EMa64"] - v["EMa32"]]
+            else:
+                inc = [v["EMa32"] - v["EMa16"], v["EMa16"] - v["EMa8"]]
+            rows2.append([f"{inst_n} r{int(rid)}", int(s.iloc[0]["L"]), f"{v[ghmax]:.6f}", f"{v[emmax]:.6f}",
+                          f"{v[ghmax] - v[emmax]:+.2e}", f"{inc[0]:+.2e}", f"{inc[1]:+.2e}"])
+        L += _md(head2, rows2)
+        L.append("")
+    L.append("Reading of the two references (b = 5). (i) Short, low-probability routes (CON8-7, SCA8-1, SCA3-1): the "
+             "Gauss-Hermite sequence is stable from 32 nodes (GH 64 and GH 128 differ by 2e-6 on SCA3-1 and SCA8-1, and "
+             "agree on CON8-7), while the bin-averaged sequence is not yet stable at 128 bins (EMa 128 minus GH 128 is "
+             "+1.1e-4 on CON8-7; the EMa increments on SCA3-1 are -3.1e-3 then -9.8e-4). The earlier attribution of the "
+             "short-route discrepancy to Gauss-Hermite is withdrawn: the Gauss-Hermite values are the converged ones "
+             "there, and the bin-averaged sequence is the open item. (ii) Long routes (L >= 16): Gauss-Hermite 64 is not "
+             "converged (GH 64 minus GH 128 is 7.7e-4 on CMT11X and 3.9e-4 on HCMC-100-3), while the bin-averaged grid is "
+             "within 1e-4 of EMa 128 from 32 to 64 bins. The two references agree within 1e-5 to 1e-4 on CMT11X, CON3-4, "
+             "HCMC-400-1 and HANOI-400-1, and disagree by 2.6e-4 on HCMC-100-3, which neither grid resolves. (iii) Heuristic, "
+             "not established by the data: the conditional overflow step has width about sqrt((1 - rho) / (rho L)) "
+             f"(0.17 at L = 22, 0.15 at L = 28 for rho = {0.6}), which is narrower than the Gauss-Hermite bulk spacing "
+             "pi / sqrt(n) at 64 nodes (0.39), so the long-route Gauss-Hermite error is consistent with the step being "
+             "unresolved; the same argument does not explain the short routes, where the step is wider.\n")
+    L.append("Recommended bin count for the bin-averaged grid: f = 6 (64 bins) for long routes (L >= 16). On the five long "
+             "routes, 32 bins are already within 7.7e-5 of EMa 128 (HCMC-100-3, the largest) and 64 bins within 5.6e-5 "
+             "(HCMC-100-3 again), so f = 5 is the smallest grid that passes the 1e-4 tolerance there, and f = 6 lowers the "
+             "largest gap; f = 6 is the recommendation for the register. The rule table above reports the smallest bin count "
+             "within tolerance on all nine routes, which is not reached on the short low-probability routes (SCA3-1 and "
+             "SCA8-1 are 9.8e-4 and 2.6e-4 from EMa 128 at 64 bins and still moving at 128 bins). For those routes "
+             "Gauss-Hermite 64 to 128 is the converged rule, and no bin-averaged grid is recommended on the evidence here.\\n")
+
+    # Recommended bin count for the bin-averaged grid, from the data (reference = largest EMa at b = 5)
+    sub5 = gh[gh["b"] == 5]
+    rt = {}
+    for (inst_n, rid), s_ in sub5.groupby(["instance", "route_id"]):
+        rt[(inst_n, int(rid))] = {"L": int(s_.iloc[0]["L"]),
+                                  **{c: float(s_[s_["cfg"] == c]["p_disc"].iloc[0]) for c in
+                                     ("GH128", "EMa8", "EMa16", "EMa32", "EMa64", "EMa128")}}
+    short = [v for v in rt.values() if v["L"] <= 8]
+    long_ = [v for v in rt.values() if v["L"] >= 16]
+    def _dev(group, c):
+        return max(abs(v[c] - v["EMa128"]) for v in group) if group else float("nan")
+    L.append("Recommendation of the bin count (b = 5, reference EMa 128, tolerance " + f"{GH_TOL:g}" + "):\n")
+    head3 = ["bin count 2^f", "max |EMa - EMa128| all 9 routes", "short routes (L <= 8)", "long routes (L >= 16)"]
+    rows3 = []
+    for f in (3, 4, 5, 6, 7):
+        c = f"EMa{2 ** f}"
+        rows3.append([f"2^{f} = {2 ** f}", f"{_dev(list(rt.values()), c):.2e}", f"{_dev(short, c):.2e}",
+                      f"{_dev(long_, c):.2e}"])
+    L += _md(head3, rows3)
+    L.append("")
+    f_all = next((f for f in (3, 4, 5, 6, 7) if _dev(list(rt.values()), f"EMa{2 ** f}") <= GH_TOL), None)
+    gh_gap = max(abs(v["GH128"] - v["EMa128"]) for v in rt.values())
+    L.append(f"Largest gap between the two references at b = 5 (GH 128 and EMa 128) over the nine routes: {gh_gap:.2e}. "
+             + (f"Within {GH_TOL:g} of EMa 128 on all nine routes, the smallest bin count is 2^{f_all} = {2 ** f_all}, "
+                "but 2^7 is the reference itself, so this is not a convergence check: on the short low-probability routes "
+                "the 2^6 deviation is 2.6e-4 and EMa 128 is still moving, so no bin count up to 2^6 is shown to meet the "
+                "tolerance there."
+                if f_all == 7 else
+                (f"Smallest bin count within {GH_TOL:g} of EMa 128 on all nine routes: 2^{f_all} = {2 ** f_all}."
+                 if f_all is not None else f"No bin count up to 2^6 is within {GH_TOL:g} of EMa 128 on all nine routes."))
+             + "\n")
+    return L
+
+
+CRN_TABLE_GRIDS = (("EMa8", "em_avg", 8), ("EMa16", "em_avg", 16), ("EMa32", "em_avg", 32),
+                   ("EMa64", "em_avg", 64), ("GH64", "gh", 64), ("GH128", "gh", 128))
+
+
+def _section_4c(crn: pd.DataFrame) -> list[str]:
+    """Factor-grid error on the CRN quantities (conditional Monte Carlo on the discrete model)."""
+    L: list[str] = []
+    A = L.append
+    A("### 4c. Factor-grid error on the CRN quantities P(D = +1), P(D = -1)\n")
+    A(f"Method. For three routes (short, medium, long) and 6 intra and 6 alternative-position moves each (seeded, among "
+      f"moves with P(D != 0) > {CRN_MIN_NONZERO:g} in the continuous MC), P(D = +1) and P(D = -1) are computed in the "
+      "discrete copula model at b = 5 on the grids EMa 8..64 and GH 64 and 128. The exact identity "
+      "P(D = +1) = sum_ts w_t w_s P(D = +1 | t, s) holds on the discrete model, but no exact conditional computation "
+      "of the joint of two routes is available in reasonable time, so each factor pair (t, s) is a conditional Monte "
+      f"Carlo with K = {CRN_K} common draws (customers independent given the pair, pmfs of the discrete model). Both "
+      "routes of a pair use the same draws. The standard error of each grid sum is written in Table 4c-2. The per-pair "
+      f"budget is K = {CRN_K}, not the 2e5 of the scenario MC, because the grids contain up to 16384 pairs per route. "
+      "Per draw, P(D = +1) - P(D = -1) = P(F_b > Q) - P(F_a > Q) exactly, and the tail p_base of each base route is "
+      "checked against the exact DP (chance_copula) in Table 4c-1.\n")
+    if crn.empty:
+        A("(no CRN results)\n")
+        return L
+    # Table 4c-1: per route and grid, the largest deviations from the two references
+    A("Table 4c-1: per route and grid, the largest |deviation| over the 12 moves of P(D = +1) and P(D = -1), against "
+      "the two converging references GH 128 and EMa 64 (the largest bin-averaged grid computed for every route); "
+      "the base tail is the exact DP minus the conditional MC, in units of its standard error.\n")
+    head = ["route", "role", "L", "grid", "max |dP(D=+1)| vs GH128", "max |dP(D=-1)| vs GH128",
+            "max |dP(D=+1)| vs EMa64", "max |dP(D=-1)| vs EMa64", "median SE of P(D=+1)",
+            "base p exact - MC (SE units)"]
+    rows = []
+    for (role, inst_n, rid), s in crn.groupby(["role", "instance", "route_id"], sort=False):
+        ref = {}
+        for g, p in (("gh", 128), ("em_avg", 64)):
+            ref[(g, p)] = s[(s["grid"] == g) & (s["points"] == p)].sort_values("move_no")
+        L_ = int(s["L"].iloc[0])
+        for lab, g, p in CRN_TABLE_GRIDS:
+            m = s[(s["grid"] == g) & (s["points"] == p)].sort_values("move_no")
+            if m.empty:
+                continue
+            g128, g64 = ref[("gh", 128)], ref[("em_avg", 64)]
+            d1_gh = (m["P_D1"].to_numpy() - g128["P_D1"].to_numpy()) if len(g128) == len(m) else None
+            dm_gh = (m["P_Dm1"].to_numpy() - g128["P_Dm1"].to_numpy()) if len(g128) == len(m) else None
+            d1_em = (m["P_D1"].to_numpy() - g64["P_D1"].to_numpy()) if len(g64) == len(m) else None
+            dm_em = (m["P_Dm1"].to_numpy() - g64["P_Dm1"].to_numpy()) if len(g64) == len(m) else None
+            fmt_max = lambda a: f"{np.max(np.abs(a)):.2e}" if a is not None and len(a) else "-"
+            pe = float(m["p_base_exact"].iloc[0]); pm = float(m["p_base_mc"].iloc[0]); se = float(m["p_base_se"].iloc[0])
+            rows.append([f"{inst_n} r{int(rid)}", role, L_, lab, fmt_max(d1_gh), fmt_max(dm_gh), fmt_max(d1_em),
+                         fmt_max(dm_em), f"{np.median(m['se_D1']):.1e}",
+                         f"{(pe - pm) / se:+.2f}" if se > 0 else "-"])
+    L += _md(head, rows)
+    L.append("")
+    # Table 4c-2: per move values
+    A("Table 4c-2: per move, P(D = +1) and P(D = -1) on each grid (6 decimals; standard error of the largest grid in "
+      "brackets; the continuous MC of M3a for the same move in the last column, P(D=+1) / P(D=-1)).\n")
+    for role, inst_n, rid in crn[["role", "instance", "route_id"]].drop_duplicates().itertuples(index=False):
+        s = crn[(crn["role"] == role) & (crn["instance"] == inst_n) & (crn["route_id"] == rid)]
+        A(f"Route {role}: {inst_n} r{int(rid)} (L = {int(s['L'].iloc[0])}).\n")
+        head = ["move", "class", "kind"] + [f"+1 {lab}" for lab, _, _ in CRN_TABLE_GRIDS] + [f"-1 {lab}" for lab, _, _ in CRN_TABLE_GRIDS] + ["continuous MC +1 / -1"]
+        rows = []
+        mv_nums = sorted(s["move_no"].unique())
+        for k in mv_nums:
+            cells = {}
+            for lab, g, p in CRN_TABLE_GRIDS:
+                m = s[(s["grid"] == g) & (s["points"] == p) & (s["move_no"] == k)]
+                cells[lab] = (float(m["P_D1"].iloc[0]), float(m["P_Dm1"].iloc[0]),
+                              float(m["se_D1"].iloc[0]) if len(m) else float("nan")) if len(m) else (float("nan"),) * 3
+            base = s[(s["move_no"] == k)].iloc[0]
+            pl = [f"{cells[lab][0]:.6f}" for lab, _, _ in CRN_TABLE_GRIDS]
+            ml = [f"{cells[lab][1]:.6f}" for lab, _, _ in CRN_TABLE_GRIDS]
+            rows.append([int(k), int(base["cls"]), str(base["kind"])] + pl + ml +
+                        [f"{float(base['P_D1_cont']):.6f} / {float(base['P_Dm1_cont']):.6f}"])
+        L += _md(head, rows)
+        L.append("")
+    return L
 
 
 def summary_v3() -> str:
@@ -1194,12 +1542,15 @@ def summary_v3() -> str:
     L += _md(["class", "family", "moves", "median rho_q (in-sample)", "median rho_c (in-sample)",
               "median rho_q upper bound", "Var=0 share"], rows)
     L.append("")
+    ins_med = {f: band[(band["cls"] == 1) & (band["family"] == f)]["rho_q"].median() for f in FAMILIES}
+    ins_txt = ", ".join(f"{f} {ins_med[f]:.2f}" for f in FAMILIES if pd.notna(ins_med[f]))
     L.append("Reading. rho_q is the ratio of the CRN amplitude standard deviation to the stand-alone one, so the "
-             "quantum query count of the CRN difference is about rho_q times the stand-alone count. Insertions "
-             "keep most of their variance (rho_q near 0.9), because an inserted customer shifts the load of the "
-             "whole suffix. Intra-route and alternative-position moves reorder the same customers, so Var(D) is small: "
-             "on CON/SCA the medians are 0.13-0.16, and on CMT/city they are zero in the sample for more than half of "
-             "the moves. The zero is an in-sample value and is bounded by the upper-bound column.\n")
+             "quantum query count of the CRN difference is about rho_q times the stand-alone count. For insertions "
+             f"(class 1, median rho_q by family in the band: {ins_txt}) the value is near 0.9 only on CON/SCA; on CMT and "
+             "city a substantial part of the variance is removed by the common draws. Intra-route and alternative-position "
+             "moves reorder the same customers, so Var(D) is small: on CON/SCA the medians are 0.13-0.16, and on CMT/city "
+             "they are zero in the sample for more than half of the moves. The zero is an in-sample value and is bounded "
+             "by the upper-bound column.\n")
 
     L.append("### 3b. Cost sums (queries) by class and family, certified classical counts\n")
     L.append("Nq/Nq_sa and Nc/Nc_sa: within-paradigm CRN gain (CRN cost over stand-alone cost). Nq/Nc: quantum "
@@ -1241,8 +1592,8 @@ def summary_v3() -> str:
         "position of the phase on the grid. In a check on the exact QPE distribution at the same M, the 81 % quantile "
         "of the actual error was smaller than the bound by factors of 1.6, 2.0 and 4.6 in the three non-aligned cases "
         "checked (a = 0.05 with eps = 1e-2; a = 0.2 with eps = 1e-3; a = 0.2 with eps = 1e-2), and by much more when "
-        "the phase falls on the grid. The factor depends on alignment; about 2x is the conservative reading, so the "
-        "quantum counts here are at least about 2x conservative.\n")
+        "the phase falls on the grid. The factor depends on alignment and is not a general constant: the quantum counts "
+        "here are conservative by 1.6-4.6x in the three cases checked, and no larger factor is claimed.\n")
     def _range(res, cls_set):
         vals = [res[(c, f)]["Nq_Nc"] for c in cls_set for f in FAMILIES if (c, f) in res]
         return f"{min(vals):.2g} to {max(vals):.2g}" if vals else "-"
@@ -1250,12 +1601,16 @@ def summary_v3() -> str:
         f"Absolute eps = 1e-3 (classical certified). Quantum-to-classical ratios of the sums: insertions "
         f"{_range(e3, (1,))} across families, intra moves {_range(e3, (2,))}, alternative-position moves "
         f"{_range(e3, (3,))}. The city cells, which the CLT count made 7 to 19 times worse in the previous "
-        f"table, are now {_r(e3, 3, 'city')} (alternative) and {_r(e3, 2, 'city')} (intra). Both paradigms are "
-        "floor-dominated on CMT and city moves whose Var(D) is zero in the sample "
-        f"({e3[(2, 'city')]['zero_share']:.2f} of city intra moves and {e3[(3, 'city')]['zero_share']:.2f} of city "
-        "alternative moves), so the honest statement is comparable cost at 1e-3 and quantum ahead at 1e-4, not a "
-        f"quantum penalty. At eps = 1e-4 the ratios are {_range(ea, (1,))} (insertions), {_range(ea, (2,))} (intra) "
-        f"and {_range(ea, (3,))} (alternative).\n")
+        f"table, are now {_r(e3, 3, 'city')} (alternative) and {_r(e3, 2, 'city')} (intra). The city ratio is a ratio of "
+        "two constants of the floor regime, not a property of the problem: a move with no event in the sample costs "
+        "2 R (2M + 1) = 5130 applications at eps = 1e-3 (R = 5, M = 256, two estimates), against the classical floor "
+        "3 / eps = 3000, and 5130 / 3000 = 1.71. At eps = 1e-4 the same count is 20490 against 30000 (0.68). Floor "
+        "moves are a large share of city moves (Var(D) = 0 share "
+        f"{e3[(2, 'city')]['zero_share']:.2f} of city intra and {e3[(3, 'city')]['zero_share']:.2f} of city alternative "
+        "moves), so the city cells mostly measure the floor. The honest statement is comparable cost at 1e-3 (the floor "
+        "constants set the ratio) and a lower quantum count at 1e-4 in every class and family of this table, not a quantum "
+        "penalty. At eps = 1e-4 the ratios are "
+        f"{_range(ea, (1,))} (insertions), {_range(ea, (2,))} (intra) and {_range(ea, (3,))} (alternative).\n")
     L.append(
         f"Within-paradigm CRN gain. Insertions gain little from CRN in the quantum count (Nq/Nq_sa "
         f"{cost_res['absolute eps = 1e-3'][(1, 'CON')]['Nq_gain']:.2f} on CON) and in the classical count "
@@ -1269,11 +1624,13 @@ def summary_v3() -> str:
         "so the quantum count is that many times the classical count in these sums (the unit costs differ, see "
         "above). The mechanism: a quantum count grows like sqrt(variance)/eps and a classical count like "
         "variance/eps^2, so the classical estimator wins when eps is large compared with the standard deviation "
-        "of the indicators. At eps = 0.1 p' this holds for the signed moves here, while at absolute eps = 1e-4 "
+        "of the indicators. Here eps_i = 0.1 p'_i is relative to the stand-alone p'_i of each move, not to E[D]. "
+        "At eps = 0.1 p' this holds for the signed moves here, while at absolute eps = 1e-4 "
         "(where eps is small against those deviations) the quantum count is the lower one. Insertions are the "
         "exception in the relative block: "
-        f"Nq/Nc is {_range(er3, (1,))} there. The relative cells must be reported next to the absolute ones; the "
-        "relative signed cells alone would read as a quantum win or loss depending on which one is quoted.\n")
+        f"Nq/Nc is {_range(er3, (1,))} there. Recommendation: the absolute blocks (1e-3 and 1e-4) are the main comparison; "
+        "the relative block answers a different question (precision relative to p'), and its signed-move ratios favour the "
+        "classical direct estimator. Quote it only with that label.\n")
 
     L.append("### 3c. Convention for one-sided moves (classes 2-3, absolute eps = 1e-3)\n")
     L.append("Reading. The single-estimate convention lowers the quantum count of one-sided moves by the share shown "
@@ -1363,138 +1720,10 @@ def summary_v3() -> str:
              "small in relative terms but not below 1e-3 absolute on every route. Cost of b = 6: 6 qubits per "
              "customer and per demand type (12 per customer for delivery and pickup), against 5 (10) at b = 5.\n")
 
-    # ---- Section 4b
-    L.append("### 4b. Quadrature: Gauss-Hermite nodes against equal-probability factor bins\n")
-    gsum = _gh_summary(gh_raw)
-    ghd = gsum["gh"]
-    refs = gsum["refs"]
-    L.append("Method. The copula window probability P(F_r > Q) is the exact double sum over factor values "
-             "sum_t sum_s w_t w_s P(F > Q | z_t, z_s), computed without Monte Carlo (batched exact recursion, "
-             "validated against classical.chance). Two factor grids per copula factor: Gauss-Hermite nodes (GH n, "
-             "n = 16, 32, 64, 128) and equal-probability bins (EM 2^f, f = 3..7): bin t has probability 1/2^f and "
-             "node z_t = Phi^-1((t + 1/2) / 2^f), weights 1/2^f (Hadamard-prepared register). Nine routes: the three "
-             "longest (CMT11X r2, HCMC-100-3 r11, CON3-4 r15) and six of mixed length (two each with L in 3-8, 9-15, "
-             "16-25, seeded). Continuous Monte Carlo is the same N = 200000 common scenarios as the rest of M3a. "
-             "Deviations are measured from the finest equal-probability grid computed for the same route and b (the "
-             "reference): EM 128 for b = 5 on all nine routes; EM 64 for b = 6 on all nine routes (a 128-point b = 6 "
-             "pair grid costs about 55 ms per pair, about 15 min per route on one core, and was dropped for time). "
-             "The reference is not a certified limit: its convergence is shown by the 32 to 64 to 128 sequence at b = 5.\n")
-    rho = DEFAULT_RHO
-    L.append("Why Gauss-Hermite fails here. Given the delivery factor z, the conditional overflow indicator is a "
-             "step in z. Its transition width is about sqrt((1 - rho) / (rho L)) (the spread of the L-term sum given "
-             f"z shrinks relative to the shift of its mean), which is {np.sqrt((1 - rho) / (rho * 22)):.3f} at L = 22 "
-             f"and {np.sqrt((1 - rho) / (rho * 28)):.3f} at L = 28 (rho = {rho}). Gauss-Hermite nodes in the bulk are "
-             "spaced pi / sqrt(n): "
-             + ", ".join(f"{np.pi / np.sqrt(n):.3f} at {n} nodes" for n in GH_NODES)
-             + ". At 64 nodes the spacing (0.39) is more than twice the transition width, so the step is not "
-             "resolved, and the quadrature error need not decrease monotonically in n (see Table 4b-1). Equal-probability "
-             "bins are dense where the mass and the step lie: the central spacing is 2.5066 / 2^f, i.e. "
-             + ", ".join(f"{2.5066 / 2 ** f:.3f} at 2^{f} bins" for f in GH_EM_F)
-             + f". The number of bins across one transition width (about {np.sqrt((1 - rho) / (rho * 22)):.2f}) is "
-             + ", ".join(f"{np.sqrt((1 - rho) / (rho * 22)) / (2.5066 / 2 ** f):.1f} at 2^{f}" for f in GH_EM_F)
-             + ". The tails are coarser, but they carry little mass.\n")
-
-    head = ["route (instance r, id)", "family", "L", "p_MC (SE)", "ref"] + [f"{c} - ref" for c in GH_CFG_ORDER]
-    for b in GH_B:
-        L.append(f"Table 4b-1, b = {b}: deviation of each grid from the reference (absolute probability; "
-                 "'-' where the configuration was not computed for this route):\n")
-        rows = []
-        sub = ghd[ghd["b"] == b]
-        for (inst_n, rid), s in sub.groupby(["instance", "route_id"]):
-            ref_cfg, ref_p, p_mc, se = refs[(inst_n, rid, b)]
-            r0 = s.iloc[0]
-            devs = []
-            for cfg in GH_CFG_ORDER:
-                m = s[s["cfg"] == cfg]
-                devs.append(f"{float(m['p_disc'].iloc[0]) - ref_p:+.2e}" if len(m) else "-")
-            rows.append([f"{inst_n} r{rid}", r0["family"], int(r0["L"]),
-                         f"{p_mc:.4f} ({se:.4f})", ref_cfg] + devs)
-        rows.sort(key=lambda r: -int(r[2]))
-        L += _md(head, rows)
-        L.append("")
-    L.append("Table 4b-2: summary over the routes of each b (max and median of |deviation| from the reference; "
-             "routes counted are those where the configuration was computed; the last column is the largest "
-             "|p(config) - p_MC| over those routes, in units of the Monte Carlo standard error):\n")
-    rows = []
-    for b in GH_B:
-        sub = ghd[ghd["b"] == b]
-        for cfg in GH_CFG_ORDER:
-            devs, mcz = [], []
-            for (inst_n, rid), s in sub.groupby(["instance", "route_id"]):
-                ref_cfg, ref_p, p_mc, se = refs[(inst_n, rid, b)]
-                m = s[s["cfg"] == cfg]
-                if len(m):
-                    p = float(m["p_disc"].iloc[0])
-                    devs.append(abs(p - ref_p))
-                    mcz.append(abs(p - p_mc) / se if se > 0 else float("nan"))
-            if not devs:
-                continue
-            rows.append([b, cfg, len(devs), _sci(max(devs)), _sci(float(np.median(devs))),
-                         f"{np.nanmax(mcz):.2f}"])
-    L += _md(["b", "configuration", "routes", "max |p - ref|", "median |p - ref|",
-              "max |p - p_MC| / SE_MC"], rows)
-    L.append("")
-    # Rule: the smallest equal-probability grid and the smallest GH grid within GH_TOL of the EM 128 reference
-    # on the routes where that reference exists (all nine at b = 5, the three long routes at b = 6).
-    ref128 = []
-    for (inst_n, rid, b), (ref_cfg, ref_p, _, _) in refs.items():
-        if ref_cfg == "EM128":
-            ref128.append((inst_n, rid, b, ref_p))
-    em_rule = {}
-    for f in (3, 4, 5, 6):
-        devs = []
-        for inst_n, rid, b, ref_p in ref128:
-            m = ghd[(ghd["instance"] == inst_n) & (ghd["route_id"] == rid) & (ghd["b"] == b) & (ghd["cfg"] == f"EM{2 ** f}")]
-            if len(m):
-                devs.append(abs(float(m["p_disc"].iloc[0]) - ref_p))
-        em_rule[f] = max(devs) if devs else float("nan")
-    gh_rule = {}
-    for n in (16, 32, 64, 128):
-        devs = []
-        for inst_n, rid, b, ref_p in ref128:
-            m = ghd[(ghd["instance"] == inst_n) & (ghd["route_id"] == rid) & (ghd["b"] == b) & (ghd["cfg"] == f"GH{n}")]
-            if len(m):
-                devs.append(abs(float(m["p_disc"].iloc[0]) - ref_p))
-        gh_rule[n] = max(devs) if devs else float("nan")
-    f_rec = next((f for f in (3, 4, 5, 6) if em_rule[f] <= GH_TOL), None)
-    n_rec = next((n for n in (16, 32, 64, 128) if gh_rule[n] <= GH_TOL), None)
-    L.append("Rule. The smallest grid whose max |p - ref| over the reference routes is at most "
-             f"{GH_TOL:g}: equal-probability bins: "
-             + ", ".join(f"2^{f} = {2 ** f}: {em_rule[f]:.2e}" for f in (3, 4, 5, 6))
-             + "; Gauss-Hermite: "
-             + ", ".join(f"{n}: {gh_rule[n]:.2e}" for n in (16, 32, 64, 128))
-             + ". "
-             + (f"Recommended factor register: f = {f_rec} (2^{f_rec} = {2 ** f_rec} equal-probability bins per "
-                f"factor, {f_rec} qubits per factor, {2 * f_rec} for the two factors)."
-                if f_rec is not None else "No equal-probability grid up to 2^6 meets the tolerance.")
-             + (f" Gauss-Hermite meets it at {n_rec} nodes." if n_rec is not None else
-                " No Gauss-Hermite grid up to 128 nodes meets it (the 128-node value is itself compared with the "
-                "equal-probability reference).")
-             + "\n")
-    n_ok = {}
-    for f in (3, 4, 5, 6):
-        n_ok[f] = sum(1 for inst_n, rid, b, ref_p in ref128
-                      if b == 5 and (lambda m: len(m) and abs(float(m["p_disc"].iloc[0]) - ref_p) <= GH_TOL)(
-                          ghd[(ghd["instance"] == inst_n) & (ghd["route_id"] == rid) & (ghd["b"] == 5)
-                              & (ghd["cfg"] == f"EM{2 ** f}")]))
-    n_gh128 = sum(1 for inst_n, rid, b, ref_p in ref128
-                  if b == 5 and (lambda m: len(m) and abs(float(m["p_disc"].iloc[0]) - ref_p) <= GH_TOL)(
-                      ghd[(ghd["instance"] == inst_n) & (ghd["route_id"] == rid) & (ghd["b"] == 5)
-                          & (ghd["cfg"] == "GH128")]))
-    n_routes5 = sum(1 for _, _, b, _ in ref128 if b == 5)
-    L.append("Within-tolerance counts at b = 5 (routes within " + f"{GH_TOL:g}" + " of the EM 128 reference, of "
-             + f"{n_routes5}): equal-probability bins " + ", ".join(f"2^{f}: {n_ok[f]}" for f in (3, 4, 5, 6))
-             + f"; Gauss-Hermite 128 nodes: {n_gh128}. Recommended factor register: f = 6 (64 equal-probability bins "
-             "per factor) as the smallest grid that is within tolerance on all but at most one route; the exception "
-             "is the shortest route (L = 3), where the equal-probability sequence converges slowly (about a factor 0.3 "
-             "per doubling), so that route needs more bins to meet the tolerance. Gauss-Hermite does not converge "
-             "to the reference at 128 nodes within the tolerance on the city routes and the shortest route.\n")
-    L.append("Caveats. (i) Node count of the reference (EM 128) is not certified; the sequence 32 to 64 to 128 "
-             "gives its convergence. (ii) The tolerance 1e-4 is a choice; the table gives the full deviations. "
-             "(iii) At b = 6 the reference is EM 64 on every route, so the b = 6 deviations bound convergence only to "
-             "64 bins. (iii') The Monte Carlo column of Table 4b-2 compares the quadrature with the continuous model, "
-             "so it contains the level (discretisation) error of Section 4a and is not a quadrature error. (iv) The factor-grid comparison is for the window probability of a single route; "
-             "the level error of Section 4a is separate and is not reduced by finer factor grids.\n")
+    # ---- Section 4b and 4c
+    L.extend(_section_4b(gh_raw))
+    crn_raw = pd.read_csv(CRN_CSV) if CRN_CSV.exists() else pd.DataFrame()
+    L.extend(_section_4c(crn_raw))
 
     # ---- Section 5
     L.append("## 5. Alternative-position moves by position distance\n")
@@ -1543,7 +1772,8 @@ def write_summary_v3() -> None:
 def main(argv: list[str] | None = None) -> None:
     global _LOG_PATH
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--part", choices=("v2", "v2disc", "v2summary", "v3", "v3gh", "v3summary"), required=True)
+    ap.add_argument("--part", choices=("v2", "v2disc", "v2summary", "v3", "v3gh", "v3crn", "v3summary"),
+                    required=True)
     ap.add_argument("--rho", type=float, default=DEFAULT_RHO, help="copula strength (0.6 = BATON)")
     ap.add_argument("--N", type=int, default=N_SCEN, help="common scenarios per instance")
     ap.add_argument("--every", type=int, default=1, help="use every k-th instance (sorted by name)")
@@ -1565,6 +1795,8 @@ def main(argv: list[str] | None = None) -> None:
         run_part_v3(args)
     elif args.part == "v3gh":
         run_part_gh(args)
+    elif args.part == "v3crn":
+        run_part_crn(args)
     elif args.part == "v3summary":
         write_summary_v3()
 

@@ -181,10 +181,14 @@ def population_table(df):
         for cls in CLASSES:
             s = d[(d["group"] == g) & (d["cls"] == cls)]
             e = s[s["elig"]]
+            nz = s[~s["tiny"]]
             rows.append({
                 "group": g, "cls": cls, "n_moves": int(len(s)),
                 "n_zero": int(s["zero"].sum()), "n_under": int(s["under"].sum()),
                 "n_eligible": int(len(e)),
+                "share_excluded": float((~s["elig"]).mean()) if len(s) else float("nan"),
+                "n_pnz_ge_1e-3": int(len(nz)),
+                "share_excluded_among_pnz_ge_1e-3": float((~nz["elig"]).mean()) if len(nz) else float("nan"),
                 "share_pnz_below_1e-3": float(s["tiny"].mean()) if len(s) else float("nan"),
                 "eligible_pnz_min": float(e["pnz"].min()) if len(e) else float("nan"),
                 "eligible_pnz_median": float(e["pnz"].median()) if len(e) else float("nan"),
@@ -739,47 +743,97 @@ def fmt(x, nd=3):
 
 
 def _pop_lines(pop):
-    L = ["| group | class | moves in M3a | zero difference | side below 200 hits | eligible | share with P(D != 0) < 1e-3 | eligible: min P(D != 0) | eligible: median P(D != 0) |",
-         "|---|---|---|---|---|---|---|---|---|"]
+    L = ["| group | class | moves in M3a | zero difference | side below 200 hits | eligible | excluded (200-hit rule or zero), share | share with P(D != 0) < 1e-3 | excluded share among moves with P(D != 0) >= 1e-3 | eligible: min P(D != 0) | eligible: median P(D != 0) |",
+         "|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in pop:
         L.append(f"| {r['group']} | {r['cls']} | {r['n_moves']} | {r['n_zero']} | {r['n_under']} | {r['n_eligible']} | "
-                 f"{r['share_pnz_below_1e-3']:.3f} | {fmt(r['eligible_pnz_min'])} | {fmt(r['eligible_pnz_median'])} |")
+                 f"{r['share_excluded']:.3f} | {r['share_pnz_below_1e-3']:.3f} | "
+                 f"{r['share_excluded_among_pnz_ge_1e-3']:.3f} | {fmt(r['eligible_pnz_min'])} | {fmt(r['eligible_pnz_median'])} |")
     return L
 
 
-CLAIMS_TEXT: list[str] = [
-    "Read with the table above. Every cost ratio divides a difference estimate by a stand-alone estimate of the same paradigm; "
-    "ratios are not quantum-versus-classical comparisons. The sample covers P(D != 0) >= 1e-3 only.",
-    "",
-    "**Supported (eligible sample, medians over ok rows, n_ok in the table):**",
-    "",
-    "- CRN lowers the quantum cost of the difference at absolute 1e-3 in all three groups. QAE: 0.65 (CON/SCA, n = 180), "
-    "0.46 (CMT, n = 153), 0.29 (city, n = 112). MLAE S = 64: 0.60, 0.45, 0.38. The same direction holds at 1e-4 for QAE "
-    "(0.61, 0.45, 0.32).",
-    "- At absolute 1e-4 MLAE S = 32 fails for most moves (111, 102 and 77 of the 180, 153 and 112 moves; Section 5a), so its medians "
-    "are not quoted. MLAE S = 64 fails for 24, 18 and 14 moves.",
-    "- Relative targets (T_D = r P(D != 0), so the target shrinks with the difference): the difference costs more than the stand-alone "
-    "estimate in all three groups. QAE 3.2 to 5.5, MLAE S = 64 1.4 to 4.1, direct classical 8 to 20 (r = 0.1 and 0.01). "
-    "Supported for the sampled moves only.",
-    "- Scaling: the quantum slope of the 90 % quantile is -1 and the classical slope -0.5, in every group (Section 3, group table).",
-    "- The sqrt(v) law for the quantum difference cost holds on class 1: ratio / rho_q for MLAE S = 64 and 128 lies between 0.94 "
-    "and 1.11 across bands and absolute targets. QAE has alignment scatter (0.72 to 1.29). Classes 2 and 3 are not tested against rho_q.",
-    "- The direct classical estimator agrees with its Var(D) / T^2 prediction (ratio / rho_c 0.97 to 1.04). This is a consistency check, "
-    "not evidence about the quantum law.",
-    "",
-    "**Not supported by M3b:**",
-    "",
-    "- The regime where P(D != 0) is tiny (below 1e-3). Such moves are zero-difference or have a side below 200 hits and are excluded. "
-    "In the M3a file they are 38 to 95 % of the classes 2 and 3 moves of every group (table above) and 3 to 7 % of class 1. "
-    "M3b makes no claim about the floor regime or about the Var(D) = 0 share.",
-    "- City classes 2 and 3. Eligible city moves are 974 (class 2) and 1076 (class 3), with median P(D != 0) of 0.0023. The class 2 "
-    "low and decision cells are empty, the class 3 decision cell has 12 moves, and the class 2 and 3 high cells have 20 each. "
-    "Only the high-band city numbers for classes 2 and 3 have usable n.",
-    "- Any claim from the cells with n_ok below 10 (listed in Section 5b, e.g. MLAE S = 32 at 1e-4 on cls1/high/CMT, "
-    "cls1/high/city, cls2/high/CMT, cls2/high/city, with 0 ok rows). Their medians are shown only for completeness.",
-    "- A quantum-versus-classical cost comparison, which M3b does not compute; the classical columns here measure the classical "
-    "difference against the classical stand-alone, not against the quantum estimator.",
-]
+def _cells(rsum, fam, tt, tv, min_ok: int = 10):
+    """(all cells, cells with n_ok >= min_ok and a finite median) for one family and target."""
+    allc = [r for r in rsum if r["family"] == fam and r["target_type"] == tt and abs(float(r["target_value"]) - tv) < 1e-12]
+    ok = [r for r in allc if int(r["n_ok"]) >= min_ok and np.isfinite(r["median_ratio"])]
+    return allc, ok
+
+
+def _rng(ok) -> str:
+    v = [float(r["median_ratio"]) for r in ok]
+    return f"{min(v):.3g} to {max(v):.3g}" if v else "-"
+
+
+def _n_below(ok, thr: float = 1.0) -> int:
+    return sum(float(r["median_ratio"]) < thr for r in ok)
+
+
+def _count_text(ok, n_above: int) -> str:
+    """'all K cells' or 'X of K cells' for 'ratio above 1'."""
+    return f"all {len(ok)} cells" if n_above == len(ok) else f"{n_above} of {len(ok)} cells"
+
+
+def claims_text(rsum, pop) -> list[str]:
+    """Section 6 text. Every number is computed from the cell table (rsum) or the population table."""
+    q3, qo3 = _cells(rsum, "qae", "abs", 1e-3)
+    m3, mo3 = _cells(rsum, "mlae_S64", "abs", 1e-3)
+    q4, qo4 = _cells(rsum, "qae", "abs", 1e-4)
+    qr, qro = _cells(rsum, "qae", "rel", 0.1)
+    mr, mro = _cells(rsum, "mlae_S64", "rel", 0.1)
+    cr, cro = _cells(rsum, "classical", "rel", 0.1)
+    mr_floor = sum(int(r["n_floor"]) for r in mr)
+    mr_tot = sum(int(r["n_total"]) for r in mr)
+    cls23 = [r for r in pop if r["cls"] in (2, 3)]
+    ex = [float(r["share_excluded"]) for r in cls23]
+    tiny = [float(r["share_pnz_below_1e-3"]) for r in cls23]
+    exn = [float(r["share_excluded_among_pnz_ge_1e-3"]) for r in cls23 if np.isfinite(r["share_excluded_among_pnz_ge_1e-3"])]
+    return [
+        "Read with the table above. Every cost ratio divides a difference estimate by a stand-alone estimate of the same "
+        "paradigm; ratios are not quantum-versus-classical comparisons. The sample covers eligible moves only (zero differences "
+        "and any nonzero side with fewer than 200 hits are excluded, Section 2).",
+        "",
+        "Group medians in Section 6 pool the sampled moves of all cells. There are about 20 moves per cell, so each cell has "
+        "roughly equal weight whatever its population; the pooled medians mix classes and bands and are not results. Quote "
+        "the per-cell values of Section 5b, restricted to cells with n_ok >= 10.",
+        "",
+        "**Supported (per cell, cells with n_ok >= 10):**",
+        "",
+        f"- CRN lowers the quantum cost of the difference at absolute 1e-3: the QAE cost ratio (difference / stand-alone) is "
+        f"below 1 in {_n_below(qo3)} of {len(qo3)} cells (range {_rng(qo3)}); MLAE S = 64 is below 1 in {_n_below(mo3)} of "
+        f"{len(mo3)} cells (range {_rng(mo3)}). At absolute 1e-4 the QAE ratio is below 1 in {_n_below(qo4)} of {len(qo4)} "
+        f"cells (range {_rng(qo4)}), so the 1e-4 direction is not a general statement for every cell; the cells above 1 are in "
+        "Section 5b.",
+        "- At absolute 1e-4 MLAE S = 32 fails for most moves (111, 102 and 77 of the 180, 153 and 112 moves; Section 5a), so its "
+        "medians are not quoted. MLAE S = 64 fails for 24, 18 and 14 moves.",
+        f"- Relative targets (T_D = r P(D != 0), so the target shrinks with the difference): the difference costs more than the "
+        f"stand-alone estimate (median ratio above 1) in {_count_text(qro, len(qro) - _n_below(qro, 1.0))} for QAE at r = 0.1 "
+        f"(range {_rng(qro)}); in {_count_text(mro, len(mro) - _n_below(mro, 1.0))} with n_ok >= 10 for MLAE S = 64 at r = 0.1 "
+        f"(range {_rng(mro)}; {len(mr) - len(mro)} cells have n_ok < 10); in {_count_text(cro, len(cro) - _n_below(cro, 1.0))} "
+        f"for the classical direct estimator (range {_rng(cro)}). MLAE S = 64 at r = 0.1 has {mr_floor} floor rows of {mr_tot} "
+        f"sampled rows ({sum(int(r['n_fail']) for r in mr)} fail): its medians use the ok rows only, which removes the easy moves, "
+        "so they are biased upward and are not comparable with the classical column, which has few floor rows.",
+        "- Scaling: the quantum slope of the 90 % quantile is -1 and the classical slope -0.5, in every group (Section 3, group table).",
+        "- The sqrt(v) law for the quantum difference cost holds on class 1: ratio / rho_q for MLAE S = 64 and 128 lies between 0.94 "
+        "and 1.11 across bands and absolute targets. QAE has alignment scatter (0.72 to 1.29). Classes 2 and 3 are not tested against rho_q.",
+        "- The direct classical estimator agrees with its Var(D) / T^2 prediction (ratio / rho_c 0.97 to 1.04). This is a consistency check, "
+        "not evidence about the quantum law.",
+        "",
+        "**Not supported by M3b:**",
+        "",
+        f"- The regime where P(D != 0) is tiny (below 1e-3). Two different shares, both in Section 2, for classes 2 and 3 "
+        f"across the three groups: the eligibility rule (zero difference, or a nonzero side with fewer than 200 hits) excludes "
+        f"{min(ex):.2f} to {max(ex):.2f} of the moves; P(D != 0) < 1e-3 holds for "
+        f"{min(tiny):.2f} to {max(tiny):.2f}. The two are not the same: among moves with P(D != 0) >= 1e-3 the rule still excludes "
+        f"{min(exn):.2f} to {max(exn):.2f}, because it drops a move when any nonzero side has fewer than 200 hits. M3b makes no "
+        "claim about the floor regime or about the Var(D) = 0 share.",
+        "- City classes 2 and 3. Eligible city moves are 974 (class 2) and 1076 (class 3), with median P(D != 0) of 0.0023. The class 2 "
+        "low and decision cells are empty, the class 3 decision cell has 12 moves, and the class 2 and 3 high cells have 20 each. "
+        "Only the high-band city numbers for classes 2 and 3 have usable n.",
+        "- Any claim from the cells with n_ok below 10 (listed in Section 5b, e.g. MLAE S = 32 at 1e-4 on cls1/high/CMT, "
+        "cls1/high/city, cls2/high/CMT, cls2/high/city, with 0 ok rows). Their medians are shown only for completeness.",
+        "- A quantum-versus-classical cost comparison, which M3b does not compute; the classical columns here measure the classical "
+        "difference against the classical stand-alone, not against the quantum estimator.",
+    ]
 
 
 def write_summary(path, meta, val_rows, info, pop, pairs, records, slopes, rsum, gsum, carry, exact_rows) -> None:
@@ -968,11 +1022,12 @@ def write_summary(path, meta, val_rows, info, pop, pairs, records, slopes, rsum,
     A("")
     A("## 6. Claims by family group")
     A("")
-    A("Cost ratio = difference / stand-alone, medians over ok rows; n_ok in brackets.")
+    A("Cost ratio = difference / stand-alone, medians over ok rows; (ok rows / floor rows) in brackets. The pooled medians "
+      "are not results (see the caveat under the table).")
     A("")
     L.extend(_claims_lines(pop, gsum, info))
     A("")
-    L.extend(CLAIMS_TEXT)
+    L.extend(claims_text(rsum, pop))
     A("")
     A("## 7. MLAE with S = 1 and S = 8: not rerun (from v2)")
     A("")
@@ -1036,18 +1091,30 @@ def _claims_lines(pop, gsum, info) -> list[str]:
             cols = []
             for fam in ("qae", "mlae_S64", "classical", "classical_2est"):
                 x = g_rows(g, fam, tt, tv)
-                cols.append(f"{fmt(x['median_ratio'])} ({x['n_ok']})")
+                cols.append(f"{fmt(x['median_ratio'])} ({x['n_ok']} ok / {x['n_floor']} floor)")
             L.append(f"| {g} | {ns} | {tiny} | {tt} {tv:g} | " + " | ".join(cols) + " |")
     return L
 
 
-def main() -> None:
+def _read_rows(name: str) -> list[dict]:
+    """Saved CSV rows as dicts (summary-only mode)."""
+    import pandas as pd
+
+    return pd.read_csv(OUT / name).to_dict("records")
+
+
+def main(summary_only: bool = False) -> None:
+    """Full run, or with summary_only=True: regenerate m3b_v3_summary.md from the saved CSVs
+    (no circuit, no simulation; the saved simulation rows are read back and analysed as before)."""
     t_all = time.perf_counter()
     OUT.mkdir(parents=True, exist_ok=True)
 
     _log("Step 1: circuit validation (v2 output reused)")
-    val_rows = reuse_validation()
-    write_csv(OUT / "m3b_v3_validation.csv", val_rows)
+    if summary_only:
+        val_rows = _read_rows("m3b_v3_validation.csv")
+    else:
+        val_rows = reuse_validation()
+        write_csv(OUT / "m3b_v3_validation.csv", val_rows)
 
     _log("Step 2: population, sample and cache")
     t1 = time.perf_counter()
@@ -1061,24 +1128,34 @@ def main() -> None:
     _log("  composition:")
     for c in info["cells"]:
         _log(f"    {c['cell']:<22} pool {c['pool']:>7}  sampled {c['sampled']:>3}  {c['families']}")
-    write_csv(OUT / "m3b_v3_sampled_moves.csv", [
-        {k: v for k, v in p.items() if k != "components"} | {
-            "components": ";".join(f"{lab}:{amp:.6g}" for lab, amp in p["components"])} for p in pairs])
+    if not summary_only:
+        write_csv(OUT / "m3b_v3_sampled_moves.csv", [
+            {k: v for k, v in p.items() if k != "components"} | {
+                "components": ";".join(f"{lab}:{amp:.6g}" for lab, amp in p["components"])} for p in pairs])
     write_csv(OUT / "m3b_v3_population.csv", pop)
 
     _log("Step 3: exact QAE check")
-    exact_rows = exact_check()
-    write_csv(OUT / "m3b_v3_exact_check.csv", exact_rows)
+    if summary_only:
+        exact_rows = _read_rows("m3b_v3_exact_check.csv")
+    else:
+        exact_rows = exact_check()
+        write_csv(OUT / "m3b_v3_exact_check.csv", exact_rows)
 
     _log("Step 4: simulation (QAE exact, MLAE and classical 4000 seeds; direct signed-mean classical per move)")
-    if n_reuse:
-        worst = reuse_check(records, pairs, cache_rows)
-        _log(f"  reuse check: one cached amplitude re-simulated, max |diff| vs cache = {worst:.1e}")
-    rows, direct_rows, n_new, t_sim = simulate(records, pairs, cache_rows)
-    rows.sort(key=lambda r: (r["amplitude"], RECORD_FAMILIES.index(r["family"])))
-    write_csv(OUT / "m3b_v3_metrics.csv", rows)
-    write_csv(OUT / "m3b_v3_direct_classical.csv", direct_rows)
-    _log(f"  simulation: {len(rows)} record rows, {len(direct_rows)} direct rows, {n_new} new amplitudes in {t_sim:.1f} s")
+    if summary_only:
+        rows = _read_rows("m3b_v3_metrics.csv")
+        direct_rows = _read_rows("m3b_v3_direct_classical.csv")
+        n_new, t_sim = 0, float("nan")
+        _log(f"  summary only: {len(rows)} saved record rows, {len(direct_rows)} saved direct rows (not re-simulated)")
+    else:
+        if n_reuse:
+            worst = reuse_check(records, pairs, cache_rows)
+            _log(f"  reuse check: one cached amplitude re-simulated, max |diff| vs cache = {worst:.1e}")
+        rows, direct_rows, n_new, t_sim = simulate(records, pairs, cache_rows)
+        rows.sort(key=lambda r: (r["amplitude"], RECORD_FAMILIES.index(r["family"])))
+        write_csv(OUT / "m3b_v3_metrics.csv", rows)
+        write_csv(OUT / "m3b_v3_direct_classical.csv", direct_rows)
+        _log(f"  simulation: {len(rows)} record rows, {len(direct_rows)} direct rows, {n_new} new amplitudes in {t_sim:.1f} s")
 
     _log("Step 5: analysis")
     cv = curves(rows)
@@ -1101,13 +1178,15 @@ def main() -> None:
     for t in (0.005, 0.03, 0.2):
         lab = min(sa_recs, key=lambda k: abs(math.log(sa_recs[k]) - math.log(t)))
         show.append((lab, f"stand-alone a = {sa_recs[lab]:.3g}"))
-    make_figure(cv, show, OUT / "m3b_v3_error.png")
+    if not summary_only:
+        make_figure(cv, show, OUT / "m3b_v3_error.png")
 
     meta = {
         "validation": "reused from v2 (no circuits rerun)",
         "amplitudes reused": n_reuse,
         "amplitudes simulated": n_new,
-        "simulation time": f"{t_sim:.0f} s with {N_WORKERS} workers",
+        "simulation time": (f"{t_sim:.0f} s with {N_WORKERS} workers" if not summary_only
+                            else "saved run (not re-measured in summary-only mode)"),
         "total time": f"{time.perf_counter() - t_all:.0f} s",
         "QAE": f"exact pmf, m = {QAE_M[0]}..{QAE_M[-1]}",
         "MLAE": f"J = {MLAE_J[0]}..{MLAE_J[-1]}, S in {list(MLAE_S)}, {N_SEEDS} seeds, grid 20001 points + golden-section",
@@ -1121,4 +1200,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(summary_only="--summary-only" in sys.argv)

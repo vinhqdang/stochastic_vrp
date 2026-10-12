@@ -203,14 +203,55 @@ def equal_mass_grid(T: int) -> tuple[np.ndarray, np.ndarray]:
     return st.norm.ppf(u).astype(np.float64), np.full(T, 1.0 / T, dtype=np.float64)
 
 
-FACTOR_GRIDS = ("gh", "em")
+EM_AVG_INNER = 32     # inner Gauss-Legendre nodes per bin (16 gives 2.5e-12 at 128 bins; 32 gives 2e-15)
+EM_AVG_TRUNC = 9.0    # outer bins are cut at |z| = 9 (mass beyond it is below 1e-18)
+
+
+def bin_averaged_nodes(T: int, m: int = EM_AVG_INNER) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Inner quadrature of the bin averages over T equal-probability bins (em_avg).
+
+    For bin t, the average of a function g(z) over the bin under the standard
+    normal law is (T * integral over bin t of g(z) phi(z) dz). It is evaluated
+    with m-point Gauss-Legendre in z on the bin [z_t, z_{t+1}], z_t = Phi^{-1}(t / T),
+    with the outer bins cut at +-EM_AVG_TRUNC, and the weights are normalised
+    within the bin (they sum to one). The rule is taken in z rather than in
+    u = Phi(z): the integrand in z is smooth on each finite bin, whereas in u it
+    has algebraic endpoint behaviour in the outer bins.
+
+    Returns
+    -------
+    z_mid : (T,) probability-midpoint values Phi^{-1}((t + 1/2) / T) (reporting only)
+    z_nodes : (T, m) inner nodes
+    w_nodes : (T, m) weights, each row summing to one
+    """
+    T = int(T)
+    m = int(m)
+    if T < 1 or m < 1:
+        raise ValueError("T and m must be positive")
+    edges = st.norm.ppf(np.arange(T + 1, dtype=np.float64) / T)
+    edges[0], edges[-1] = -EM_AVG_TRUNC, EM_AVG_TRUNC
+    x, wgl = np.polynomial.legendre.leggauss(m)
+    lo, hi = edges[:-1, None], edges[1:, None]
+    z_nodes = 0.5 * (lo + hi) + 0.5 * (hi - lo) * x[None, :]
+    raw = wgl[None, :] * 0.5 * (hi - lo) * st.norm.pdf(z_nodes)
+    w_nodes = raw / raw.sum(axis=1, keepdims=True)
+    z_mid = st.norm.ppf((np.arange(T) + 0.5) / T)
+    return z_mid.astype(np.float64), z_nodes.astype(np.float64), w_nodes.astype(np.float64)
+
+
+FACTOR_GRIDS = ("gh", "em", "em_avg")
 
 
 def factor_grid(kind: str, size: int) -> tuple[np.ndarray, np.ndarray]:
-    """Factor nodes and weights: "gh" = Gauss-Hermite nodes, "em" = equal-mass bins."""
+    """Factor nodes and weights.
+
+    "gh" = Gauss-Hermite nodes; "em" = equal-mass bins at their midpoints;
+    "em_avg" = the same bins, returned with their midpoints for reference only
+    (the pmfs of an em_avg model are bin averages, see :func:`copula_demand`).
+    """
     if kind == "gh":
         return gh_nodes(size)
-    if kind == "em":
+    if kind in ("em", "em_avg"):
         return equal_mass_grid(size)
     raise ValueError(f"grid must be one of {FACTOR_GRIDS}, got {kind!r}")
 
@@ -276,17 +317,39 @@ def copula_demand(plan_json: dict, b: int, rho: float = DEFAULT_RHO, n_nodes: in
     """Copula discrete model of an instance at V = 2**b levels (see module doc).
 
     grid = "gh": n_nodes Gauss-Hermite nodes per factor; grid = "em": n_nodes
-    equal-probability bins per factor (:func:`equal_mass_grid`).
+    equal-probability bins per factor, conditional pmfs at the bin midpoints
+    (:func:`equal_mass_grid`); grid = "em_avg": the same bins with the
+    conditional pmfs averaged over each bin (:func:`bin_averaged_nodes`),
+    P(level | t) = T * integral over bin t of P(level | z) phi(z) dz.
     """
     dbar, pbar, n, Q = _plan_arrays(plan_json)
     V = 2 ** int(b)
     q_max = q999_max(dbar, pbar, cv)
     Q_level, unit = level_rule(Q, V, q_max, rule)
-    z, w = factor_grid(grid, n_nodes)
-    pmf_d = np.stack([conditional_level_pmf(m, cv, unit, V, z, rho) for m in dbar], axis=1)
-    pmf_p = np.stack([conditional_level_pmf(m, cv, unit, V, z, rho) for m in pbar], axis=1)
+    if grid == "em_avg":
+        z, nodes, W = bin_averaged_nodes(n_nodes)
+        w = np.full(z.size, 1.0 / z.size, dtype=np.float64)
+        pmf_d = _bin_averaged_pmfs(dbar, cv, unit, V, nodes, W, rho)
+        pmf_p = _bin_averaged_pmfs(pbar, cv, unit, V, nodes, W, rho)
+    else:
+        z, w = factor_grid(grid, n_nodes)
+        pmf_d = np.stack([conditional_level_pmf(m, cv, unit, V, z, rho) for m in dbar], axis=1)
+        pmf_p = np.stack([conditional_level_pmf(m, cv, unit, V, z, rho) for m in pbar], axis=1)
     return CopulaDemand(pmf_d=pmf_d, pmf_p=pmf_p, z=z, w=w, unit=float(unit),
                         Q_level=int(Q_level), rho=float(rho), b=int(b))
+
+
+def _bin_averaged_pmfs(means: np.ndarray, cv: float, unit: float, V: int,
+                       nodes: np.ndarray, W: np.ndarray, rho: float) -> np.ndarray:
+    """(T, n, V): per-customer conditional pmfs averaged over each factor bin.
+
+    nodes, W: (T, m) inner nodes and bin-normalised weights from
+    :func:`bin_averaged_nodes`.
+    """
+    T, m = nodes.shape
+    cond = np.stack([conditional_level_pmf(mu, cv, unit, V, nodes.ravel(), rho).reshape(T, m, V)
+                     for mu in means], axis=1)          # (T, n, m, V)
+    return np.einsum("tnjv,tj->tnv", cond, W)
 
 
 def tail_over_pickups(route: Sequence[int], pmf_d: np.ndarray, pmf_p_batch: np.ndarray,
@@ -359,6 +422,85 @@ def chance_copula(route: Sequence[int], cd: CopulaDemand) -> float:
         tails = tail_over_pickups(seq, cd.pmf_d[t], cd.pmf_p, cd.Q_level)
         total += cd.w[t] * float(np.dot(cd.w, tails))
     return float(total)
+
+
+def _sample_levels(pmf: np.ndarray, K: int, rng: np.random.Generator) -> np.ndarray:
+    """K independent draws of every customer's level from its pmf row; (n, K) floats."""
+    n = pmf.shape[0]
+    cdf = np.cumsum(pmf, axis=1)
+    cdf[:, -1] = 1.0
+    U = rng.random((n, K))
+    out = np.empty((n, K), dtype=np.float64)
+    for c in range(n):
+        out[c] = np.searchsorted(cdf[c], U[c], side="right")
+    return out
+
+
+def crn_factor_grid(pairs: Sequence[tuple[Sequence[int], Sequence[int]]], cd: CopulaDemand,
+                    K: int, seed: int) -> dict:
+    """Factor-grid estimates of P(D = +1), P(D = -1) for pairs of routes (common draws).
+
+    For a pair (a, b) of routes, D = 1[F_b > Q] - 1[F_a > Q] with both routes
+    evaluated on the SAME draws (common random numbers). Alternative-position
+    moves have a different base route for each move, hence the list of pairs.
+    The quantity is the sum over factor pairs (t, s) of w_t w_s times the
+    conditional probability, evaluated in the discrete copula model of ``cd``
+    (the model that :func:`chance_copula` evaluates exactly for one route).
+    Each factor pair draws its own K scenarios, in which the customers are
+    independent with pmfs pmf_d[t], pmf_p[s]: a conditional Monte Carlo over
+    the pairs, not an exact computation. The standard error of each grid sum is
+    sqrt(sum_ts (w_t w_s)^2 p_ts (1 - p_ts) / K) over the independent pairs.
+    Per draw, P(D = +1) - P(D = -1) = P(F_b > Q) - P(F_a > Q) exactly, so the
+    two estimates satisfy that identity without error.
+
+    Returns arrays over the pairs: P_D1, P_Dm1 (with standard errors se_D1,
+    se_Dm1), p_a and p_b (tails of the two routes), all as floats.
+    """
+    K = int(K)
+    if K < 1:
+        raise ValueError("K must be positive")
+    pairs = [([int(c) for c in a], [int(c) for c in b]) for a, b in pairs]
+    if not pairs:
+        raise ValueError("pairs must be non-empty")
+    routes = []
+    index: dict[tuple[int, ...], int] = {}
+    for a, b in pairs:
+        for r in (a, b):
+            key = tuple(r)
+            if key not in index:
+                index[key] = len(routes)
+                routes.append(list(r))
+    ia = np.array([index[tuple(a)] for a, _ in pairs])
+    ib = np.array([index[tuple(b)] for _, b in pairs])
+    M = len(pairs)
+    Q = cd.Q_level
+    T = cd.z.size
+    P_D1 = np.zeros(M)
+    P_Dm1 = np.zeros(M)
+    var_D1 = np.zeros(M)
+    var_Dm1 = np.zeros(M)
+    p_a = np.zeros(M)
+    p_b = np.zeros(M)
+    for t in range(T):
+        for s in range(T):
+            rng = np.random.default_rng([int(seed), t, s])
+            dsc = _sample_levels(cd.pmf_d[t], K, rng)
+            psc = _sample_levels(cd.pmf_p[s], K, rng)
+            w = float(cd.w[t] * cd.w[s])
+            flags = [route_peak(r, dsc, psc) > Q for r in routes]
+            for m in range(M):
+                x = flags[ib[m]]
+                y = flags[ia[m]]
+                d1 = float(np.mean(x & ~y))
+                dm = float(np.mean(~x & y))
+                P_D1[m] += w * d1
+                P_Dm1[m] += w * dm
+                p_a[m] += w * float(np.mean(y))
+                p_b[m] += w * float(np.mean(x))
+                var_D1[m] += w * w * d1 * (1.0 - d1) / K
+                var_Dm1[m] += w * w * dm * (1.0 - dm) / K
+    return {"P_D1": P_D1, "P_Dm1": P_Dm1, "se_D1": np.sqrt(var_D1), "se_Dm1": np.sqrt(var_Dm1),
+            "p_a": p_a, "p_b": p_b}
 
 
 # ============================================================

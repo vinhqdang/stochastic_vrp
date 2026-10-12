@@ -21,8 +21,11 @@ from quantum.experiments import (
     DEFAULT_CV,
     DEFAULT_DIST,
     DEFAULT_RHO,
+    CopulaDemand,
+    bin_averaged_nodes,
     canonical_ae_M,
     chance_copula,
+    crn_factor_grid,
     classical_queries,
     conditional_level_pmf,
     copula_demand,
@@ -926,3 +929,131 @@ def test_work_v3_toy_route_has_no_gh_output(tmp_path, monkeypatch):
     assert "gh" not in d
     assert {r["b"] for r in d["paired"]} == {4, 5, 6}
     assert len(d["routes"]) == 1 and 0 <= d["routes"][0]["B_union"] <= 1
+
+
+# ------------------------------------------------------------ Revision 3b: bin-averaged factor grid
+
+def test_bin_averaged_nodes_normalised_inside_bins_and_exact_for_phi_moment():
+    for T in (8, 64):
+        z_mid, nodes, W = bin_averaged_nodes(T, 32)
+        assert nodes.shape == (T, 32) and W.shape == (T, 32)
+        assert np.allclose(W.sum(axis=1), 1.0, atol=1e-14) and (W >= 0).all()
+        assert np.allclose(z_mid, st.norm.ppf((np.arange(T) + 0.5) / T))
+        # interior bins: inner nodes lie between the bin edges
+        edges = st.norm.ppf(np.arange(T + 1) / T)
+        for t in range(1, T - 1):
+            assert (nodes[t] > edges[t]).all() and (nodes[t] < edges[t + 1]).all()
+        # E[Phi(Z)] = 1/2 is reproduced by the mixture over bins (1/T) sum_t avg_t Phi
+        mix = float(np.sum(W * st.norm.cdf(nodes)) / T)
+        assert mix == pytest.approx(0.5, abs=1e-13)
+
+
+@pytest.mark.parametrize("T", [8, 128])
+def test_em_avg_mixture_reproduces_marginal_level_pmf(T):
+    """Mixture over equal-probability bins of the bin-averaged conditionals = marginal (1e-12)."""
+    plan = _synthetic_plan()
+    b = 4
+    cd = copula_demand(plan, b, 0.6, T, DEFAULT_CV, "nearest", "em_avg")
+    V = 2 ** b
+    assert cd.pmf_d.shape[0] == T and np.allclose(cd.w, 1.0 / T)
+    assert np.allclose(cd.pmf_d.sum(axis=2), 1.0, atol=1e-12)
+    dbar = np.asarray(plan["dbar"], dtype=np.float64)
+    pbar = np.asarray(plan["pbar"], dtype=np.float64)
+    n = dbar.size
+    for c in range(n):
+        marg_d = gamma_level_pmf(float(dbar[c]), DEFAULT_CV, cd.unit, V)
+        marg_p = gamma_level_pmf(float(pbar[c]), DEFAULT_CV, cd.unit, V)
+        assert np.max(np.abs(cd.pmf_d[:, c, :].mean(axis=0) - marg_d)) < 1e-12
+        assert np.max(np.abs(cd.pmf_p[:, c, :].mean(axis=0) - marg_p)) < 1e-12
+
+
+def test_copula_em_avg_rho_zero_matches_independent_model():
+    plan = _synthetic_plan()
+    route = [1, 2, 3]
+    cd = copula_demand(plan, 4, 0.0, 8, grid="em_avg")
+    dem, unit, Ql = instance_demand(plan, 4)
+    assert chance_copula(route, cd) == pytest.approx(chance(route, dem, Ql), abs=1e-12)
+
+
+def test_copula_em_avg_converges_to_gauss_hermite_limit():
+    plan = _synthetic_plan()
+    route = [1, 2, 3]
+    ref = chance_copula(route, copula_demand(plan, 4, 0.6, 128, grid="gh"))
+    avg = chance_copula(route, copula_demand(plan, 4, 0.6, 64, grid="em_avg"))
+    assert avg == pytest.approx(ref, abs=5e-3)
+
+
+def test_factor_grid_em_avg_dispatch():
+    z, w = factor_grid("em_avg", 8)
+    z_e, w_e = equal_mass_grid(8)
+    assert np.array_equal(z, z_e) and np.array_equal(w, w_e)
+    with pytest.raises(ValueError):
+        factor_grid("em_mid", 8)
+
+
+def test_driver_configs_include_bin_averaged_grid():
+    drv = _load_driver()
+    assert ("em_avg", 128) in drv._gh_configs(5) and ("em_avg", 8) in drv._gh_configs(5)
+    assert ("em_avg", 32) in drv._gh_configs(6) and ("em_avg", 64) not in drv._gh_configs(6)
+    assert drv._cfg_label("em_avg", 8) == "EMa8" and drv._cfg_label("em", 8) == "EMm8"
+    assert drv._cfg_label("gh", 16) == "GH16"
+
+
+# ------------------------------------------------------------ Revision 3b: CRN on the factor grid
+
+def _toy_copula(T=3, n=4, V=4, seed=1, K=5):
+    rng = np.random.default_rng(seed)
+    pmf_d = rng.dirichlet(np.ones(V), size=(T, n))
+    pmf_p = rng.dirichlet(np.ones(V), size=(T, n))
+    pmf_d[:, 0] = np.eye(V)[0]
+    pmf_p[:, 0] = np.eye(V)[0]
+    return CopulaDemand(pmf_d=pmf_d, pmf_p=pmf_p, z=np.arange(T, dtype=float),
+                        w=np.full(T, 1.0 / T), unit=1.0, Q_level=K, rho=0.5, b=2)
+
+
+def test_crn_identical_routes_have_no_difference():
+    cd = _toy_copula()
+    out = crn_factor_grid([([1, 2, 3], [1, 2, 3])], cd, K=2000, seed=3)
+    assert out["P_D1"][0] == 0.0 and out["P_Dm1"][0] == 0.0
+    assert out["p_a"][0] == out["p_b"][0]
+
+
+def test_crn_point_mass_pairs_are_exact():
+    """Deterministic demands: route [1,2] peaks at 4, route [2,1] at 5; with K = 4 only [2,1] overflows."""
+    V = 4
+    cd = _toy_copula(T=2, n=3, V=V, K=4)
+    pmf_d = np.zeros_like(cd.pmf_d)
+    pmf_p = np.zeros_like(cd.pmf_p)
+    pmf_d[:, :, 0] = 1.0
+    pmf_d[:, 1, :] = np.eye(V)[2]
+    pmf_d[:, 2, :] = np.eye(V)[2]
+    pmf_p[:, :, :] = np.eye(V)[0]
+    pmf_p[:, 2, :] = np.eye(V)[3]
+    cd = CopulaDemand(pmf_d=pmf_d, pmf_p=pmf_p, z=cd.z, w=cd.w, unit=1.0, Q_level=4, rho=0.5, b=2)
+    out = crn_factor_grid([([1, 2], [2, 1])], cd, K=50, seed=0)
+    assert out["P_D1"][0] == pytest.approx(1.0, abs=1e-15)
+    assert out["P_Dm1"][0] == pytest.approx(0.0, abs=1e-15)
+    assert out["p_a"][0] == pytest.approx(0.0, abs=1e-15) and out["p_b"][0] == pytest.approx(1.0, abs=1e-15)
+
+
+def test_crn_per_draw_identity_and_exact_tail_agreement():
+    cd = _toy_copula(T=3, n=4, V=4, seed=2, K=5)
+    route = [1, 2, 3]
+    alt = [3, 1, 2]
+    other = [2, 3, 1]
+    out = crn_factor_grid([(route, alt), (route, other)], cd, K=200_000, seed=7)
+    for m in range(2):
+        # per draw, D = 1[F_b > Q] - 1[F_a > Q], so the two estimates satisfy this exactly
+        assert out["P_D1"][m] - out["P_Dm1"][m] == pytest.approx(out["p_b"][m] - out["p_a"][m], abs=1e-12)
+    exact = chance_copula(route, cd)
+    assert abs(out["p_a"][0] - exact) < 0.005
+    assert abs(out["p_b"][0] - chance_copula(alt, cd)) < 0.005
+
+
+def test_crn_rejects_bad_input():
+    cd = _toy_copula()
+    with pytest.raises(ValueError):
+        crn_factor_grid([], cd, K=10, seed=0)
+    with pytest.raises(ValueError):
+        crn_factor_grid([([1], [1])], cd, K=0, seed=0)
+
