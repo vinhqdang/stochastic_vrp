@@ -41,10 +41,23 @@ unitary A with the objective marked, and the Grover iterate uses A and A†.
 Degenerate thresholds: if Q+1 > L(V−1) the objective is identically 0; if
 Q < 0 it is identically 1 (no comparators are emitted).
 
-Expected size: 2bL + c + (c−b) + 1 + 1 + (c−1) + m + 1 qubits;
-Toffoli count ≈ 3L · 2c (adders) + 2(L+1)·T_cmp(c) + (L+1)·T_inc(m), with
-T_cmp and T_inc read off the synthesised circuits. Exact formulas are
-derived from the counts in M2 and stated in the paper.
+Size: 2bL + c + (c−b) + 1 + 1 + (c−1) + m + 1 qubits.
+
+Toffoli count (verified component by component against the transpiled
+circuit at (L,V) = (5,2), (10,8), (20,8), totals 160, 813, 2043):
+- Cuccaro adder: 2c per application, 3L applications;
+- comparator with a constant: 2c − 3 per application, 2(L+1) applications
+  (compute and uncompute);
+- controlled increment of the m-bit counter: 1 + 2(m−1)(m−2) per stage,
+  L+1 stages;
+- objective [count ≠ 0]: one m-control MCX, 4(m−2).
+
+    T(L, c, m) = 6cL + 2(L+1)(2c−3) + (L+1)(1 + 2(m−1)(m−2)) + 4(m−2),  m ≥ 3.
+
+Multi-controlled X with k ≥ 3 controls is a Toffoli-only dirty-ancilla
+V-chain (Barenco et al., Lemma 7.2), 4(k−2) Toffolis, borrowing k−2 qubits
+from cmp_anc and load (disjoint from the controls and target by the
+layout; restored for every input). It uses no extra qubits.
 
 ## Difference oracle (coherent common random numbers)
 Base route r and moved route r' (customer j inserted at position pos) share
@@ -52,7 +65,12 @@ the demand registers of all customers in r ∪ {j}. Run steps 2–5 twice, into
 (load_A, count_A, obj_A) for r and (load_B, count_B, obj_B) for r', reusing
 pad, carry, cmp and cmp_anc (they are restored). Then D ← obj_A ⊕ obj_B.
 By the insertion lemma D = 1[F_{r'} > Q] − 1[F_r > Q] ∈ {0,1}, so P(D=1) is
-exactly `classical.insertion_window`.
+exactly `classical.insertion_window`. Sizes: c = bit_length((L+1)(V−1)) (the
+moved route's bound, also used for the base route), m_A = bit_length(L+1),
+m_B = bit_length(L+2) (both necessary: a smaller m_B fails on 44 of 64
+inputs in a mutation test).
+
+Thresholds: a non-integer Q is used as ⌊Q⌋, as in `classical.chance`.
 
 ## Correctness checks (tests)
 - Basis inputs: for every assignment of the demand registers (small L, b),
