@@ -20,7 +20,7 @@
 - [x] M0 scaffold + literature review (2025–2026 included; LITERATURE.md, 139 verified records, 45 from 2026)
 - [x] M1 classical references (exact peak DP, discretisation, insertion lemma; svrpspd_wdro/quantum/classical.py, 112 tests)
 - [x] M2 Qiskit oracle + resource counts + correctness tests (quantum/oracle.py, DESIGN_M2.md, exact Toffoli formula)
-- [ ] M3 amplitude estimation experiments, coherent CRN
+- [~] M3 amplitude estimation experiments, coherent CRN (v2 measurements done and verified; interpretation layer under revision, DESIGN_M3.md)
 - [ ] M4 cheapest-feasible search, lower bounds
 - [ ] M5 resource estimation, crossover, manuscript
 

@@ -152,3 +152,20 @@ difference estimates, 30 moves per class), 2000 independent seeds each.
 Report RMS error vs A-applications, the fitted slopes (quantum ≈ −1,
 classical ≈ −½), and the cost ratio difference/stand-alone at equal RMS,
 which should track ρ_q. Independent seed streams per configuration.
+
+## Status after review of revision 2 (2026-10-12)
+
+Measurements verified (scenarios = BATON model; 15 moves recomputed
+independently within 1.5 SE; Grover rotation model holds on the real
+circuits to 6e−15; MLAE re-implementation matches). Interpretation layer to
+be redone: QAE errors from the exact outcome pmf (sampled RMS misses the
+tails), per-class cost comparison (classical estimates a signed mean
+directly), discretisation without quadrature error (≥ 64 nodes per factor
+beyond L ≈ 6), ratio table without silent drops, MLAE only with S ≥ 32,
+p'-band tables and route-bootstrap intervals.
+
+**End-load lemma (to be written up).** For any reordering r' of the same
+customers, L_0 = Σd and L_L = Σp are order-invariant, so
+1[F_r > Q] = 1[F_{r'} > Q] whenever max(Σd, Σp) > Q; hence
+P(D ≠ 0) ≤ P(Σd ≤ Q, Σp ≤ Q, max(F_r, F_{r'}) > Q). This explains the large
+share of intra-route moves with Var(D) = 0 (55% on city, 50% on CMT).
