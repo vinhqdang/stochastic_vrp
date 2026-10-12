@@ -146,7 +146,7 @@ Resolved thread from paper 4: BATON's W-DRO gate in
 tighter threshold. Revision 1 of BATON states this explicitly (Section
 4.1) and presents the gate as a more conservative regime.
 
-### Paper 7 — QUASAR (papers/quasar/, ACTIVE — M2)
+### Paper 7 — QUASAR (papers/quasar/, ACTIVE — M3)
 
 *Quantum Amplitude estimation for Stochastic vehicle Routing.* Quantum
 algorithms for chance-constrained / CVaR SVRPSPD: a coherent reversible

@@ -79,3 +79,12 @@ Thresholds: a non-integer Q is used as ⌊Q⌋, as in `classical.chance`.
   (statevector); P(D = 1) equals `classical.insertion_window`.
 - Amplitude estimation (qiskit-algorithms IAE / MLAE) on A returns an
   estimate within its confidence interval of the exact value.
+
+## Exact probabilities and query accounting
+- `exact_probability` enumerates demand assignments through the classical
+  permutation U_eval, weighted by the product of pmfs (exact; cost
+  exponential in the demand bits only); the statevector is used only below
+  23 qubits and as a cross-check.
+- `num_oracle_queries` counts applications of A: each round of k Grover
+  iterates costs 2k+1 applications per shot. The raw library count
+  (shots·Σk) is reported separately.

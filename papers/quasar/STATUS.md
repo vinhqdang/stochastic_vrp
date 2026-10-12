@@ -6,7 +6,7 @@
 - **Venue:** not fixed. Candidates: INFORMS Journal on Computing; IEEE
   Transactions on Quantum Engineering. Decide at M3 from the strength of the
   results.
-- **State:** **ACTIVE — M2 next (Qiskit oracle).** Open for
+- **State:** **ACTIVE — M3 next (amplitude estimation experiments, coherent CRN on real instances).** Open for
   edits.
 - **Sharing:** uses the shared engine's instances, scenario generators and
   route conventions (`svrpspd_wdro/core`); quantum code is separate in
@@ -19,7 +19,7 @@
 ## Milestones
 - [x] M0 scaffold + literature review (2025–2026 included; LITERATURE.md, 139 verified records, 45 from 2026)
 - [x] M1 classical references (exact peak DP, discretisation, insertion lemma; svrpspd_wdro/quantum/classical.py, 112 tests)
-- [ ] M2 Qiskit oracle + resource counts + correctness tests
+- [x] M2 Qiskit oracle + resource counts + correctness tests (quantum/oracle.py, DESIGN_M2.md, exact Toffoli formula)
 - [ ] M3 amplitude estimation experiments, coherent CRN
 - [ ] M4 cheapest-feasible search, lower bounds
 - [ ] M5 resource estimation, crossover, manuscript
