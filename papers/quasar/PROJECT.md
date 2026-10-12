@@ -96,6 +96,14 @@ attacks.
   the statistics), to show when the window mass is small (anti-concentration
   of the peak for long routes).
 
+- **M3 finding (2026-10-12).** For inter-route insertions the gain is
+  negligible (median ρ_q = 0.98 on 648k real moves): Δ = p' − p and an
+  insertion multiplies the risk, so the base carries little of it. For
+  intra-route moves (relocate, 2-opt) a pilot gives median ρ_q = 0.27 and
+  0.44. RQ2 is therefore re-targeted at intra-route moves and at comparisons
+  between candidate positions; the insertion result is kept as a negative
+  baseline (DESIGN_M3.md).
+
 ### 3.3 Cheapest-feasible move search (RQ3)
 - Classical ALNS repair sorts candidate insertions by deterministic cost and
   takes the first that passes the gate. Quantum version: exponential search
