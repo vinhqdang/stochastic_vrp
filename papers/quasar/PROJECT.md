@@ -69,6 +69,12 @@ attacks.
   demands; used to obtain true amplitudes on real instances at scale.
 
 ### 3.2 Coherent common random numbers (RQ2) — central contribution
+- Positioning (LITERATURE.md §5, §7): a difference estimator on shared
+  randomness is a corollary of quantum mean estimation, and quantum MLMC
+  already estimates coupled differences. What is specific here is the
+  route-comparison construction, the insertion lemma and the measured
+  window masses; quantum selection papers (2026) use independent noise per
+  candidate and leave correlated sampling open.
 - Evaluate base route r and moved route r' on the same register ξ and encode
   D(ξ) = 1[F_{r'}(ξ) > Q] − 1[F_r(ξ) > Q].
 - **Insertion lemma (to prove).** Inserting customer j anywhere in r gives
@@ -128,7 +134,16 @@ attacks.
    the literature. A negative crossover result is an acceptable outcome and
    will be reported as such.
 
-## 5. Rules
+## 5. Positioning
+
+See `LITERATURE.md` §7. Closest prior work: amplitude estimation for travel
+times in a stochastic VRP (August 2026), amplitude estimation over discrete
+decisions with VaR/CVaR (2019–2025), quantum selection with independent
+noise (2021, 2026), quantum multilevel Monte Carlo (2021). Not to be
+claimed: a first quantum algorithm for stochastic routing, a new variance
+reduction technique, or a practical advantage without RQ4.
+
+## 6. Rules
 
 - Every literature claim verified (VERIFY_CITATIONS.md); 2025–2026 work
   covered.
@@ -138,7 +153,7 @@ attacks.
 - Roles: the master plans and designs algorithms; execution is delegated in
   small, specified modules with tests; review is a separate pass.
 
-## 6. Milestones
+## 7. Milestones
 
 - M0 project scaffold and literature review (2025–2026 included).
 - M1 classical references: exact DP for the peak distribution, demand
