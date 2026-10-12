@@ -40,6 +40,29 @@ from quantum.experiments import (
     quantum_queries,
     signed_costs,
     window_stats,
+    ALT_DIST_LABELS,
+    alt_distance_label,
+    band_label,
+    canonical_ae_M_array,
+    class_costs,
+    class_costs_array,
+    classical_queries_array,
+    end_load_bound,
+    end_load_violations,
+    gate_distance,
+    paired_level_check,
+    plug_in_variance,
+    quantise_levels,
+    quantum_queries_array,
+    reconstruct_intra,
+    route_bootstrap_quantile,
+    route_peak,
+    rho_q_upper,
+    rule_of_three_bound,
+    sum_loads,
+    weighted_quantile_sorted,
+    PPRIME_BANDS,
+    GATE_BANDS,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -496,3 +519,198 @@ def test_level_rule_nearest_variant():
         assert Kd + 0.5 >= x and Kd - 0.5 < x or Kd == 1
     with pytest.raises(ValueError):
         level_rule(1.0, V, q_max, "floor")
+
+
+# ============================================================
+# M3a v3 interpretation layer
+# ============================================================
+
+
+def _toy_scenarios(n, levels=3):
+    """All equal-weight scenarios of n customers with integer d_i, p_i uniform on 0..levels-1."""
+    grid = np.array(np.meshgrid(*([np.arange(levels)] * (2 * n)), indexing="ij")).reshape(2 * n, -1)
+    dsc = grid[:n].astype(np.float64)
+    psc = grid[n:].astype(np.float64)
+    return dsc, psc
+
+
+def test_end_load_bound_dominates_observed_p_ne0_on_toy_route():
+    """Exact toy: 3 customers, levels 0..2, all intra moves. D != 0 implies both end
+    loads <= Q (zero violations), and the union end-load bound is >= P(D != 0) per move."""
+    from quantum.experiments import intra_candidates
+
+    dsc, psc = _toy_scenarios(3)
+    Q = 3.0
+    route = [0, 1, 2]
+    y = route_peak(route, dsc, psc) > Q
+    end_ok = (sum_loads(route, dsc) <= Q) & (sum_loads(route, psc) <= Q)
+    moves, _ = intra_candidates(route, cap=200, rng=np.random.default_rng(0), all_upto=12)
+    xs, p_ne0 = [], []
+    for kind, i, k, t in moves:
+        x = route_peak(list(t), dsc, psc) > Q
+        D = x.astype(np.int8) - y.astype(np.int8)
+        assert end_load_violations(D, end_ok) == 0
+        xs.append(x)
+        p_ne0.append(float(np.mean(D != 0)))
+    bound = end_load_bound(end_ok, y, xs)
+    assert max(p_ne0) > 0.0  # the toy is not trivially zero
+    assert bound["B_union"] >= max(p_ne0) - 1e-12
+    assert bound["B_union"] >= bound["B_spec"] - 1e-12
+    assert 0.0 <= bound["B_spec"] <= 1.0
+
+
+def test_end_load_violation_counter_flags_bad_scenarios():
+    D = np.array([0, 1, -1, 0, 1])
+    end_ok = np.array([True, True, False, True, False])
+    assert end_load_violations(D, end_ok) == 2
+    assert end_load_violations(np.zeros(5, dtype=int), np.zeros(5, dtype=bool)) == 0
+
+
+def test_end_load_bound_shape_checks():
+    with pytest.raises(ValueError):
+        end_load_bound(np.array([True]), np.array([True, False]))
+    with pytest.raises(ValueError):
+        end_load_bound(np.array([True, True]), np.array([True, False]), [np.array([True])])
+
+
+def test_reconstruct_intra_inverts_candidate_generation():
+    route = [4, 1, 7, 3, 9]
+    moves, _ = intra_candidates(route, cap=10_000, rng=np.random.default_rng(1), all_upto=12)
+    assert len(moves) > 0
+    for kind, i, k, t in moves:
+        assert tuple(reconstruct_intra(route, kind, i, k)) == t
+    with pytest.raises(ValueError):
+        reconstruct_intra(route, "shuffle", 0, 1)
+
+
+def test_rule_of_three_plug_in_and_bounds():
+    N = 200_000
+    assert rule_of_three_bound(N) == pytest.approx(1.5e-5)
+    assert plug_in_variance(0.0, N) == pytest.approx(3.0 / N)
+    assert plug_in_variance(0.5, N) == pytest.approx(0.5)
+    assert rho_q_upper(0.0, 0.3, N) == pytest.approx(math.sqrt(3.0 / N) / math.sqrt(0.21))
+    assert math.isnan(rho_q_upper(0.0, 0.0, N))
+    with pytest.raises(ValueError):
+        rule_of_three_bound(0)
+
+
+def test_weighted_quantile_is_lower_quantile():
+    v = np.array([1.0, 2.0, 3.0, 4.0])
+    assert weighted_quantile_sorted(v, np.ones(4), 0.5) == 2.0
+    v5 = np.arange(5.0)
+    assert weighted_quantile_sorted(v5, np.ones(5), 0.5) == 2.0
+    # weights as route multiplicities: value 10 carries most of the mass
+    assert weighted_quantile_sorted(np.array([1.0, 10.0]), np.array([1.0, 5.0]), 0.5) == 10.0
+
+
+def test_route_bootstrap_shape_and_degenerate_cases():
+    rng = np.random.default_rng(3)
+    # all zeros: point and interval are zero
+    z = np.zeros(50)
+    assert route_bootstrap_quantile(z, np.arange(50), reps=200) == (0.0, 0.0, 0.0)
+    # one cluster: every replicate is the same sample, so the interval collapses
+    v = rng.normal(size=40)
+    pt, lo, hi = route_bootstrap_quantile(v, np.zeros(40, dtype=int), reps=200)
+    assert lo == pytest.approx(pt) and hi == pytest.approx(pt)
+    # many clusters: ordered interval around the point, and it narrows with more clusters
+    vals = rng.normal(size=2000)
+    few = route_bootstrap_quantile(vals, np.arange(2000) % 20, reps=500, seed=1)
+    many = route_bootstrap_quantile(vals, np.arange(2000) % 1000, reps=500, seed=1)
+    assert few[1] <= few[0] <= few[2] and many[1] <= many[0] <= many[2]
+    assert (many[2] - many[1]) < (few[2] - few[1])
+    # NaN values are dropped; the default replicate count is 1000 and the result is reproducible
+    a = route_bootstrap_quantile(np.array([1.0, np.nan, 2.0, 3.0]), np.array([0, 0, 1, 2]), seed=5)
+    b = route_bootstrap_quantile(np.array([1.0, np.nan, 2.0, 3.0]), np.array([0, 0, 1, 2]), seed=5)
+    assert a == b and all(np.isfinite(a))
+    assert route_bootstrap_quantile(np.array([np.nan]), np.array([0]))[0] != route_bootstrap_quantile(
+        np.array([np.nan]), np.array([0]))[0]  # NaN point for an empty sample
+    with pytest.raises(ValueError):
+        route_bootstrap_quantile(np.zeros(3), np.zeros(2))
+
+
+def test_class_costs_formulas_per_class():
+    N = 200_000
+    eps = 1e-3
+    z2 = 1.96 ** 2
+    # class 1, Var > floor: quantum CRN = one amplitude, classical = z^2 var / eps^2
+    P1, pn = 0.01, 0.05
+    c = class_costs(1, P1, 0.0, pn, eps, N)
+    assert c["Nq"] == pytest.approx(quantum_queries(P1 * (1 - P1), eps))
+    assert c["Nc"] == pytest.approx(z2 * P1 * (1 - P1) / eps ** 2)
+    assert c["Nq_sa"] == pytest.approx(quantum_queries(pn * (1 - pn), eps))
+    assert c["Nc_sa"] == pytest.approx(z2 * pn * (1 - pn) / eps ** 2)
+    # class 1 with zero count: rule-of-three plug-in on both paradigms
+    z = class_costs(1, 0.0, 0.0, pn, eps, N)
+    assert z["Nq"] == pytest.approx(quantum_queries(3.0 / N, eps))
+    assert z["Nc"] == pytest.approx(z2 * (3.0 / N) / eps ** 2)
+    # classes 2-3: quantum two-estimate at eps/2 each; classical DIRECT signed mean
+    P1s, Pm1s = 0.01, 0.02
+    s = class_costs(2, P1s, Pm1s, pn, eps, N)
+    assert s["Nq"] == pytest.approx(quantum_queries(P1s * (1 - P1s), eps / 2)
+                                    + quantum_queries(Pm1s * (1 - Pm1s), eps / 2))
+    var_dir = P1s + Pm1s - (P1s - Pm1s) ** 2
+    assert s["Nc"] == pytest.approx(z2 * var_dir / eps ** 2)
+    # classes 2-3 with both counts zero: both estimates on the 3/N floor, direct on 3/N
+    s0 = class_costs(3, 0.0, 0.0, pn, eps, N)
+    assert s0["Nq"] == pytest.approx(2 * quantum_queries(3.0 / N, eps / 2))
+    assert s0["Nc"] == pytest.approx(z2 * (3.0 / N) / eps ** 2)
+    with pytest.raises(ValueError):
+        class_costs(1, 0.1, 0.1, pn, eps, N)
+    with pytest.raises(ValueError):
+        class_costs(4, 0.1, 0.0, pn, eps, N)
+
+
+def test_class_costs_array_matches_scalar_and_query_helpers():
+    rng = np.random.default_rng(7)
+    n = 60
+    cls = rng.integers(1, 4, size=n)
+    P1 = np.where(cls == 1, rng.uniform(0.02, 0.5, n), rng.uniform(0, 0.2, n) * (rng.random(n) < 0.7))
+    Pm1 = np.where(cls == 1, 0.0, rng.uniform(0, 0.2, n) * (rng.random(n) < 0.7))
+    pn = rng.uniform(0.02, 0.5, n)
+    eps = 0.1 * pn
+    arr = class_costs_array(cls, P1, Pm1, pn, eps, 200_000)
+    for i in range(n):
+        sc = class_costs(int(cls[i]), P1[i], Pm1[i], pn[i], float(eps[i]), 200_000)
+        for key in ("Nq", "Nc", "Nq_sa", "Nc_sa"):
+            assert arr[key][i] == pytest.approx(sc[key], rel=1e-12)
+    # vectorised query helpers equal the scalar ones
+    v = np.array([0.0, 1e-6, 1e-4, 0.05, 0.2])
+    for e in (1e-2, 1e-3, 1e-4):
+        assert canonical_ae_M_array(v, e).tolist() == [canonical_ae_M(x, e) for x in v]
+        assert quantum_queries_array(v, e).tolist() == [quantum_queries(x, e) for x in v]
+    assert classical_queries_array(v, 1e-3)[1] == pytest.approx(classical_queries(1e-6, 1e-3))
+
+
+def test_quantise_levels_nearest_bins_and_absorbing_top():
+    unit, V = 1.0, 4
+    x = np.array([0.0, 0.49, 0.5, 1.49, 1.5, 2.6, 100.0])
+    assert quantise_levels(x, unit, V).tolist() == [0, 0, 1, 1, 2, 3, 3]
+    with pytest.raises(ValueError):
+        quantise_levels(x, 0.0, V)
+
+
+def test_paired_level_check_is_zero_when_demands_sit_on_levels():
+    """Deterministic integer demands equal their levels, so the level check has no bias."""
+    N = 16
+    dsc = np.tile(np.array([[1.0], [2.0], [1.0]]), (1, N))
+    psc = np.tile(np.array([[0.0], [1.0], [2.0]]), (1, N))
+    route = [0, 1, 2]
+    for Q in (2.5, 3.5, 4.5):
+        K = int(Q - 0.5)  # unit 1: Q = K + 1/2
+        r = paired_level_check(route, dsc, psc, Q, 1.0, 8, K)
+        assert r["bias"] == pytest.approx(0.0)
+        assert r["se"] == 0.0
+
+
+def test_band_and_distance_labels():
+    assert band_label(0.0, PPRIME_BANDS) == "<0.02"
+    assert band_label(0.02, PPRIME_BANDS) == "0.02-0.2"
+    assert band_label(0.2, PPRIME_BANDS) == "0.2-0.5"
+    assert band_label(0.5, PPRIME_BANDS) == ">0.5"
+    assert band_label(float("nan"), PPRIME_BANDS) == "NaN"
+    assert gate_distance(0.13) == pytest.approx(0.03)
+    assert band_label(gate_distance(0.13), GATE_BANDS) == "0.02-0.1"
+    assert [alt_distance_label(d) for d in (1, 2, 3, 4, 9)] == ["1", "2-3", "2-3", ">3", ">3"]
+    assert ALT_DIST_LABELS == ("1", "2-3", ">3")
+    with pytest.raises(ValueError):
+        alt_distance_label(0)

@@ -597,3 +597,302 @@ def classical_samples_for_error(p: float, err: float, z: float = 1.96) -> float:
     if err <= 0.0:
         return float("nan")
     return z * z * p * (1.0 - p) / (err * err)
+
+
+# ============================================================
+# M3a v3: interpretation layer (rule of three, end-load lemma, costs,
+# paired level check, route bootstrap). Design: DESIGN_M3.md, status after
+# review of revision 2.
+# ============================================================
+
+GATE_LEVEL = 0.10  # per-route failure target 1 - ALPHA of dethloff_runner (ALPHA = 0.90)
+PPRIME_BANDS = ((0.0, 0.02, "<0.02"), (0.02, 0.2, "0.02-0.2"), (0.2, 0.5, "0.2-0.5"),
+                (0.5, 1.0000001, ">0.5"))
+GATE_BANDS = ((0.0, 0.02, "<0.02"), (0.02, 0.1, "0.02-0.1"), (0.1, 0.4, "0.1-0.4"),
+              (0.4, 1.0000001, ">0.4"))
+ALT_DIST_LABELS = ("1", "2-3", ">3")
+BOOT_REPS = 1000
+
+
+def band_label(x: float, bands: Sequence[tuple[float, float, str]]) -> str:
+    """Label of the half-open band [lo, hi) that contains x ("NaN" if none)."""
+    if x is None or not np.isfinite(x):
+        return "NaN"
+    for lo, hi, lab in bands:
+        if lo <= x < hi:
+            return lab
+    return "NaN"
+
+
+def gate_distance(pprime: float, gate: float = GATE_LEVEL) -> float:
+    """Absolute distance |p' - gate| of a move's new window probability to the gate level."""
+    return abs(float(pprime) - gate)
+
+
+def alt_distance_label(d: int) -> str:
+    """Position distance |pos2 - pos| for alternative-position moves: 1, 2-3, > 3."""
+    d = int(d)
+    if d < 1:
+        raise ValueError(f"position distance must be >= 1, got {d}")
+    if d == 1:
+        return "1"
+    return "2-3" if d <= 3 else ">3"
+
+
+def rule_of_three_bound(N: int) -> float:
+    """95 % upper bound on P(D != 0) when no scenario out of N shows D != 0."""
+    if int(N) < 1:
+        raise ValueError("N must be positive")
+    return 3.0 / float(N)
+
+
+def plug_in_variance(var: float, N: int) -> float:
+    """Variance used for costs and ratios: max(var, 3 / N) (rule-of-three plug-in)."""
+    return max(float(var), rule_of_three_bound(N))
+
+
+def rho_q_upper(var: float, pn: float, N: int) -> float:
+    """rho_q with the rule-of-three plug-in for Var(D); NaN when p' is 0 or 1."""
+    q = float(pn) * (1.0 - float(pn))
+    if q <= 0.0:
+        return float("nan")
+    return math.sqrt(plug_in_variance(var, N)) / math.sqrt(q)
+
+
+# ---------------------------------------------------------------- per-class costs
+
+def class_costs(cls: int, P1: float, Pm1: float, pn: float, eps: float, N: int) -> dict:
+    """Query costs of one move at absolute error eps, both paradigms, with the
+    rule-of-three plug-in (Var -> max(Var, 3/N) before any cost is computed).
+
+    Stand-alone (per-move) estimate of p': quantum and classical at eps.
+    Class 1 (D in {0, 1}): one amplitude P(D = 1); quantum CRN cost at eps,
+    classical CRN cost z^2 var / eps^2 with var = max(P1 (1 - P1), 3/N).
+    Classes 2-3 (D in {-1, 0, 1}): quantum two-estimate cost, P(D = 1) and
+    P(D = -1) each at eps/2 with variance max(P (1 - P), 3/N); classical DIRECT
+    signed-mean cost z^2 var / eps^2 with var = max(E D^2 - (E D)^2, 3/N).
+    """
+    if cls not in (1, 2, 3):
+        raise ValueError(f"cls must be 1, 2 or 3, got {cls}")
+    if not eps > 0:
+        raise ValueError(f"eps must be positive, got {eps}")
+    P1 = float(P1)
+    Pm1 = float(Pm1)
+    if cls == 1 and Pm1 != 0.0:
+        raise ValueError("class 1 moves have D in {0, 1}; P(D = -1) must be 0")
+    delta = P1 - Pm1
+    var_dir = max(P1 + Pm1 - delta * delta, 0.0)
+    sa_var = float(pn) * (1.0 - float(pn))
+    out = {
+        "Nq_sa": quantum_queries(sa_var, eps),
+        "Nc_sa": classical_queries(sa_var, eps),
+        "Nc": classical_queries(plug_in_variance(var_dir, N), eps),
+    }
+    if cls == 1:
+        out["Nq"] = quantum_queries(plug_in_variance(var_dir, N), eps)
+    else:
+        v1 = plug_in_variance(P1 * (1.0 - P1), N)
+        v2 = plug_in_variance(Pm1 * (1.0 - Pm1), N)
+        out["Nq"] = quantum_queries(v1, eps / 2.0) + quantum_queries(v2, eps / 2.0)
+    return out
+
+
+# ---------------------------------------------------------------- end-load lemma
+
+def end_load_bound(end_ok: np.ndarray, base_over: np.ndarray,
+                   move_over: Sequence[np.ndarray] = ()) -> dict:
+    """Route-level end-load bounds on P(D != 0) for the intra moves of one route.
+
+    end_ok: bool, sum of deliveries <= Q and sum of pickups <= Q (E).
+    base_over: bool, F_r > Q. move_over: bool arrays F_{r'} > Q for the moves.
+
+    B_spec = P(E and F_r > Q) (the quantity in the design note).
+    B_union = P(E and (F_r > Q or any F_{r'} > Q)). Under E, D != 0 forces
+    max(F_r, F_{r'}) > Q, so B_union bounds P(D != 0) of every listed move.
+    """
+    E = np.asarray(end_ok, dtype=bool)
+    base = np.asarray(base_over, dtype=bool)
+    if E.shape != base.shape or E.ndim != 1:
+        raise ValueError("end_ok and base_over must be 1-D arrays of equal length")
+    union = E & base
+    for x in move_over:
+        x = np.asarray(x, dtype=bool)
+        if x.shape != base.shape:
+            raise ValueError("move flags must have the same shape as base_over")
+        union = union | (E & x)
+    return {"B_spec": float(np.mean(E & base)), "B_union": float(np.mean(union))}
+
+
+def end_load_violations(D: np.ndarray, end_ok: np.ndarray) -> int:
+    """Scenarios with D != 0 where an end load exceeds Q. The lemma says 0."""
+    D = np.asarray(D)
+    E = np.asarray(end_ok, dtype=bool)
+    if D.shape != E.shape:
+        raise ValueError("D and end_ok must have the same shape")
+    return int(np.count_nonzero((D != 0) & ~E))
+
+
+def sum_loads(route: Sequence[int], dsc: np.ndarray) -> np.ndarray:
+    """Sum of the given demands over a route, accumulated as in load_profile."""
+    total = np.zeros(dsc.shape[1], dtype=np.float64)
+    for c in route:
+        total += dsc[int(c)]
+    return total
+
+
+def reconstruct_intra(route: Sequence[int], kind: str, i: int, k: int) -> list[int]:
+    """Route after an intra move as generated by intra_candidates (kind, i, k)."""
+    s = [int(c) for c in route]
+    if kind == "relocate":
+        c = s.pop(int(i))
+        s.insert(int(k), c)
+    elif kind == "swap":
+        s[int(i)], s[int(k)] = s[int(k)], s[int(i)]
+    elif kind == "2opt":
+        s[int(i):int(k) + 1] = s[int(i):int(k) + 1][::-1]
+    else:
+        raise ValueError(f"unknown intra move kind {kind!r}")
+    return s
+
+
+# ---------------------------------------------------------------- paired level check
+
+def quantise_levels(x: np.ndarray, unit: float, V: int) -> np.ndarray:
+    """Nearest-level binning of continuous demands on the grid of level_rule.
+
+    Level v carries [(v - 1/2) u, (v + 1/2) u); the top level V - 1 absorbs the
+    upper tail. Returns float64 levels (integer valued).
+    """
+    if not unit > 0:
+        raise ValueError(f"unit must be positive, got {unit}")
+    lev = np.floor(np.asarray(x, dtype=np.float64) / unit + 0.5)
+    return np.clip(lev, 0.0, float(int(V) - 1))
+
+
+def paired_level_check(route: Sequence[int], dsc: np.ndarray, psc: np.ndarray,
+                       Q: float, unit: float, V: int, K: int) -> dict:
+    """Level-only discretisation error on the same continuous scenarios.
+
+    p_cont = P(F > Q) on the continuous scenarios; p_lev = P(F_level > K) on
+    the quantised scenarios (same draws). bias = p_lev - p_cont; se is the
+    paired standard error of the scenario-wise difference of the two flags.
+    """
+    y = route_peak(route, dsc, psc) > Q
+    x = route_peak(route, quantise_levels(dsc, unit, V),
+                   quantise_levels(psc, unit, V)) > float(K)
+    diff = x.astype(np.float64) - y.astype(np.float64)
+    N = y.size
+    se = float(np.std(diff, ddof=1)) / math.sqrt(N) if N > 1 else float("nan")
+    p_cont = float(y.mean())
+    p_lev = float(x.mean())
+    return {"p_cont": p_cont, "p_lev": p_lev, "bias": p_lev - p_cont, "se": se, "N": N}
+
+
+# ---------------------------------------------------------------- bootstrap
+
+def weighted_quantile_sorted(values: np.ndarray, weights: np.ndarray, q: float) -> float:
+    """Lower weighted q-quantile of values already sorted ascending."""
+    cw = np.cumsum(weights)
+    total = cw[-1]
+    if not total > 0:
+        return float("nan")
+    idx = int(np.searchsorted(cw, q * total, side="left"))
+    return float(values[min(idx, values.size - 1)])
+
+
+def route_bootstrap_quantile(values: np.ndarray, clusters: np.ndarray, q: float = 0.5,
+                             reps: int = BOOT_REPS, seed: int = 0,
+                             level: float = 0.95) -> tuple[float, float, float]:
+    """Point estimate and percentile bootstrap interval of a quantile, resampling
+    clusters (routes) with replacement.
+
+    Each replicate draws R clusters from the R distinct clusters (multinomial
+    counts) and takes the weighted lower q-quantile of the moves, each move
+    weighted by the count of its route. Non-finite values are dropped.
+    Returns (point, lo, hi) with the point estimate from the same definition.
+    """
+    v = np.asarray(values, dtype=np.float64)
+    c = np.asarray(clusters)
+    if v.shape != c.shape or v.ndim != 1:
+        raise ValueError("values and clusters must be 1-D arrays of equal length")
+    keep = np.isfinite(v)
+    v, c = v[keep], c[keep]
+    if v.size == 0:
+        return float("nan"), float("nan"), float("nan")
+    uniq, inv = np.unique(c, return_inverse=True)
+    R = uniq.size
+    order = np.argsort(v, kind="stable")
+    vs = v[order]
+    cs = inv[order]
+    point = weighted_quantile_sorted(vs, np.ones(vs.size), q)
+    rng = np.random.default_rng(seed)
+    probs = np.full(R, 1.0 / R)
+    draws = np.empty(reps, dtype=np.float64)
+    for b in range(reps):
+        cnt = rng.multinomial(R, probs)
+        draws[b] = weighted_quantile_sorted(vs, cnt[cs].astype(np.float64), q)
+    a = (1.0 - level) / 2.0
+    lo, hi = np.quantile(draws, [a, 1.0 - a])
+    return point, float(lo), float(hi)
+
+
+# ---------------------------------------------------------------- vectorised costs
+
+def canonical_ae_M_array(var, eps) -> np.ndarray:
+    """Vectorised :func:`canonical_ae_M` (broadcasts var and eps)."""
+    var = np.maximum(np.asarray(var, dtype=np.float64), 0.0)
+    eps = np.broadcast_to(np.asarray(eps, dtype=np.float64), var.shape)
+    if np.any(~(eps > 0)):
+        raise ValueError("eps must be positive")
+    s = np.sqrt(var)
+    M = np.full(var.shape, np.nan)
+    done = np.zeros(var.shape, dtype=bool)
+    Mk = 1.0
+    for _ in range(80):
+        ok = (~done) & (2.0 * math.pi * s / Mk + math.pi ** 2 / (Mk * Mk) <= eps)
+        M[ok] = Mk
+        done |= ok
+        if done.all():
+            break
+        Mk *= 2.0
+    if not done.all():
+        raise RuntimeError("canonical_ae_M_array: no power of two reaches the target")
+    return M
+
+
+def quantum_queries_array(var, eps, reps: int = AE_REPS) -> np.ndarray:
+    """Vectorised :func:`quantum_queries`."""
+    return reps * (2.0 * canonical_ae_M_array(var, eps) + 1.0)
+
+
+def classical_queries_array(var, eps, z: float = Z_95) -> np.ndarray:
+    """Vectorised :func:`classical_queries`."""
+    var = np.maximum(np.asarray(var, dtype=np.float64), 0.0)
+    eps = np.asarray(eps, dtype=np.float64)
+    if np.any(~(eps > 0)):
+        raise ValueError("eps must be positive")
+    return z * z * var / (eps * eps)
+
+
+def class_costs_array(cls, P1, Pm1, pn, eps, N: int) -> dict:
+    """Vectorised :func:`class_costs` over moves (cls, P1, Pm1, pn, eps arrays)."""
+    cls = np.asarray(cls)
+    P1 = np.asarray(P1, dtype=np.float64)
+    Pm1 = np.asarray(Pm1, dtype=np.float64)
+    pn = np.asarray(pn, dtype=np.float64)
+    eps = np.asarray(eps, dtype=np.float64)
+    floor = rule_of_three_bound(N)
+    delta = P1 - Pm1
+    var_dir = np.maximum(P1 + Pm1 - delta * delta, 0.0)
+    v_dir = np.maximum(var_dir, floor)
+    sa_var = pn * (1.0 - pn)
+    v1 = np.maximum(P1 * (1.0 - P1), floor)
+    v2 = np.maximum(Pm1 * (1.0 - Pm1), floor)
+    Nq_single = quantum_queries_array(v_dir, eps)
+    Nq_signed = quantum_queries_array(v1, eps / 2.0) + quantum_queries_array(v2, eps / 2.0)
+    return {
+        "Nq_sa": quantum_queries_array(sa_var, eps),
+        "Nc_sa": classical_queries_array(sa_var, eps),
+        "Nq": np.where(cls == 1, Nq_single, Nq_signed),
+        "Nc": classical_queries_array(v_dir, eps),
+    }

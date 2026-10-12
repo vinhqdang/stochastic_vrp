@@ -169,3 +169,22 @@ customers, L_0 = Σd and L_L = Σp are order-invariant, so
 1[F_r > Q] = 1[F_{r'} > Q] whenever max(Σd, Σp) > Q; hence
 P(D ≠ 0) ≤ P(Σd ≤ Q, Σp ≤ Q, max(F_r, F_{r'}) > Q). This explains the large
 share of intra-route moves with Var(D) = 0 (55% on city, 50% on CMT).
+
+## Revision 3 decisions (2026-10-12, after review of v3)
+
+- **Factor register for the copula: equal-probability bins.** Quantise each
+  copula factor (delivery, pickup) into 2^f bins of equal probability,
+  u_t = (t + ½)/2^f, prepared by Hadamard gates alone (no rotations); each
+  demand register is then prepared conditionally on the bin. Gauss–Hermite
+  nodes (spacing 0.39 at 64 nodes) are coarser than the width of the
+  conditional overflow step (about 0.18) and do not converge on long routes;
+  equal-probability bins converge at 2^f = 16–32 on the tested routes.
+  Default f = 5, to be confirmed on more routes at b = 5 and 6.
+- **Demand levels:** b = 6 meets the rule "median relative bias ≤ 1 %, max ≤
+  5 %" on the paired check (105 routes); b = 5 has median 0.5 % and max 8 %.
+  The rule is a choice, stated as such; the worst cases are short routes.
+- **Classical certificate floor:** a classical estimate that sees no event
+  needs about 3/ε samples to certify a probability below ε, so the classical
+  cost is max(z²v/ε², 3/ε); this changes the city cells of the cost table.
+- **End-load lemma scope:** it covers every reordering of the same customers,
+  hence also alternative-position comparisons.

@@ -1,6 +1,9 @@
-"""Rotation-model simulators for amplitude estimation (QUASAR M3b v2).
+"""Rotation-model simulators for amplitude estimation (QUASAR M3b v3).
 
 Design: papers/quasar/DESIGN_M3.md, Revision 2, "M3b v2 - estimator behaviour".
+v3 adds exact (pmf-based) error metrics for canonical QAE, quantile metrics
+for the sampled estimators, and the cost-to-target and prediction helpers
+used by scripts/run_quasar_m3b.py.
 
 Conventions
 -----------
@@ -276,33 +279,40 @@ def _loglik(theta: np.ndarray, H: np.ndarray, S: int, ks: np.ndarray) -> np.ndar
     return np.sum(H * lp + (S - H) * lq, axis=1)
 
 
-def mlae_estimates(H: np.ndarray, J: int, S: int, chunk: int = 256) -> np.ndarray:
+def mlae_estimates(H: np.ndarray, J: int, S: int, chunk: int = 128) -> np.ndarray:
     """Maximum-likelihood estimates of a from hit counts H (n_seeds, K).
 
     The likelihood is maximised over theta in [0, pi/2] by a grid of
-    GRID_POINTS points (matrix product over seeds), then refined per seed by
-    golden-section search on the bracket of the two neighbouring grid points.
+    GRID_POINTS points, then refined per seed by golden-section search on the
+    bracket of the two neighbouring grid points. The grid log-likelihood
+    H lp + (S - H) lq is computed as H (lp - lq) + S sum_k lq (one matrix
+    product instead of two; same values in exact arithmetic).
     """
     H = np.asarray(H, dtype=float)
     ks = np.array(mlae_schedule(J), dtype=float)
     th, lp, lq = _grid_logs(J)
     G = th.size
-    out = np.empty(H.shape[0])
-    for s in range(0, H.shape[0], chunk):
-        Hc = H[s : s + chunk]
-        ll = Hc @ lp + (S - Hc) @ lq
-        i = np.argmax(ll, axis=1)
-        lo = th[np.maximum(i - 1, 0)]
-        hi = th[np.minimum(i + 1, G - 1)]
-        for _ in range(_REFINE_ITERS):
-            w = hi - lo
-            c = hi - _GOLD * w
-            d = lo + _GOLD * w
-            left = _loglik(c, Hc, S, ks) > _loglik(d, Hc, S, ks)
-            hi = np.where(left, d, hi)
-            lo = np.where(left, lo, c)
-        out[s : s + chunk] = np.sin(0.5 * (lo + hi)) ** 2
-    return out
+    D = lp - lq
+    base = S * lq.sum(axis=0)
+    n = H.shape[0]
+    i = np.empty(n, dtype=np.int64)
+    buf = np.empty((min(chunk, n), G))  # reused: fresh 600 MB temporaries cost seconds of page faults
+    for s in range(0, n, chunk):
+        m = min(chunk, n - s)
+        b = buf[:m]
+        np.matmul(H[s : s + m], D, out=b)
+        b += base
+        i[s : s + m] = np.argmax(b, axis=1)
+    lo = th[np.maximum(i - 1, 0)]
+    hi = th[np.minimum(i + 1, G - 1)]
+    for _ in range(_REFINE_ITERS):
+        w = hi - lo
+        c = hi - _GOLD * w
+        d = lo + _GOLD * w
+        left = _loglik(c, H, S, ks) > _loglik(d, H, S, ks)
+        hi = np.where(left, d, hi)
+        lo = np.where(left, lo, c)
+    return np.sin(0.5 * (lo + hi)) ** 2
 
 
 # ============================================================
@@ -374,3 +384,125 @@ def rms_vs_cost(a: float, method: str, settings, n_seeds: int, rng) -> list[tupl
         err = est - a
         rows.append((setting, int(cost), float(np.sqrt(np.mean(err * err))), float(np.mean(err))))
     return rows
+
+
+# ============================================================
+# Error metrics (v3): quantiles of |a_hat - a|
+# ============================================================
+
+QUANTILE_LEVELS = (0.5, 0.9, 0.95)
+
+
+def _discrete_quantiles(values: np.ndarray, weights: np.ndarray, levels) -> list[float]:
+    """Quantiles of a discrete law: smallest value x with P(V <= x) >= q."""
+    order = np.argsort(values, kind="stable")
+    v = values[order]
+    cdf = np.cumsum(weights[order])
+    cdf = cdf / cdf[-1]
+    out = []
+    for q in levels:
+        i = int(np.searchsorted(cdf, q - 1e-12, side="left"))
+        out.append(float(v[min(i, v.size - 1)]))
+    return out
+
+
+def exact_qae_metrics(a: float, m: int) -> dict:
+    """Error metrics of canonical QAE from the exact outcome pmf (no sampling).
+
+    Returns mean_abs_err = E|a_hat - a|, median/q90/q95 of |a_hat - a| (smallest
+    value with cdf >= level), rms = sqrt(E (a_hat - a)^2) and bias = E(a_hat - a).
+    """
+    pmf = qae_outcome_pmf(a, m)
+    N = 1 << m
+    err = np.sin(np.pi * np.arange(N) / N) ** 2 - a
+    ae = np.abs(err)
+    med, q90, q95 = _discrete_quantiles(ae, pmf, QUANTILE_LEVELS)
+    return {
+        "mean_abs_err": float(np.sum(pmf * ae)),
+        "median_abs_err": med,
+        "q90_abs_err": q90,
+        "q95_abs_err": q95,
+        "rms": float(math.sqrt(max(float(np.sum(pmf * err * err)), 0.0))),
+        "bias": float(np.sum(pmf * err)),
+    }
+
+
+def sample_metrics(est: np.ndarray, a: float) -> dict:
+    """The same metrics from independent estimates (empirical distribution).
+
+    Quantiles use the inverted-cdf rule, the sample analogue of
+    :func:`exact_qae_metrics`.
+    """
+    err = np.asarray(est, dtype=float) - a
+    ae = np.abs(err)
+    return {
+        "mean_abs_err": float(np.mean(ae)),
+        "median_abs_err": float(np.quantile(ae, 0.5, method="inverted_cdf")),
+        "q90_abs_err": float(np.quantile(ae, 0.9, method="inverted_cdf")),
+        "q95_abs_err": float(np.quantile(ae, 0.95, method="inverted_cdf")),
+        "rms": float(np.sqrt(np.mean(err * err))),
+        "bias": float(np.mean(err)),
+    }
+
+
+def cost_at(cost, value, eps: float):
+    """Cost to reach error level eps: the smallest cost from which every larger setting also meets eps.
+
+    The suffix maximum of the error is used, so a lucky dip at one setting does
+    not count (the canonical QAE error is not monotone in m). Log-log
+    interpolation between the last failing and the first passing setting.
+    Returns (cost, floor): floor is True if eps is met at the smallest setting
+    (the cost is then only an upper bound). Returns (nan, False) if no suffix passes.
+    """
+    cost = np.asarray(cost, dtype=float)
+    value = np.asarray(value, dtype=float)
+    suf = np.maximum.accumulate(value[::-1])[::-1]
+    ok = np.nonzero(suf <= eps)[0]
+    if ok.size == 0:
+        return float("nan"), False
+    i = int(ok[0])
+    if i == 0:
+        return float(cost[0]), True
+    if suf[i] <= 0.0:
+        return float(cost[i]), False
+    t = (math.log(eps) - math.log(suf[i - 1])) / (math.log(suf[i]) - math.log(suf[i - 1]))
+    lc = math.log(cost[i - 1]) + t * (math.log(cost[i]) - math.log(cost[i - 1]))
+    return float(math.exp(lc)), False
+
+
+def target_scales(a_sa: float, a_sum: float, kind: str, value: float) -> tuple[float, float]:
+    """Error targets (T_sa, T_D) for the stand-alone and the difference estimate.
+
+    kind "abs": both targets equal the absolute level value.
+    kind "rel": T_sa = value * a_sa (relative to the stand-alone amplitude) and
+    T_D = value * a_sum, where a_sum = a+ + a- is the total difference amplitude
+    (the nonzero side for a one-sided move).
+    """
+    if kind == "abs":
+        return float(value), float(value)
+    if kind == "rel":
+        return float(value) * float(a_sa), float(value) * float(a_sum)
+    raise ValueError(f"unknown target kind {kind!r}")
+
+
+def predicted_cost_ratio(method: str, v_sa: float, v_diff: list[float], T_sa: float, T_D: float) -> float:
+    """Predicted cost(difference) / cost(stand-alone) at the given targets.
+
+    The difference is estimated by k = len(v_diff) estimates, each to error
+    T_D / k (so the k errors sum to T_D; k = 1 one-sided, k = 2 signed).
+    Quantum (QAE, MLAE): cost ~ sqrt(v) / T, so the ratio is
+    k sum sqrt(v_i) / T_D  divided by  sqrt(v_sa) / T_sa.
+    Classical: cost ~ v / T^2, so the ratio is k^2 sum v_i / T_D^2 divided by v_sa / T_sa^2.
+    """
+    k = len(v_diff)
+    if k < 1:
+        raise ValueError("need at least one difference estimate")
+    if method in ("qae", "mlae"):
+        num = k * sum(math.sqrt(v) for v in v_diff) / T_D
+        den = math.sqrt(v_sa) / T_sa
+    elif method == "classical":
+        num = k * k * sum(v_diff) / (T_D * T_D)
+        den = v_sa / (T_sa * T_sa)
+    else:
+        raise ValueError(f"unknown method {method!r}")
+    return num / den

@@ -1,200 +1,213 @@
-"""QUASAR M3b v2: estimator behaviour on the validated rotation model.
+"""QUASAR M3b v3: estimator behaviour on the validated rotation model.
 
-Design: papers/quasar/DESIGN_M3.md, Revision 2, "M3b v2 - estimator behaviour".
+Design: papers/quasar/DESIGN_M3.md, Revision 2, "M3b v2 - estimator behaviour"
+(v3 changes are listed in results/quasar/m3b_v3_summary.md, "Deviations").
 
-Step 1  Validate sin^2((2k+1) theta) for k = 0..6 on real small peak and
-        difference circuits (statevector, <= 22 qubits).
-Step 2  Simulate canonical QAE (m = 3..12), MLAE (J = 1..10, S in {1, 8, 64})
-        and classical Monte Carlo (N = 2^4..2^22) on the rotation model, with
-        2000 independent seeds per setting.
-Step 3  Report RMS error against A-applications, fitted log-log slopes, and
-        the cost ratio of difference and stand-alone estimators at equal RMS
-        against rho_q.
+Step 1  Circuit validation of sin^2((2k+1) theta), k = 0..6. Not rerun: the v2
+        output results/quasar/m3b_v2_validation.csv is copied to m3b_v3_validation.csv
+        after its maximum deviation is checked.
+Step 2  Error metrics per amplitude and setting:
+        canonical QAE (m = 3..22) from the EXACT outcome pmf (no sampling);
+        MLAE (J = 1..10, S in {32, 64, 128}) and classical Monte Carlo
+        (N = 2^4..2^26) from N_SEEDS = 4000 independent seeds.
+        Metrics: mean |a_hat - a|, median, 90 % and 95 % quantiles of |a_hat - a|,
+        RMS and bias.
+Step 3  Log-log slopes of the 90 % quantile (primary) and of the RMS (secondary),
+        and the cost of a difference estimate relative to the stand-alone
+        estimate at absolute and relative error targets.
 
-Amplitudes. If results/quasar/m3a_v2_moves.csv.gz exists (columns cls, p_new,
-P_D1, P_Dm1, ...), 30 random moves per move class (cls) with 0.001 < p_new < 0.5
-are used: stand-alone a = p_new, difference a+ = P_D1, a- = P_Dm1. Otherwise a
-fixed illustrative grid is used: stand-alone a in {0.001, 0.005, 0.02, 0.05,
-0.1, 0.3}, difference a+ = a rho^2 with rho in {0.1, 0.3, 0.5} and a- = 0.
+Amplitudes come from results/quasar/m3a_v2_moves.csv.gz (2e5 scenarios per move).
+Eligible moves: every nonzero amplitude has at least HITS_MIN hits; moves with
+P(D = +1) = P(D = -1) = 0 are excluded. Stratified by move class (cls) and
+stand-alone p' band (low < 0.02 <= decision <= 0.2 < high), up to MOVES_PER_CELL
+moves per cell.
 
 Run from svrpspd_wdro/:  python scripts/run_quasar_m3b.py
 """
 
 from __future__ import annotations
 
-import csv
-import json
-import math
-import sys
-import time
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
+import os
 
-import numpy as np
-from scipy.stats import gamma
+# One BLAS thread per worker: the MLAE grid is a matrix product and the job shares the machine.
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
+import csv  # noqa: E402
+import json  # noqa: E402
+import math  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+from concurrent.futures import ProcessPoolExecutor  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from quantum.ae_sim import estimates, grover_validation  # noqa: E402
-from quantum.classical import DiscreteDemand, peak_distribution  # noqa: E402
-from quantum.oracle import (  # noqa: E402
-    build_difference_oracle,
-    build_peak_oracle,
-    exact_probability,
+from quantum.ae_sim import (  # noqa: E402
+    classical_cost,
+    classical_estimates,
+    cost_at,
+    exact_qae_metrics,
+    mlae_cost,
+    mlae_counts,
+    mlae_estimates,
+    predicted_cost_ratio,
+    qae_cost,
+    qae_estimates,
+    sample_metrics,
+    target_scales,
 )
 
 OUT = ROOT / "results" / "quasar"
-PLANS = ROOT / "results" / "plans"
 MOVES_GZ = OUT / "m3a_v2_moves.csv.gz"
+V2_VALIDATION = OUT / "m3b_v2_validation.csv"
+V2_RMS = OUT / "m3b_v2_rms.csv"
 
-ROOT_SEED = 20261012
-N_SEEDS = 2000
-GAMMA_CV = 0.30
-K_VALID = range(7)
-QAE_M = list(range(3, 23))  # spec 3..12; extended, see summary
-MLAE_SETTINGS = [(J, S) for J in range(1, 11) for S in (1, 8, 64)]
-CLASSICAL_N = [2**e for e in range(4, 27)]  # spec 2^4..2^22; extended, see summary
-FALLBACK_A = [0.001, 0.005, 0.02, 0.05, 0.1, 0.3]
-FALLBACK_RHO = [0.1, 0.3, 0.5]
-TARGETS = [1e-3, 1e-4]
-FAMILIES = ["qae", "mlae_S1", "mlae_S8", "mlae_S64", "classical"]
-ASYMPTOTIC_LAST = 6  # fit slopes over the last six settings of each family
-MOVES_PER_CLASS = 30
-N_WORKERS = 3
+V3_SEED = 20261013
+N_SCEN = 200_000
+HITS_MIN = 200
+N_SEEDS = 4000
+QAE_M = list(range(3, 23))
+MLAE_S = (32, 64, 128)
+MLAE_J = list(range(1, 11))
+CLASSICAL_N = [2**e for e in range(4, 27)]
+MOVES_PER_CELL = 30
+CLASSES = (1, 2, 3)
+BAND_NAMES = ("low", "decision", "high")
+ABS_TARGETS = (1e-3, 1e-4)
+REL_TARGETS = (0.1, 0.01)
+TARGETS = [("abs", v) for v in ABS_TARGETS] + [("rel", v) for v in REL_TARGETS]
+FAMILIES = ["qae"] + [f"mlae_S{S}" for S in MLAE_S] + ["classical"]
+ASYMPTOTIC_LAST = 6
+N_WORKERS = 2
+EXACT_CHECK_N = 200_000
 
 
 def _log(msg: str) -> None:
     print(msg, flush=True)
 
 
+def _cell(cls: int, band: str) -> str:
+    return f"cls{cls}|{band}"
+
+
+def band_of(p: np.ndarray) -> np.ndarray:
+    """low: p < 0.02; decision: 0.02 <= p <= 0.2; high: p > 0.2."""
+    p = np.asarray(p, dtype=float)
+    return np.where(p < 0.02, "low", np.where(p <= 0.2, "decision", "high"))
+
+
 # ============================================================
-# Step 1: circuit validation
+# Step 1: circuit validation (reused from v2)
 # ============================================================
 
 
-def _gamma_levels(mean: float, V: int, u: float) -> np.ndarray:
-    """Level pmf of a gamma demand (cv GAMMA_CV) on V levels of width u.
+def reuse_validation() -> list[dict]:
+    import csv as _csv
 
-    Level v covers [(v - 1/2) u, (v + 1/2) u); level 0 takes all mass below u/2
-    and the top level all mass above (V - 3/2) u. Zero means give a point mass.
-    """
-    if mean <= 0.0:
-        p = np.zeros(V)
-        p[0] = 1.0
-        return p
-    shape = 1.0 / (GAMMA_CV * GAMMA_CV)
-    scale = mean * GAMMA_CV * GAMMA_CV
-    bounds = np.concatenate(([-np.inf], (np.arange(1, V) - 0.5) * u, [np.inf]))
-    return np.diff(gamma.cdf(bounds, shape, scale=scale))
-
-
-def small_demand(plan: dict, customers, b: int) -> DiscreteDemand:
-    """Independent-marginal demand model for the listed customers (validation only).
-
-    Built from the plan's dbar/pbar. The unit is set so that the largest mean
-    plus three coefficients of variation sits at the top level. Customers not
-    listed keep a point mass at zero.
-    """
-    V = 1 << b
-    mu_d = np.asarray(plan["dbar"], dtype=float)
-    mu_p = np.asarray(plan["pbar"], dtype=float)
-    n = mu_d.size
-    u = max((1.0 + 3.0 * GAMMA_CV) * max(mu_d[c], mu_p[c]) for c in customers) / (V - 1)
-    pd = np.zeros((n, V))
-    pp = np.zeros((n, V))
-    pd[:, 0] = 1.0
-    pp[:, 0] = 1.0
-    for c in customers:
-        pd[c] = _gamma_levels(mu_d[c], V, u)
-        pp[c] = _gamma_levels(mu_p[c], V, u)
-    return DiscreteDemand(pmf_d=pd, pmf_p=pp, unit=float(u))
-
-
-def median_threshold(seq, dem: DiscreteDemand) -> tuple[int, float]:
-    """Smallest level q with P(F <= q) >= 1/2 for the base route, and P(F > q)."""
-    cdf = np.cumsum(peak_distribution(seq, dem))
-    q = int(np.searchsorted(cdf, 0.5, side="left"))
-    return q, float(1.0 - cdf[q])
-
-
-def validation_cases():
-    """(kind, plan name, route index, prefix length, b, diff spec or None)."""
-    return [
-        ("peak", "CON8-3", 0, 4, 1, None),
-        ("peak", "CON8-0", 0, 2, 2, None),
-        ("peak", "SCA8-0", 0, 2, 2, None),
-        ("difference", "CON8-3", 0, 2, 1, {"j_index": 2, "pos": 2}),
-    ]
-
-
-def run_validation() -> list[dict]:
-    rows: list[dict] = []
-    for kind, name, ridx, L, b, dspec in validation_cases():
-        plan = json.loads((PLANS / f"{name}.json").read_text())
-        route = plan["res"]["Det"]["plan"][ridx]
-        seq = [int(c) for c in route[:L]]
-        if dspec is None:
-            cust = seq
-        else:
-            j = int(route[dspec["j_index"]])
-            cust = seq + [j]
-        dem = small_demand(plan, cust, b)
-        q, p_thr = median_threshold(seq, dem)
-        if dspec is None:
-            oracle = build_peak_oracle(seq, dem, q)
-        else:
-            oracle = build_difference_oracle(seq, j, dspec["pos"], dem, q)
-        a_exact = exact_probability(oracle, method="enumeration")
-        res = grover_validation(oracle, ks=K_VALID)
-        max_diff = max(abs(pc - pm) for _, pc, pm in res)
-        _log(
-            f"  {kind:10s} {name} route[{ridx}] L={L} b={b} qubits={oracle.num_qubits} "
-            f"Q_level={q} a={a_exact:.6f} max|diff|={max_diff:.2e}"
-        )
-        for k, pc, pm in res:
-            rows.append(
-                {
-                    "kind": kind,
-                    "plan": name,
-                    "route_index": ridx,
-                    "customers": " ".join(str(c) for c in cust),
-                    "b": b,
-                    "n_qubits": oracle.num_qubits,
-                    "threshold_level": q,
-                    "P_base_gt_threshold": p_thr,
-                    "a_exact": a_exact,
-                    "k": k,
-                    "p_circuit": pc,
-                    "p_model": pm,
-                    "abs_diff": abs(pc - pm),
-                }
-            )
+    with V2_VALIDATION.open() as fh:
+        rows = list(_csv.DictReader(fh))
+    max_dev = max(float(r["abs_diff"]) for r in rows)
+    _log(f"  validation (v2 output reused): {len(rows)} rows, max |p_circuit - p_model| = {max_dev:.2e}")
+    if max_dev > 1e-12:
+        raise RuntimeError("v2 validation does not match the expected 1e-12 level")
     return rows
 
 
 # ============================================================
-# Step 2: amplitudes
+# Step 2 inputs: amplitudes
 # ============================================================
 
 
-def _amp_key(a: float) -> str:
-    return f"{a:.15e}"
+def load_moves():
+    import pandas as pd
+
+    cols = ["instance", "family", "route_id", "cls", "kind", "j", "pos", "pos2",
+            "p_new", "P_D1", "P_Dm1", "rho_q"]
+    return pd.read_csv(MOVES_GZ, usecols=cols)
 
 
-def build_pairs():
-    """Return (source, records, pairs).
+def select_moves(df, rng: np.random.Generator):
+    """Eligibility, stratified sample and exclusion counts.
 
-    records: unique amplitudes [{label, a, kind}] simulated once each.
-    pairs: one per estimation target: {group, sa, dp, dm, base, a_plus,
-    a_minus, ids} where sa/dp/dm are record labels (dm is the a- record).
+    Returns (selected DataFrame, info dict). Hits are rint(amplitude * N_SCEN).
     """
+    d = df.copy()
+    d["h_sa"] = np.rint(d["p_new"].to_numpy(float) * N_SCEN)
+    d["h_p"] = np.rint(d["P_D1"].to_numpy(float) * N_SCEN)
+    d["h_m"] = np.rint(d["P_Dm1"].to_numpy(float) * N_SCEN)
+    zero = (d["h_p"] == 0) & (d["h_m"] == 0)
+    under = (
+        (d["h_sa"] < HITS_MIN)
+        | ((d["h_p"] > 0) & (d["h_p"] < HITS_MIN))
+        | ((d["h_m"] > 0) & (d["h_m"] < HITS_MIN))
+    )
+    d["status"] = np.where(zero, "zero_difference", np.where(under, "under_threshold", "eligible"))
+
+    info: dict = {"n_moves": int(len(d))}
+    for name, h in (("p_new", d["h_sa"]), ("P_D1", d["h_p"]), ("P_Dm1", d["h_m"])):
+        info[f"amp_{name}_zero_hits"] = int((h == 0).sum())
+        info[f"amp_{name}_1_to_{HITS_MIN - 1}_hits"] = int(((h > 0) & (h < HITS_MIN)).sum())
+        info[f"amp_{name}_ge_{HITS_MIN}_hits"] = int((h >= HITS_MIN).sum())
+    info["moves_zero_difference"] = int((d["status"] == "zero_difference").sum())
+    info["moves_under_threshold"] = int((d["status"] == "under_threshold").sum())
+    info["moves_eligible"] = int((d["status"] == "eligible").sum())
+
+    el = d[d["status"] == "eligible"].copy()
+    el["band"] = band_of(el["p_new"].to_numpy(float))
+    el["cell"] = [_cell(int(c), b) for c, b in zip(el["cls"], el["band"])]
+    picks = []
+    cells = []
+    for cls in CLASSES:
+        for band in BAND_NAMES:
+            pool = el[(el["cls"] == cls) & (el["band"] == band)]
+            n = min(MOVES_PER_CELL, len(pool))
+            if n > 0:
+                idx = np.sort(rng.choice(len(pool), size=n, replace=False))
+                picks.append(pool.iloc[idx])
+            cells.append({"cell": _cell(cls, band), "pool": int(len(pool)), "sampled": int(n)})
+    info["cells"] = cells
+    sel = _concat(picks)
+    sel = sel.assign(mode=[_mode(hp, hm) for hp, hm in zip(sel["h_p"], sel["h_m"])])
+    return sel, info
+
+
+def _concat(parts):
+    import pandas as pd
+
+    if not parts:
+        return pd.DataFrame(columns=["cell", "band", "cls", "p_new", "P_D1", "P_Dm1", "rho_q", "h_p", "h_m", "mode"])
+    return pd.concat(parts, ignore_index=True)
+
+
+def _mode(h_p: float, h_m: float) -> str:
+    if h_p > 0 and h_m > 0:
+        return "signed"
+    return "one-sided+" if h_p > 0 else "one-sided-"
+
+
+def build_pairs(df=None, seed: int = V3_SEED):
+    """Return (info, records, pairs).
+
+    records: unique amplitudes [{label, a, kind}], each simulated once.
+    pairs: one per sampled move: {cell, cls, band, mode, base, a_plus, a_minus,
+    sa (record label), components [(record label, amplitude)], rho_q, ids}.
+    components are the nonzero difference sides: one for one-sided moves, two
+    for signed moves.
+    """
+    if df is None:
+        df = load_moves()
+    rng = np.random.default_rng(seed)
+    sel, info = select_moves(df, rng)
     records: list[dict] = []
     labels: dict[str, str] = {}
 
     def rec_for(a: float, kind: str) -> str:
-        key = _amp_key(a)
+        key = f"{float(a):.15e}"
         if key not in labels:
             lab = f"amp{len(records):04d}"
             labels[key] = lab
@@ -202,104 +215,95 @@ def build_pairs():
         return labels[key]
 
     pairs: list[dict] = []
-    if MOVES_GZ.exists():
-        import pandas as pd
+    for _, r in sel.iterrows():
+        comps = []
+        if r["h_p"] > 0:
+            comps.append((rec_for(r["P_D1"], "difference+"), float(r["P_D1"])))
+        if r["h_m"] > 0:
+            comps.append((rec_for(r["P_Dm1"], "difference-"), float(r["P_Dm1"])))
+        pairs.append({
+            "cell": r["cell"], "cls": int(r["cls"]), "band": r["band"], "mode": r["mode"],
+            "base": float(r["p_new"]), "a_plus": float(r["P_D1"]), "a_minus": float(r["P_Dm1"]),
+            "sa": rec_for(r["p_new"], "standalone"), "components": comps,
+            "rho_q": float(r["rho_q"]),
+            "ids": f"{r['instance']} {r['family']} route {int(r['route_id'])} {r['kind']} "
+                   f"j={r['j']} pos={r['pos']} pos2={r['pos2']}",
+        })
+    return info, records, pairs
 
-        cols = ["instance", "family", "route_id", "cls", "kind", "j", "pos", "pos2",
-                "p", "p_new", "P_D1", "P_Dm1", "var_D", "rho_q"]
-        df = pd.read_csv(MOVES_GZ, usecols=cols)
-        sel = df[(df["p_new"] > 0.001) & (df["p_new"] < 0.5)]
-        rng = np.random.default_rng(ROOT_SEED)
-        chosen = []
-        for cls in sorted(sel["cls"].unique()):
-            g = sel[sel["cls"] == cls]
-            pick = rng.choice(len(g), size=min(MOVES_PER_CLASS, len(g)), replace=False)
-            chosen.append(g.iloc[np.sort(pick)])
-        sample = pd.concat(chosen)
-        sample.to_csv(OUT / "m3b_v2_moves_sample.csv", index=False)
-        for _, r in sample.iterrows():
-            base = float(r["p_new"])
-            ap = float(r["P_D1"])
-            am = float(r["P_Dm1"])
-            pairs.append({
-                "group": f"cls{int(r['cls'])}",
-                "sa": rec_for(base, "standalone"),
-                "dp": rec_for(ap, "difference"),
-                "dm": rec_for(am, "difference-minus"),
-                "base": base, "a_plus": ap, "a_minus": am,
-                "rho_file": float(r["rho_q"]),
-                "ids": f"{r['instance']} {r['family']} route {int(r['route_id'])} {r['kind']} j={r['j']} pos={r['pos']} pos2={r['pos2']}",
-            })
-        source = (f"{MOVES_GZ.name}: {MOVES_PER_CLASS} random moves per class (cls) with "
-                  f"0.001 < p_new < 0.5; {len(sample)} moves sampled")
-    else:
-        for a in FALLBACK_A:
-            pairs_sa = rec_for(a, "standalone")
-            for rho in FALLBACK_RHO:
-                pairs.append({
-                    "group": f"rho{rho:g}",
-                    "sa": pairs_sa,
-                    "dp": rec_for(a * rho * rho, "difference"),
-                    "dm": rec_for(0.0, "difference-minus"),
-                    "base": a, "a_plus": a * rho * rho, "a_minus": 0.0,
-                    "rho_file": None, "ids": f"fallback a={a:g} rho={rho:g}",
-                })
-        source = "fallback grid (results/quasar/m3a_v2_moves.csv.gz absent)"
-    return source, records, pairs
+
+# ============================================================
+# Step 2: simulation
+# ============================================================
+
+
+def _row(rec, fam, setting, cost, evaluation, n_seeds, met) -> dict:
+    return {
+        "amplitude": rec["label"], "kind": rec["kind"], "a": rec["a"],
+        "family": fam, "setting": setting, "cost_A_apps_or_samples": int(cost),
+        "evaluation": evaluation, "n_seeds": n_seeds,
+        "mean_abs_err": met["mean_abs_err"], "median_abs_err": met["median_abs_err"],
+        "q90_abs_err": met["q90_abs_err"], "q95_abs_err": met["q95_abs_err"],
+        "rms": met["rms"], "bias": met["bias"],
+    }
 
 
 def _simulate_record(job):
-    """Worker: all three estimators for one amplitude record."""
-    rec, aseed = job
+    """Worker: all estimators for one amplitude record."""
+    rec, seed = job
     t0 = time.perf_counter()
-    method_seeds = aseed.spawn(3)
     a = rec["a"]
     rows: list[dict] = []
-    for method, settings, mseed in (
-        ("qae", QAE_M, method_seeds[0]),
-        ("mlae", MLAE_SETTINGS, method_seeds[1]),
-        ("classical", CLASSICAL_N, method_seeds[2]),
-    ):
-        for setting_seed, setting in zip(mseed.spawn(len(settings)), settings):
-            est, cost = estimates(a, method, setting, N_SEEDS, np.random.default_rng(setting_seed))
-            err = est - a
-            if method == "mlae":
-                J, S = setting
-                fam = f"mlae_S{S}"
-                sname = f"J={J},S={S}"
-            elif method == "qae":
-                fam = "qae"
-                sname = f"m={setting}"
-            else:
-                fam = "classical"
-                sname = f"N={setting}"
-            ae = np.abs(err)
-            rows.append({
-                "amplitude": rec["label"],
-                "kind": rec["kind"],
-                "a": a,
-                "family": fam,
-                "setting": sname,
-                "cost_A_apps_or_samples": int(cost),
-                "rms": float(np.sqrt(np.mean(err * err))),
-                "bias": float(np.mean(err)),
-                "median_abs_err": float(np.median(ae)),
-                "q90_abs_err": float(np.quantile(ae, 0.9)),
-                "n_seeds": N_SEEDS,
-            })
+    for m in QAE_M:
+        met = exact_qae_metrics(a, m)
+        rows.append(_row(rec, "qae", f"m={m}", qae_cost(m), "exact pmf", 0, met))
+    s_mlae, s_cls = seed.spawn(2)
+    settings = [(J, S) for S in MLAE_S for J in MLAE_J]
+    for (J, S), cs in zip(settings, s_mlae.spawn(len(settings))):
+        H = mlae_counts(a, J, S, N_SEEDS, np.random.default_rng(cs))
+        est = mlae_estimates(H, J, S)
+        rows.append(_row(rec, f"mlae_S{S}", f"J={J},S={S}", mlae_cost(J, S), f"sampled {N_SEEDS}",
+                         N_SEEDS, sample_metrics(est, a)))
+    for N, cs in zip(CLASSICAL_N, s_cls.spawn(len(CLASSICAL_N))):
+        est = classical_estimates(a, N, N_SEEDS, np.random.default_rng(cs))
+        rows.append(_row(rec, "classical", f"N={N}", classical_cost(N), f"sampled {N_SEEDS}",
+                         N_SEEDS, sample_metrics(est, a)))
     return rec["label"], rows, time.perf_counter() - t0
 
 
 def simulate(records) -> list[dict]:
-    root = np.random.SeedSequence(ROOT_SEED)
-    seeds = root.spawn(len(records))
-    jobs = list(zip(records, seeds))
+    root = np.random.SeedSequence(V3_SEED)
+    jobs = list(zip(records, root.spawn(len(records))))
     rows: list[dict] = []
+    t0 = time.perf_counter()
     with ProcessPoolExecutor(max_workers=N_WORKERS) as ex:
-        for label, r, dt in ex.map(_simulate_record, jobs):
+        for k, (label, r, dt) in enumerate(ex.map(_simulate_record, jobs, chunksize=1)):
             rows.extend(r)
-            _log(f"  {label} a={next(x['a'] for x in records if x['label'] == label):.3e} done in {dt:.1f} s")
+            if k % 25 == 0 or k == len(jobs) - 1:
+                _log(f"  {k + 1}/{len(jobs)} amplitudes ({label}, {dt:.1f} s each); "
+                     f"elapsed {time.perf_counter() - t0:.0f} s")
     return rows
+
+
+def exact_check() -> list[dict]:
+    """Exact QAE mean |error| and q90 against a large sampled estimate."""
+    rng = np.random.default_rng(V3_SEED + 1)
+    out = []
+    for a in (0.005, 0.03, 0.2):
+        for m in (6, 10):
+            ex = exact_qae_metrics(a, m)
+            est = qae_estimates(a, m, EXACT_CHECK_N, rng)
+            ae = np.abs(est - a)
+            se = float(np.std(ae, ddof=1) / math.sqrt(EXACT_CHECK_N))
+            out.append({
+                "a": a, "m": m, "n_samples": EXACT_CHECK_N,
+                "exact_mean_abs": ex["mean_abs_err"], "sampled_mean_abs": float(np.mean(ae)),
+                "z_mean_abs": float((np.mean(ae) - ex["mean_abs_err"]) / se),
+                "exact_q90": ex["q90_abs_err"],
+                "sampled_q90": float(np.quantile(ae, 0.9, method="inverted_cdf")),
+                "exact_rms": ex["rms"], "sampled_rms": float(np.sqrt(np.mean((est - a) ** 2))),
+            })
+    return out
 
 
 # ============================================================
@@ -308,161 +312,177 @@ def simulate(records) -> list[dict]:
 
 
 def curves(rows):
-    """{(amplitude label, family): (cost array, rms array)} with settings in cost order."""
-    out: dict = {}
+    """{(record label, family): (cost array, q90 array, rms array, mean-abs array)}, cost-ordered."""
+    acc: dict = {}
     for r in rows:
-        key = (r["amplitude"], r["family"])
-        out.setdefault(key, []).append((r["cost_A_apps_or_samples"], r["rms"]))
+        acc.setdefault((r["amplitude"], r["family"]), []).append(
+            (r["cost_A_apps_or_samples"], r["q90_abs_err"], r["rms"], r["mean_abs_err"]))
     res = {}
-    for key, pts in out.items():
+    for key, pts in acc.items():
         pts.sort(key=lambda t: t[0])
-        res[key] = (np.array([p[0] for p in pts], float), np.array([p[1] for p in pts], float))
+        arr = np.array(pts, float)
+        res[key] = (arr[:, 0], arr[:, 1], arr[:, 2], arr[:, 3])
     return res
 
 
-def cost_at(cost: np.ndarray, rms: np.ndarray, eps: float):
-    """Cost to reach RMS eps: the smallest cost from which every larger setting also has RMS <= eps.
-
-    The suffix maximum is used (not the running minimum), so a lucky dip at one
-    setting does not count; for the canonical QAE the RMS depends on the phase
-    alignment of 2^m theta/pi and is not monotone in m. Log-log interpolation
-    between the last failing and the first passing setting. Returns (cost, floor):
-    floor is True if eps is met at the smallest setting (cost is then a floor).
-    Returns (nan, False) if no suffix passes.
-    """
-    suf = np.maximum.accumulate(rms[::-1])[::-1]
-    ok = np.nonzero(suf <= eps)[0]
-    if ok.size == 0:
-        return float("nan"), False
-    i = int(ok[0])
-    if i == 0:
-        return float(cost[0]), True
-    if suf[i] <= 0.0:
-        return float(cost[i]), False
-    t = (math.log(eps) - math.log(suf[i - 1])) / (math.log(suf[i]) - math.log(suf[i - 1]))
-    lc = math.log(cost[i - 1]) + t * (math.log(cost[i]) - math.log(cost[i - 1]))
-    return float(math.exp(lc)), False
-
-
-def q90_curves(rows):
-    """{(amplitude, family): (cost array, q90 absolute error array)}."""
-    out: dict = {}
-    for r in rows:
-        out.setdefault((r["amplitude"], r["family"]), []).append((r["cost_A_apps_or_samples"], r["q90_abs_err"]))
-    res = {}
-    for key, pts in out.items():
-        pts.sort(key=lambda t: t[0])
-        res[key] = (np.array([p[0] for p in pts], float), np.array([p[1] for p in pts], float))
-    return res
-
-
-def fitted_slope(cost: np.ndarray, rms: np.ndarray) -> float:
-    """Log-log slope over the last ASYMPTOTIC_LAST settings (NaN if any RMS is zero)."""
-    c = cost[-ASYMPTOTIC_LAST:]
-    r = rms[-ASYMPTOTIC_LAST:]
-    if np.any(r <= 0.0):
+def fitted_slope(cost: np.ndarray, val: np.ndarray) -> float:
+    """Log-log slope over the last ASYMPTOTIC_LAST settings (cost order); NaN if any value is zero."""
+    c = np.asarray(cost[-ASYMPTOTIC_LAST:], float)
+    v = np.asarray(val[-ASYMPTOTIC_LAST:], float)
+    if np.any(v <= 0.0):
         return float("nan")
-    return float(np.polyfit(np.log(c), np.log(r), 1)[0])
+    return float(np.polyfit(np.log(c), np.log(v), 1)[0])
 
 
-def slope_rows(cv, qv, records, pairs):
-    group_of = {}
-    for pr in pairs:
-        for role in ("sa", "dp", "dm"):
-            group_of.setdefault(pr[role], (pr["group"], role))
+def slope_rows(cv, records):
     rows = []
     for rec in records:
-        if rec["label"] not in group_of:
-            continue
-        grp, role = group_of[rec["label"]]
         for fam in FAMILIES:
-            c, r = cv[(rec["label"], fam)]
-            cq, q = qv[(rec["label"], fam)]
-            rows.append({"group": grp, "role": role, "amplitude": rec["label"], "a": rec["a"],
-                         "family": fam, "slope_rms": fitted_slope(c, r), "slope_q90": fitted_slope(cq, q)})
+            c, q90, rms, mab = cv[(rec["label"], fam)]
+            rows.append({
+                "amplitude": rec["label"], "kind": rec["kind"], "a": rec["a"], "family": fam,
+                "slope_q90": fitted_slope(c, q90), "slope_rms": fitted_slope(c, rms),
+                "slope_mean_abs": fitted_slope(c, mab),
+            })
     return rows
 
 
-def ratio_rows(cv, pairs):
-    """Cost ratios (difference over stand-alone) at equal RMS, per estimation target."""
-    out = []
+def ratio_rows(qv, pairs, families=FAMILIES, targets=TARGETS):
+    """Cost of the difference estimate over the stand-alone cost, at the 90 % quantile target.
+
+    qv: {(record label, family): (cost array, q90 array)}.
+    One-sided moves: one estimate of the nonzero side at target T_D.
+    Signed moves: two estimates, each at target T_D / 2 (the two errors sum to T_D).
+    Every row is reported with a status: ok, floor (a target is met at the smallest
+    setting, so the cost is only an upper bound) or fail (target not reached).
+    """
+    rows = []
     for pr in pairs:
-        a, ap, am = pr["base"], pr["a_plus"], pr["a_minus"]
-        vb = a * (1.0 - a)
-        vp = ap * (1.0 - ap)
-        vm = am * (1.0 - am)
-        varD = ap + am - (ap - am) ** 2
-        rho_q_var = math.sqrt(max(varD, 0.0)) / math.sqrt(vb) if vb > 0 else float("nan")
-        for fam in FAMILIES:
-            cs, rs = cv[(pr["sa"], fam)]
-            cd, rd = cv[(pr["dp"], fam)]
-            cm, rm = cv[(pr["dm"], fam)]
-            if fam == "classical":
-                pred_single = vp / vb
-                pred_spec = 4.0 * (vp + vm) / vb
-            else:
-                pred_single = math.sqrt(vp) / math.sqrt(vb)
-                pred_spec = 2.0 * (math.sqrt(vp) + math.sqrt(vm)) / math.sqrt(vb)
-            for eps in TARGETS:
-                c_sa, f_sa = cost_at(cs, rs, eps)
-                c_single, f_single = cost_at(cd, rd, eps)
-                c_p, f_p = cost_at(cd, rd, eps / 2)
-                c_m, _ = cost_at(cm, rm, eps / 2)
-                c_spec = c_p + c_m
-                out.append({
-                    "group": pr["group"], "ids": pr["ids"], "base_p": a, "P_D1": ap, "P_Dm1": am,
-                    "family": fam, "target_rms": eps,
-                    "cost_standalone": c_sa, "cost_diff_single": c_single,
-                    "cost_diff_spec": c_spec,
-                    "ratio_single": c_single / c_sa, "ratio_spec": c_spec / c_sa,
-                    "pred_single": pred_single, "pred_spec": pred_spec,
-                    "rho_q_var": rho_q_var, "rho_q_file": pr["rho_file"] if pr["rho_file"] is not None else "",
-                    "signed": am > 0.0,
-                    "at_floor": bool(f_sa or f_single or f_p),
+        a = pr["base"]
+        comps = pr["components"]
+        k = len(comps)
+        a_sum = sum(amp for _, amp in comps)
+        v_sa = a * (1.0 - a)
+        v_list = [amp * (1.0 - amp) for _, amp in comps]
+        ap, am = pr["a_plus"], pr["a_minus"]
+        rho_var = math.sqrt(max(ap + am - (ap - am) ** 2, 0.0)) / math.sqrt(v_sa)
+        for fam in families:
+            method = "classical" if fam == "classical" else ("qae" if fam == "qae" else "mlae")
+            for kind, val in targets:
+                T_sa, T_D = target_scales(a, a_sum, kind, val)
+                c_sa, f_sa = cost_at(*qv[(pr["sa"], fam)][:2], T_sa)
+                c_comp, floors = [], [f_sa]
+                for lab, _ in comps:
+                    c, f = cost_at(*qv[(lab, fam)][:2], T_D / k)
+                    c_comp.append(c)
+                    floors.append(f)
+                if not (math.isfinite(c_sa) and all(math.isfinite(c) for c in c_comp)):
+                    status = "fail"
+                elif any(floors):
+                    status = "floor"
+                else:
+                    status = "ok"
+                total = sum(c_comp) if all(math.isfinite(c) for c in c_comp) else float("nan")
+                ratio = total / c_sa if status in ("ok",) else float("nan")
+                pred = predicted_cost_ratio(method, v_sa, v_list, T_sa, T_D)
+                rows.append({
+                    "cell": pr["cell"], "cls": pr["cls"], "band": pr["band"], "mode": pr["mode"],
+                    "ids": pr["ids"], "base_p": a, "P_D1": ap, "P_Dm1": am, "a_sum": a_sum,
+                    "rho_q_var": rho_var, "rho_q_file": pr["rho_q"],
+                    "family": fam, "target_type": kind, "target_value": val,
+                    "T_sa": T_sa, "T_D": T_D,
+                    "cost_standalone": c_sa,
+                    "cost_diff_components": ";".join(f"{c:.6g}" for c in c_comp),
+                    "cost_diff_total": total,
+                    "status": status,
+                    "ratio": ratio, "pred": pred,
+                    "ratio_over_pred": ratio / pred if status == "ok" and pred > 0 else float("nan"),
                 })
-    return out
+    return rows
 
 
-def _median(vals):
-    v = [x for x in vals if np.isfinite(x)]
+def _finite(v):
+    return [x for x in v if x is not None and math.isfinite(x)]
+
+
+def _med(v):
+    v = _finite(v)
     return float(np.median(v)) if v else float("nan")
 
 
-def _spread(vals):
-    v = np.array([x for x in vals if np.isfinite(x)], float)
-    if v.size == 0:
-        return "-"
-    return f"{np.quantile(v, 0.1):.3g} - {np.quantile(v, 0.9):.3g}"
+def _p(v, q):
+    v = _finite(v)
+    return float(np.quantile(v, q)) if v else float("nan")
+
+
+def ratio_summary(rr):
+    """Per (cell, family, target): counts and medians over the same ok rows."""
+    out = []
+    keys = sorted({(r["cell"], r["family"], r["target_type"], r["target_value"]) for r in rr},
+                  key=lambda k: (k[0], FAMILIES.index(k[1]), k[2], -k[3]))
+    for cell, fam, tt, tv in keys:
+        g = [r for r in rr if r["cell"] == cell and r["family"] == fam
+             and r["target_type"] == tt and r["target_value"] == tv]
+        ok = [r for r in g if r["status"] == "ok"]
+        rat = [r["ratio"] for r in ok]
+        prd = [r["pred"] for r in ok]
+        rop = [r["ratio_over_pred"] for r in ok]
+        out.append({
+            "cell": cell, "family": fam, "target_type": tt, "target_value": tv,
+            "mode_mix": f"{sum(r['mode'] == 'signed' for r in g)} signed / {sum(r['mode'] != 'signed' for r in g)} one-sided",
+            "n_total": len(g), "n_ok": len(ok),
+            "n_floor": sum(r["status"] == "floor" for r in g),
+            "n_fail": sum(r["status"] == "fail" for r in g),
+            "median_ratio": _med(rat), "median_pred": _med(prd), "median_ratio_over_pred": _med(rop),
+            "p10_ratio_over_pred": _p(rop, 0.1), "p90_ratio_over_pred": _p(rop, 0.9),
+        })
+    return out
+
+
+def v2_carryover():
+    """S = 1 and S = 8 (and S = 64) at the largest J of the v2 run, from its stored q90 errors (not rerun)."""
+    import pandas as pd
+
+    rms = pd.read_csv(V2_RMS, usecols=["a", "kind", "family", "setting", "q90_abs_err"])
+    rows = []
+    for fam in ("mlae_S1", "mlae_S8", "mlae_S64"):
+        sub = rms[rms["family"] == fam]
+        last = sub[sub["setting"].str.startswith("J=10,")].set_index(["a", "kind"])["q90_abs_err"]
+        best = sub.groupby(["a", "kind"])["q90_abs_err"].min()
+        rows.append({
+            "family": fam, "n_amplitudes": int(last.size),
+            "median_q90_at_J10": float(np.median(last)),
+            "frac_J10_q90_le_1e-3": float(np.mean(last <= 1e-3)),
+            "frac_any_J_q90_le_1e-3": float(np.mean(best <= 1e-3)),
+            "frac_any_J_q90_le_1e-4": float(np.mean(best <= 1e-4)),
+        })
+    return rows
 
 
 def make_figure(cv, show, path: Path) -> None:
-    """show: list of (record label, title)."""
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     styles = {
-        "classical": ("grey", "o", "classical N"),
-        "qae": ("tab:blue", "s", "QAE m"),
-        "mlae_S1": ("tab:orange", ".", "MLAE S=1"),
-        "mlae_S8": ("tab:green", "^", "MLAE S=8"),
-        "mlae_S64": ("tab:red", "D", "MLAE S=64"),
+        "classical": ("grey", "o", "classical (N samples)"),
+        "qae": ("tab:blue", "s", "canonical QAE (exact pmf)"),
+        "mlae_S64": ("tab:red", "D", "MLAE S = 64"),
     }
-    fig, axes = plt.subplots(1, len(show), figsize=(4.6 * len(show), 4.2), sharey=True)
+    fig, axes = plt.subplots(1, len(show), figsize=(4.6 * len(show), 4.3), sharey=True)
     axes = np.atleast_1d(axes)
     for ax, (lab, title) in zip(axes, show):
-        for fam in FAMILIES:
-            c, r = cv[(lab, fam)]
-            m = r > 0
-            col, mk, name = styles[fam]
-            ax.loglog(c[m], r[m], marker=mk, color=col, ls=":" if fam == "mlae_S1" else "-", ms=4, label=name)
+        for fam, (col, mk, name) in styles.items():
+            c, q90, _, _ = cv[(lab, fam)]
+            m = q90 > 0
+            ax.loglog(c[m], q90[m], marker=mk, color=col, ms=4, lw=1.2, label=name)
         ax.set_title(title, fontsize=10)
         ax.set_xlabel("A-applications (samples for classical)")
         ax.grid(True, which="both", alpha=0.3)
-    axes[0].set_ylabel("RMS error")
+    axes[0].set_ylabel("90 % quantile of |a_hat - a|")
     axes[-1].legend(fontsize=8)
-    fig.suptitle("QUASAR M3b v2: RMS error vs cost on the rotation model (2000 seeds)")
+    fig.suptitle("QUASAR M3b v3: 90 % quantile error versus cost (4000 seeds; QAE exact)")
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
@@ -479,177 +499,261 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 
 def fmt(x, nd=3):
     if isinstance(x, (float, np.floating)):
-        if not np.isfinite(x):
+        if not math.isfinite(float(x)):
             return "nan"
         return f"{float(x):.{nd}g}"
     return str(x)
 
 
-def write_summary(path, meta, val_rows, source, records, pairs, slopes, ratios) -> None:
-    lines: list[str] = []
-    A = lines.append
-    A("# QUASAR M3b v2: estimator behaviour on the validated rotation model")
+def write_summary(path, meta, val_rows, info, pairs, records, slopes, rsum, carry, exact_rows) -> None:
+    L: list[str] = []
+    A = L.append
+    A("# QUASAR M3b v3: estimator behaviour on the validated rotation model")
     A("")
-    A(f"Generated by scripts/run_quasar_m3b.py. Seeds: root SeedSequence({ROOT_SEED}); "
-      f"{N_SEEDS} independent replicates per setting; one spawned stream per amplitude and estimator.")
+    A(f"Produced by scripts/run_quasar_m3b.py. Root seed SeedSequence({V3_SEED}); {N_SEEDS} independent "
+      "seeds per sampled setting; canonical QAE is computed from its exact outcome pmf.")
     A("")
-    A("## Step 1: circuit validation (exact statevector, k = 0..6)")
+    A("## 1. Circuit validation (reused from v2, not rerun)")
     A("")
-    A("| kind | plan / route | prefix L | b | customers | qubits | Q_level | P(base > Q_level) | a (enumeration) | max abs diff over k |")
-    A("|---|---|---|---|---|---|---|---|---|---|")
-    seen = []
-    for r in val_rows:
-        key = (r["kind"], r["plan"], r["route_index"], r["b"], r["customers"])
-        if key in seen:
-            continue
-        seen.append(key)
-        grp = [x for x in val_rows if (x["kind"], x["plan"], x["route_index"], x["b"], x["customers"]) == key]
-        L = len(r["customers"].split()) if r["kind"] == "peak" else len(r["customers"].split()) - 1
-        A(f"| {r['kind']} | {r['plan']} route {r['route_index']} | {L} | {r['b']} | {r['customers']} | "
-          f"{r['n_qubits']} | {r['threshold_level']} | {fmt(r['P_base_gt_threshold'])} | "
-          f"{fmt(r['a_exact'], 6)} | {max(x['abs_diff'] for x in grp):.2e} |")
-    overall = max(r["abs_diff"] for r in val_rows)
+    A("The four real oracles of v2 (three peak, one difference; 19 to 22 qubits) were simulated once with an exact statevector "
+      "and compared with sin^2((2k+1) theta), k = 0..6. The rows are copied unchanged to m3b_v3_validation.csv.")
     A("")
-    A(f"Maximum |p_circuit - p_model| over all oracles and k = 0..6: **{overall:.2e}**.")
+    mx = max(float(r["abs_diff"]) for r in val_rows)
+    A(f"Maximum |p_circuit - p_model| over the four oracles and k = 0..6: **{mx:.2e}**.")
     A("")
-    A("Thresholds: the plan Q lies far above the peak of these prefixes (p = 0), so each oracle uses the discrete median of its base route's "
-      "peak (smallest q with P(F <= q) >= 1/2). The demand marginals are independent gamma (cv 0.3) built from the plan's dbar/pbar, "
-      "for circuit validation only; the M3a statistics use the copula model.")
+    A("## 2. Sample and exclusions")
     A("")
-    A("## Amplitudes")
+    A(f"Source: {MOVES_GZ.name}, {info['n_moves']} moves, 2e5 scenarios each (hits = amplitude x 2e5). "
+      f"Eligible: every nonzero amplitude has at least {HITS_MIN} hits, and the move is not zero-difference.")
     A("")
-    A(f"Source: {source}.")
-    A(f"Unique amplitudes simulated: {len(records)}; estimation targets (pairs): {len(pairs)}.")
+    A(f"- Zero-difference moves (P(D=+1) = P(D=-1) = 0): **{info['moves_zero_difference']}** excluded.")
+    A(f"- Moves with a nonzero amplitude below {HITS_MIN} hits (stand-alone p' or a difference side): "
+      f"**{info['moves_under_threshold']}** excluded.")
+    A(f"- Eligible moves: {info['moves_eligible']}.")
+    A(f"- Amplitude values below the threshold (1 to {HITS_MIN - 1} hits): p' {info['amp_p_new_1_to_199_hits']}, "
+      f"P(D=+1) {info['amp_P_D1_1_to_199_hits']}, P(D=-1) {info['amp_P_Dm1_1_to_199_hits']}; "
+      f"zero hits (one-sided sides, not amplitudes to estimate): P(D=+1) {info['amp_P_D1_zero_hits']}, "
+      f"P(D=-1) {info['amp_P_Dm1_zero_hits']}.")
     A("")
-    groups = sorted({pr["group"] for pr in pairs})
-    A("| group | targets | median p' | median P(D=1) | median P(D=-1) | median rho_q (file) | median rho_q (recomputed) | share with P(D=-1) > 0 |")
-    A("|---|---|---|---|---|---|---|---|")
-    for g in groups:
-        pg = [pr for pr in pairs if pr["group"] == g]
-        rq_f = [pr["rho_file"] for pr in pg if pr["rho_file"] is not None]
-        rq_r = [r for r in ratios if r["group"] == g and r["family"] == "qae" and r["target_rms"] == TARGETS[0]]
-        rq_r = [r["rho_q_var"] for r in rq_r]
-        A(f"| {g} | {len(pg)} | {fmt(_median([pr['base'] for pr in pg]))} | {fmt(_median([pr['a_plus'] for pr in pg]))} | "
-          f"{fmt(_median([pr['a_minus'] for pr in pg]))} | {fmt(_median(rq_f)) if rq_f else '-'} | {fmt(_median(rq_r))} | "
-          f"{sum(1 for pr in pg if pr['a_minus'] > 0) / len(pg):.2f} |")
+    A("Stratification: move class cls (1 = insertion, 2 = intra-route, 3 = alternative position) by stand-alone p' band "
+      "(low: p' < 0.02; decision: 0.02 <= p' <= 0.2; high: p' > 0.2). Up to 30 moves per cell, drawn at random from the eligible pool.")
     A("")
-    A("## Fitted log-log slopes (last six settings per family; expected -1 quantum, -1/2 classical)")
+    A("| cell | eligible pool | sampled |")
+    A("|---|---|---|")
+    for c in info["cells"]:
+        A(f"| {c['cell'].replace('|', ' / ')} | {c['pool']} | {c['sampled']} |")
     A("")
-    A("Median (min, max) over the targets of each group; stand-alone records (sa) and difference records (dp). "
-      "The last column is the slope of the 90% quantile of |a_hat - a| for the stand-alone records.")
+    n_one = sum(1 for p in pairs if p["mode"] != "signed")
+    A(f"Sampled moves: {len(pairs)} ({n_one} one-sided, {len(pairs) - n_one} signed). "
+      f"Unique amplitudes simulated: {len(records)}.")
     A("")
-    A("| group | family | sa slope (RMS) | dp slope (RMS) | sa slope (90% abs error) |")
+    A("## 3. Error metrics and fitted slopes")
+    A("")
+    A("Primary metric: the 90 % quantile of |a_hat - a|. Slopes are log-log fits over the last six settings of each family in "
+      "cost order (QAE m = 17..22; MLAE J = 5..10 for each S; classical N = 2^21..2^26). Medians and [min, max] over the "
+      "amplitude records of each kind.")
+    A("")
+    A("| kind | family | slope, 90 % quantile | slope, mean abs error | slope, RMS (secondary) |")
     A("|---|---|---|---|---|")
-    for g in groups:
+    for kind in ("standalone", "difference+", "difference-"):
         for fam in FAMILIES:
             cells = []
-            for role in ("sa", "dp"):
-                v = [x["slope_rms"] for x in slopes if x["group"] == g and x["role"] == role and x["family"] == fam]
-                v = [x for x in v if np.isfinite(x)]
-                cells.append(f"{np.median(v):.3f} ({min(v):.3f}, {max(v):.3f})" if v else "nan")
-            v = [x["slope_q90"] for x in slopes if x["group"] == g and x["role"] == "sa" and x["family"] == fam]
-            v = [x for x in v if np.isfinite(x)]
-            cells.append(f"{np.median(v):.3f} ({min(v):.3f}, {max(v):.3f})" if v else "nan")
-            A(f"| {g} | {fam} | {cells[0]} | {cells[1]} | {cells[2]} |")
+            for key in ("slope_q90", "slope_mean_abs", "slope_rms"):
+                v = [x[key] for x in slopes if x["kind"] == kind and x["family"] == fam]
+                v = _finite(v)
+                cells.append(f"{np.median(v):.3f} [{min(v):.3f}, {max(v):.3f}] (n={len(v)})" if v else "nan")
+            A(f"| {kind} | {fam} | {cells[0]} | {cells[1]} | {cells[2]} |")
     A("")
-    A("## Difference versus stand-alone cost at equal RMS")
+    A("**Why the QAE 90 % quantile slope is read as a median over records.** For large N the exact QAE error is "
+      "|a_hat - a| = 2 pi sqrt(a(1-a)) |delta| / N (1 + o(1)), where delta is the offset of the outcome from N phi, and the outcome law of delta "
+      "depends only on f_m = frac(2^m theta / pi): q90 = 2 pi sqrt(a(1-a)) g(f_m) / N with g bounded. The exact values agree with this: for a = 0.2, q90 N is about proportional to f_m "
+      "for small f_m (0.013 at f = 0.005, 0.40 at f = 0.16) and reaches about 4 at f = 0.6. At fixed a the factor g(f_m) therefore moves with m, "
+      "so the slope of one amplitude over six values of m is alignment noise. The population slope is -1 (the median over records is the statistic to read; "
+      "the per-record range is shown only to make that noise visible).")
     A("")
-    A("cost_standalone: cost to reach RMS eps for p'. ratio_single: cost to reach RMS eps for one estimate of P(D=1) divided by cost_standalone "
-      "(the relevant comparison when D is nonnegative, P(D=-1) = 0). ratio_spec: two estimates, P(D=1) and P(D=-1), each at RMS eps/2, "
-      "divided by cost_standalone. Predicted single ratio: sqrt(P(D=1)(1-P(D=1))) / sqrt(p'(1-p')) for quantum families and the same squared "
-      "for classical. Predicted spec ratio: 2 (sqrt v+ + sqrt v-) / sqrt(p'(1-p')) for quantum and 4 (v+ + v-)/(p'(1-p')) for classical, "
-      "with v = P(1-P). rho_q (file) and rho_q (recomputed) are sqrt(Var D)/sqrt(p'(1-p')) with Var D = P(D=1) + P(D=-1) - (P(D=1)-P(D=-1))^2. "
-      "Rows where a target is already met at the smallest setting are excluded (at_floor).")
+    A("**Why the RMS is a secondary column.** For canonical QAE the tails are P(|delta| > x) of order 1/(pi^2 x), so "
+      "P(|a_hat - a| > e) is of order 1/(N e) for 1/N << e << 1. The mean absolute error then behaves as "
+      "(log N)/N (up to the alignment factor), with slope -1 in cost. The mean square, "
+      "E(a_hat - a)^2 = integral of 2 e P(|a_hat - a| > e) de, is of order 1/N: the integrand 2 e P(|a_hat - a| > e) is about 2/(pi^2 N) for every e in (1/N, O(1)), so the mass is spread "
+      "uniformly over error levels up to O(1) and is carried by outcomes of probability about 1/N and error of order a. It therefore scales as "
+      "N^(-1/2) and is dominated by these heavy tails (for the QAE rows of m3b_v3_metrics.csv, sqrt(N) times the exact RMS is checkable directly and oscillates with m). A finite sample of 2000 or 4000 seeds almost never contains "
+      "them, so a sampled RMS of QAE under-estimates it and its slope is noise; the exact RMS is reported as a secondary column for that reason.")
     A("")
-    A("Medians over valid rows (at_floor = False). n = valid rows. For the single ratio only rows with P(D=-1) = 0 are used (n_single).")
+    A("## 4. Exact QAE metrics versus a large sampled estimate")
     A("")
-    A("| group | family | target RMS | n | n_single | median ratio_single | median pred_single | ratio_single / pred p10-p90 | median ratio_spec | median pred_spec | ratio_spec / pred p10-p90 |")
-    A("|---|---|---|---|---|---|---|---|---|---|---|")
-    for g in groups:
-        for fam in FAMILIES:
-            for eps in TARGETS:
-                rr = [r for r in ratios if r["group"] == g and r["family"] == fam and r["target_rms"] == eps and not r["at_floor"]]
-                single = [r for r in rr if not r["signed"]]
-                if not rr:
-                    A(f"| {g} | {fam} | {eps:g} | 0 | 0 | - | - | - | - | - | - |")
+    A(f"Exact mean absolute error and q90 from the pmf, against {EXACT_CHECK_N} sampled QAE runs (z = (sampled - exact) / standard error):")
+    A("")
+    A("| a | m | exact mean abs | sampled mean abs | z | exact q90 | sampled q90 | exact RMS | sampled RMS |")
+    A("|---|---|---|---|---|---|---|---|---|")
+    for r in exact_rows:
+        A(f"| {r['a']:g} | {r['m']} | {fmt(r['exact_mean_abs'], 4)} | {fmt(r['sampled_mean_abs'], 4)} | {r['z_mean_abs']:.2f} | "
+          f"{fmt(r['exact_q90'], 4)} | {fmt(r['sampled_q90'], 4)} | {fmt(r['exact_rms'], 4)} | {fmt(r['sampled_rms'], 4)} |")
+    A("")
+    A("## 5. Cost of the difference estimate relative to the stand-alone estimate")
+    A("")
+    A("Targets on the 90 % quantile of |a_hat - a|: absolute 1e-3 and 1e-4 (T_sa = T_D = eps); relative 0.1 and 0.01 "
+      "(T_sa = r p', T_D = r (a+ + a-), with a+ + a- = P(D != 0)). Cost ratio = cost(difference) / cost(stand-alone).")
+    A("")
+    A("- One-sided moves use one estimate of the nonzero side at target T_D: ratio = cost_D / cost_sa, prediction "
+      "sqrt(v_D) / T_D over sqrt(v_sa) / T_sa for quantum estimators (v = a(1-a)) and v_D / T_D^2 over v_sa / T_sa^2 for classical.")
+    A("- Signed moves use two estimates of P(D = +1) and P(D = -1) at target T_D / 2 each: ratio = (cost_+ + cost_-) / cost_sa, "
+      "prediction 2 (sqrt v+ + sqrt v-) / T_D over sqrt(v_sa) / T_sa (quantum); 4 (v+ + v-) / T_D^2 over v_sa / T_sa^2 (classical).")
+    A("- Status: ok (cost measured), floor (a target is met at the smallest setting, so the cost is an upper bound and the row is not used), "
+      "fail (target not reached within the grid). Medians and the ratio/prediction spread use the ok rows only, and the same rows for all three columns.")
+    A("- QAE cost-to-target inherits the alignment factor g(f_m) of Section 3: the cost is the smallest m from which every larger m meets the target "
+      "(suffix maximum over the error, cost resolved in factors of 2), so QAE ratios carry a multiplicative scatter. Read the QAE columns with that in mind.")
+    A("- The claim 'ratio tracks rho_q' applies to class 1 (insertion) with absolute targets only: there the prediction for one-sided moves "
+      "is exactly rho_q = sqrt(Var D) / sqrt(p'(1-p')). It is not claimed for classes 2 and 3 or for relative targets, whose predictions differ.")
+    A("")
+    for tt, tv in TARGETS:
+        lab = f"absolute {tv:g}" if tt == "abs" else f"relative {tv:g} (x amplitude)"
+        A(f"### Target: {lab}")
+        A("")
+        A("Each cell: median ratio / median prediction; median (ratio / prediction) [p10, p90]; ok / floor / fail counts.")
+        A("")
+        A("| cell | " + " | ".join(FAMILIES) + " |")
+        A("|---|" + "---|" * len(FAMILIES))
+        for cell in sorted({r["cell"] for r in rsum}, key=lambda c: (int(c[3]), BAND_NAMES.index(c.split("|")[1]))):
+            cols = []
+            for fam in FAMILIES:
+                x = [r for r in rsum if r["cell"] == cell and r["family"] == fam
+                     and r["target_type"] == tt and r["target_value"] == tv]
+                if not x:
+                    cols.append("-")
                     continue
-                x1 = [r["ratio_single"] / r["pred_single"] for r in single if r["pred_single"] > 0]
-                x2 = [r["ratio_spec"] / r["pred_spec"] for r in rr if r["pred_spec"] > 0]
-                A(f"| {g} | {fam} | {eps:g} | {len(rr)} | {len(single)} | "
-                  f"{fmt(_median([r['ratio_single'] for r in single]))} | {fmt(_median([r['pred_single'] for r in single]))} | "
-                  f"{_spread(x1)} | "
-                  f"{fmt(_median([r['ratio_spec'] for r in rr]))} | {fmt(_median([r['pred_spec'] for r in rr]))} | "
-                  f"{_spread(x2)} |")
+                r = x[0]
+                cols.append(
+                    f"{fmt(r['median_ratio'])} / {fmt(r['median_pred'])}; "
+                    f"{fmt(r['median_ratio_over_pred'])} [{fmt(r['p10_ratio_over_pred'])}, {fmt(r['p90_ratio_over_pred'])}]; "
+                    f"{r['n_ok']} / {r['n_floor']} / {r['n_fail']}")
+            A(f"| {cell.replace('|', ' / ')} | " + " | ".join(cols) + " |")
+        A("")
+    A("Counts per cell and family (targets: 4) are in m3b_v3_ratio_summary.csv; every row is in m3b_v3_ratio.csv with its status.")
     A("")
-    A("Full per-target table: m3b_v2_ratio.csv. Sampled moves: m3b_v2_moves_sample.csv.")
+    A("**Class 1 against rho_q (absolute targets only).** For class 1 (insertion; P(D = -1) = 0 for every class-1 move in the source file) the predicted ratio is "
+      "rho_q. The median of ratio / rho_q over the ok rows, for the three p' bands, is:")
     A("")
-    A("## Notes on definitions and ranges")
+    for fam in FAMILIES:
+        parts = []
+        for tv in ABS_TARGETS:
+            meds = [r["median_ratio_over_pred"] for r in rsum if r["cell"].startswith("cls1|")
+                    and r["family"] == fam and r["target_type"] == "abs" and r["target_value"] == tv]
+            fin = _finite(meds)
+            parts.append(f"target {tv:g}: {min(fin):.2f} to {max(fin):.2f}" if fin else f"target {tv:g}: none")
+        A(f"- {fam}: " + "; ".join(parts))
     A("")
-    A("- Settings were extended beyond the design grid where the design grid cannot reach the targets. "
-      "Canonical QAE uses m = 3..22 (design 3..12). Its RMS is dominated by outcomes far from the peak, "
-      "whose total probability is about sin^2(pi frac(2^m theta/pi)) / N, so the RMS depends on the alignment of 2^m theta/pi "
-      "and is not monotone in m (it oscillates with m, and is about 0.01 at m = 12 for a = 0.07). "
-      "Classical samples run to N = 2^26 (design 2^22): at a = 0.07 the target RMS 1e-4 needs N near 6.5e6.")
-    A("- cost_at uses the suffix maximum of RMS over cost: the cost is the smallest cost from which every larger setting also meets the target. "
-      "This avoids crediting a lucky dip (the QAE RMS is not monotone).")
-    A("- The 90% absolute-error column reports the high-probability error that the canonical QAE bound actually controls; it is provided beside the RMS.")
-    A("- Resolution of the QAE cost ratios: the canonical QAE cost moves in factors of two (cost = 2 (2^m - 1) + 1), so a cost-to-target is only resolved to about a factor of two, and the alignment effect above adds scatter. The QAE ratio/prediction spread columns should be read with this in mind; the classical and MLAE (S = 64) families have fine cost resolution and are the sharp test of the sqrt(variance) law.")
+    A("Only class 1 is compared with rho_q. For classes 2 and 3 the signed prediction is 2(sqrt v+ + sqrt v-)/sqrt(v) "
+      "(in [2, 2 sqrt 2] times rho_q) and is reported as the prediction, not as rho_q.")
     A("")
-    A("## Run")
+    A("Figure m3b_v3_error.png: the 90 % quantile error against A-applications (classical samples), log-log, for three stand-alone amplitudes "
+      "(about 0.005, 0.03, 0.2). The QAE curve is jagged because the exact 90 % quantile depends on the alignment f_m of Section 3. "
+      "At a = 0.005025 the curve is flat at 1.8e-8 for m >= 15: theta/pi lies within about 4e-8 of the dyadic point k/2^15, so every "
+      "grid from m = 15 up returns the same estimate sin^2(pi k / 2^15) and the error cannot fall below its distance from a. "
+      "This is an exact property of the estimator at this amplitude, not a numerical floor.")
+    A("")
+    A("## 6. MLAE with S = 1 and S = 8: not rerun (from v2)")
+    A("")
+    s1, s8 = carry[0], carry[1]
+    A("v2 included S = 1 and S = 8. v3 keeps S in {32, 64, 128} only and does not rerun S = 1 or S = 8. The table is computed from "
+      "m3b_v2_rms.csv (2000 seeds, the v2 run) over all v2 amplitude records (stand-alone and difference). "
+      f"S = 1 does not converge: its median 90 % error at J = 10 is {s1['median_q90_at_J10']:.2g}, and only "
+      f"{s1['frac_any_J_q90_le_1e-3']:.0%} of records reach 1e-3 at any J and {s1['frac_any_J_q90_le_1e-4']:.0%} reach 1e-4. "
+      f"S = 8 is too slow for the 1e-4 target: {s8['frac_J10_q90_le_1e-3']:.0%} of records reach 1e-3 at J = 10 but only "
+      f"{s8['frac_any_J_q90_le_1e-4']:.0%} reach 1e-4 at any J (S = 64: {carry[2]['frac_any_J_q90_le_1e-4']:.0%}). "
+      "Neither S = 1 nor S = 8 is used in the cost comparison.")
+    A("")
+    A("| family (v2) | records | median q90 at J = 10 | fraction with q90 <= 1e-3 at J = 10 | fraction with q90 <= 1e-3 at some J | fraction with q90 <= 1e-4 at some J |")
+    A("|---|---|---|---|---|---|")
+    for c in carry:
+        A(f"| {c['family']} | {c['n_amplitudes']} | {fmt(c['median_q90_at_J10'])} | {c['frac_J10_q90_le_1e-3']:.2f} | "
+          f"{c['frac_any_J_q90_le_1e-3']:.2f} | {c['frac_any_J_q90_le_1e-4']:.2f} |")
+    A("")
+    A("## 7. Run")
     A("")
     for k, v in meta.items():
         A(f"- {k}: {v}")
     A("")
-    path.write_text("\n".join(lines) + "\n")
+    A("## 8. Deviations from the brief")
+    A("")
+    A("- Sample: 30 moves per class x band cell (9 cells, 270 moves, 588 unique amplitudes). Every cell had at least 30 eligible moves. "
+      "The 200-hit rule applies to every nonzero amplitude of a move, so a move is excluded if any of its amplitudes is below it; both counts are in Section 2.")
+    A("- One-sided moves are those with exactly one nonzero side. The brief gives P(D = -1) = 0; in classes 2 and 3 the nonzero side is sometimes "
+      "P(D = -1), so the single estimate is taken on whichever side is nonzero.")
+    A("- Relative targets were not specified in the brief beyond the example. The definitions used are T_sa = r p' and "
+      "T_D = r (a+ + a-). For signed moves each of the two estimates has target T_D / 2, as in v2 for absolute targets.")
+    A("- Grids were not reduced: QAE m = 3..22, MLAE J = 1..10 with S in {32, 64, 128}, classical N = 2^4..2^26. Sampled estimators use "
+      f"{N_SEEDS} seeds; QAE is exact and has no seeds.")
+    A("- Slopes use the same six-setting window for every family, as in v2. For QAE the per-amplitude slope is alignment noise (Section 3), "
+      "so the median over records is the value to read; per-record spreads are shown.")
+    A("- Step 1 was reused from v2 and not rerun, as the brief allows. The MLAE code was rewritten for speed (one matrix product into a reused "
+      "buffer, refinement vectorised over seeds). The grid, argmax and golden-section refinement are unchanged, and on four test settings the "
+      "new and previous outputs agree exactly (maximum difference 0.0).")
+    A("- The ratio table reports rows at the floor and rows that fail as separate counts. They are excluded from the medians, which are computed "
+      "on the same ok rows for ratio, prediction and their quotient.")
+    A("- The exact QAE quantile is the smallest value with cdf >= q; the sampled quantile uses the inverted-cdf rule, the same definition on a sample.")
+    A("")
+    path.write_text("\n".join(L) + "\n")
 
 
 def main() -> None:
     t_all = time.perf_counter()
     OUT.mkdir(parents=True, exist_ok=True)
 
-    _log("Step 1: circuit validation")
+    _log("Step 1: circuit validation (v2 output reused)")
+    val_rows = reuse_validation()
+    write_csv(OUT / "m3b_v3_validation.csv", val_rows)
+
+    _log("Step 2: amplitudes")
     t1 = time.perf_counter()
-    val_rows = run_validation()
-    t_val = time.perf_counter() - t1
-    write_csv(OUT / "m3b_v2_validation.csv", val_rows)
-    _log(f"  validation: {len(val_rows)} rows in {t_val:.1f} s")
+    info, records, pairs = build_pairs()
+    write_csv(OUT / "m3b_v3_sampled_moves.csv", [
+        {k: v for k, v in p.items() if k != "components"} | {
+            "components": ";".join(f"{lab}:{amp:.6g}" for lab, amp in p["components"])} for p in pairs])
+    _log(f"  {info['moves_eligible']} eligible moves, {len(pairs)} sampled, {len(records)} unique amplitudes "
+         f"({time.perf_counter() - t1:.1f} s)")
 
-    _log("Step 2: amplitudes and simulations")
-    source, records, pairs = build_pairs()
-    _log(f"  source: {source}; {len(records)} unique amplitudes; {len(pairs)} targets")
+    _log("Step 3: exact QAE check")
+    exact_rows = exact_check()
+    write_csv(OUT / "m3b_v3_exact_check.csv", exact_rows)
+
+    _log("Step 4: simulation (QAE exact, MLAE and classical 4000 seeds)")
     t2 = time.perf_counter()
-    rms_rows = simulate(records)
+    rows = simulate(records)
     t_sim = time.perf_counter() - t2
-    write_csv(OUT / "m3b_v2_rms.csv", rms_rows)
-    _log(f"  simulation: {len(rms_rows)} rows in {t_sim:.1f} s")
+    write_csv(OUT / "m3b_v3_metrics.csv", rows)
+    _log(f"  simulation: {len(rows)} rows in {t_sim:.1f} s")
 
-    _log("Step 3: analysis")
-    cv = curves(rms_rows)
-    qv = q90_curves(rms_rows)
-    slopes = slope_rows(cv, qv, records, pairs)
-    ratios = ratio_rows(cv, pairs)
-    write_csv(OUT / "m3b_v2_ratio.csv", ratios)
-    write_csv(OUT / "m3b_v2_slopes.csv", slopes)
-    # figure: three stand-alone amplitudes spanning the range
-    targets = [0.005, 0.03, 0.2] if MOVES_GZ.exists() else [0.001, 0.02, 0.1]
-    sa_recs = {pr["sa"]: pr["base"] for pr in pairs}
+    _log("Step 5: analysis")
+    cv = curves(rows)
+    slopes = slope_rows(cv, records)
+    write_csv(OUT / "m3b_v3_slopes.csv", slopes)
+    qv = {k: (v[0], v[1]) for k, v in cv.items()}
+    rr = ratio_rows(qv, pairs)
+    write_csv(OUT / "m3b_v3_ratio.csv", rr)
+    rsum = ratio_summary(rr)
+    write_csv(OUT / "m3b_v3_ratio_summary.csv", rsum)
+    carry = v2_carryover()
+    write_csv(OUT / "m3b_v3_v2_carryover.csv", carry)
+
+    sa_recs = {p["sa"]: p["base"] for p in pairs}
     show = []
-    for t in targets:
-        lab = min(sa_recs, key=lambda k: abs(sa_recs[k] - t))
+    for t in (0.005, 0.03, 0.2):
+        lab = min(sa_recs, key=lambda k: abs(math.log(sa_recs[k]) - math.log(t)))
         show.append((lab, f"stand-alone a = {sa_recs[lab]:.3g}"))
-    make_figure(cv, show, OUT / "m3b_v2_rms.png")
+    make_figure(cv, show, OUT / "m3b_v3_error.png")
+
     meta = {
-        "validation time": f"{t_val:.1f} s",
-        "simulation time": f"{t_sim:.1f} s (workers {N_WORKERS})",
-        "total time": f"{time.perf_counter() - t_all:.1f} s",
+        "validation": "reused from v2 (no circuits rerun)",
+        "simulation time": f"{t_sim:.0f} s with {N_WORKERS} workers",
+        "total time": f"{time.perf_counter() - t_all:.0f} s",
+        "QAE": f"exact pmf, m = {QAE_M[0]}..{QAE_M[-1]}",
+        "MLAE": f"J = {MLAE_J[0]}..{MLAE_J[-1]}, S in {list(MLAE_S)}, {N_SEEDS} seeds, grid 20001 points + golden-section",
+        "classical": f"N = 2^{int(math.log2(CLASSICAL_N[0]))}..2^{int(math.log2(CLASSICAL_N[-1]))}, {N_SEEDS} seeds",
+        "seeds": f"root SeedSequence({V3_SEED}); one spawned stream per amplitude, estimator and setting",
         "python": sys.version.split()[0],
-        "seeds per setting": N_SEEDS,
-        "classical N": "2^4 .. 2^26",
-        "QAE m": "3 .. 22",
-        "MLAE": "J = 1 .. 10, S in {1, 8, 64}, grid 20001 points + golden-section refinement",
     }
-    write_summary(OUT / "m3b_v2_summary.md", meta, val_rows, source, records, pairs, slopes, ratios)
-    _log(f"done in {time.perf_counter() - t_all:.1f} s")
+    write_summary(OUT / "m3b_v3_summary.md", meta, val_rows, info, pairs, records, slopes, rsum, carry, exact_rows)
+    _log(f"done in {time.perf_counter() - t_all:.0f} s")
 
 
 if __name__ == "__main__":
