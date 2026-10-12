@@ -146,6 +146,22 @@ Resolved thread from paper 4: BATON's W-DRO gate in
 tighter threshold. Revision 1 of BATON states this explicitly (Section
 4.1) and presents the gate as a more conservative regime.
 
+### Paper 7 — QUASAR (papers/quasar/, ACTIVE — M0)
+
+*Quantum Amplitude estimation for Stochastic vehicle Routing.* Quantum
+algorithms for chance-constrained / CVaR SVRPSPD: a coherent reversible
+oracle for the route peak-load predicate (Qiskit), amplitude estimation of
+gate quantities, coherent common random numbers (base and moved route on
+one superposed scenario register; an insertion moves the peak by at most
+one demand, so the difference is an indicator of a narrow window), nested
+cheapest-feasible move search, and a fault-tolerant crossover analysis.
+Shares instances, scenario generators and route conventions with the
+engine; quantum code in `svrpspd_wdro/quantum/`, tests in
+`svrpspd_wdro/tests/test_quantum_*.py`. Spec: `papers/quasar/PROJECT.md`.
+Roles for this project: the master session plans and designs algorithms;
+execution is delegated in small specified modules with tests; review is a
+separate pass.
+
 ## Layout
 
 - `svrpspd_wdro/` — the shared engine + all experiment scripts (see its
@@ -163,6 +179,8 @@ tighter threshold. Revision 1 of BATON states this explicitly (Section
   documented negative result. Do not resume — see its PROJECT.md banner.
 - `papers/eclair/` — paper 5 (ECLAIR), **ACTIVE and open for edits**;
   self-contained (no `svrpspd_wdro/` imports — see its README.md).
+- `papers/quasar/` — paper 7 (QUASAR), **ACTIVE and open for edits**;
+  quantum code in `svrpspd_wdro/quantum/` (Qiskit).
 - `papers/parcel/` — paper 6 (PARCEL), **ACTIVE and open for edits**;
   planning stage, self-contained (see its README.md).
 - **Parallel papers, independent review clocks** — always check each
