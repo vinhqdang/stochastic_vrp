@@ -1,4 +1,4 @@
-"""Experiment helpers for QUASAR M3 (design: papers/quasar/DESIGN_M3.md, Revision 2).
+"""Experiment helpers for QUASAR M3 (design: papers/quasar/DESIGN_M3.md, Revisions 2 and 3).
 
 M3a (v2): insertion, relocate, swap, 2-opt and alternative-position moves of
 every cached plan, evaluated on common scenarios of the BATON demand model
@@ -188,6 +188,33 @@ def gh_nodes(n_nodes: int) -> tuple[np.ndarray, np.ndarray]:
     return z.astype(np.float64), (w / w.sum()).astype(np.float64)
 
 
+def equal_mass_grid(T: int) -> tuple[np.ndarray, np.ndarray]:
+    """Equal-probability factor grid with T bins (Revision 3).
+
+    Bin t carries probability 1/T and is represented by its probability
+    midpoint u_t = (t + 1/2) / T, so the factor value is z_t = Phi^{-1}(u_t)
+    with equal weights w_t = 1/T. For T = 2^f the register is a uniform
+    superposition over the f qubits (Hadamards only).
+    """
+    T = int(T)
+    if T < 1:
+        raise ValueError(f"T must be positive, got {T}")
+    u = (np.arange(T, dtype=np.float64) + 0.5) / T
+    return st.norm.ppf(u).astype(np.float64), np.full(T, 1.0 / T, dtype=np.float64)
+
+
+FACTOR_GRIDS = ("gh", "em")
+
+
+def factor_grid(kind: str, size: int) -> tuple[np.ndarray, np.ndarray]:
+    """Factor nodes and weights: "gh" = Gauss-Hermite nodes, "em" = equal-mass bins."""
+    if kind == "gh":
+        return gh_nodes(size)
+    if kind == "em":
+        return equal_mass_grid(size)
+    raise ValueError(f"grid must be one of {FACTOR_GRIDS}, got {kind!r}")
+
+
 def conditional_level_pmf(
     mean: float, cv: float, unit: float, V: int, z: np.ndarray, rho: float
 ) -> np.ndarray:
@@ -245,31 +272,92 @@ class CopulaDemand:
 
 
 def copula_demand(plan_json: dict, b: int, rho: float = DEFAULT_RHO, n_nodes: int = 10,
-                  cv: float = DEFAULT_CV, rule: str = "design") -> CopulaDemand:
-    """Copula discrete model of an instance at V = 2**b levels (see module doc)."""
+                  cv: float = DEFAULT_CV, rule: str = "design", grid: str = "gh") -> CopulaDemand:
+    """Copula discrete model of an instance at V = 2**b levels (see module doc).
+
+    grid = "gh": n_nodes Gauss-Hermite nodes per factor; grid = "em": n_nodes
+    equal-probability bins per factor (:func:`equal_mass_grid`).
+    """
     dbar, pbar, n, Q = _plan_arrays(plan_json)
     V = 2 ** int(b)
     q_max = q999_max(dbar, pbar, cv)
     Q_level, unit = level_rule(Q, V, q_max, rule)
-    z, w = gh_nodes(n_nodes)
+    z, w = factor_grid(grid, n_nodes)
     pmf_d = np.stack([conditional_level_pmf(m, cv, unit, V, z, rho) for m in dbar], axis=1)
     pmf_p = np.stack([conditional_level_pmf(m, cv, unit, V, z, rho) for m in pbar], axis=1)
     return CopulaDemand(pmf_d=pmf_d, pmf_p=pmf_p, z=z, w=w, unit=float(unit),
                         Q_level=int(Q_level), rho=float(rho), b=int(b))
 
 
+def tail_over_pickups(route: Sequence[int], pmf_d: np.ndarray, pmf_p_batch: np.ndarray,
+                      K: int) -> np.ndarray:
+    """P(F > K) for one delivery pmf set and a batch of pickup pmf sets.
+
+    pmf_d: (n, V) delivery pmfs of the route's customers; pmf_p_batch: (T, n, V)
+    pickup pmfs, one set per batch element; returns the T tail probabilities.
+    Exact, no truncation error. F is the peak load in level units, so the
+    window is F > K.
+
+    Recursion (backward over the route). With A = sum of the deliveries of the
+    processed suffix and G = max over the suffix of the load minus the current
+    load, the final peak is F = A + G, and one customer c updates
+        A <- A + d_c,   G <- max(0, G + p_c - d_c).
+    On the event F <= K every partial sum is at most K, so states with
+    S = A + G > K are absorbed as overflow (S never decreases). The state is
+    kept as (A, S) for the delivery step, which is then a Toeplitz product in
+    A, and as (A, G~ = S - A) for the pickup step, which is row independent.
+    Both steps are batched over the pickup sets with matrix products.
+    """
+    K = int(K)
+    pmf_p_batch = np.asarray(pmf_p_batch, dtype=np.float64)
+    T = pmf_p_batch.shape[0]
+    if K < 0:
+        return np.ones(T)
+    V = pmf_p_batch.shape[2]
+    K1 = K + 1
+    idx = np.arange(K1)
+    Af, Sf = np.meshgrid(idx, idx, indexing="ij")     # axes (A, S)
+    Jf = Sf - Af + K                                  # G~ = S - A in [-K, K] -> [0, 2K]
+    Gf = Sf - Af                                      # G after pickup, valid where >= 0
+    valid = Gf >= 0
+    jj = np.arange(2 * K + 1)
+    P = np.zeros((T, K1, K1))                         # [pickup set, A, S]
+    P[:, 0, 0] = 1.0
+    for c in reversed([int(x) for x in route]):
+        pd = np.asarray(pmf_d[c], dtype=np.float64)
+        Td = np.zeros((K1, K1))                        # Td[A + v, A] = pd[v]
+        for v in np.flatnonzero(pd):
+            if v <= K:
+                Td[np.arange(v, K1), np.arange(0, K1 - v)] += pd[v]
+        Qs = np.matmul(Td, P)
+        Gt = np.zeros((T, K1, 2 * K + 1))
+        Gt[:, Af, Jf] = Qs[:, Af, Sf]
+        Mp = np.zeros((T, 2 * K + 1, K1))              # G~ -> max(0, G~ + p) per pickup set
+        pp = pmf_p_batch[:, c, :]
+        for p in range(V):
+            if not np.any(pp[:, p]):
+                continue
+            g = np.maximum(jj - K + p, 0)
+            ok = g <= K
+            Mp[:, jj[ok], g[ok]] += pp[:, p][:, None]
+        R = np.matmul(Gt, Mp)                          # [pickup set, A, G]
+        P = np.zeros((T, K1, K1))
+        P[:, Af[valid], Sf[valid]] = R[:, Af[valid], Gf[valid]]
+    return 1.0 - P.sum(axis=(1, 2))
+
+
 def chance_copula(route: Sequence[int], cd: CopulaDemand) -> float:
     """P(F_r > Q_level) under the discrete copula model.
 
-    Exact identity P = sum_t w_t sum_s w_s P(F > Q | z_t, z_s), each term a
-    ``classical.chance`` call on the conditional independent model.
+    Exact identity P = sum_t w_t sum_s w_s P(F > Q | z_t, z_s), with the inner
+    sum over s computed by :func:`tail_over_pickups` (validated against
+    ``classical.chance`` on the conditional independent model).
     """
     seq = [int(c) for c in route]
     total = 0.0
-    T = cd.z.size
-    for t in range(T):
-        for s in range(T):
-            total += cd.w[t] * cd.w[s] * chance(seq, cd.demand(t, s), cd.Q_level)
+    for t in range(cd.z.size):
+        tails = tail_over_pickups(seq, cd.pmf_d[t], cd.pmf_p, cd.Q_level)
+        total += cd.w[t] * float(np.dot(cd.w, tails))
     return float(total)
 
 
@@ -494,6 +582,31 @@ def classical_queries(var: float, eps: float, z: float = Z_95) -> float:
     return z * z * max(float(var), 0.0) / (eps * eps)
 
 
+CERT_FLOOR = 3.0  # rule-of-three constant of the classical certificate floor (Revision 3)
+
+
+def classical_queries_certified(var: float, eps: float, z: float = Z_95) -> float:
+    """Classical samples certifying error eps: max(z^2 var / eps^2, 3 / eps).
+
+    The first term is the CLT count. The floor is what a classical estimator
+    needs before it can certify a probability below eps when no event has
+    been seen (rule of three: about 3/eps samples); it binds when var is small
+    (for example a move with Var(D) = 0 in the sample).
+    """
+    if not eps > 0:
+        raise ValueError(f"eps must be positive, got {eps}")
+    return max(z * z * max(float(var), 0.0) / (eps * eps), CERT_FLOOR / eps)
+
+
+def classical_queries_certified_array(var, eps, z: float = Z_95) -> np.ndarray:
+    """Vectorised :func:`classical_queries_certified` (broadcasts var and eps)."""
+    var = np.maximum(np.asarray(var, dtype=np.float64), 0.0)
+    eps = np.asarray(eps, dtype=np.float64)
+    if np.any(~(eps > 0)):
+        raise ValueError("eps must be positive")
+    return np.maximum(z * z * var / (eps * eps), CERT_FLOOR / eps)
+
+
 def signed_costs(P1: float, Pm1: float, eps: float) -> tuple[float, float]:
     """(quantum, classical) cost of a signed D: two estimates, each at eps/2."""
     v1 = P1 * (1.0 - P1)
@@ -629,6 +742,20 @@ def gate_distance(pprime: float, gate: float = GATE_LEVEL) -> float:
     return abs(float(pprime) - gate)
 
 
+LENGTH_BANDS = ((0, 8, "<=8"), (9, 15, "9-15"), (16, 25, "16-25"), (26, 10**9, ">25"))
+
+
+def length_label(L: int) -> str:
+    """Route-length band of the paired level check: <= 8, 9-15, 16-25, > 25."""
+    L = int(L)
+    if L < 1:
+        raise ValueError(f"route length must be >= 1, got {L}")
+    for lo, hi, lab in LENGTH_BANDS:
+        if lo <= L <= hi:
+            return lab
+    raise AssertionError("unreachable")
+
+
 def alt_distance_label(d: int) -> str:
     """Position distance |pos2 - pos| for alternative-position moves: 1, 2-3, > 3."""
     d = int(d)
@@ -667,10 +794,13 @@ def class_costs(cls: int, P1: float, Pm1: float, pn: float, eps: float, N: int) 
 
     Stand-alone (per-move) estimate of p': quantum and classical at eps.
     Class 1 (D in {0, 1}): one amplitude P(D = 1); quantum CRN cost at eps,
-    classical CRN cost z^2 var / eps^2 with var = max(P1 (1 - P1), 3/N).
+    classical CRN cost with var = max(P1 (1 - P1), 3/N).
     Classes 2-3 (D in {-1, 0, 1}): quantum two-estimate cost, P(D = 1) and
     P(D = -1) each at eps/2 with variance max(P (1 - P), 3/N); classical DIRECT
-    signed-mean cost z^2 var / eps^2 with var = max(E D^2 - (E D)^2, 3/N).
+    signed-mean cost with var = max(E D^2 - (E D)^2, 3/N).
+    Every classical cost is the certified count max(z^2 var / eps^2, 3 / eps)
+    (:func:`classical_queries_certified`); the quantum cost is the canonical
+    AE count of :func:`quantum_queries`.
     """
     if cls not in (1, 2, 3):
         raise ValueError(f"cls must be 1, 2 or 3, got {cls}")
@@ -685,8 +815,8 @@ def class_costs(cls: int, P1: float, Pm1: float, pn: float, eps: float, N: int) 
     sa_var = float(pn) * (1.0 - float(pn))
     out = {
         "Nq_sa": quantum_queries(sa_var, eps),
-        "Nc_sa": classical_queries(sa_var, eps),
-        "Nc": classical_queries(plug_in_variance(var_dir, N), eps),
+        "Nc_sa": classical_queries_certified(sa_var, eps),
+        "Nc": classical_queries_certified(plug_in_variance(var_dir, N), eps),
     }
     if cls == 1:
         out["Nq"] = quantum_queries(plug_in_variance(var_dir, N), eps)
@@ -741,7 +871,7 @@ def sum_loads(route: Sequence[int], dsc: np.ndarray) -> np.ndarray:
 
 
 def reconstruct_intra(route: Sequence[int], kind: str, i: int, k: int) -> list[int]:
-    """Route after an intra move as generated by intra_candidates (kind, i, k)."""
+    """Route after an intra move as produced by intra_candidates (kind, i, k)."""
     s = [int(c) for c in route]
     if kind == "relocate":
         c = s.pop(int(i))
@@ -892,7 +1022,7 @@ def class_costs_array(cls, P1, Pm1, pn, eps, N: int) -> dict:
     Nq_signed = quantum_queries_array(v1, eps / 2.0) + quantum_queries_array(v2, eps / 2.0)
     return {
         "Nq_sa": quantum_queries_array(sa_var, eps),
-        "Nc_sa": classical_queries_array(sa_var, eps),
+        "Nc_sa": classical_queries_certified_array(sa_var, eps),
         "Nq": np.where(cls == 1, Nq_single, Nq_signed),
-        "Nc": classical_queries_array(v_dir, eps),
+        "Nc": classical_queries_certified_array(v_dir, eps),
     }

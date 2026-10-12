@@ -1,6 +1,6 @@
-# QUASAR M3b v3: estimator behaviour on the validated rotation model
+# QUASAR M3b v3 (review fixes): estimator behaviour on the validated rotation model
 
-Produced by scripts/run_quasar_m3b.py. Root seed SeedSequence(20261013); 4000 independent seeds per sampled setting; canonical QAE is computed from its exact outcome pmf.
+Produced by scripts/run_quasar_m3b.py. Root seed SeedSequence(20261013); 4000 independent seeds per sampled setting; canonical QAE is computed from its exact outcome pmf. Each amplitude's seed is fixed by its slot (amp<slot>), so amplitudes simulated in the previous run were reused exactly.
 
 ## 1. Circuit validation (reused from v2, not rerun)
 
@@ -8,56 +8,96 @@ The four real oracles of v2 (three peak, one difference; 19 to 22 qubits) were s
 
 Maximum |p_circuit - p_model| over the four oracles and k = 0..6: **6.11e-15**.
 
-## 2. Sample and exclusions
+## 2. Population, sample and exclusions
 
-Source: m3a_v2_moves.csv.gz, 1369458 moves, 2e5 scenarios each (hits = amplitude x 2e5). Eligible: every nonzero amplitude has at least 200 hits, and the move is not zero-difference.
+Source: m3a_v2_moves.csv.gz, 1369458 moves, 2e5 scenarios each (hits = amplitude x 2e5). Eligible: every nonzero amplitude has at least 200 hits, and the move is not zero-difference. Zero-difference moves: 149236 excluded; moves with a nonzero amplitude below 200 hits: 529674 excluded; eligible: 690548.
 
-- Zero-difference moves (P(D=+1) = P(D=-1) = 0): **149236** excluded.
-- Moves with a nonzero amplitude below 200 hits (stand-alone p' or a difference side): **529674** excluded.
-- Eligible moves: 690548.
-- Amplitude values below the threshold (1 to 199 hits): p' 28995, P(D=+1) 354488, P(D=-1) 335112; zero hits (one-sided sides, not amplitudes to estimate): P(D=+1) 232903, P(D=-1) 805815.
+Family groups: CON/SCA (random-generator instances, families CON and SCA), CMT (the CMT instances), city (the OSM instances).
 
-Stratification: move class cls (1 = insertion, 2 = intra-route, 3 = alternative position) by stand-alone p' band (low: p' < 0.02; decision: 0.02 <= p' <= 0.2; high: p' > 0.2). Up to 30 moves per cell, drawn at random from the eligible pool.
+Population by group and class (the whole M3a file; the last three columns show what the eligible sample can and cannot speak to):
 
-| cell | eligible pool | sampled |
-|---|---|---|
-| cls1 / low | 57564 | 30 |
-| cls1 / decision | 219134 | 30 |
-| cls1 / high | 272123 | 30 |
-| cls2 / low | 651 | 30 |
-| cls2 / decision | 6309 | 30 |
-| cls2 / high | 13901 | 30 |
-| cls3 / low | 2106 | 30 |
-| cls3 / decision | 26704 | 30 |
-| cls3 / high | 92056 | 30 |
+| group | class | moves in M3a | zero difference | side below 200 hits | eligible | share with P(D != 0) < 1e-3 | eligible: min P(D != 0) | eligible: median P(D != 0) |
+|---|---|---|---|---|---|---|---|---|
+| CON/SCA | 1 | 482628 | 4413 | 19713 | 458502 | 0.050 | 0.001 | 0.115 |
+| CON/SCA | 2 | 125225 | 12261 | 96568 | 16396 | 0.579 | 0.001 | 0.0077 |
+| CON/SCA | 3 | 482628 | 30702 | 337191 | 114735 | 0.379 | 0.001 | 0.0109 |
+| CMT | 1 | 18200 | 251 | 223 | 17726 | 0.026 | 0.00103 | 0.0695 |
+| CMT | 2 | 17116 | 8607 | 5018 | 3491 | 0.694 | 0.001 | 0.0173 |
+| CMT | 3 | 18200 | 8235 | 4910 | 5055 | 0.651 | 0.001 | 0.0157 |
+| city | 1 | 77994 | 3586 | 1815 | 72593 | 0.069 | 0.00101 | 0.0465 |
+| city | 2 | 69473 | 38144 | 30355 | 974 | 0.949 | 0.001 | 0.00227 |
+| city | 3 | 77994 | 43037 | 33881 | 1076 | 0.951 | 0.001 | 0.00228 |
 
-Sampled moves: 270 (186 one-sided, 84 signed). Unique amplitudes simulated: 588.
+Stratified sample: class x stand-alone p' band x family group, up to 20 moves per cell (drawn at random from the eligible pool). Cells with fewer eligible moves than 20 contribute all of them and are marked.
+
+| cell (cls / band / group) | eligible pool | sampled | families in sample | shortfall |
+|---|---|---|---|---|
+| cls1 / low / CON/SCA | 55567 | 20 | CON 12, SCA 8 | no |
+| cls1 / low / CMT | 189 | 20 | CMT 20 | no |
+| cls1 / low / city | 1808 | 20 | city 20 | no |
+| cls1 / decision / CON/SCA | 175722 | 20 | CON 15, SCA 5 | no |
+| cls1 / decision / CMT | 1066 | 20 | CMT 20 | no |
+| cls1 / decision / city | 42346 | 20 | city 20 | no |
+| cls1 / high / CON/SCA | 227213 | 20 | CON 12, SCA 8 | no |
+| cls1 / high / CMT | 16471 | 20 | CMT 20 | no |
+| cls1 / high / city | 28439 | 20 | city 20 | no |
+| cls2 / low / CON/SCA | 651 | 20 | CON 10, SCA 10 | no |
+| cls2 / low / CMT | 0 | 0 | - | yes, all taken |
+| cls2 / low / city | 0 | 0 | - | yes, all taken |
+| cls2 / decision / CON/SCA | 6235 | 20 | CON 13, SCA 7 | no |
+| cls2 / decision / CMT | 74 | 20 | CMT 20 | no |
+| cls2 / decision / city | 0 | 0 | - | yes, all taken |
+| cls2 / high / CON/SCA | 9510 | 20 | CON 9, SCA 11 | no |
+| cls2 / high / CMT | 3417 | 20 | CMT 20 | no |
+| cls2 / high / city | 974 | 20 | city 20 | no |
+| cls3 / low / CON/SCA | 2093 | 20 | CON 13, SCA 7 | no |
+| cls3 / low / CMT | 13 | 13 | CMT 13 | yes, all taken |
+| cls3 / low / city | 0 | 0 | - | yes, all taken |
+| cls3 / decision / CON/SCA | 26531 | 20 | CON 8, SCA 12 | no |
+| cls3 / decision / CMT | 161 | 20 | CMT 20 | no |
+| cls3 / decision / city | 12 | 12 | city 12 | yes, all taken |
+| cls3 / high / CON/SCA | 86111 | 20 | CON 7, SCA 13 | no |
+| cls3 / high / CMT | 4881 | 20 | CMT 20 | no |
+| cls3 / high / city | 1064 | 20 | city 20 | no |
+
+Sampled moves: 445 (374 one-sided, 71 signed); cells with a shortfall: 6 of 27. Unique amplitudes in the sample: 901, of which 901 reused from the previous run and 0 simulated now.
 
 ## 3. Error metrics and fitted slopes
 
-Primary metric: the 90 % quantile of |a_hat - a|. Slopes are log-log fits over the last six settings of each family in cost order (QAE m = 17..22; MLAE J = 5..10 for each S; classical N = 2^21..2^26). Medians and [min, max] over the amplitude records of each kind.
+Primary metric: the 90 % quantile of |a_hat - a|. Slopes are log-log fits over the last six settings of each family in cost order (QAE m = 17..22; MLAE J = 5..10 for each S; classical N = 2^21..2^26). Medians and [min, max] over the amplitude records of each kind (all groups).
 
 | kind | family | slope, 90 % quantile | slope, mean abs error | slope, RMS (secondary) |
 |---|---|---|---|---|
-| standalone | qae | -0.957 [-3.603, 0.422] (n=267) | -0.889 [-3.763, 0.572] (n=267) | -0.471 [-2.538, 0.499] (n=267) |
-| standalone | mlae_S32 | -0.987 [-1.441, -0.069] (n=267) | -0.941 [-1.141, -0.250] (n=267) | -0.827 [-1.321, -0.038] (n=267) |
-| standalone | mlae_S64 | -1.001 [-1.413, -0.202] (n=267) | -0.986 [-1.206, -0.485] (n=267) | -0.966 [-1.170, -0.101] (n=267) |
-| standalone | mlae_S128 | -1.005 [-1.307, -0.382] (n=267) | -1.002 [-1.183, -0.649] (n=267) | -0.996 [-1.316, -0.364] (n=267) |
-| standalone | classical | -0.499 [-0.512, -0.484] (n=267) | -0.500 [-0.514, -0.488] (n=267) | -0.500 [-0.511, -0.489] (n=267) |
-| difference+ | qae | -0.931 [-2.839, 0.463] (n=211) | -0.922 [-3.006, 0.652] (n=211) | -0.488 [-1.812, 0.498] (n=211) |
-| difference+ | mlae_S32 | -0.937 [-1.534, 0.126] (n=211) | -0.713 [-1.119, -0.168] (n=211) | -0.303 [-1.285, 0.005] (n=211) |
-| difference+ | mlae_S64 | -0.991 [-1.420, 0.049] (n=211) | -0.916 [-1.160, -0.283] (n=211) | -0.690 [-1.219, -0.044] (n=211) |
-| difference+ | mlae_S128 | -1.003 [-1.394, -0.148] (n=211) | -0.978 [-1.170, -0.481] (n=211) | -0.916 [-1.262, -0.152] (n=211) |
-| difference+ | classical | -0.500 [-0.514, -0.489] (n=211) | -0.500 [-0.509, -0.491] (n=211) | -0.500 [-0.510, -0.491] (n=211) |
-| difference- | qae | -1.080 [-2.386, 0.295] (n=110) | -1.011 [-2.383, 0.681] (n=110) | -0.521 [-1.353, 0.500] (n=110) |
-| difference- | mlae_S32 | -0.883 [-1.441, 0.131] (n=110) | -0.552 [-1.018, -0.211] (n=110) | -0.195 [-0.999, 0.022] (n=110) |
-| difference- | mlae_S64 | -0.967 [-1.419, -0.097] (n=110) | -0.773 [-1.319, -0.374] (n=110) | -0.460 [-1.437, -0.045] (n=110) |
-| difference- | mlae_S128 | -0.999 [-1.261, -0.261] (n=110) | -0.944 [-1.145, -0.520] (n=110) | -0.760 [-1.315, -0.227] (n=110) |
-| difference- | classical | -0.500 [-0.513, -0.482] (n=110) | -0.500 [-0.508, -0.486] (n=110) | -0.500 [-0.510, -0.487] (n=110) |
+| standalone | qae | -1.007 [-3.411, 0.495] (n=436) | -0.928 [-3.466, 0.612] (n=436) | -0.492 [-2.400, 0.500] (n=436) |
+| standalone | mlae_S32 | -0.996 [-1.408, -0.045] (n=436) | -0.969 [-1.191, -0.223] (n=436) | -0.925 [-1.420, -0.008] (n=436) |
+| standalone | mlae_S64 | -1.006 [-1.437, 0.029] (n=436) | -0.998 [-1.206, -0.327] (n=436) | -0.980 [-1.238, -0.114] (n=436) |
+| standalone | mlae_S128 | -1.005 [-1.386, -0.599] (n=436) | -1.004 [-1.174, -0.584] (n=436) | -1.000 [-1.316, -0.217] (n=436) |
+| standalone | classical | -0.500 [-0.512, -0.486] (n=436) | -0.500 [-0.512, -0.486] (n=436) | -0.500 [-0.512, -0.486] (n=436) |
+| difference+ | qae | -1.007 [-2.646, 0.426] (n=320) | -0.944 [-2.733, 0.666] (n=320) | -0.497 [-1.581, 0.493] (n=320) |
+| difference+ | mlae_S32 | -0.965 [-1.557, 0.134] (n=320) | -0.738 [-1.122, -0.164] (n=320) | -0.308 [-1.268, 0.016] (n=320) |
+| difference+ | mlae_S64 | -0.993 [-1.378, 0.060] (n=320) | -0.939 [-1.248, -0.291] (n=320) | -0.693 [-1.215, -0.040] (n=320) |
+| difference+ | mlae_S128 | -1.002 [-1.393, -0.389] (n=320) | -0.988 [-1.160, -0.455] (n=320) | -0.957 [-1.298, -0.142] (n=320) |
+| difference+ | classical | -0.500 [-0.512, -0.488] (n=320) | -0.500 [-0.513, -0.487] (n=320) | -0.500 [-0.512, -0.488] (n=320) |
+| difference- | qae | -0.913 [-3.077, 0.453] (n=145) | -0.900 [-3.592, 0.694] (n=145) | -0.469 [-2.587, 0.495] (n=145) |
+| difference- | mlae_S32 | -0.896 [-1.501, 0.134] (n=145) | -0.549 [-1.096, -0.191] (n=145) | -0.187 [-1.115, -0.014] (n=145) |
+| difference- | mlae_S64 | -0.975 [-1.445, -0.114] (n=145) | -0.822 [-1.128, -0.344] (n=145) | -0.460 [-1.165, -0.042] (n=145) |
+| difference- | mlae_S128 | -0.999 [-1.300, -0.148] (n=145) | -0.960 [-1.215, -0.515] (n=145) | -0.840 [-1.262, -0.174] (n=145) |
+| difference- | classical | -0.500 [-0.515, -0.487] (n=145) | -0.501 [-0.513, -0.490] (n=145) | -0.500 [-0.511, -0.490] (n=145) |
 
-**Why the QAE 90 % quantile slope is read as a median over records.** For large N the exact QAE error is |a_hat - a| = 2 pi sqrt(a(1-a)) |delta| / N (1 + o(1)), where delta is the offset of the outcome from N phi, and the outcome law of delta depends only on f_m = frac(2^m theta / pi): q90 = 2 pi sqrt(a(1-a)) g(f_m) / N with g bounded. The exact values agree with this: for a = 0.2, q90 N is about proportional to f_m for small f_m (0.013 at f = 0.005, 0.40 at f = 0.16) and reaches about 4 at f = 0.6. At fixed a the factor g(f_m) therefore moves with m, so the slope of one amplitude over six values of m is alignment noise. The population slope is -1 (the median over records is the statistic to read; the per-record range is shown only to make that noise visible).
+Slopes by family group (90 % quantile; records used by moves of that group, median [min, max], n records). A record used by moves of two groups counts in both.
 
-**Why the RMS is a secondary column.** For canonical QAE the tails are P(|delta| > x) of order 1/(pi^2 x), so P(|a_hat - a| > e) is of order 1/(N e) for 1/N << e << 1. The mean absolute error then behaves as (log N)/N (up to the alignment factor), with slope -1 in cost. The mean square, E(a_hat - a)^2 = integral of 2 e P(|a_hat - a| > e) de, is of order 1/N: the integrand 2 e P(|a_hat - a| > e) is about 2/(pi^2 N) for every e in (1/N, O(1)), so the mass is spread uniformly over error levels up to O(1) and is carried by outcomes of probability about 1/N and error of order a. It therefore scales as N^(-1/2) and is dominated by these heavy tails (for the QAE rows of m3b_v3_metrics.csv, sqrt(N) times the exact RMS is checkable directly and oscillates with m). A finite sample of 2000 or 4000 seeds almost never contains them, so a sampled RMS of QAE under-estimates it and its slope is noise; the exact RMS is reported as a secondary column for that reason.
+| group | kind | qae | mlae_S64 | classical |
+|---|---|---|---|---|
+| CON/SCA | standalone | -1.01 [-3.41, 0.49] (n=180) | -1.01 [-1.26, 0.03] (n=180) | -0.50 [-0.51, -0.49] (n=180) |
+| CON/SCA | difference | -1.02 [-3.08, 0.41] (n=225) | -0.99 [-1.30, 0.06] (n=225) | -0.50 [-0.52, -0.49] (n=225) |
+| CMT | standalone | -1.01 [-2.47, 0.44] (n=150) | -1.00 [-1.41, -0.42] (n=150) | -0.50 [-0.51, -0.49] (n=150) |
+| CMT | difference | -0.96 [-2.88, 0.45] (n=157) | -0.99 [-1.43, -0.07] (n=157) | -0.50 [-0.51, -0.49] (n=157) |
+| city | standalone | -1.02 [-2.49, 0.41] (n=113) | -1.01 [-1.44, -0.80] (n=113) | -0.50 [-0.51, -0.49] (n=113) |
+| city | difference | -0.98 [-2.61, 0.43] (n=110) | -0.99 [-1.44, 0.06] (n=110) | -0.50 [-0.51, -0.49] (n=110) |
+
+**Why the QAE 90 % quantile slope is read as a median over records.** For large N the exact QAE error is |a_hat - a| = 2 pi sqrt(a(1-a)) |delta| / N (1 + o(1)), where delta is the offset of the outcome from N phi, and the outcome law of delta depends only on f_m = frac(2^m theta / pi): q90 = 2 pi sqrt(a(1-a)) g(f_m) / N with g bounded. At fixed a the factor g(f_m) moves with m, so the slope of one amplitude over six values of m is alignment noise. The population slope is -1; the median over records is the statistic to read, and the per-record range is shown to make that noise visible.
+
+**Why the RMS is a secondary column.** For canonical QAE the tails are P(|delta| > x) of order 1/(pi^2 x), so P(|a_hat - a| > e) is of order 1/(N e) for 1/N << e << 1. The mean absolute error then behaves as (log N)/N (up to the alignment factor). The mean square, E(a_hat - a)^2 = integral of 2 e P(|a_hat - a| > e) de, is of order 1/N with a constant c(a) = 2 sqrt(a(1-a))/pi: the integrand is about 2 c(a)/N for every e in (1/N, O(1)), so the mass is spread over error levels and carried by outcomes of probability about 1/N. The RMS therefore scales as N^(-1/2) and is dominated by these heavy tails. A sample of 4000 seeds almost never contains them, so the sampled RMS of QAE under-estimates it; the exact RMS is reported as a secondary column for that reason.
 
 ## 4. Exact QAE metrics versus a large sampled estimate
 
@@ -76,91 +116,200 @@ Exact mean absolute error and q90 from the pmf, against 200000 sampled QAE runs 
 
 Targets on the 90 % quantile of |a_hat - a|: absolute 1e-3 and 1e-4 (T_sa = T_D = eps); relative 0.1 and 0.01 (T_sa = r p', T_D = r (a+ + a-), with a+ + a- = P(D != 0)). Cost ratio = cost(difference) / cost(stand-alone).
 
-- One-sided moves use one estimate of the nonzero side at target T_D: ratio = cost_D / cost_sa, prediction sqrt(v_D) / T_D over sqrt(v_sa) / T_sa for quantum estimators (v = a(1-a)) and v_D / T_D^2 over v_sa / T_sa^2 for classical.
-- Signed moves use two estimates of P(D = +1) and P(D = -1) at target T_D / 2 each: ratio = (cost_+ + cost_-) / cost_sa, prediction 2 (sqrt v+ + sqrt v-) / T_D over sqrt(v_sa) / T_sa (quantum); 4 (v+ + v-) / T_D^2 over v_sa / T_sa^2 (classical).
+Families of the difference:
+
+- qae, mlae_S32/64/128: one estimate of the nonzero side for one-sided moves (target T_D); two estimates of P(D = +1) and P(D = -1) at T_D / 2 each for signed moves, cost summed. Prediction: sqrt(v_D)/T_D over sqrt(v_sa)/T_sa for one-sided moves; 2 (sqrt v+ + sqrt v-)/T_D over sqrt(v_sa)/T_sa for signed moves.
+- **classical** (primary classical column): the direct signed-mean estimator of D, one sample mean of N draws of D in {-1, 0, +1} (multinomial counts), target T_D on the 90 % quantile. No two-estimate protocol. Prediction Var(D)/T_D^2 over v_sa/T_sa^2, Var(D) = a+ + a- - (a+ - a-)^2; for one-sided moves Var(D) = a+(1 - a+).
+- **classical_2est** (secondary): the two-estimate protocol of the previous v3 run (one Monte Carlo estimate per nonzero side, each at T_D / k). For one-sided moves it equals the single estimate and agrees with classical in law; for signed moves it costs about 4x the direct estimator at equal variance and is reported only to show that protocol effect.
 - Status: ok (cost measured), floor (a target is met at the smallest setting, so the cost is an upper bound and the row is not used), fail (target not reached within the grid). Medians and the ratio/prediction spread use the ok rows only, and the same rows for all three columns.
-- QAE cost-to-target inherits the alignment factor g(f_m) of Section 3: the cost is the smallest m from which every larger m meets the target (suffix maximum over the error, cost resolved in factors of 2), so QAE ratios carry a multiplicative scatter. Read the QAE columns with that in mind.
-- The claim 'ratio tracks rho_q' applies to class 1 (insertion) with absolute targets only: there the prediction for one-sided moves is exactly rho_q = sqrt(Var D) / sqrt(p'(1-p')). It is not claimed for classes 2 and 3 or for relative targets, whose predictions differ.
+- QAE cost-to-target inherits the alignment factor g(f_m) of Section 3 (cost resolved in factors of 2 over m), so QAE ratios carry multiplicative scatter.
 
-### Target: absolute 0.001
+### 5a. Summary by family group (all classes and bands; ok rows; median ratio [p10, p90] and n_ok / n_floor / n_fail)
 
-Each cell: median ratio / median prediction; median (ratio / prediction) [p10, p90]; ok / floor / fail counts.
+| group | target | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical | classical_2est |
+|---|---|---|---|---|---|---|---|
+| CON/SCA | abs 0.001 | 0.652 [0.177, 2.72]; 180 / 0 / 0 | 0.681 [0.211, 1.32]; 178 / 0 / 2 | 0.595 [0.235, 1.06]; 180 / 0 / 0 | 0.616 [0.222, 1]; 180 / 0 / 0 | 0.163 [0.0349, 0.95]; 180 / 0 / 0 | 0.319 [0.0758, 0.945]; 180 / 0 / 0 |
+| CON/SCA | abs 0.0001 | 0.613 [0.161, 2]; 180 / 0 / 0 | 0.676 [0.239, 1.31]; 69 / 0 / 111 | 0.729 [0.258, 1.18]; 156 / 0 / 24 | 0.71 [0.29, 1.09]; 176 / 0 / 4 | 0.162 [0.0347, 0.913]; 173 / 0 / 7 | 0.31 [0.0724, 0.959]; 172 / 0 / 8 |
+| CON/SCA | rel 0.1 | 3.68 [0.779, 29.5]; 174 / 6 / 0 | 3.19 [1.06, 26.2]; 140 / 25 / 15 | 3.23 [1.03, 17.2]; 137 / 41 / 2 | 2.97 [1.04, 15.6]; 131 / 49 / 0 | 8.06 [1.15, 73.3]; 178 / 2 / 0 | 9.32 [1.15, 237]; 178 / 2 / 0 |
+| CON/SCA | rel 0.01 | 4.89 [0.711, 34.8]; 179 / 1 / 0 | 2.89 [0.869, 23]; 104 / 0 / 76 | 3.32 [1.03, 23]; 155 / 0 / 25 | 3.28 [1.07, 21.3]; 171 / 0 / 9 | 8.24 [1.16, 75.2]; 180 / 0 / 0 | 9.55 [1.16, 225]; 180 / 0 / 0 |
+| CMT | abs 0.001 | 0.462 [0.0927, 1.59]; 153 / 0 / 0 | 0.454 [0.122, 1]; 153 / 0 / 0 | 0.449 [0.11, 0.932]; 153 / 0 / 0 | 0.454 [0.113, 0.88]; 153 / 0 / 0 | 0.23 [0.0168, 0.743]; 153 / 0 / 0 | 0.231 [0.0195, 0.739]; 153 / 0 / 0 |
+| CMT | abs 0.0001 | 0.452 [0.0884, 1.71]; 153 / 0 / 0 | 0.567 [0.202, 1.32]; 51 / 0 / 102 | 0.512 [0.155, 0.987]; 135 / 0 / 18 | 0.534 [0.138, 0.962]; 149 / 0 / 4 | 0.247 [0.0185, 0.821]; 130 / 0 / 23 | 0.26 [0.0221, 0.835]; 130 / 0 / 23 |
+| CMT | rel 0.1 | 3.16 [0.651, 22]; 138 / 15 / 0 | 2.44 [0.737, 16]; 109 / 35 / 9 | 2.18 [1.02, 12.7]; 94 / 56 / 3 | 2.32 [1.09, 8.8]; 90 / 63 / 0 | 10.1 [1.39, 187]; 153 / 0 / 0 | 10 [1.38, 191]; 153 / 0 / 0 |
+| CMT | rel 0.01 | 3.59 [0.506, 22.5]; 152 / 1 / 0 | 3.41 [1.15, 11]; 110 / 0 / 43 | 3.18 [1.27, 12.5]; 135 / 0 / 18 | 3.14 [1.22, 13.2]; 145 / 0 / 8 | 9.74 [1.42, 182]; 153 / 0 / 0 | 9.79 [1.44, 192]; 153 / 0 / 0 |
+| city | abs 0.001 | 0.285 [0.0651, 2.01]; 112 / 0 / 0 | 0.401 [0.0713, 0.998]; 112 / 0 / 0 | 0.38 [0.0635, 0.943]; 112 / 0 / 0 | 0.4 [0.0578, 0.94]; 112 / 0 / 0 | 0.155 [0.00597, 0.745]; 112 / 0 / 0 | 0.161 [0.00597, 0.733]; 112 / 0 / 0 |
+| city | abs 0.0001 | 0.319 [0.0488, 2.17]; 112 / 0 / 0 | 0.716 [0.0923, 1.14]; 35 / 0 / 77 | 0.505 [0.0868, 0.944]; 98 / 0 / 14 | 0.423 [0.0806, 0.961]; 111 / 0 / 1 | 0.239 [0.00726, 0.797]; 90 / 0 / 22 | 0.242 [0.0073, 0.81]; 90 / 0 / 22 |
+| city | rel 0.1 | 5.51 [0.688, 31.8]; 106 / 6 / 0 | 2.45 [1.01, 40.8]; 74 / 28 / 10 | 1.44 [0.983, 14.8]; 54 / 56 / 2 | 1.54 [1.01, 16.4]; 54 / 58 / 0 | 19.5 [1.42, 515]; 112 / 0 / 0 | 20 [1.32, 595]; 112 / 0 / 0 |
+| city | rel 0.01 | 5.02 [0.548, 43.6]; 112 / 0 / 0 | 3.1 [1.02, 22.1]; 76 / 0 / 36 | 4.05 [1.06, 24.6]; 100 / 0 / 12 | 4.79 [1.17, 27.5]; 110 / 0 / 2 | 19.7 [1.37, 525]; 112 / 0 / 0 | 19.5 [1.38, 623]; 112 / 0 / 0 |
 
-| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical |
-|---|---|---|---|---|---|
-| cls1 / low | 0.872 / 0.88; 1.02 [0.279, 4.42]; 30 / 0 / 0 | 0.768 / 0.88; 0.951 [0.437, 1.99]; 30 / 0 / 0 | 0.838 / 0.88; 0.94 [0.47, 1.11]; 30 / 0 / 0 | 0.858 / 0.88; 0.977 [0.753, 1.02]; 30 / 0 / 0 | 0.796 / 0.774; 1 [0.909, 1.03]; 30 / 0 / 0 |
-| cls1 / decision | 0.685 / 0.795; 1.24 [0.376, 3.22]; 30 / 0 / 0 | 0.745 / 0.795; 0.949 [0.67, 1.34]; 30 / 0 / 0 | 0.802 / 0.795; 0.993 [0.764, 1.21]; 30 / 0 / 0 | 0.799 / 0.795; 0.997 [0.771, 1.12]; 30 / 0 / 0 | 0.626 / 0.632; 1.01 [0.974, 1.06]; 30 / 0 / 0 |
-| cls1 / high | 1.03 / 0.965; 1.08 [0.557, 3.18]; 30 / 0 / 0 | 0.959 / 0.965; 1.04 [0.901, 1.25]; 30 / 0 / 0 | 0.85 / 0.965; 1.01 [0.838, 1.21]; 30 / 0 / 0 | 0.908 / 0.965; 0.991 [0.825, 1.13]; 30 / 0 / 0 | 0.932 / 0.931; 1.01 [0.95, 1.04]; 30 / 0 / 0 |
-| cls2 / low | 0.513 / 0.47; 0.921 [0.6, 2.64]; 30 / 0 / 0 | 0.358 / 0.47; 0.825 [0.449, 1.08]; 30 / 0 / 0 | 0.361 / 0.47; 0.874 [0.586, 0.974]; 30 / 0 / 0 | 0.354 / 0.47; 0.8 [0.675, 0.94]; 30 / 0 / 0 | 0.224 / 0.221; 1.01 [0.877, 1.07]; 30 / 0 / 0 |
-| cls2 / decision | 0.479 / 0.584; 1.4 [0.324, 4.17]; 30 / 0 / 0 | 0.573 / 0.584; 0.965 [0.732, 1.34]; 30 / 0 / 0 | 0.557 / 0.584; 0.947 [0.796, 1.1]; 30 / 0 / 0 | 0.553 / 0.584; 0.946 [0.765, 1.03]; 30 / 0 / 0 | 0.19 / 0.205; 0.977 [0.921, 1.03]; 30 / 0 / 0 |
-| cls2 / high | 0.778 / 0.61; 1.28 [0.492, 10.5]; 30 / 0 / 0 | 0.708 / 0.589; 1.1 [0.888, 4.23]; 28 / 0 / 2 | 0.572 / 0.61; 0.969 [0.808, 1.43]; 30 / 0 / 0 | 0.57 / 0.61; 0.97 [0.765, 1.1]; 30 / 0 / 0 | 0.204 / 0.21; 1 [0.949, 1.03]; 30 / 0 / 0 |
-| cls3 / low | 0.382 / 0.371; 0.951 [0.416, 1.97]; 30 / 0 / 0 | 0.332 / 0.37; 0.9 [0.393, 1.03]; 29 / 0 / 1 | 0.332 / 0.37; 0.872 [0.626, 0.995]; 29 / 0 / 1 | 0.338 / 0.371; 0.891 [0.74, 0.955]; 30 / 0 / 0 | 0.136 / 0.137; 0.985 [0.869, 1.07]; 30 / 0 / 0 |
-| cls3 / decision | 0.525 / 0.496; 1.08 [0.363, 7.16]; 30 / 0 / 0 | 0.532 / 0.496; 0.976 [0.838, 1.53]; 30 / 0 / 0 | 0.476 / 0.496; 0.939 [0.776, 1.08]; 30 / 0 / 0 | 0.452 / 0.496; 0.929 [0.705, 1.04]; 30 / 0 / 0 | 0.155 / 0.153; 1.01 [0.915, 1.05]; 30 / 0 / 0 |
-| cls3 / high | 0.868 / 0.745; 1.01 [0.692, 5.42]; 30 / 0 / 0 | 0.994 / 0.745; 1.08 [0.82, 4.54]; 30 / 0 / 0 | 0.708 / 0.745; 0.976 [0.678, 1.18]; 30 / 0 / 0 | 0.733 / 0.745; 0.978 [0.904, 1.06]; 30 / 0 / 0 | 0.346 / 0.338; 0.994 [0.975, 1.04]; 30 / 0 / 0 |
+### 5b. By cell (class x p' band x family group)
 
-### Target: absolute 0.0001
+Each cell: median ratio / median prediction; median (ratio / prediction) [p10, p90]; n_ok / n_floor / n_fail. Cells with no eligible move are omitted; cells with n_ok < 10 must not be quoted.
 
-Each cell: median ratio / median prediction; median (ratio / prediction) [p10, p90]; ok / floor / fail counts.
+#### Target: absolute 0.001
 
-| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical |
-|---|---|---|---|---|---|
-| cls1 / low | 0.953 / 0.88; 1.04 [0.216, 2.42]; 30 / 0 / 0 | 0.901 / 0.88; 0.981 [0.342, 2.14]; 20 / 0 / 10 | 0.883 / 0.894; 0.999 [0.383, 1.5]; 28 / 0 / 2 | 0.848 / 0.88; 0.988 [0.68, 1.2]; 30 / 0 / 0 | 0.79 / 0.774; 1 [0.954, 1.04]; 30 / 0 / 0 |
-| cls1 / decision | 0.624 / 0.795; 1.01 [0.285, 4.25]; 30 / 0 / 0 | 0.913 / 0.782; 1.06 [0.922, 1.35]; 21 / 0 / 9 | 0.83 / 0.8; 1.01 [0.841, 1.12]; 29 / 0 / 1 | 0.789 / 0.79; 0.998 [0.823, 1.07]; 29 / 0 / 1 | 0.632 / 0.632; 1 [0.965, 1.04]; 30 / 0 / 0 |
-| cls1 / high | 0.853 / 0.965; 0.997 [0.307, 3.62]; 30 / 0 / 0 | nan / nan; nan [nan, nan]; 0 / 0 / 30 | 0.958 / 0.982; 0.985 [0.933, 1.13]; 21 / 0 / 9 | 0.879 / 0.967; 0.986 [0.84, 1.16]; 29 / 0 / 1 | 0.924 / 0.931; 1.01 [0.975, 1.04]; 26 / 0 / 4 |
-| cls2 / low | 0.54 / 0.47; 1.04 [0.465, 2.83]; 30 / 0 / 0 | 0.316 / 0.47; 0.703 [0.383, 1.53]; 17 / 0 / 13 | 0.487 / 0.47; 0.937 [0.65, 2.56]; 28 / 0 / 2 | 0.444 / 0.47; 0.985 [0.807, 1.13]; 30 / 0 / 0 | 0.224 / 0.221; 1 [0.966, 1.04]; 30 / 0 / 0 |
-| cls2 / decision | 0.568 / 0.584; 1.06 [0.506, 3.47]; 30 / 0 / 0 | 0.574 / 0.34; 1.06 [0.83, 3.53]; 12 / 0 / 18 | 0.824 / 0.582; 1.06 [0.964, 1.9]; 25 / 0 / 5 | 0.583 / 0.582; 1.06 [0.976, 1.37]; 29 / 0 / 1 | 0.216 / 0.205; 1.01 [0.98, 1.04]; 30 / 0 / 0 |
-| cls2 / high | 0.523 / 0.61; 1.11 [0.496, 4.08]; 30 / 0 / 0 | nan / nan; nan [nan, nan]; 0 / 0 / 30 | 0.584 / 0.566; 1.03 [0.925, 1.35]; 20 / 0 / 10 | 0.615 / 0.61; 1.01 [0.769, 1.21]; 28 / 0 / 2 | 0.203 / 0.203; 0.989 [0.974, 1.03]; 26 / 0 / 4 |
-| cls3 / low | 0.58 / 0.371; 1.06 [0.34, 3.92]; 30 / 0 / 0 | 0.396 / 0.366; 0.956 [0.594, 3.7]; 17 / 0 / 13 | 0.447 / 0.37; 0.997 [0.724, 3.08]; 28 / 0 / 2 | 0.416 / 0.371; 1.01 [0.774, 1.84]; 30 / 0 / 0 | 0.139 / 0.137; 1 [0.955, 1.03]; 30 / 0 / 0 |
-| cls3 / decision | 0.472 / 0.496; 0.977 [0.271, 2.86]; 30 / 0 / 0 | 0.597 / 0.312; 1.04 [0.968, 3.05]; 14 / 0 / 16 | 0.518 / 0.474; 1.05 [0.891, 1.77]; 27 / 0 / 3 | 0.484 / 0.496; 1.02 [0.925, 1.74]; 30 / 0 / 0 | 0.149 / 0.153; 0.992 [0.965, 1.02]; 30 / 0 / 0 |
-| cls3 / high | 0.756 / 0.745; 1.2 [0.294, 4.25]; 30 / 0 / 0 | 1.39 / 1.11; 1.25 [1.25, 1.25]; 1 / 0 / 29 | 0.737 / 0.711; 1.05 [0.953, 1.53]; 19 / 0 / 11 | 0.754 / 0.745; 1.02 [0.92, 1.25]; 30 / 0 / 0 | 0.368 / 0.362; 1 [0.971, 1.04]; 27 / 0 / 3 |
+| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical | classical_2est |
+|---|---|---|---|---|---|---|
+| cls1 / low / CON/SCA | 0.877 / 0.784; 1.21 [0.547, 5.3]; 20 / 0 / 0 | 0.682 / 0.784; 0.947 [0.609, 1.42]; 20 / 0 / 0 | 0.716 / 0.784; 0.966 [0.824, 1.02]; 20 / 0 / 0 | 0.732 / 0.784; 0.966 [0.872, 1.03]; 20 / 0 / 0 | 0.581 / 0.615; 0.968 [0.855, 1.05]; 20 / 0 / 0 | 0.602 / 0.615; 0.971 [0.855, 1.04]; 20 / 0 / 0 |
+| cls1 / low / CMT | 0.828 / 0.741; 1.11 [0.459, 3.26]; 20 / 0 / 0 | 0.607 / 0.741; 0.801 [0.285, 1.13]; 20 / 0 / 0 | 0.675 / 0.741; 0.951 [0.426, 1.07]; 20 / 0 / 0 | 0.728 / 0.741; 0.964 [0.773, 1.01]; 20 / 0 / 0 | 0.556 / 0.549; 0.996 [0.945, 1.04]; 20 / 0 / 0 | 0.538 / 0.549; 0.99 [0.917, 1.07]; 20 / 0 / 0 |
+| cls1 / low / city | 0.763 / 0.853; 1.01 [0.318, 2.59]; 20 / 0 / 0 | 0.768 / 0.853; 0.987 [0.485, 1.21]; 20 / 0 / 0 | 0.729 / 0.853; 0.973 [0.635, 1.01]; 20 / 0 / 0 | 0.813 / 0.853; 0.967 [0.827, 1]; 20 / 0 / 0 | 0.74 / 0.727; 0.987 [0.914, 1.06]; 20 / 0 / 0 | 0.723 / 0.727; 0.993 [0.866, 1.03]; 20 / 0 / 0 |
+| cls1 / decision / CON/SCA | 0.76 / 0.943; 0.959 [0.314, 2.31]; 20 / 0 / 0 | 0.907 / 0.943; 0.988 [0.884, 1.26]; 20 / 0 / 0 | 0.928 / 0.943; 1.01 [0.874, 1.08]; 20 / 0 / 0 | 0.915 / 0.943; 0.995 [0.781, 1.06]; 20 / 0 / 0 | 0.877 / 0.89; 0.993 [0.96, 1.03]; 20 / 0 / 0 | 0.872 / 0.89; 0.985 [0.965, 1.01]; 20 / 0 / 0 |
+| cls1 / decision / CMT | 0.498 / 0.56; 0.764 [0.141, 1.95]; 20 / 0 / 0 | 0.579 / 0.56; 0.971 [0.711, 1.26]; 20 / 0 / 0 | 0.562 / 0.56; 0.981 [0.909, 1.09]; 20 / 0 / 0 | 0.568 / 0.56; 0.985 [0.82, 1.04]; 20 / 0 / 0 | 0.314 / 0.313; 1 [0.965, 1.06]; 20 / 0 / 0 | 0.315 / 0.313; 1 [0.948, 1.05]; 20 / 0 / 0 |
+| cls1 / decision / city | 0.577 / 0.705; 0.963 [0.312, 3.12]; 20 / 0 / 0 | 0.713 / 0.705; 1.05 [0.723, 1.46]; 20 / 0 / 0 | 0.7 / 0.705; 0.98 [0.85, 1.35]; 20 / 0 / 0 | 0.689 / 0.705; 0.996 [0.909, 1.18]; 20 / 0 / 0 | 0.493 / 0.497; 1 [0.952, 1.04]; 20 / 0 / 0 | 0.515 / 0.497; 0.999 [0.942, 1.07]; 20 / 0 / 0 |
+| cls1 / high / CON/SCA | 0.587 / 0.97; 0.72 [0.246, 6.38]; 20 / 0 / 0 | 0.782 / 0.97; 0.989 [0.754, 1.26]; 20 / 0 / 0 | 0.817 / 0.97; 0.938 [0.768, 1.08]; 20 / 0 / 0 | 0.821 / 0.97; 0.941 [0.788, 1.03]; 20 / 0 / 0 | 0.949 / 0.941; 0.995 [0.951, 1.03]; 20 / 0 / 0 | 0.887 / 0.941; 0.967 [0.943, 1.03]; 20 / 0 / 0 |
+| cls1 / high / CMT | 0.502 / 0.491; 1.06 [0.273, 2.87]; 20 / 0 / 0 | 0.51 / 0.491; 0.992 [0.71, 1.38]; 20 / 0 / 0 | 0.484 / 0.491; 0.973 [0.75, 1.2]; 20 / 0 / 0 | 0.518 / 0.491; 0.963 [0.86, 1.23]; 20 / 0 / 0 | 0.246 / 0.241; 1 [0.963, 1.04]; 20 / 0 / 0 | 0.242 / 0.241; 0.995 [0.95, 1.02]; 20 / 0 / 0 |
+| cls1 / high / city | 0.486 / 0.591; 0.962 [0.23, 3.06]; 20 / 0 / 0 | 0.577 / 0.591; 1.05 [0.883, 1.35]; 20 / 0 / 0 | 0.538 / 0.591; 1.02 [0.926, 1.35]; 20 / 0 / 0 | 0.581 / 0.591; 1.01 [0.954, 1.08]; 20 / 0 / 0 | 0.354 / 0.349; 0.996 [0.943, 1.03]; 20 / 0 / 0 | 0.351 / 0.349; 0.993 [0.956, 1.02]; 20 / 0 / 0 |
+| cls2 / low / CON/SCA | 0.372 / 0.391; 0.867 [0.419, 3.13]; 20 / 0 / 0 | 0.337 / 0.391; 0.908 [0.686, 1.01]; 20 / 0 / 0 | 0.34 / 0.391; 0.904 [0.784, 0.968]; 20 / 0 / 0 | 0.346 / 0.391; 0.873 [0.741, 0.956]; 20 / 0 / 0 | 0.152 / 0.153; 1.01 [0.851, 1.08]; 20 / 0 / 0 | 0.156 / 0.153; 1.02 [0.851, 1.08]; 20 / 0 / 0 |
+| cls2 / decision / CON/SCA | 0.748 / 0.406; 1.06 [0.533, 6.83]; 20 / 0 / 0 | 0.345 / 0.324; 0.914 [0.498, 1.15]; 19 / 0 / 1 | 0.374 / 0.406; 0.869 [0.726, 1.06]; 20 / 0 / 0 | 0.383 / 0.406; 0.822 [0.673, 1.01]; 20 / 0 / 0 | 0.0735 / 0.0752; 0.983 [0.939, 1.04]; 20 / 0 / 0 | 0.12 / 0.119; 0.986 [0.889, 1.03]; 20 / 0 / 0 |
+| cls2 / decision / CMT | 0.346 / 0.307; 0.991 [0.369, 3.33]; 20 / 0 / 0 | 0.354 / 0.307; 0.899 [0.719, 1.57]; 20 / 0 / 0 | 0.329 / 0.307; 0.939 [0.765, 1.45]; 20 / 0 / 0 | 0.31 / 0.307; 0.948 [0.809, 1.06]; 20 / 0 / 0 | 0.0609 / 0.0601; 1.01 [0.943, 1.04]; 20 / 0 / 0 | 0.0919 / 0.0941; 0.998 [0.967, 1.04]; 20 / 0 / 0 |
+| cls2 / high / CON/SCA | 0.645 / 0.667; 0.844 [0.519, 2.6]; 20 / 0 / 0 | 0.871 / 0.667; 1.05 [0.816, 5.18]; 20 / 0 / 0 | 0.588 / 0.667; 0.978 [0.767, 1.06]; 20 / 0 / 0 | 0.742 / 0.667; 0.979 [0.835, 1.12]; 20 / 0 / 0 | 0.0616 / 0.0615; 0.991 [0.963, 1.01]; 20 / 0 / 0 | 0.238 / 0.245; 1 [0.972, 1.02]; 20 / 0 / 0 |
+| cls2 / high / CMT | 0.251 / 0.3; 0.811 [0.307, 3.4]; 20 / 0 / 0 | 0.343 / 0.3; 0.955 [0.731, 1.32]; 20 / 0 / 0 | 0.312 / 0.3; 0.96 [0.788, 1.13]; 20 / 0 / 0 | 0.298 / 0.3; 0.948 [0.883, 1.07]; 20 / 0 / 0 | 0.0623 / 0.0632; 0.992 [0.94, 1.05]; 20 / 0 / 0 | 0.0716 / 0.0691; 1.01 [0.961, 1.05]; 20 / 0 / 0 |
+| cls2 / high / city | 0.139 / 0.1; 1.3 [0.609, 12.2]; 20 / 0 / 0 | 0.097 / 0.1; 0.961 [0.845, 1.77]; 20 / 0 / 0 | 0.0879 / 0.1; 0.894 [0.782, 0.987]; 20 / 0 / 0 | 0.087 / 0.1; 0.873 [0.671, 0.97]; 20 / 0 / 0 | 0.0106 / 0.0102; 0.991 [0.897, 1.1]; 20 / 0 / 0 | 0.00967 / 0.0102; 1 [0.897, 1.05]; 20 / 0 / 0 |
+| cls3 / low / CON/SCA | 0.382 / 0.425; 0.738 [0.248, 3.05]; 20 / 0 / 0 | 0.346 / 0.425; 0.865 [0.411, 1.04]; 20 / 0 / 0 | 0.351 / 0.425; 0.901 [0.63, 0.979]; 20 / 0 / 0 | 0.355 / 0.425; 0.89 [0.685, 0.988]; 20 / 0 / 0 | 0.195 / 0.181; 0.986 [0.893, 1.08]; 20 / 0 / 0 | 0.197 / 0.181; 0.986 [0.889, 1.08]; 20 / 0 / 0 |
+| cls3 / low / CMT | 0.82 / 0.701; 1.05 [0.244, 2.67]; 13 / 0 / 0 | 0.519 / 0.701; 0.937 [0.424, 1.14]; 13 / 0 / 0 | 0.837 / 0.701; 0.94 [0.61, 1.27]; 13 / 0 / 0 | 0.691 / 0.701; 0.957 [0.618, 1]; 13 / 0 / 0 | 0.5 / 0.492; 0.984 [0.888, 1.04]; 13 / 0 / 0 | 0.505 / 0.492; 1 [0.887, 1.05]; 13 / 0 / 0 |
+| cls3 / decision / CON/SCA | 0.446 / 0.504; 0.808 [0.45, 3.68]; 20 / 0 / 0 | 0.485 / 0.492; 0.995 [0.81, 1.59]; 19 / 0 / 1 | 0.556 / 0.504; 0.986 [0.847, 1.35]; 20 / 0 / 0 | 0.524 / 0.504; 0.952 [0.762, 1.22]; 20 / 0 / 0 | 0.0654 / 0.066; 0.989 [0.863, 1.01]; 20 / 0 / 0 | 0.157 / 0.158; 0.988 [0.96, 1.02]; 20 / 0 / 0 |
+| cls3 / decision / CMT | 0.353 / 0.363; 1.12 [0.485, 3.48]; 20 / 0 / 0 | 0.384 / 0.363; 0.993 [0.772, 1.11]; 20 / 0 / 0 | 0.385 / 0.363; 0.932 [0.803, 1.22]; 20 / 0 / 0 | 0.376 / 0.363; 0.91 [0.735, 1.16]; 20 / 0 / 0 | 0.13 / 0.132; 0.973 [0.942, 1.04]; 20 / 0 / 0 | 0.134 / 0.132; 0.987 [0.932, 1.03]; 20 / 0 / 0 |
+| cls3 / decision / city | 0.156 / 0.0959; 1.74 [0.59, 1.91]; 12 / 0 / 0 | 0.0732 / 0.0959; 0.786 [0.535, 0.916]; 12 / 0 / 0 | 0.0687 / 0.0959; 0.735 [0.603, 0.889]; 12 / 0 / 0 | 0.0709 / 0.0959; 0.698 [0.645, 0.914]; 12 / 0 / 0 | 0.00858 / 0.0092; 0.894 [0.777, 1.01]; 12 / 0 / 0 | 0.00842 / 0.0092; 0.887 [0.777, 1.01]; 12 / 0 / 0 |
+| cls3 / high / CON/SCA | 0.835 / 0.786; 1.06 [0.624, 4.64]; 20 / 0 / 0 | 0.87 / 0.786; 1.14 [0.965, 7.26]; 20 / 0 / 0 | 0.823 / 0.786; 0.994 [0.841, 1.37]; 20 / 0 / 0 | 0.817 / 0.786; 0.985 [0.86, 1.02]; 20 / 0 / 0 | 0.0938 / 0.0938; 1 [0.965, 1.02]; 20 / 0 / 0 | 0.371 / 0.373; 1 [0.962, 1.01]; 20 / 0 / 0 |
+| cls3 / high / CMT | 0.282 / 0.275; 0.824 [0.414, 2.8]; 20 / 0 / 0 | 0.305 / 0.275; 0.962 [0.842, 1.49]; 20 / 0 / 0 | 0.254 / 0.275; 0.905 [0.755, 1.03]; 20 / 0 / 0 | 0.278 / 0.275; 0.986 [0.68, 1.02]; 20 / 0 / 0 | 0.0754 / 0.0755; 0.985 [0.916, 1.04]; 20 / 0 / 0 | 0.0756 / 0.0755; 0.987 [0.916, 1.04]; 20 / 0 / 0 |
+| cls3 / high / city | 0.0828 / 0.109; 0.879 [0.44, 3.19]; 20 / 0 / 0 | 0.0936 / 0.109; 0.931 [0.772, 1.18]; 20 / 0 / 0 | 0.084 / 0.109; 0.815 [0.626, 0.974]; 20 / 0 / 0 | 0.096 / 0.109; 0.853 [0.708, 0.928]; 20 / 0 / 0 | 0.0118 / 0.0107; 0.991 [0.884, 1.11]; 20 / 0 / 0 | 0.0121 / 0.012; 1 [0.884, 1.09]; 20 / 0 / 0 |
 
-### Target: relative 0.1 (x amplitude)
+#### Target: absolute 0.0001
 
-Each cell: median ratio / median prediction; median (ratio / prediction) [p10, p90]; ok / floor / fail counts.
+| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical | classical_2est |
+|---|---|---|---|---|---|---|
+| cls1 / low / CON/SCA | 0.839 / 0.784; 1.25 [0.385, 3.55]; 20 / 0 / 0 | 0.692 / 0.809; 0.916 [0.452, 2.97]; 13 / 0 / 7 | 0.772 / 0.809; 0.968 [0.748, 1.13]; 19 / 0 / 1 | 0.77 / 0.784; 0.982 [0.876, 1.06]; 20 / 0 / 0 | 0.617 / 0.615; 0.998 [0.968, 1.03]; 20 / 0 / 0 | 0.618 / 0.615; 1 [0.943, 1.05]; 20 / 0 / 0 |
+| cls1 / low / CMT | 0.599 / 0.741; 0.815 [0.165, 2.88]; 20 / 0 / 0 | 0.805 / 0.758; 1.06 [0.354, 2.53]; 13 / 0 / 7 | 0.804 / 0.741; 1.02 [0.525, 1.34]; 18 / 0 / 2 | 0.808 / 0.741; 1 [0.936, 1.27]; 20 / 0 / 0 | 0.554 / 0.549; 1.01 [0.986, 1.03]; 20 / 0 / 0 | 0.544 / 0.549; 0.998 [0.977, 1.03]; 20 / 0 / 0 |
+| cls1 / low / city | 0.88 / 0.853; 1.07 [0.446, 2.43]; 20 / 0 / 0 | 0.706 / 0.853; 0.925 [0.599, 1.23]; 12 / 0 / 8 | 0.862 / 0.853; 0.998 [0.851, 1.69]; 18 / 0 / 2 | 0.868 / 0.853; 1.01 [0.912, 1.32]; 20 / 0 / 0 | 0.736 / 0.727; 1 [0.942, 1.03]; 20 / 0 / 0 | 0.74 / 0.727; 1.01 [0.977, 1.04]; 20 / 0 / 0 |
+| cls1 / decision / CON/SCA | 1.24 / 0.943; 1.29 [0.483, 5.86]; 20 / 0 / 0 | 0.797 / 0.943; 1.02 [0.802, 1.24]; 16 / 0 / 4 | 0.9 / 0.947; 0.992 [0.853, 1.31]; 19 / 0 / 1 | 0.927 / 0.943; 1.01 [0.945, 1.15]; 20 / 0 / 0 | 0.87 / 0.89; 0.998 [0.984, 1.03]; 20 / 0 / 0 | 0.878 / 0.89; 0.997 [0.969, 1.04]; 20 / 0 / 0 |
+| cls1 / decision / CMT | 0.605 / 0.56; 1.12 [0.268, 4.87]; 20 / 0 / 0 | 0.734 / 0.618; 1.1 [0.992, 1.33]; 11 / 0 / 9 | 0.646 / 0.56; 1.01 [0.968, 1.67]; 20 / 0 / 0 | 0.598 / 0.56; 1.02 [0.952, 1.13]; 20 / 0 / 0 | 0.324 / 0.313; 1.01 [0.974, 1.05]; 20 / 0 / 0 | 0.312 / 0.313; 1.01 [0.97, 1.04]; 20 / 0 / 0 |
+| cls1 / decision / city | 0.641 / 0.705; 0.769 [0.2, 3.92]; 20 / 0 / 0 | 0.779 / 0.705; 1.13 [0.996, 1.53]; 16 / 0 / 4 | 0.719 / 0.705; 1.03 [0.838, 1.32]; 20 / 0 / 0 | 0.761 / 0.705; 1.02 [0.96, 1.22]; 20 / 0 / 0 | 0.498 / 0.497; 1 [0.973, 1.03]; 20 / 0 / 0 | 0.499 / 0.497; 1.01 [0.957, 1.04]; 20 / 0 / 0 |
+| cls1 / high / CON/SCA | 0.812 / 0.97; 0.992 [0.206, 1.93]; 20 / 0 / 0 | 0.774 / 0.599; 1.29 [1.29, 1.29]; 1 / 0 / 19 | 0.977 / 0.968; 1.02 [0.974, 1.18]; 17 / 0 / 3 | 0.969 / 0.972; 1.04 [0.953, 1.24]; 19 / 0 / 1 | 0.906 / 0.894; 1.01 [0.97, 1.05]; 17 / 0 / 3 | 0.904 / 0.894; 1.01 [0.986, 1.03]; 17 / 0 / 3 |
+| cls1 / high / CMT | 0.457 / 0.491; 1.1 [0.256, 1.83]; 20 / 0 / 0 | nan / nan; nan [nan, nan]; 0 / 0 / 20 | 0.528 / 0.474; 1.03 [0.973, 1.29]; 17 / 0 / 3 | 0.513 / 0.491; 1 [0.869, 1.27]; 20 / 0 / 0 | 0.265 / 0.258; 1.02 [0.989, 1.05]; 13 / 0 / 7 | 0.275 / 0.258; 1.03 [0.977, 1.06]; 13 / 0 / 7 |
+| cls1 / high / city | 0.659 / 0.591; 1.15 [0.317, 9.27]; 20 / 0 / 0 | nan / nan; nan [nan, nan]; 0 / 0 / 20 | 0.651 / 0.611; 1.11 [0.953, 1.43]; 17 / 0 / 3 | 0.634 / 0.611; 1.03 [0.856, 1.35]; 19 / 0 / 1 | 0.409 / 0.412; 1.04 [0.988, 1.07]; 13 / 0 / 7 | 0.397 / 0.412; 1.02 [0.962, 1.05]; 13 / 0 / 7 |
+| cls2 / low / CON/SCA | 0.505 / 0.391; 0.968 [0.293, 2.14]; 20 / 0 / 0 | 0.371 / 0.393; 1.03 [0.615, 4.91]; 9 / 0 / 11 | 0.389 / 0.391; 1.01 [0.779, 3.69]; 20 / 0 / 0 | 0.445 / 0.391; 1.01 [0.962, 1.49]; 20 / 0 / 0 | 0.156 / 0.153; 0.993 [0.964, 1.02]; 20 / 0 / 0 | 0.153 / 0.153; 1 [0.968, 1.04]; 20 / 0 / 0 |
+| cls2 / decision / CON/SCA | 0.444 / 0.406; 1.11 [0.591, 11.1]; 20 / 0 / 0 | 0.503 / 0.489; 1 [0.977, 1.27]; 7 / 0 / 13 | 0.751 / 0.406; 0.999 [0.734, 3.81]; 16 / 0 / 4 | 0.707 / 0.406; 1 [0.967, 2.77]; 20 / 0 / 0 | 0.0752 / 0.0752; 1 [0.938, 1.02]; 20 / 0 / 0 | 0.12 / 0.119; 1.01 [0.966, 1.03]; 20 / 0 / 0 |
+| cls2 / decision / CMT | 0.237 / 0.307; 0.618 [0.215, 1.69]; 20 / 0 / 0 | 0.319 / 0.258; 1.12 [0.966, 1.69]; 8 / 0 / 12 | 0.306 / 0.304; 1.01 [0.876, 1.28]; 19 / 0 / 1 | 0.275 / 0.307; 1.03 [0.928, 1.29]; 20 / 0 / 0 | 0.0556 / 0.0562; 0.989 [0.972, 1.02]; 19 / 0 / 1 | 0.0943 / 0.0923; 0.982 [0.949, 1.02]; 19 / 0 / 1 |
+| cls2 / high / CON/SCA | 0.544 / 0.667; 0.99 [0.441, 2.5]; 20 / 0 / 0 | 0.377 / 0.318; 1.19 [1.19, 1.19]; 1 / 0 / 19 | 0.751 / 0.667; 1.05 [0.891, 1.52]; 16 / 0 / 4 | 0.796 / 0.603; 1.02 [0.931, 1.38]; 19 / 0 / 1 | 0.0626 / 0.0615; 1.01 [0.973, 1.04]; 18 / 0 / 2 | 0.245 / 0.245; 0.995 [0.964, 1.04]; 18 / 0 / 2 |
+| cls2 / high / CMT | 0.535 / 0.3; 1.72 [0.322, 3.78]; 20 / 0 / 0 | nan / nan; nan [nan, nan]; 0 / 0 / 20 | 0.37 / 0.313; 1.01 [0.928, 1.9]; 12 / 0 / 8 | 0.352 / 0.301; 1.01 [0.826, 1.37]; 17 / 0 / 3 | 0.0514 / 0.0523; 1 [0.969, 1.04]; 12 / 0 / 8 | 0.0666 / 0.0691; 0.99 [0.971, 1.06]; 12 / 0 / 8 |
+| cls2 / high / city | 0.123 / 0.1; 1.1 [0.572, 2.77]; 20 / 0 / 0 | nan / nan; nan [nan, nan]; 0 / 0 / 20 | 0.125 / 0.091; 1.06 [0.964, 2.73]; 17 / 0 / 3 | 0.105 / 0.1; 1 [0.862, 1.28]; 20 / 0 / 0 | 0.00863 / 0.00828; 0.999 [0.979, 1.04]; 11 / 0 / 9 | 0.0087 / 0.00828; 1.03 [1.01, 1.05]; 11 / 0 / 9 |
+| cls3 / low / CON/SCA | 0.322 / 0.425; 0.855 [0.221, 3.41]; 20 / 0 / 0 | 0.491 / 0.529; 0.99 [0.446, 2.94]; 12 / 0 / 8 | 0.441 / 0.425; 0.96 [0.562, 2.86]; 20 / 0 / 0 | 0.417 / 0.425; 1 [0.812, 1.82]; 20 / 0 / 0 | 0.183 / 0.181; 1.02 [0.966, 1.05]; 20 / 0 / 0 | 0.182 / 0.181; 0.998 [0.961, 1.03]; 20 / 0 / 0 |
+| cls3 / low / CMT | 0.417 / 0.701; 0.611 [0.176, 2.42]; 13 / 0 / 0 | 0.725 / 0.616; 1.03 [0.508, 2.43]; 8 / 0 / 5 | 0.795 / 0.626; 0.999 [0.823, 3.38]; 12 / 0 / 1 | 0.879 / 0.701; 0.994 [0.952, 2.67]; 13 / 0 / 0 | 0.465 / 0.492; 0.981 [0.946, 1.02]; 13 / 0 / 0 | 0.47 / 0.492; 1 [0.948, 1.05]; 13 / 0 / 0 |
+| cls3 / decision / CON/SCA | 0.587 / 0.504; 1.02 [0.353, 3.57]; 20 / 0 / 0 | 0.41 / 0.318; 1.34 [0.882, 2.23]; 8 / 0 / 12 | 0.575 / 0.482; 1.01 [0.769, 1.8]; 15 / 0 / 5 | 0.683 / 0.492; 1 [0.872, 1.6]; 19 / 0 / 1 | 0.0666 / 0.066; 1 [0.959, 1.03]; 20 / 0 / 0 | 0.156 / 0.158; 0.997 [0.976, 1.05]; 20 / 0 / 0 |
+| cls3 / decision / CMT | 0.406 / 0.363; 1.04 [0.247, 4.57]; 20 / 0 / 0 | 0.459 / 0.399; 1.14 [0.951, 1.57]; 10 / 0 / 10 | 0.372 / 0.363; 1.07 [0.877, 1.58]; 20 / 0 / 0 | 0.385 / 0.363; 0.999 [0.902, 1.52]; 20 / 0 / 0 | 0.134 / 0.132; 1.01 [0.956, 1.04]; 20 / 0 / 0 | 0.131 / 0.132; 0.992 [0.95, 1.03]; 20 / 0 / 0 |
+| cls3 / decision / city | 0.105 / 0.0959; 0.979 [0.474, 2.66]; 12 / 0 / 0 | 0.0918 / 0.092; 0.978 [0.943, 1.16]; 7 / 0 / 5 | 0.0958 / 0.0964; 1.01 [0.89, 4.05]; 10 / 0 / 2 | 0.0935 / 0.0959; 0.984 [0.788, 1.02]; 12 / 0 / 0 | 0.00951 / 0.0092; 1.03 [0.975, 1.06]; 12 / 0 / 0 | 0.00926 / 0.0092; 1 [0.962, 1.05]; 12 / 0 / 0 |
+| cls3 / high / CON/SCA | 0.622 / 0.786; 0.806 [0.399, 1.53]; 20 / 0 / 0 | 1.06 / 0.622; 1.88 [1.41, 2.35]; 2 / 0 / 18 | 0.813 / 0.716; 1.08 [0.991, 1.54]; 14 / 0 / 6 | 0.77 / 0.771; 0.995 [0.852, 1.36]; 19 / 0 / 1 | 0.0879 / 0.0874; 1.01 [0.971, 1.03]; 18 / 0 / 2 | 0.333 / 0.324; 0.999 [0.976, 1.03]; 17 / 0 / 3 |
+| cls3 / high / CMT | 0.346 / 0.275; 1.13 [0.232, 3.73]; 20 / 0 / 0 | 0.169 / 0.148; 1.14 [1.14, 1.14]; 1 / 0 / 19 | 0.329 / 0.272; 1 [0.925, 1.24]; 17 / 0 / 3 | 0.258 / 0.272; 0.996 [0.838, 1.1]; 19 / 0 / 1 | 0.0758 / 0.0739; 0.999 [0.971, 1.05]; 13 / 0 / 7 | 0.0761 / 0.0739; 1.01 [0.978, 1.03]; 13 / 0 / 7 |
+| cls3 / high / city | 0.0898 / 0.109; 0.946 [0.345, 5.93]; 20 / 0 / 0 | nan / nan; nan [nan, nan]; 0 / 0 / 20 | 0.122 / 0.115; 1.02 [0.946, 1.56]; 16 / 0 / 4 | 0.117 / 0.109; 1.01 [0.866, 1.19]; 20 / 0 / 0 | 0.0121 / 0.012; 1.02 [0.964, 1.05]; 14 / 0 / 6 | 0.0122 / 0.012; 1.02 [0.966, 1.05]; 14 / 0 / 6 |
 
-| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical |
-|---|---|---|---|---|---|
-| cls1 / low | 1.41 / 1.14; 1.19 [0.283, 5.25]; 30 / 0 / 0 | 1.07 / 1.14; 0.991 [0.45, 3.72]; 28 / 0 / 2 | 1.06 / 1.13; 1 [0.522, 1.14]; 29 / 0 / 1 | 1.1 / 1.14; 1.01 [0.761, 1.29]; 30 / 0 / 0 | 1.35 / 1.3; 1.02 [0.963, 1.05]; 30 / 0 / 0 |
-| cls1 / decision | 1.58 / 1.33; 0.921 [0.2, 3.85]; 28 / 2 / 0 | 1.2 / 1.3; 1.02 [0.807, 1.34]; 30 / 0 / 0 | 1.48 / 1.3; 1.01 [0.846, 1.26]; 30 / 0 / 0 | 1.48 / 1.3; 1.03 [0.754, 1.51]; 30 / 0 / 0 | 1.68 / 1.69; 0.991 [0.939, 1.03]; 30 / 0 / 0 |
-| cls1 / high | 1.63 / 1.48; 0.962 [0.588, 2.07]; 26 / 4 / 0 | 1.3 / 1.56; 0.977 [0.718, 1.35]; 17 / 13 / 0 | 1.25 / 1.05; 1.01 [0.761, 1.18]; 5 / 25 / 0 | 1.05 / 1.01; 1.03 [1.03, 1.03]; 1 / 29 / 0 | 2.97 / 2.92; 0.999 [0.931, 1.03]; 30 / 0 / 0 |
-| cls2 / low | 2.95 / 2.14; 1.21 [0.592, 4.24]; 30 / 0 / 0 | 2.1 / 2.14; 0.985 [0.568, 2.74]; 24 / 0 / 6 | 2.3 / 2.14; 1.01 [0.824, 1.85]; 30 / 0 / 0 | 2.17 / 2.14; 1.03 [0.812, 1.34]; 30 / 0 / 0 | 4.65 / 4.58; 0.995 [0.955, 1.02]; 30 / 0 / 0 |
-| cls2 / decision | 8.7 / 8.6; 0.979 [0.421, 1.94]; 30 / 0 / 0 | 8.86 / 8.6; 1.06 [0.861, 2.16]; 28 / 0 / 2 | 10.2 / 8.65; 1.12 [0.903, 1.36]; 27 / 1 / 2 | 11.2 / 8.65; 1.21 [0.887, 1.49]; 29 / 1 / 0 | 41.7 / 42.3; 1.01 [0.967, 1.04]; 30 / 0 / 0 |
-| cls2 / high | 15.6 / 18.8; 1.06 [0.413, 1.79]; 30 / 0 / 0 | 23.9 / 19.4; 1.31 [0.848, 4.83]; 14 / 15 / 1 | 12.1 / 12.7; 0.986 [0.745, 2.17]; 7 / 23 / 0 | 7.27 / 10.1; 0.717 [0.717, 0.717]; 1 / 29 / 0 | 242 / 242; 0.997 [0.959, 1.06]; 30 / 0 / 0 |
-| cls3 / low | 2.93 / 2.75; 0.965 [0.113, 3.53]; 30 / 0 / 0 | 2.92 / 2.78; 1.05 [0.551, 6.99]; 24 / 0 / 6 | 2.91 / 2.74; 1.02 [0.877, 3.94]; 29 / 0 / 1 | 3.13 / 2.75; 1.05 [0.908, 2.19]; 30 / 0 / 0 | 7.5 / 7.54; 0.994 [0.956, 1.04]; 30 / 0 / 0 |
-| cls3 / decision | 8.77 / 8.66; 0.987 [0.399, 2.72]; 30 / 0 / 0 | 8.72 / 8.11; 1.12 [0.834, 2.12]; 27 / 0 / 3 | 10.3 / 8.66; 1.08 [0.857, 1.27]; 30 / 0 / 0 | 11.2 / 8.66; 1.16 [0.846, 1.41]; 30 / 0 / 0 | 71.4 / 75.2; 0.999 [0.952, 1.04]; 30 / 0 / 0 |
-| cls3 / high | 19.5 / 22; 0.84 [0.539, 3.52]; 27 / 3 / 0 | 20.6 / 15.2; 1.08 [0.719, 2.8]; 17 / 11 / 2 | 12.3 / 12.6; 0.875 [0.734, 1.17]; 10 / 20 / 0 | 9.9 / 12.6; 0.718 [0.694, 1.08]; 6 / 24 / 0 | 284 / 294; 1.01 [0.95, 1.09]; 29 / 1 / 0 |
+#### Target: relative 0.1 (x amplitude)
 
-### Target: relative 0.01 (x amplitude)
+| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical | classical_2est |
+|---|---|---|---|---|---|---|
+| cls1 / low / CON/SCA | 1.26 / 1.28; 1.02 [0.552, 2.36]; 20 / 0 / 0 | 1.22 / 1.23; 1.04 [0.765, 2.87]; 18 / 0 / 2 | 1.22 / 1.24; 1.01 [0.825, 1.15]; 19 / 0 / 1 | 1.28 / 1.28; 1.01 [0.899, 1.03]; 20 / 0 / 0 | 1.63 / 1.64; 1 [0.969, 1.05]; 20 / 0 / 0 | 1.64 / 1.64; 1.01 [0.954, 1.05]; 20 / 0 / 0 |
+| cls1 / low / CMT | 1.49 / 1.36; 1.17 [0.51, 3.19]; 20 / 0 / 0 | 1.09 / 1.33; 0.854 [0.396, 1.6]; 19 / 0 / 1 | 1.18 / 1.33; 0.986 [0.514, 1.24]; 19 / 0 / 1 | 1.25 / 1.36; 1.02 [0.834, 1.11]; 20 / 0 / 0 | 1.81 / 1.84; 0.985 [0.953, 1.02]; 20 / 0 / 0 | 1.85 / 1.84; 0.997 [0.949, 1.03]; 20 / 0 / 0 |
+| cls1 / low / city | 1.05 / 1.18; 1 [0.418, 1.96]; 20 / 0 / 0 | 1.09 / 1.16; 0.995 [0.297, 1.92]; 19 / 0 / 1 | 1.07 / 1.16; 0.999 [0.634, 1.12]; 19 / 0 / 1 | 1.1 / 1.18; 1.01 [0.88, 1.14]; 20 / 0 / 0 | 1.35 / 1.38; 1.01 [0.946, 1.05]; 20 / 0 / 0 | 1.33 / 1.38; 0.995 [0.947, 1.03]; 20 / 0 / 0 |
+| cls1 / decision / CON/SCA | 1.37 / 1.06; 1.05 [0.586, 2.94]; 19 / 1 / 0 | 1.11 / 1.07; 1.01 [0.963, 1.29]; 20 / 0 / 0 | 1.03 / 1.07; 1 [0.819, 1.17]; 20 / 0 / 0 | 1.08 / 1.07; 1 [0.931, 1.19]; 20 / 0 / 0 | 1.17 / 1.15; 0.987 [0.962, 1.02]; 20 / 0 / 0 | 1.15 / 1.15; 0.982 [0.946, 1.03]; 20 / 0 / 0 |
+| cls1 / decision / CMT | 1.62 / 2.03; 0.867 [0.203, 2.2]; 17 / 3 / 0 | 2.07 / 1.98; 1.07 [0.779, 1.25]; 20 / 0 / 0 | 2.11 / 1.98; 1 [0.8, 1.33]; 20 / 0 / 0 | 2.34 / 1.98; 1.11 [0.735, 1.36]; 20 / 0 / 0 | 3.99 / 3.91; 1.02 [0.967, 1.06]; 20 / 0 / 0 | 3.84 / 3.91; 1.01 [0.973, 1.07]; 20 / 0 / 0 |
+| cls1 / decision / city | 1.54 / 1.47; 1 [0.43, 3.96]; 20 / 0 / 0 | 1.94 / 1.47; 1.06 [0.914, 1.43]; 20 / 0 / 0 | 1.43 / 1.47; 1.02 [0.836, 1.23]; 20 / 0 / 0 | 1.58 / 1.47; 1.05 [0.738, 1.23]; 20 / 0 / 0 | 2.14 / 2.17; 1.01 [0.952, 1.04]; 20 / 0 / 0 | 2.08 / 2.17; 0.987 [0.94, 1.03]; 20 / 0 / 0 |
+| cls1 / high / CON/SCA | 1.77 / 1.58; 0.973 [0.41, 2.47]; 18 / 2 / 0 | 1.91 / 1.82; 1.02 [0.845, 1.2]; 14 / 6 / 0 | 1.76 / 1.1; 1.36 [1.07, 1.62]; 6 / 14 / 0 | 1.52 / 1.7; 0.926 [0.868, 0.984]; 2 / 18 / 0 | 2.47 / 2.5; 1 [0.952, 1.05]; 18 / 2 / 0 | 2.46 / 2.5; 1.01 [0.944, 1.06]; 18 / 2 / 0 |
+| cls1 / high / CMT | 4.29 / 4.31; 0.971 [0.425, 1.58]; 16 / 4 / 0 | 10.6 / 8.32; 1.13 [0.536, 9.99]; 7 / 13 / 0 | 1.74 / 4.31; 0.403 [0.392, 0.414]; 2 / 18 / 0 | nan / nan; nan [nan, nan]; 0 / 20 / 0 | 18.2 / 18.6; 0.994 [0.948, 1.05]; 20 / 0 / 0 | 17.8 / 18.6; 0.979 [0.932, 1.04]; 20 / 0 / 0 |
+| cls1 / high / city | 3.15 / 3.1; 1.01 [0.504, 2]; 16 / 4 / 0 | 2.1 / 2.02; 1.06 [0.93, 1.52]; 4 / 16 / 0 | 1.16 / 1.56; 0.769 [0.701, 0.837]; 2 / 18 / 0 | 0.846 / 1.56; 0.548 [0.533, 0.563]; 2 / 18 / 0 | 11.3 / 11.6; 0.983 [0.949, 1.03]; 20 / 0 / 0 | 11 / 11.6; 0.983 [0.953, 1.04]; 20 / 0 / 0 |
+| cls2 / low / CON/SCA | 2.09 / 2.59; 1.02 [0.448, 3.32]; 20 / 0 / 0 | 3.64 / 2.27; 1.29 [0.911, 5.88]; 16 / 0 / 4 | 3.19 / 2.59; 1.05 [0.983, 3.23]; 20 / 0 / 0 | 2.94 / 2.59; 1.06 [0.997, 1.28]; 20 / 0 / 0 | 6.59 / 6.71; 1 [0.95, 1.06]; 20 / 0 / 0 | 6.66 / 6.71; 1.01 [0.96, 1.05]; 20 / 0 / 0 |
+| cls2 / decision / CON/SCA | 11.3 / 6.63; 1.11 [0.872, 13.2]; 20 / 0 / 0 | 9.97 / 10.1; 1.08 [0.731, 1.53]; 15 / 0 / 5 | 10.3 / 7.66; 1.07 [0.907, 4.15]; 19 / 0 / 1 | 10.1 / 6.63; 1.18 [0.976, 1.76]; 20 / 0 / 0 | 17.2 / 17.2; 1.01 [0.939, 1.04]; 20 / 0 / 0 | 30.1 / 30.3; 0.997 [0.954, 1.04]; 20 / 0 / 0 |
+| cls2 / decision / CMT | 3.61 / 5.18; 0.973 [0.343, 2.07]; 20 / 0 / 0 | 5.49 / 4.85; 0.994 [0.792, 1.55]; 19 / 0 / 1 | 7.04 / 6.51; 1.11 [0.94, 1.44]; 17 / 3 / 0 | 7.88 / 6.51; 1.3 [1.09, 1.54]; 17 / 3 / 0 | 22.3 / 21.8; 1 [0.957, 1.04]; 20 / 0 / 0 | 26.4 / 26.9; 0.98 [0.946, 1.03]; 20 / 0 / 0 |
+| cls2 / high / CON/SCA | 22.3 / 19.5; 1.07 [0.51, 5.39]; 18 / 2 / 0 | 29.2 / 19.2; 1.23 [1.09, 8.76]; 11 / 9 / 0 | 15 / 14.2; 1.04 [0.928, 1.34]; 9 / 11 / 0 | 11.8 / 14.2; 0.767 [0.715, 1.07]; 9 / 11 / 0 | 59.9 / 54.9; 1.01 [0.966, 1.07]; 20 / 0 / 0 | 213 / 214; 1.01 [0.967, 1.04]; 20 / 0 / 0 |
+| cls2 / high / CMT | 9.21 / 11.5; 1.17 [0.261, 2.63]; 18 / 2 / 0 | 14.1 / 11.5; 1.38 [0.772, 2.09]; 8 / 9 / 3 | nan / nan; nan [nan, nan]; 0 / 19 / 1 | nan / nan; nan [nan, nan]; 0 / 20 / 0 | 76.7 / 75.7; 0.992 [0.964, 1.04]; 20 / 0 / 0 | 101 / 105; 0.993 [0.939, 1.04]; 20 / 0 / 0 |
+| cls2 / high / city | 22.3 / 21.3; 1.01 [0.522, 1.93]; 20 / 0 / 0 | 35.4 / 18.5; 1.67 [1.4, 5.62]; 16 / 0 / 4 | nan / nan; nan [nan, nan]; 0 / 20 / 0 | nan / nan; nan [nan, nan]; 0 / 20 / 0 | 340 / 329; 0.997 [0.942, 1.05]; 20 / 0 / 0 | 432 / 419; 0.989 [0.95, 1.05]; 20 / 0 / 0 |
+| cls3 / low / CON/SCA | 2.19 / 2.43; 0.907 [0.164, 3.58]; 20 / 0 / 0 | 2.01 / 2.37; 1.04 [0.624, 1.17]; 18 / 0 / 2 | 2.36 / 2.43; 1.03 [0.86, 2.24]; 20 / 0 / 0 | 2.54 / 2.43; 1.03 [0.937, 2.18]; 20 / 0 / 0 | 5.57 / 5.59; 0.998 [0.964, 1.05]; 20 / 0 / 0 | 5.75 / 5.89; 1.01 [0.955, 1.06]; 20 / 0 / 0 |
+| cls3 / low / CMT | 1.54 / 1.44; 0.936 [0.34, 2.4]; 13 / 0 / 0 | 1.63 / 1.83; 1.02 [0.386, 2.18]; 11 / 0 / 2 | 1.8 / 1.63; 1.11 [0.795, 2.89]; 12 / 0 / 1 | 1.71 / 1.44; 1.04 [0.828, 1.93]; 13 / 0 / 0 | 1.94 / 2.06; 0.976 [0.918, 1.03]; 13 / 0 / 0 | 2.01 / 2.06; 0.986 [0.953, 1.03]; 13 / 0 / 0 |
+| cls3 / decision / CON/SCA | 8.73 / 6.83; 1.02 [0.492, 2.67]; 20 / 0 / 0 | 9.27 / 6.69; 1.48 [0.946, 2.98]; 19 / 0 / 1 | 8.76 / 6.83; 1.16 [0.949, 2.36]; 20 / 0 / 0 | 9.84 / 6.97; 1.25 [0.977, 2.53]; 19 / 1 / 0 | 21.5 / 21.8; 1.01 [0.955, 1.04]; 20 / 0 / 0 | 40.6 / 39.8; 0.991 [0.951, 1.04]; 20 / 0 / 0 |
+| cls3 / decision / CMT | 2.81 / 3.06; 0.88 [0.35, 1.67]; 19 / 1 / 0 | 3.72 / 3.04; 1.13 [1.01, 1.4]; 18 / 0 / 2 | 3.67 / 3.12; 1.09 [0.951, 1.53]; 20 / 0 / 0 | 3.94 / 3.12; 1.22 [1.05, 1.44]; 20 / 0 / 0 | 10 / 9.76; 1 [0.97, 1.04]; 20 / 0 / 0 | 9.92 / 9.76; 0.998 [0.935, 1.03]; 20 / 0 / 0 |
+| cls3 / decision / city | 8.42 / 12.6; 0.755 [0.378, 1.62]; 11 / 1 / 0 | 14.7 / 12.7; 1.13 [0.69, 1.33]; 10 / 0 / 2 | 14.1 / 12.7; 1.15 [0.936, 1.19]; 12 / 0 / 0 | 15.2 / 12.7; 1.31 [1.11, 1.34]; 12 / 0 / 0 | 162 / 160; 1 [0.966, 1.07]; 12 / 0 / 0 | 159 / 160; 0.99 [0.97, 1.03]; 12 / 0 / 0 |
+| cls3 / high / CON/SCA | 18.8 / 18.6; 0.716 [0.594, 1.63]; 19 / 1 / 0 | 21.5 / 13.7; 1.29 [0.842, 8.5]; 9 / 10 / 1 | 16.8 / 14.8; 1.05 [0.971, 1.2]; 4 / 16 / 0 | 7.32 / 8.78; 0.833 [0.833, 0.833]; 1 / 19 / 0 | 40.7 / 42.5; 0.985 [0.953, 1.11]; 20 / 0 / 0 | 164 / 169; 0.998 [0.941, 1.11]; 20 / 0 / 0 |
+| cls3 / high / CMT | 15.9 / 11; 0.964 [0.631, 2.82]; 15 / 5 / 0 | 11.3 / 11.5; 0.655 [0.564, 1.15]; 7 / 13 / 0 | 10.1 / 11.2; 0.57 [0.482, 1.03]; 4 / 16 / 0 | nan / nan; nan [nan, nan]; 0 / 20 / 0 | 69.6 / 65.4; 0.991 [0.95, 1.03]; 20 / 0 / 0 | 67.9 / 65.4; 0.991 [0.926, 1.05]; 20 / 0 / 0 |
+| cls3 / high / city | 16.5 / 22.8; 0.738 [0.482, 1.85]; 19 / 1 / 0 | 41.5 / 26.5; 1.62 [1.01, 6.61]; 5 / 12 / 3 | 22.1 / 36.5; 0.607 [0.607, 0.607]; 1 / 18 / 1 | nan / nan; nan [nan, nan]; 0 / 20 / 0 | 450 / 462; 0.991 [0.936, 1.07]; 20 / 0 / 0 | 508 / 505; 1.01 [0.957, 1.06]; 20 / 0 / 0 |
 
-Each cell: median ratio / median prediction; median (ratio / prediction) [p10, p90]; ok / floor / fail counts.
+#### Target: relative 0.01 (x amplitude)
 
-| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical |
-|---|---|---|---|---|---|
-| cls1 / low | 1.12 / 1.14; 0.983 [0.142, 2.39]; 30 / 0 / 0 | 1.18 / 1.12; 1.11 [0.45, 1.72]; 17 / 0 / 13 | 1.26 / 1.12; 1.05 [0.513, 1.51]; 27 / 0 / 3 | 1.17 / 1.14; 0.999 [0.693, 1.15]; 30 / 0 / 0 | 1.3 / 1.3; 0.999 [0.974, 1.04]; 30 / 0 / 0 |
-| cls1 / decision | 2.04 / 1.3; 1.03 [0.358, 3.53]; 30 / 0 / 0 | 1.31 / 1.28; 0.975 [0.717, 1.4]; 27 / 0 / 3 | 1.37 / 1.28; 1.01 [0.819, 1.29]; 29 / 0 / 1 | 1.36 / 1.3; 1.01 [0.949, 1.32]; 30 / 0 / 0 | 1.71 / 1.69; 1.01 [0.971, 1.05]; 30 / 0 / 0 |
-| cls1 / high | 2.06 / 1.71; 1.03 [0.263, 3.17]; 30 / 0 / 0 | 1.53 / 1.71; 0.97 [0.821, 1.29]; 30 / 0 / 0 | 1.64 / 1.71; 1.02 [0.778, 1.18]; 30 / 0 / 0 | 1.62 / 1.71; 1.01 [0.839, 1.2]; 30 / 0 / 0 | 2.95 / 2.92; 1.01 [0.965, 1.05]; 30 / 0 / 0 |
-| cls2 / low | 2.2 / 2.14; 0.998 [0.357, 3.85]; 30 / 0 / 0 | 2.2 / 2.2; 0.964 [0.457, 1.69]; 12 / 0 / 18 | 2.03 / 2.14; 0.944 [0.839, 1.3]; 26 / 0 / 4 | 2.13 / 2.14; 0.982 [0.871, 1.27]; 30 / 0 / 0 | 4.57 / 4.58; 0.998 [0.97, 1.03]; 30 / 0 / 0 |
-| cls2 / decision | 9.99 / 8.6; 1.24 [0.483, 3.45]; 30 / 0 / 0 | 8.88 / 6.7; 1.13 [0.938, 2.17]; 13 / 0 / 17 | 7.67 / 8.44; 1.04 [0.876, 1.63]; 24 / 0 / 6 | 9.74 / 8.65; 1.04 [0.843, 1.38]; 29 / 0 / 1 | 41.9 / 42.3; 1 [0.947, 1.04]; 30 / 0 / 0 |
-| cls2 / high | 27 / 18.8; 1.39 [0.508, 8.01]; 30 / 0 / 0 | 19.7 / 18.4; 1.16 [0.988, 1.93]; 18 / 0 / 12 | 21 / 18.5; 1.09 [0.963, 1.48]; 27 / 0 / 3 | 19.8 / 18.4; 1.05 [0.997, 1.39]; 28 / 0 / 2 | 238 / 242; 0.996 [0.958, 1.03]; 30 / 0 / 0 |
-| cls3 / low | 2.22 / 2.75; 0.759 [0.259, 4.35]; 30 / 0 / 0 | 2.25 / 2.76; 0.935 [0.742, 1.08]; 4 / 0 / 26 | 2.93 / 2.79; 1.14 [0.789, 2]; 18 / 0 / 12 | 3.17 / 2.74; 1.05 [0.991, 2.11]; 25 / 0 / 5 | 7.44 / 7.54; 1.01 [0.967, 1.04]; 30 / 0 / 0 |
-| cls3 / decision | 9.94 / 8.66; 1.16 [0.324, 3.59]; 30 / 0 / 0 | 10.3 / 7.57; 1.25 [0.961, 2.17]; 14 / 0 / 16 | 11.1 / 8.09; 1.07 [0.771, 1.63]; 24 / 0 / 6 | 9.37 / 8.22; 1.02 [0.775, 1.31]; 28 / 0 / 2 | 74.3 / 75.2; 0.992 [0.947, 1.04]; 30 / 0 / 0 |
-| cls3 / high | 16.9 / 22.3; 0.781 [0.423, 2.37]; 30 / 0 / 0 | 19.1 / 15.1; 1.13 [0.92, 1.47]; 18 / 0 / 12 | 19 / 21.6; 1.06 [0.851, 1.21]; 25 / 0 / 5 | 24.6 / 22.3; 1.04 [0.869, 1.24]; 30 / 0 / 0 | 309 / 312; 0.995 [0.951, 1.04]; 30 / 0 / 0 |
+| cell | qae | mlae_S32 | mlae_S64 | mlae_S128 | classical | classical_2est |
+|---|---|---|---|---|---|---|
+| cls1 / low / CON/SCA | 1.2 / 1.28; 0.831 [0.362, 6.23]; 20 / 0 / 0 | 0.944 / 1.23; 0.813 [0.467, 1.26]; 10 / 0 / 10 | 1.29 / 1.24; 0.972 [0.69, 1.13]; 17 / 0 / 3 | 1.29 / 1.28; 0.985 [0.869, 1.12]; 20 / 0 / 0 | 1.66 / 1.64; 0.988 [0.95, 1.03]; 20 / 0 / 0 | 1.64 / 1.64; 0.988 [0.95, 1.02]; 20 / 0 / 0 |
+| cls1 / low / CMT | 1.38 / 1.36; 1.03 [0.286, 2.97]; 20 / 0 / 0 | 1.49 / 1.3; 1.19 [0.739, 2.08]; 10 / 0 / 10 | 1.38 / 1.3; 1.03 [0.863, 1.11]; 14 / 0 / 6 | 1.34 / 1.36; 1.01 [0.871, 1.16]; 18 / 0 / 2 | 1.77 / 1.84; 1 [0.954, 1.03]; 20 / 0 / 0 | 1.83 / 1.84; 0.985 [0.954, 1.04]; 20 / 0 / 0 |
+| cls1 / low / city | 1.29 / 1.18; 0.969 [0.185, 3.02]; 20 / 0 / 0 | 1.05 / 1.18; 0.824 [0.678, 1.16]; 14 / 0 / 6 | 1.09 / 1.18; 0.983 [0.822, 1.73]; 18 / 0 / 2 | 1.18 / 1.18; 0.991 [0.88, 1.46]; 20 / 0 / 0 | 1.38 / 1.38; 0.993 [0.969, 1.03]; 20 / 0 / 0 | 1.37 / 1.38; 1.01 [0.956, 1.03]; 20 / 0 / 0 |
+| cls1 / decision / CON/SCA | 1.17 / 1.07; 1.03 [0.298, 4.04]; 20 / 0 / 0 | 1.01 / 1.06; 0.987 [0.78, 1.36]; 19 / 0 / 1 | 1.08 / 1.07; 1 [0.874, 1.32]; 20 / 0 / 0 | 1.09 / 1.07; 1.01 [0.963, 1.23]; 20 / 0 / 0 | 1.14 / 1.15; 0.992 [0.961, 1.02]; 20 / 0 / 0 | 1.16 / 1.15; 1 [0.966, 1.04]; 20 / 0 / 0 |
+| cls1 / decision / CMT | 2.64 / 2.03; 1.17 [0.469, 5.32]; 19 / 1 / 0 | 1.97 / 1.91; 0.98 [0.764, 1.65]; 18 / 0 / 2 | 1.93 / 1.98; 1 [0.787, 1.6]; 20 / 0 / 0 | 1.96 / 1.98; 0.989 [0.94, 1.09]; 20 / 0 / 0 | 3.9 / 3.91; 0.99 [0.953, 1.06]; 20 / 0 / 0 | 3.83 / 3.91; 1.01 [0.972, 1.05]; 20 / 0 / 0 |
+| cls1 / decision / city | 1.32 / 1.47; 0.866 [0.262, 1.95]; 20 / 0 / 0 | 1.46 / 1.47; 1.11 [0.825, 1.89]; 20 / 0 / 0 | 1.52 / 1.47; 1.01 [0.773, 1.26]; 20 / 0 / 0 | 1.56 / 1.47; 1 [0.893, 1.33]; 20 / 0 / 0 | 2.14 / 2.17; 1.01 [0.965, 1.04]; 20 / 0 / 0 | 2.16 / 2.17; 0.999 [0.95, 1.03]; 20 / 0 / 0 |
+| cls1 / high / CON/SCA | 2.35 / 1.72; 1.01 [0.423, 4.63]; 20 / 0 / 0 | 1.81 / 1.72; 0.983 [0.805, 1.23]; 20 / 0 / 0 | 1.52 / 1.72; 0.987 [0.879, 1.27]; 20 / 0 / 0 | 1.76 / 1.72; 1.03 [0.756, 1.38]; 20 / 0 / 0 | 3.02 / 2.98; 0.998 [0.943, 1.02]; 20 / 0 / 0 | 2.95 / 2.98; 0.997 [0.945, 1.03]; 20 / 0 / 0 |
+| cls1 / high / CMT | 4.85 / 4.31; 0.914 [0.426, 4.04]; 20 / 0 / 0 | 4.49 / 4.22; 1.03 [0.835, 1.47]; 18 / 0 / 2 | 4.55 / 4.31; 1.04 [0.74, 1.22]; 20 / 0 / 0 | 4.59 / 4.31; 1.05 [0.997, 1.36]; 20 / 0 / 0 | 18.6 / 18.6; 1.01 [0.971, 1.04]; 20 / 0 / 0 | 18.7 / 18.6; 0.995 [0.974, 1.04]; 20 / 0 / 0 |
+| cls1 / high / city | 2.9 / 3.4; 0.953 [0.223, 2.42]; 20 / 0 / 0 | 3.58 / 3.4; 1.06 [0.724, 1.28]; 20 / 0 / 0 | 3.52 / 3.4; 1.01 [0.945, 1.29]; 20 / 0 / 0 | 3.88 / 3.4; 1.04 [0.942, 1.22]; 20 / 0 / 0 | 11.6 / 11.6; 1 [0.985, 1.04]; 20 / 0 / 0 | 11.3 / 11.6; 0.995 [0.972, 1.03]; 20 / 0 / 0 |
+| cls2 / low / CON/SCA | 2.15 / 2.59; 0.884 [0.188, 2.15]; 20 / 0 / 0 | 2.95 / 1.98; 1.63 [0.682, 2.57]; 2 / 0 / 18 | 2.71 / 2.27; 1.05 [0.624, 1.28]; 16 / 0 / 4 | 2.65 / 2.45; 1.01 [0.736, 1.34]; 18 / 0 / 2 | 6.85 / 6.71; 1.01 [0.969, 1.03]; 20 / 0 / 0 | 6.87 / 6.71; 1 [0.977, 1.05]; 20 / 0 / 0 |
+| cls2 / decision / CON/SCA | 10 / 6.63; 0.96 [0.254, 16.2]; 20 / 0 / 0 | 7.97 / 10.1; 0.98 [0.659, 1.6]; 10 / 0 / 10 | 8 / 7.66; 0.993 [0.845, 1.54]; 17 / 0 / 3 | 7.46 / 6.63; 0.998 [0.856, 1.34]; 20 / 0 / 0 | 17.5 / 17.2; 1.01 [0.981, 1.06]; 20 / 0 / 0 | 30.8 / 30.3; 1.01 [0.976, 1.04]; 20 / 0 / 0 |
+| cls2 / decision / CMT | 3.32 / 5.18; 0.669 [0.342, 1.71]; 20 / 0 / 0 | 4.47 / 3.78; 1.03 [0.687, 1.63]; 15 / 0 / 5 | 5.29 / 4.85; 1.02 [0.805, 1.2]; 19 / 0 / 1 | 5.72 / 5.18; 1.01 [0.965, 1.28]; 20 / 0 / 0 | 22.4 / 21.8; 1 [0.956, 1.04]; 20 / 0 / 0 | 27.4 / 26.9; 0.993 [0.955, 1.03]; 20 / 0 / 0 |
+| cls2 / high / CON/SCA | 16.2 / 19.2; 0.859 [0.576, 2.44]; 19 / 1 / 0 | 19.1 / 16.7; 1.07 [0.817, 2.24]; 11 / 0 / 9 | 22.1 / 19.2; 1.05 [0.957, 1.91]; 17 / 0 / 3 | 21.1 / 19.2; 1.08 [0.919, 1.44]; 19 / 0 / 1 | 54.6 / 54.9; 1.01 [0.966, 1.05]; 20 / 0 / 0 | 207 / 214; 0.992 [0.946, 1.01]; 20 / 0 / 0 |
+| cls2 / high / CMT | 14.1 / 10.2; 1.01 [0.61, 2.16]; 20 / 0 / 0 | 5.87 / 5.83; 1.03 [0.929, 2.67]; 12 / 0 / 8 | 9.12 / 7.41; 1.01 [0.892, 1.46]; 16 / 0 / 4 | 8.74 / 8.41; 1.04 [0.924, 1.32]; 17 / 0 / 3 | 75.8 / 75.7; 0.981 [0.964, 1.01]; 20 / 0 / 0 | 108 / 105; 0.998 [0.961, 1.04]; 20 / 0 / 0 |
+| cls2 / high / city | 18.3 / 21.3; 0.952 [0.48, 9.95]; 20 / 0 / 0 | 23.3 / 15.5; 1.12 [0.989, 2.14]; 8 / 0 / 12 | 21.8 / 21.8; 1.01 [0.829, 1.48]; 17 / 0 / 3 | 20.9 / 21.3; 0.998 [0.822, 1.21]; 20 / 0 / 0 | 324 / 329; 1 [0.964, 1.04]; 20 / 0 / 0 | 397 / 419; 0.999 [0.949, 1.02]; 20 / 0 / 0 |
+| cls3 / low / CON/SCA | 2.7 / 2.43; 1.06 [0.445, 3.34]; 20 / 0 / 0 | 1.74 / 1.77; 1.02 [0.306, 1.07]; 7 / 0 / 13 | 2.25 / 2.43; 0.998 [0.437, 1.69]; 14 / 0 / 6 | 2.41 / 2.37; 1.01 [0.864, 1.27]; 16 / 0 / 4 | 5.55 / 5.59; 0.995 [0.944, 1.03]; 20 / 0 / 0 | 5.91 / 5.89; 1 [0.981, 1.04]; 20 / 0 / 0 |
+| cls3 / low / CMT | 1.56 / 1.44; 1.29 [0.165, 3.03]; 13 / 0 / 0 | 1.15 / 1.44; 1.09 [0.499, 1.25]; 5 / 0 / 8 | 1.45 / 1.63; 1.01 [0.675, 1.27]; 10 / 0 / 3 | 1.42 / 1.44; 1.01 [0.913, 1.28]; 13 / 0 / 0 | 2.07 / 2.06; 0.988 [0.964, 1.03]; 13 / 0 / 0 | 2.03 / 2.06; 0.989 [0.967, 1.04]; 13 / 0 / 0 |
+| cls3 / decision / CON/SCA | 9.86 / 6.83; 1.05 [0.636, 2.72]; 20 / 0 / 0 | 5.38 / 5.51; 0.977 [0.748, 1.47]; 9 / 0 / 11 | 6.35 / 6.34; 1.01 [0.902, 1.53]; 14 / 0 / 6 | 6.95 / 6.83; 0.993 [0.892, 1.28]; 18 / 0 / 2 | 22.1 / 21.8; 0.991 [0.943, 1.04]; 20 / 0 / 0 | 39.8 / 39.8; 0.987 [0.961, 1.02]; 20 / 0 / 0 |
+| cls3 / decision / CMT | 2.33 / 3.12; 0.89 [0.226, 1.79]; 20 / 0 / 0 | 3.15 / 2.89; 1.05 [0.774, 1.46]; 16 / 0 / 4 | 2.94 / 3.04; 0.998 [0.825, 1.24]; 18 / 0 / 2 | 3 / 3.04; 0.986 [0.755, 1.22]; 18 / 0 / 2 | 9.53 / 9.76; 1 [0.949, 1.04]; 20 / 0 / 0 | 9.47 / 9.76; 0.996 [0.971, 1.02]; 20 / 0 / 0 |
+| cls3 / decision / city | 6.38 / 12.7; 0.505 [0.157, 1.86]; 12 / 0 / 0 | 12.8 / 12.7; 0.878 [0.802, 1.23]; 5 / 0 / 7 | 13.3 / 12.7; 1.05 [0.764, 1.34]; 9 / 0 / 3 | 12.4 / 12.7; 0.996 [0.941, 1.26]; 11 / 0 / 1 | 158 / 160; 0.991 [0.97, 1.01]; 12 / 0 / 0 | 158 / 160; 1.02 [0.962, 1.03]; 12 / 0 / 0 |
+| cls3 / high / CON/SCA | 22.3 / 18; 0.942 [0.532, 6.38]; 20 / 0 / 0 | 20.8 / 15.7; 1.23 [0.893, 1.94]; 16 / 0 / 4 | 18.7 / 18; 1.09 [0.826, 1.76]; 20 / 0 / 0 | 18.2 / 18; 1.07 [0.984, 1.35]; 20 / 0 / 0 | 42.5 / 42.5; 0.994 [0.968, 1.03]; 20 / 0 / 0 | 173 / 169; 0.995 [0.96, 1.03]; 20 / 0 / 0 |
+| cls3 / high / CMT | 10.9 / 8.06; 1.2 [0.724, 3.03]; 20 / 0 / 0 | 6.43 / 6.92; 1.03 [0.941, 1.46]; 16 / 0 / 4 | 7.69 / 7.35; 1.02 [0.87, 1.13]; 18 / 0 / 2 | 8.1 / 7.38; 1.04 [0.878, 1.19]; 19 / 0 / 1 | 65.3 / 65.4; 0.991 [0.968, 1.02]; 20 / 0 / 0 | 64.3 / 65.4; 0.993 [0.962, 1.02]; 20 / 0 / 0 |
+| cls3 / high / city | 30.2 / 22.5; 1.55 [0.76, 3.68]; 20 / 0 / 0 | 22 / 21.7; 0.988 [0.737, 1.22]; 9 / 0 / 11 | 22.8 / 21.2; 1.03 [0.917, 1.15]; 16 / 0 / 4 | 23.5 / 22.2; 1.03 [0.836, 1.22]; 19 / 0 / 1 | 462 / 462; 0.996 [0.971, 1.03]; 20 / 0 / 0 | 515 / 505; 1 [0.969, 1.04]; 20 / 0 / 0 |
 
-Counts per cell and family (targets: 4) are in m3b_v3_ratio_summary.csv; every row is in m3b_v3_ratio.csv with its status.
+Every row is in m3b_v3_ratio.csv with its status; per-cell counts in m3b_v3_ratio_summary.csv.
 
-**Class 1 against rho_q (absolute targets only).** For class 1 (insertion; P(D = -1) = 0 for every class-1 move in the source file) the predicted ratio is rho_q. The median of ratio / rho_q over the ok rows, for the three p' bands, is:
+### 5c. Class 1 against the rho prediction (absolute targets)
 
-- qae: target 0.001: 1.02 to 1.24; target 0.0001: 1.00 to 1.04
-- mlae_S32: target 0.001: 0.95 to 1.04; target 0.0001: 0.98 to 1.06
-- mlae_S64: target 0.001: 0.94 to 1.01; target 0.0001: 0.98 to 1.01
-- mlae_S128: target 0.001: 0.98 to 1.00; target 0.0001: 0.99 to 1.00
-- classical: target 0.001: 1.00 to 1.01; target 0.0001: 1.00 to 1.01
+For class 1 (insertion; P(D = -1) = 0) the one-sided prediction is rho_q = sqrt(Var D) / sqrt(p'(1-p')) for the quantum estimators, and rho_c = rho_q^2 for the classical estimators. The lines below divide the median ratio by the family's own prediction: ratio / rho_q for the quantum families, ratio / rho_c (rho_c = rho_q^2) for the classical families. Range of the per-cell medians over the three p' bands.
 
-Only class 1 is compared with rho_q. For classes 2 and 3 the signed prediction is 2(sqrt v+ + sqrt v-)/sqrt(v) (in [2, 2 sqrt 2] times rho_q) and is reported as the prediction, not as rho_q.
+- qae (ratio / rho_q): target 0.001: 0.72 to 1.21; target 0.0001: 0.77 to 1.29
+- mlae_S32 (ratio / rho_q): target 0.001: 0.80 to 1.05; target 0.0001: 0.92 to 1.29
+- mlae_S64 (ratio / rho_q): target 0.001: 0.94 to 1.02; target 0.0001: 0.97 to 1.11
+- mlae_S128 (ratio / rho_q): target 0.001: 0.94 to 1.01; target 0.0001: 0.98 to 1.04
+- classical (ratio / rho_c): target 0.001: 0.97 to 1.00; target 0.0001: 1.00 to 1.04
+- classical_2est (ratio / rho_c): target 0.001: 0.97 to 1.00; target 0.0001: 1.00 to 1.03
 
-Figure m3b_v3_error.png: the 90 % quantile error against A-applications (classical samples), log-log, for three stand-alone amplitudes (about 0.005, 0.03, 0.2). The QAE curve is jagged because the exact 90 % quantile depends on the alignment f_m of Section 3. At a = 0.005025 the curve is flat at 1.8e-8 for m >= 15: theta/pi lies within about 4e-8 of the dyadic point k/2^15, so every grid from m = 15 up returns the same estimate sin^2(pi k / 2^15) and the error cannot fall below its distance from a. This is an exact property of the estimator at this amplitude, not a numerical floor.
+**Consistency check, not a test, for the classical columns.** For a mean of i.i.d. draws the cost to reach a target scales as Var/T^2 (CLT, 90 % quantile); the classical prediction is that law, so the classical ratio / prediction is a consistency check that only the integer grid of N (factor-2 steps, log-log interpolation) and the discreteness of the 90 % quantile can move. It is tautological for a binomial and says nothing about the quantum law. Only the quantum columns test the sqrt(v) law.
 
-## 6. MLAE with S = 1 and S = 8: not rerun (from v2)
+## 6. Claims by family group
+
+Cost ratio = difference / stand-alone, medians over ok rows; n_ok in brackets.
+
+| group | sampled moves | population P(D != 0) < 1e-3 (classes 1 / 2 / 3) | target | qae median ratio (n_ok) | mlae_S64 median ratio (n_ok) | classical direct median ratio (n_ok) | classical_2est median ratio (n_ok) |
+|---|---|---|---|---|---|---|---|
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | abs 0.001 | 0.652 (180) | 0.595 (180) | 0.163 (180) | 0.319 (180) |
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | abs 0.0001 | 0.613 (180) | 0.729 (156) | 0.162 (173) | 0.31 (172) |
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | rel 0.1 | 3.68 (174) | 3.23 (137) | 8.06 (178) | 9.32 (178) |
+| CON/SCA | 180 | 0.05 / 0.58 / 0.38 | rel 0.01 | 4.89 (179) | 3.32 (155) | 8.24 (180) | 9.55 (180) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | abs 0.001 | 0.462 (153) | 0.449 (153) | 0.23 (153) | 0.231 (153) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | abs 0.0001 | 0.452 (153) | 0.512 (135) | 0.247 (130) | 0.26 (130) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | rel 0.1 | 3.16 (138) | 2.18 (94) | 10.1 (153) | 10 (153) |
+| CMT | 153 | 0.03 / 0.69 / 0.65 | rel 0.01 | 3.59 (152) | 3.18 (135) | 9.74 (153) | 9.79 (153) |
+| city | 112 | 0.07 / 0.95 / 0.95 | abs 0.001 | 0.285 (112) | 0.38 (112) | 0.155 (112) | 0.161 (112) |
+| city | 112 | 0.07 / 0.95 / 0.95 | abs 0.0001 | 0.319 (112) | 0.505 (98) | 0.239 (90) | 0.242 (90) |
+| city | 112 | 0.07 / 0.95 / 0.95 | rel 0.1 | 5.51 (106) | 1.44 (54) | 19.5 (112) | 20 (112) |
+| city | 112 | 0.07 / 0.95 / 0.95 | rel 0.01 | 5.02 (112) | 4.05 (100) | 19.7 (112) | 19.5 (112) |
+
+Read with the table above. Every cost ratio divides a difference estimate by a stand-alone estimate of the same paradigm; ratios are not quantum-versus-classical comparisons. The sample covers P(D != 0) >= 1e-3 only.
+
+**Supported (eligible sample, medians over ok rows, n_ok in the table):**
+
+- CRN lowers the quantum cost of the difference at absolute 1e-3 in all three groups. QAE: 0.65 (CON/SCA, n = 180), 0.46 (CMT, n = 153), 0.29 (city, n = 112). MLAE S = 64: 0.60, 0.45, 0.38. The same direction holds at 1e-4 for QAE (0.61, 0.45, 0.32).
+- At absolute 1e-4 MLAE S = 32 fails for most moves (111, 102 and 77 of the 180, 153 and 112 moves; Section 5a), so its medians are not quoted. MLAE S = 64 fails for 24, 18 and 14 moves.
+- Relative targets (T_D = r P(D != 0), so the target shrinks with the difference): the difference costs more than the stand-alone estimate in all three groups. QAE 3.2 to 5.5, MLAE S = 64 1.4 to 4.1, direct classical 8 to 20 (r = 0.1 and 0.01). Supported for the sampled moves only.
+- Scaling: the quantum slope of the 90 % quantile is -1 and the classical slope -0.5, in every group (Section 3, group table).
+- The sqrt(v) law for the quantum difference cost holds on class 1: ratio / rho_q for MLAE S = 64 and 128 lies between 0.94 and 1.11 across bands and absolute targets. QAE has alignment scatter (0.72 to 1.29). Classes 2 and 3 are not tested against rho_q.
+- The direct classical estimator agrees with its Var(D) / T^2 prediction (ratio / rho_c 0.97 to 1.04). This is a consistency check, not evidence about the quantum law.
+
+**Not supported by M3b:**
+
+- The regime where P(D != 0) is tiny (below 1e-3). Such moves are zero-difference or have a side below 200 hits and are excluded. In the M3a file they are 38 to 95 % of the classes 2 and 3 moves of every group (table above) and 3 to 7 % of class 1. M3b makes no claim about the floor regime or about the Var(D) = 0 share.
+- City classes 2 and 3. Eligible city moves are 974 (class 2) and 1076 (class 3), with median P(D != 0) of 0.0023. The class 2 low and decision cells are empty, the class 3 decision cell has 12 moves, and the class 2 and 3 high cells have 20 each. Only the high-band city numbers for classes 2 and 3 have usable n.
+- Any claim from the cells with n_ok below 10 (listed in Section 5b, e.g. MLAE S = 32 at 1e-4 on cls1/high/CMT, cls1/high/city, cls2/high/CMT, cls2/high/city, with 0 ok rows). Their medians are shown only for completeness.
+- A quantum-versus-classical cost comparison, which M3b does not compute; the classical columns here measure the classical difference against the classical stand-alone, not against the quantum estimator.
+
+## 7. MLAE with S = 1 and S = 8: not rerun (from v2)
 
 v2 included S = 1 and S = 8. v3 keeps S in {32, 64, 128} only and does not rerun S = 1 or S = 8. The table is computed from m3b_v2_rms.csv (2000 seeds, the v2 run) over all v2 amplitude records (stand-alone and difference). S = 1 does not converge: its median 90 % error at J = 10 is 0.51, and only 17% of records reach 1e-3 at any J and 9% reach 1e-4. S = 8 is too slow for the 1e-4 target: 64% of records reach 1e-3 at J = 10 but only 19% reach 1e-4 at any J (S = 64: 98%). Neither S = 1 nor S = 8 is used in the cost comparison.
 
@@ -170,25 +319,27 @@ v2 included S = 1 and S = 8. v3 keeps S in {32, 64, 128} only and does not rerun
 | mlae_S8 | 183 | 0.000564 | 0.64 | 0.70 | 0.19 |
 | mlae_S64 | 183 | 4.11e-05 | 1.00 | 1.00 | 0.98 |
 
-## 7. Run
+## 8. Run
 
 - validation: reused from v2 (no circuits rerun)
-- simulation time: 3846 s with 2 workers
-- total time: 3857 s (analysis and summary re-rendered afterwards)
+- simulation time: 3 s with 2 workers
+- total time: 28 s
 - QAE: exact pmf, m = 3..22
 - MLAE: J = 1..10, S in [32, 64, 128], 4000 seeds, grid 20001 points + golden-section
 - classical: N = 2^4..2^26, 4000 seeds
-- seeds: root SeedSequence(20261013); one spawned stream per amplitude, estimator and setting
+- direct signed-mean classical: per move, same N grid and 4000 seeds (multinomial draws of D)
+- seeds: root SeedSequence(20261013); child per amplitude slot, per move (spawn key (1, row))
 - python: 3.11.17
 
-## 8. Deviations from the brief
+## 9. Deviations from the brief
 
-- Sample: 30 moves per class x band cell (9 cells, 270 moves, 588 unique amplitudes). Every cell had at least 30 eligible moves. The 200-hit rule applies to every nonzero amplitude of a move, so a move is excluded if any of its amplitudes is below it; both counts are in Section 2.
-- One-sided moves are those with exactly one nonzero side. The brief gives P(D = -1) = 0; in classes 2 and 3 the nonzero side is sometimes P(D = -1), so the single estimate is taken on whichever side is nonzero.
-- Relative targets were not specified in the brief beyond the example. The definitions used are T_sa = r p' and T_D = r (a+ + a-). For signed moves each of the two estimates has target T_D / 2, as in v2 for absolute targets.
+- Stratification: class x p' band x family group (27 cells), up to 20 moves per cell (the previous v3 run had 9 cells of 30). Cells with fewer eligible moves than 20 contribute all of them; the composition is in Section 2.
+- Classical column: the direct signed-mean estimator of D (one estimate, cost z^2 Var(D)/eps^2 in its simulated form). The two-estimate protocol of the previous v3 run is kept as the secondary column classical_2est.
+- Relabelling: the classical ratio of class 1 is divided by rho_c = rho_q^2 and labelled so; the classical ratio / prediction is a consistency check (Section 5c).
+- Amplitude reuse: each amplitude's seed is fixed by its slot (amp<slot>). The previous run's metrics file was read as a cache and each reused amplitude was re-simulated once before the write, and matched the cached rows exactly (Section 8). Only amplitudes absent from the cache were simulated, with the same N_SEEDS = 4000.
+- Labels of amplitudes are now their slots (amp<slot>), not their order in the sample; the previous run used the order, so labels differ for some amplitudes.
+- The 200-hit rule and the exclusion of zero-difference moves are unchanged. Moves with P(D != 0) < 1e-3 are not in the sample, so the regime where P(D != 0) is tiny is not covered by M3b (Section 6).
+- Relative targets were not specified in the brief beyond the example. The definitions are T_sa = r p' and T_D = r (a+ + a-).
 - Grids were not reduced: QAE m = 3..22, MLAE J = 1..10 with S in {32, 64, 128}, classical N = 2^4..2^26. Sampled estimators use 4000 seeds; QAE is exact and has no seeds.
-- Slopes use the same six-setting window for every family, as in v2. For QAE the per-amplitude slope is alignment noise (Section 3), so the median over records is the value to read; per-record spreads are shown.
-- Step 1 was reused from v2 and not rerun, as the brief allows. The MLAE code was rewritten for speed (one matrix product into a reused buffer, refinement vectorised over seeds). The grid, argmax and golden-section refinement are unchanged, and on four test settings the new and previous outputs agree exactly (maximum difference 0.0).
-- The ratio table reports rows at the floor and rows that fail as separate counts. They are excluded from the medians, which are computed on the same ok rows for ratio, prediction and their quotient.
-- The exact QAE quantile is the smallest value with cdf >= q; the sampled quantile uses the inverted-cdf rule, the same definition on a sample.
+- Step 1 was reused from v2 and not rerun, as the brief allows.
 

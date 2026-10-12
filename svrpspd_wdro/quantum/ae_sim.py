@@ -2,8 +2,9 @@
 
 Design: papers/quasar/DESIGN_M3.md, Revision 2, "M3b v2 - estimator behaviour".
 v3 adds exact (pmf-based) error metrics for canonical QAE, quantile metrics
-for the sampled estimators, and the cost-to-target and prediction helpers
-used by scripts/run_quasar_m3b.py.
+for the sampled estimators, the direct signed-mean classical estimator
+(one sample mean of the signed difference, no two-estimate protocol), and the
+cost-to-target and prediction helpers used by scripts/run_quasar_m3b.py.
 
 Conventions
 -----------
@@ -327,6 +328,28 @@ def classical_cost(N: int) -> int:
 def classical_estimates(a: float, N: int, n_seeds: int, rng: np.random.Generator) -> np.ndarray:
     """Plain Monte Carlo: n_seeds independent means of N Bernoulli(a) draws."""
     return rng.binomial(N, min(max(float(a), 0.0), 1.0), size=n_seeds) / N
+
+
+# ============================================================
+# Direct signed-mean classical estimator (M3b v3 review fix)
+# ============================================================
+
+
+def signed_mean_variance(p_plus: float, p_minus: float) -> float:
+    """Variance of D in {-1, 0, +1} with P(D = +1) = p_plus and P(D = -1) = p_minus."""
+    return p_plus + p_minus - (p_plus - p_minus) ** 2
+
+
+def signed_mean_estimates(p_plus: float, p_minus: float, N: int, n_seeds: int, rng: np.random.Generator) -> np.ndarray:
+    """Direct classical estimate of E D: the mean of N i.i.d. draws of D, n_seeds times.
+
+    Draws are multinomial counts (n_+1, n_-1, n_0), so the estimate is (n_+1 - n_-1) / N.
+    No two-estimate protocol: one sample mean of the signed difference.
+    """
+    pp = min(max(float(p_plus), 0.0), 1.0)
+    pm = min(max(float(p_minus), 0.0), 1.0 - pp)
+    counts = rng.multinomial(int(N), [pp, pm, max(1.0 - pp - pm, 0.0)], size=n_seeds)
+    return (counts[:, 0] - counts[:, 1]) / float(N)
 
 
 # ============================================================

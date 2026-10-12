@@ -28,6 +28,12 @@ from quantum.experiments import (
     copula_demand,
     gamma_level_pmf,
     gh_nodes,
+    equal_mass_grid,
+    factor_grid,
+    tail_over_pickups,
+    classical_queries_certified,
+    classical_queries_certified_array,
+    length_label,
     insertion_candidates,
     insertion_envelopes,
     insertion_peak,
@@ -639,10 +645,11 @@ def test_class_costs_formulas_per_class():
     assert c["Nc"] == pytest.approx(z2 * P1 * (1 - P1) / eps ** 2)
     assert c["Nq_sa"] == pytest.approx(quantum_queries(pn * (1 - pn), eps))
     assert c["Nc_sa"] == pytest.approx(z2 * pn * (1 - pn) / eps ** 2)
-    # class 1 with zero count: rule-of-three plug-in on both paradigms
+    # class 1 with zero count: quantum on the 3/N plug-in; classical is the certified
+    # count max(z^2 (3/N) / eps^2, 3/eps), which is the floor 3/eps here
     z = class_costs(1, 0.0, 0.0, pn, eps, N)
     assert z["Nq"] == pytest.approx(quantum_queries(3.0 / N, eps))
-    assert z["Nc"] == pytest.approx(z2 * (3.0 / N) / eps ** 2)
+    assert z["Nc"] == pytest.approx(3.0 / eps)
     # classes 2-3: quantum two-estimate at eps/2 each; classical DIRECT signed mean
     P1s, Pm1s = 0.01, 0.02
     s = class_costs(2, P1s, Pm1s, pn, eps, N)
@@ -653,7 +660,10 @@ def test_class_costs_formulas_per_class():
     # classes 2-3 with both counts zero: both estimates on the 3/N floor, direct on 3/N
     s0 = class_costs(3, 0.0, 0.0, pn, eps, N)
     assert s0["Nq"] == pytest.approx(2 * quantum_queries(3.0 / N, eps / 2))
-    assert s0["Nc"] == pytest.approx(z2 * (3.0 / N) / eps ** 2)
+    assert s0["Nc"] == pytest.approx(3.0 / eps)
+    # the certified floor binds only when the CLT term is below 3/eps
+    big = class_costs(2, 0.2, 0.1, pn, eps, N)
+    assert big["Nc"] == pytest.approx(z2 * (0.2 + 0.1 - 0.1 ** 2) / eps ** 2)
     with pytest.raises(ValueError):
         class_costs(1, 0.1, 0.1, pn, eps, N)
     with pytest.raises(ValueError):
@@ -714,3 +724,205 @@ def test_band_and_distance_labels():
     assert ALT_DIST_LABELS == ("1", "2-3", ">3")
     with pytest.raises(ValueError):
         alt_distance_label(0)
+
+
+# ------------------------------------------------------------ Revision 3: factor grids
+
+@pytest.mark.parametrize("T", [1, 2, 8, 16, 32, 128])
+def test_equal_mass_grid_bins_have_equal_probability(T):
+    """Bin t is [Phi^-1 edges]: each bin has probability 1/T and its node is the midpoint."""
+    z, w = equal_mass_grid(T)
+    assert z.shape == (T,) and w.shape == (T,)
+    assert np.all(np.diff(z) > 0) if T > 1 else True
+    assert w.sum() == pytest.approx(1.0, abs=1e-15)
+    assert np.allclose(w, 1.0 / T, rtol=0, atol=1e-15)
+    with np.errstate(divide="ignore"):
+        edges = st.norm.ppf(np.arange(T + 1) / T)     # bin edges in z: Phi^-1(t / T)
+    edges[0], edges[-1] = -np.inf, np.inf
+    assert np.allclose(np.diff(st.norm.cdf(edges)), 1.0 / T, rtol=0, atol=1e-12)   # mass 1/T each
+    assert np.all((edges[:-1] < z) & (z < edges[1:]))                             # node inside its bin
+    # node is the probability midpoint of its bin: Phi(z_t) = (t + 1/2) / T
+    assert np.allclose(st.norm.cdf(z), (np.arange(T) + 0.5) / T, rtol=0, atol=1e-12)
+
+
+def test_equal_mass_grid_symmetry_and_moments():
+    for T in (8, 32, 128):
+        z, w = equal_mass_grid(T)
+        assert np.allclose(z, -z[::-1], atol=1e-12)          # symmetric about 0
+        assert float(np.dot(w, z)) == pytest.approx(0.0, abs=1e-12)
+    # Midpoint bins under-weight the Gaussian tails: E[Z^2] is 0.961 at 32 bins
+    # (the mass beyond the last midpoint is not represented); the error shrinks with T.
+    err = {}
+    for T in (32, 128):
+        zt, wt = equal_mass_grid(T)
+        err[T] = abs(float(np.dot(wt, zt ** 2)) - 1.0)
+    assert err[32] < 0.05 and err[128] < err[32]
+    with pytest.raises(ValueError):
+        equal_mass_grid(0)
+
+
+def test_factor_grid_dispatch():
+    z_gh, w_gh = factor_grid("gh", 16)
+    z_g, w_g = gh_nodes(16)
+    assert np.array_equal(z_gh, z_g) and np.array_equal(w_gh, w_g)
+    z_em, w_em = factor_grid("em", 16)
+    z_e, w_e = equal_mass_grid(16)
+    assert np.array_equal(z_em, z_e) and np.array_equal(w_em, w_e)
+    with pytest.raises(ValueError):
+        factor_grid("sobol", 16)
+
+
+def test_copula_equal_mass_rho_zero_matches_independent_model():
+    plan = _synthetic_plan()
+    route = [1, 2, 3]
+    cd = copula_demand(plan, 4, 0.0, 8, grid="em")
+    dem, unit, Ql = instance_demand(plan, 4)
+    assert cd.z.size == 8 and np.allclose(cd.w, 1.0 / 8)
+    assert chance_copula(route, cd) == pytest.approx(chance(route, dem, Ql), abs=1e-12)
+
+
+def test_copula_equal_mass_converges_to_gauss_hermite_limit():
+    """Two grids of different kind converge to the same copula window probability."""
+    plan = _synthetic_plan()
+    route = [1, 2, 3]
+    ref = chance_copula(route, copula_demand(plan, 4, 0.6, 128, grid="gh"))
+    em = chance_copula(route, copula_demand(plan, 4, 0.6, 64, grid="em"))
+    assert em == pytest.approx(ref, abs=5e-3)
+
+
+# ------------------------------------------------------------ Revision 3: exact window DP
+
+def test_tail_over_pickups_matches_classical_chance_on_random_routes():
+    """The batched recursion equals the exact peak pmf of classical.chance for every K."""
+    rng = np.random.default_rng(11)
+    worst = 0.0
+    for _ in range(40):
+        n = int(rng.integers(1, 7))
+        V = int(rng.choice([2, 3, 4, 6]))
+        T = int(rng.integers(1, 4))
+        pd = rng.dirichlet(np.ones(V), size=n)
+        pd[rng.random(n) < 0.3] = np.eye(V)[0]
+        pp = rng.dirichlet(np.ones(V), size=(T, n))
+        route = [int(c) for c in rng.permutation(n)]
+        for K in sorted({0, 1, n * (V - 1) // 2, n * (V - 1), n * (V - 1) + 2}):
+            got = tail_over_pickups(route, pd, pp, K)
+            for s in range(T):
+                dem = DiscreteDemand(pmf_d=pd, pmf_p=pp[s], unit=1.0)
+                worst = max(worst, abs(got[s] - chance(route, dem, K)))
+    assert worst < 1e-12
+
+
+def test_tail_over_pickups_negative_threshold_and_zero_mass():
+    pd = np.array([[0.0, 1.0], [0.0, 1.0]])
+    pp = np.array([[[1.0, 0.0], [1.0, 0.0]]])
+    assert tail_over_pickups([0, 1], pd, pp, -1).tolist() == [1.0]
+    assert tail_over_pickups([0, 1], pd, pp, 2).tolist() == [0.0]
+    assert tail_over_pickups([0, 1], pd, pp, 1).tolist() == [1.0]   # F = 2 > 1 (deliveries 1 + 1)
+
+
+def test_copula_window_equals_double_sum_of_classical_chance():
+    """chance_copula is exactly sum_t sum_s w_t w_s P(F > K | z_t, z_s) (classical.chance per pair)."""
+    plan = _synthetic_plan()
+    route = [1, 2, 3]
+    cd = copula_demand(plan, 3, 0.6, 5, grid="em")
+    direct = 0.0
+    for t in range(cd.z.size):
+        for s in range(cd.z.size):
+            direct += cd.w[t] * cd.w[s] * chance(route, cd.demand(t, s), cd.Q_level)
+    assert chance_copula(route, cd) == pytest.approx(direct, abs=1e-12)
+
+
+# ------------------------------------------------------------ Revision 3: certified classical floor
+
+def test_classical_certified_floor_and_clt_branch():
+    eps = 1e-3
+    assert classical_queries_certified(0.0, eps) == pytest.approx(3.0 / eps)
+    assert classical_queries_certified(1e-9, eps) == pytest.approx(3.0 / eps)
+    v = 0.2
+    assert classical_queries_certified(v, eps) == pytest.approx(1.96 ** 2 * v / eps ** 2)
+    # crossover: the CLT term equals the floor at var = 3 eps / z^2
+    v_star = 3 * eps / 1.96 ** 2
+    assert classical_queries_certified(v_star, eps) == pytest.approx(3.0 / eps)
+    with pytest.raises(ValueError):
+        classical_queries_certified(0.1, 0.0)
+
+
+def test_classical_certified_array_matches_scalar():
+    v = np.array([0.0, 1e-7, 1e-4, 0.05, 0.25])
+    eps = np.array([1e-3, 1e-3, 1e-4, 1e-4, 1e-2])
+    arr = classical_queries_certified_array(v, eps)
+    assert arr.tolist() == pytest.approx([classical_queries_certified(x, e) for x, e in zip(v, eps)])
+    with pytest.raises(ValueError):
+        classical_queries_certified_array(v, np.array([0.0] * 5))
+
+
+def test_length_label_bands():
+    assert [length_label(L) for L in (1, 8, 9, 15, 16, 25, 26, 40)] == \
+        ["<=8", "<=8", "9-15", "9-15", "16-25", "16-25", ">25", ">25"]
+    with pytest.raises(ValueError):
+        length_label(0)
+
+
+# ------------------------------------------------------------ Revision 3: driver helpers
+
+def test_gh_selection_and_grid_configs():
+    import pandas as pd
+
+    routes_csv = ROOT / "results" / "quasar" / "m3a_v2_routes.csv"
+    if not routes_csv.exists():
+        pytest.skip("M3a v2 routes not available")
+    drv = _load_driver()
+    routes = pd.read_csv(routes_csv)
+    sel = drv._gh_selection(routes)
+    keys = {(s["instance"], s["route_id"]) for s in sel}
+    assert len(sel) == 9 and len(keys) == 9
+    assert sum(s["long"] for s in sel) == 3
+    for s in sel:
+        row = routes[(routes["instance"] == s["instance"]) & (routes["route_id"] == s["route_id"])].iloc[0]
+        assert row["L"] >= 3
+        if not s["long"]:
+            assert 0.05 < row["p_base"] < 0.95
+    labels = [length_label(int(routes[(routes["instance"] == s["instance"]) &
+                                      (routes["route_id"] == s["route_id"])]["L"].iloc[0]))
+              for s in sel if not s["long"]]
+    assert sorted(labels) == ["16-25", "16-25", "9-15", "9-15", "<=8", "<=8"]
+    assert [(s["instance"], s["route_id"]) for s in drv._gh_selection(routes)] == \
+        [(s["instance"], s["route_id"]) for s in sel]
+    assert ("em", 128) not in drv._gh_configs(6) and ("gh", 128) not in drv._gh_configs(6)
+    assert ("em", 128) in drv._gh_configs(5) and ("gh", 128) in drv._gh_configs(5)
+    assert ("em", 64) in drv._gh_configs(6)
+
+
+def test_work_gh_matches_chance_copula(tmp_path):
+    drv = _load_driver()
+    plan = _synthetic_plan()
+    plan_path = tmp_path / "SYN.json"
+    plan_path.write_text(json.dumps(plan))
+    route = [1, 2, 3]
+    out = tmp_path / "row.json"
+    row = drv._work_gh((str(plan_path), "SYN", "CON", 0, route, 3, False, 4, "em", 8, 0.6, 0.5, 0.01,
+                        str(out)))
+    cd = copula_demand(plan, 4, 0.6, 8, DEFAULT_CV, "nearest", "em")
+    assert row["p_disc"] == pytest.approx(chance_copula(route, cd), abs=1e-14)
+    assert row["f"] == 3 and row["grid"] == "em" and row["K"] == cd.Q_level
+    assert json.loads(out.read_text())["p_disc"] == pytest.approx(row["p_disc"])
+
+
+def test_work_v3_toy_route_has_no_gh_output(tmp_path, monkeypatch):
+    """The v3 worker still computes the end-load bound and the paired check on a toy route
+    after the Gauss-Hermite block moved to the v3gh part."""
+    import pickle
+
+    drv = _load_driver()
+    monkeypatch.setattr(drv, "V3_PARTS", tmp_path)
+    plan = _synthetic_plan()
+    plan_path = tmp_path / "SYN.json"
+    plan_path.write_text(json.dumps(plan))
+    rrows = [{"route_id": 0, "route": "1 2 3"}]
+    out = drv._work_v3((str(plan_path), rrows, [], {("SYN", 0)}, 4000, 0.6))
+    assert out["n_routes"] == 1 and out["viol"] == 0
+    with open(tmp_path / "SYN.pkl", "rb") as fh:
+        d = pickle.load(fh)
+    assert "gh" not in d
+    assert {r["b"] for r in d["paired"]} == {4, 5, 6}
+    assert len(d["routes"]) == 1 and 0 <= d["routes"][0]["B_union"] <= 1
