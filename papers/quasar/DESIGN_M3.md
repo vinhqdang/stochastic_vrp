@@ -172,14 +172,18 @@ share of intra-route moves with Var(D) = 0 (55% on city, 50% on CMT).
 
 ## Revision 3 decisions (2026-10-12, after review of v3)
 
-- **Factor register for the copula: equal-probability bins.** Quantise each
-  copula factor (delivery, pickup) into 2^f bins of equal probability,
-  u_t = (t + ½)/2^f, prepared by Hadamard gates alone (no rotations); each
-  demand register is then prepared conditionally on the bin. Gauss–Hermite
-  nodes (spacing 0.39 at 64 nodes) are coarser than the width of the
-  conditional overflow step (about 0.18) and do not converge on long routes;
-  equal-probability bins converge at 2^f = 16–32 on the tested routes.
-  Default f = 5, to be confirmed on more routes at b = 5 and 6.
+- **Factor register for the copula: equal-probability bins with bin-averaged
+  conditionals.** Quantise each copula factor (delivery, pickup) into 2^f bins
+  of equal probability, prepared by Hadamard gates alone (no rotations); each
+  demand register is prepared conditionally on the bin with the conditional
+  pmf AVERAGED over the bin, P(d | t) = 2^f ∫_{bin t} P(d | z) φ(z) dz (inner
+  quadrature), not evaluated at the bin midpoint. Midpoint values under-weight
+  the tails (E[Z²] = 0.961 at 32 bins) and bias short, low-probability routes
+  (CON8-7, L = 3: −1.4e−3 at 64 bins, where Gauss–Hermite is converged);
+  Gauss–Hermite in turn fails on long routes, where the conditional overflow
+  step (width ≈ √((1−ρ)/(ρL)), a heuristic) is narrower than the node spacing
+  π/√n. The bin count f is chosen after the bin-averaged grid is checked on
+  short and long routes and on the CRN window probabilities P(D = ±1).
 - **Demand levels:** b = 6 meets the rule "median relative bias ≤ 1 %, max ≤
   5 %" on the paired check (105 routes); b = 5 has median 0.5 % and max 8 %.
   The rule is a choice, stated as such; the worst cases are short routes.
