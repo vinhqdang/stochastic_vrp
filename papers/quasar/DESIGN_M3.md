@@ -94,3 +94,61 @@ Use maximum-likelihood AE with explicit power schedules (k = 0, 1, 2, 4, …,
 model (P(good after k iterates) = sin²((2k+1)θ), validated on the circuits)
 for the same schedules at the real amplitudes p' and Var(D) of M3a, to show
 error ∝ 1/(A-applications) and the √Var(D) cost of the difference oracle.
+
+## Revision 2 (after review of the first run)
+
+Review findings that change the design: (i) BATON's demand model is a
+one-factor Gaussian copula with ρ = 0.6, applied separately to deliveries
+and to pickups (independent factors), gamma marginals with cv = 0.3; under
+independence the protective-gate routes look 5–30 times safer, so every M3
+statistic must use the copula model. (ii) floor(Q/u) with nearest rounding
+causes errors up to 0.15 in P(F > Q). (iii) The quantum query constant was
+optimistic by 2–4×. (iv) M3b did not test its purpose.
+
+**M3a v2 — statistics on the BATON model itself.** The variance ratios are
+properties of the routing model, not of the circuit, so they are estimated
+on the continuous copula model with common scenarios (no discretisation):
+N = 2·10⁵ scenarios per instance, shared by all routes and moves of that
+instance, drawn exactly as `dethloff_runner.make_scenarios` (same marginals,
+same copula, ρ = 0.6; ρ = 0 as a sensitivity run). Move classes:
+1. inter-route insertion (negative baseline; the lemma still holds
+   scenario-wise, D ∈ {0, 1});
+2. intra-route relocate, swap, 2-opt (all moves if |r| ≤ 12, else 200 random);
+3. alternative positions of the same inserted customer (r'_{pos1} vs
+   r'_{pos2}).
+Per move: p, p', P(D = 1), P(D = −1), Var(D), ρ_q = √Var(D)/√(p'(1−p')),
+ρ_c = Var(D)/(p'(1−p')), with Monte Carlo standard errors (delta method).
+Identical routes appearing under several gates are evaluated once.
+Summaries by move class × family × base-p stratum (p < 0.005, 0.005–0.05,
+0.05–0.1, 0.1–0.3, > 0.3).
+
+**Query constants.** Canonical amplitude estimation with M Grover iterates
+has error ≤ 2π√(a(1−a))/M + π²/M² with probability ≥ 8/π² and costs 2M + 1
+applications of A. For error ε: M(ε, v) = smallest power of two with
+2π√v/M + π²/M² ≤ ε. Confidence 95% by the median of R = 5 repetitions
+(stated as an assumption; the factor is common to all variants). Classical:
+N = z²v/ε², z = 1.96. A signed D needs two estimates (P(D = 1), P(D = −1)),
+each at ε/2. Incremental feasibility uses ε/√2 per estimate.
+
+**Discretisation for the circuits.** Unit u = Q/(K + ½), K the smallest
+integer with K + ½ ≥ Q·(V−1)/q_{0.999}^{max}, Q_level = K, nearest-level
+rounding; b = 5 by default. The check routes are stratified by base p (two
+per stratum per family) and report the bias with a Monte Carlo interval.
+The copula enters the circuit as a factor register: the conditional pmf of
+each demand given a quantised factor value z_t (Gauss–Hermite nodes) is
+prepared under uniformly controlled rotations; the arithmetic part of the
+oracle is unchanged. (Circuit implementation is a later step; M3 only needs
+the discretised conditional pmfs to measure the discretisation error, using
+the exact identity P(F > Q) = Σ_t w_t Σ_s w_s P(F > Q | z_t, z_s) with the
+classical DP for each node pair.)
+
+**M3b v2 — estimator behaviour.** (1) Validate P(objective after k Grover
+iterates) = sin²((2k+1)θ) on the real peak and difference circuits for
+k = 0..6 (statevector, ≤ 22 qubits). (2) On this validated rotation model,
+simulate canonical QAE (m = 3..12 evaluation qubits) and maximum-likelihood
+AE with exponential schedules (k = 0, 1, 2, 4, …, 2^J; shots 1, 8, 64) for
+amplitudes taken from M3a v2 (p' of stand-alone estimates and P(D ≠ 0) of
+difference estimates, 30 moves per class), 2000 independent seeds each.
+Report RMS error vs A-applications, the fitted slopes (quantum ≈ −1,
+classical ≈ −½), and the cost ratio difference/stand-alone at equal RMS,
+which should track ρ_q. Independent seed streams per configuration.
