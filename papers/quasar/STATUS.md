@@ -6,7 +6,7 @@
 - **Venue:** not fixed. Candidates: INFORMS Journal on Computing; IEEE
   Transactions on Quantum Engineering. Decide at M3 from the strength of the
   results.
-- **State:** **ACTIVE — M4 next (cheapest-feasible search with estimated feasibility; lower bounds).** Open for
+- **State:** **ACTIVE — M4 in progress (theory and measurements done; next: a search algorithm with smaller constants).** Open for
   edits.
 - **Sharing:** uses the shared engine's instances, scenario generators and
   route conventions (`svrpspd_wdro/core`); quantum code is separate in
@@ -21,7 +21,7 @@
 - [x] M1 classical references (exact peak DP, discretisation, insertion lemma; svrpspd_wdro/quantum/classical.py, 112 tests)
 - [x] M2 Qiskit oracle + resource counts + correctness tests (quantum/oracle.py, DESIGN_M2.md, exact Toffoli formula)
 - [x] M3 amplitude estimation experiments, coherent CRN (results/quasar/m3a_v3_summary.md, m3b_v3_summary.md). Findings: CRN gain small for inter-route insertions (rho_q ~0.9 CON/SCA, 0.4-0.7 CMT/city), large for intra-route and alternative-position moves (rho_q 0.13-0.16 CON/SCA, ~0 in-sample CMT/city); end-load lemma; certified query counts quantum/classical 0.07-0.11 (insertions) and 0.42-0.72 (signed moves) at eps 1e-3, 0.006-0.06 at 1e-4, classical cheaper at relative precision; MLAE S>=64 slope -1 vs classical -1/2 on the circuit-validated rotation model; levels b=6, factor-grid error budget ~3e-4.
-- [ ] M4 cheapest-feasible search, lower bounds
+- [ ] M4 cheapest-feasible search, lower bounds. Done: THEORY_M4.md revision 2 (FIRST-FEASIBLE, O(sqrt(k*) T) up to logs; classical scan; lower bounds Omega(k a(1-a)/eps^2) classical and Omega(sqrt(k) + sqrt(a)/eps) quantum, product bound a conjecture); cost model quantum/search.py; M4b repair-step measurements on the 73-instance set (results/quasar/m4b_rr_summary.md) and on the region set (148 instances, Northern Vietnam 35.3 M and Guangdong 115.5 M people, data/Region/, results/quasar/m4b_rr_region_summary.md). Findings: on SAA plans the cheapest position is feasible in 72-83% of steps; on Det plans k* grows with scale (q90 30 / 50 / 130 for the 73-set / VNN / GD); core ratio quantum/classical 0.011-0.63, but with the explicit constants of the theorem quantum is 22-500x costlier in every step. Open: a search with smaller constants (expected O(sqrt(k*)) find-first without per-bisection re-testing), then re-measure.
 - [ ] M5 resource estimation, crossover, manuscript
 
 ## Freeze policy
