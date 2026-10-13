@@ -449,6 +449,9 @@ def osrm_block_plan(n: int) -> list[Block]:
 def block_url(coords, b: Block) -> str:
     pts = ";".join(f"{coords[i][1]:.5f},{coords[i][0]:.5f}" for i in b.coords)
     if b.diag:
+        if len(b.coords) == 1:
+            # OSRM needs two coordinates: send the point twice, ask for 1 x 1
+            return f"{OSRM_URL}{pts};{pts}?annotations=distance&sources=0&destinations=0"
         return f"{OSRM_URL}{pts}?annotations=distance"
     ns = len(b.src)
     srcs = ";".join(str(k) for k in range(ns))

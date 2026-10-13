@@ -296,3 +296,11 @@ def test_split_handles_dense_single_hexagon_and_uneven_blobs():
     out = m._split_oversize(c0, xy, w, "dense", ppp, split)
     assert max(c.pop for c in out) <= split
     assert abs(sum(c.pop for c in out) - w.sum()) < 1e-6 * w.sum()
+
+
+def test_single_point_diagonal_block_sends_two_coordinates():
+    coords = np.array([[23.9, 115.7]] * 101)
+    plan = m.osrm_block_plan(101)
+    last = [b for b in plan if b.diag and len(b.coords) == 1][0]
+    url = m.block_url(coords, last)
+    assert url.count(";") == 1 and "sources=0&destinations=0" in url
