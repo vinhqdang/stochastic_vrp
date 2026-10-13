@@ -714,7 +714,14 @@ Asserted: max(delivery, pickup) <= Q / 2.
 
 - Service points: population-weighted k-means of hex centres, k = max(10,
   round(P / POP_PER_POINT)); clusters under 100 people dropped; clusters above
-  2 x POP_PER_POINT split once into ceil(pop / POP_PER_POINT) parts.
+  2 x POP_PER_POINT split by weighted k-means into ceil(pop / POP_PER_POINT)
+  parts, repeated until none is left (at most 10 passes); a single hexagon
+  above that size (dense towns, > 8 000 people in 0.74 km^2) becomes
+  co-located points sharing its population equally.
+- Population coverage: Kontur hexagons whose centre lies in no ADM2 unit
+  (coast, simplified-boundary gaps) are not served; Guangdong's served
+  population (115.5 M) is therefore below the official resident count
+  (127.8 M in 2024).
 - Area splitting: an area still above 600 service points is partitioned by
   population-weighted k-means into ceil(n / 600) sub-areas, named `NAME-1`,
   `NAME-2`, ...; each sub-area is its own instance with its own depot. The
