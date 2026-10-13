@@ -350,17 +350,33 @@ def _kmeans_pass(xy, w, k, seed) -> list[Cluster]:
     return out
 
 
+SPLIT_ROUNDS = 10
+
+
 def _split_oversize(clusters, xy, w, area, ppp, split) -> list[Cluster]:
-    out = []
-    for ci, c in enumerate(clusters):
-        if c.pop <= split or len(c.members) < 2:
-            out.append(c)
-            continue
-        sub_k = min(math.ceil(c.pop / ppp), len(c.members))
-        seed = area_seed(f"{area}#{ci}")
-        for s in _kmeans_pass(xy[c.members], w[c.members], sub_k, seed):
-            out.append(Cluster(members=c.members[s.members], pop=s.pop, xy=s.xy))
-    return out
+    """Split clusters above `split` until none is left (at most SPLIT_ROUNDS
+    passes). A single hexagon above `split` (dense towns: > 20 000 people in
+    0.74 km^2) cannot be split in space; it becomes ceil(pop / ppp) co-located
+    points sharing its population equally."""
+    for rnd in range(SPLIT_ROUNDS):
+        out, changed = [], False
+        for ci, c in enumerate(clusters):
+            if c.pop <= split:
+                out.append(c)
+                continue
+            changed = True
+            if len(c.members) < 2:
+                m = math.ceil(c.pop / ppp)
+                out.extend(Cluster(members=c.members, pop=c.pop / m, xy=c.xy) for _ in range(m))
+                continue
+            sub_k = min(math.ceil(c.pop / ppp), len(c.members))
+            seed = area_seed(f"{area}#{ci}" if rnd == 0 else f"{area}#{rnd}#{ci}")
+            for s in _kmeans_pass(xy[c.members], w[c.members], sub_k, seed):
+                out.append(Cluster(members=c.members[s.members], pop=s.pop, xy=s.xy))
+        clusters = out
+        if not changed:
+            return clusters
+    return clusters
 
 
 def plan_area(lat, lon, pop, area: str, ppp: float) -> Plan:

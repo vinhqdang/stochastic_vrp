@@ -285,3 +285,14 @@ def test_round_trip_through_parse_dethloff(tmp_path):
     assert dem2[0].tolist() == [0.0, 0.0]
     # 0.1 m units / 10^4 gives km
     assert D2[0, 1] / div == pytest.approx(1.234)
+
+
+def test_split_handles_dense_single_hexagon_and_uneven_blobs():
+    rng = np.random.default_rng(3)
+    xy = np.vstack([rng.normal(0, 3, (400, 2)), [[0.0, 0.0]]])
+    w = np.concatenate([rng.exponential(200.0, 400), [21000.0]])   # one hexagon of 21 000 people
+    ppp, split = 4000.0, 8000.0
+    c0 = [m.Cluster(members=np.arange(len(w)), pop=float(w.sum()), xy=np.zeros(2))]
+    out = m._split_oversize(c0, xy, w, "dense", ppp, split)
+    assert max(c.pop for c in out) <= split
+    assert abs(sum(c.pop for c in out) - w.sum()) < 1e-6 * w.sum()
