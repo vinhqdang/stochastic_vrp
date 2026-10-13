@@ -59,8 +59,11 @@ Open points:
   function; Reichardt and LMRSS state composition for total functions only.
   Proposition 3(c) stays a CONJECTURE.
 - The variance-sensitive classical bound Ω(k α(1−α)/ε²) is not stated in
-  this form in the bandit papers above (they use n/ε² with biases in
-  [0, 1/2], KL-type, or unit variance); it must be proved directly by a
-  change-of-measure argument in THEORY_M4.
+  this form in the bandit papers above; it is now proved directly in
+  THEORY_M4 Prop. 3(a) from the transportation lemma.
+- Added from memory, metadata to check against the publisher pages:
+  KaufmannCappeGarivier2016 (JMLR 17, Lemma 1 = transportation lemma) and
+  Bennett1997BBBV (SIAM J. Comput. 26(5)). Prop. 3(b) no longer relies on
+  NayakWu1998Median (membership oracle); it uses a direct hybrid argument.
 - ReichardtReflections2011: SODA venue from the arXiv record, DOI unchecked.
   LocatelliGutzeitCarpentier2016: pages unchecked.
