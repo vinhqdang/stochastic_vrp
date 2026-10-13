@@ -702,7 +702,11 @@ def main(argv: list[str] | None = None) -> None:
                     help="rr: ruin-and-recreate rounds per (instance, gate); ignored in single")
     ap.add_argument("--force", action="store_true", help="recompute cached instances")
     ap.add_argument("--summary", action="store_true", help="only rebuild the outputs from the parts")
+    ap.add_argument("--plans", default=None,
+                    help="plan-cache directory name under results/ (default: plans; region set: plans_Region)")
     args = ap.parse_args(argv)
+    if args.plans:
+        _use_plan_set(args.plans)
     rr = args.mode == "rr"
     if args.N is None:
         args.N = N_RR if rr else N_SCEN
@@ -713,6 +717,19 @@ def main(argv: list[str] | None = None) -> None:
         write_rr_summary(args) if rr else write_summary(args)
     else:
         run_rr(args) if rr else run_part(args)
+
+
+def _use_plan_set(plans: str) -> None:
+    """Read plans from results/<plans> and tag every output with that name."""
+    global PARTS_ROOT, STEPS_CSV, SUMMARY_MD, RR_PARTS_ROOT, RR_STEPS_CSV, RR_SUMMARY_MD
+    M3.PLANS_DIR = ROOT / "results" / plans
+    tag = plans.replace("plans_", "_").lower() if plans != "plans" else ""
+    PARTS_ROOT = OUT_DIR / f"m4b{tag}_parts"
+    STEPS_CSV = OUT_DIR / f"m4b{tag}_steps.csv"
+    SUMMARY_MD = OUT_DIR / f"m4b{tag}_summary.md"
+    RR_PARTS_ROOT = OUT_DIR / f"m4b_rr{tag}_parts"
+    RR_STEPS_CSV = OUT_DIR / f"m4b_rr{tag}_steps.csv"
+    RR_SUMMARY_MD = OUT_DIR / f"m4b_rr{tag}_summary.md"
 
 
 if __name__ == "__main__":
