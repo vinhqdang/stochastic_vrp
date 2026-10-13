@@ -36,3 +36,31 @@ Nothing listed here may be cited until it is checked against the source.
 ## Must be read in full before the positioning is final
 WangFilipovska2026, HuHuZhou2026, HuHu2026, Gacon2020, An2021mlmc,
 Moosavi2026RLQALNS, RibesMarza2026jcc.
+
+## M4 (search and lower bounds) — checked 2026-10-13
+Verified against the arXiv full texts; added to `references.bib`:
+boyer1998tight (Thm 3, exact oracle), hoyer2003bounded (model: total
+Boolean f_i with two-sided error; promise inputs not covered),
+ambainis2006variable (now the TOCS 2010 version; Thm 3 for ideal
+subroutines), NayakWu1998Median (Thm 1.11), Kothari2014OracleID,
+DurrHeiligmanHoyerMhalla2006, ReichardtReflections2011,
+LeeMittalReichardtSpalekSzegedy2011, Wang2021bandits (Thm 5 only for biases
+in [p, 1−p], no variance parameter), MannorTsitsiklis2004,
+KanoHondaSakamakiMatsuuraNakamuraSugiyama2019 (KL-type bound),
+LocatelliGutzeitCarpentier2016 (fixed budget, unit-variance Gaussian).
+Open points:
+- Find-first in O(√p) expected queries: stated in Kothari2014OracleID §2.2
+  as a remark, not a lemma; the attribution to DHHM06 was not found in the
+  DHHM arXiv text. Cite as a remark only.
+- NayakWu1998Median: the STOC 1999 venue is not verified; cite the arXiv
+  version. The specialisation Δ = εn, t = pn ⇒ Ω(1/√ε + √(p(1−p))/ε) is our
+  derivation.
+- No composition theorem found for OR_k with a promise (partial) inner
+  function; Reichardt and LMRSS state composition for total functions only.
+  Proposition 3(c) stays a CONJECTURE.
+- The variance-sensitive classical bound Ω(k α(1−α)/ε²) is not stated in
+  this form in the bandit papers above (they use n/ε² with biases in
+  [0, 1/2], KL-type, or unit variance); it must be proved directly by a
+  change-of-measure argument in THEORY_M4.
+- ReichardtReflections2011: SODA venue from the arXiv record, DOI unchecked.
+  LocatelliGutzeitCarpentier2016: pages unchecked.
