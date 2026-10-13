@@ -231,3 +231,4 @@ papers/eclair/figures/*.png
 svrpspd_wdro/results/quasar/m3a_moves.csv
 svrpspd_wdro/results/quasar/*_parts/
 svrpspd_wdro/results/quasar/*_moves.csv.gz
+svrpspd_wdro/data/Region/_raw/
