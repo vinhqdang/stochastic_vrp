@@ -67,3 +67,14 @@ Open points:
   NayakWu1998Median (membership oracle); it uses a direct hybrid argument.
 - ReichardtReflections2011: SODA venue from the arXiv record, DOI unchecked.
   LocatelliGutzeitCarpentier2016: pages unchecked.
+
+## Certification re-aim (2026-10-13)
+Read in full: Huggins, Wan, McClean, O'Brien, Wiebe, Babbush, PRL 129,
+240501 (2022), arXiv 2111.09283 (Thm 1, Thm 2 lower bound for
+ε < 1/(3√M), Thm 4 with c = 2); Brassard–Høyer–Mosca–Tapp quant-ph/0005055
+Thm 15 (relative error Θ((1/ε)√(N/t))); Tang arXiv 2504.06940v3 (Thms I.2,
+I.3; preprint). Abstract only (do not cite theorem numbers yet): van
+Apeldoorn TQC 2021 (LIPIcs 197, 9), Cornelissen–Hamoudi–Jerbi STOC 2022
+(ℓ2, not ℓ∞), Hamoudi–Magniez ICALP 2019, Gilyén–Arunachalam–Wiebe SODA
+2019 (informal Thm 1 only). No citable Ω(log d/ε²) shared-sample classical
+lower bound found yet (candidate: Wainwright 2019).

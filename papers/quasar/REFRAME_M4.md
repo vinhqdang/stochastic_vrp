@@ -88,3 +88,34 @@ Next: a variance-aware simultaneous estimator whose cost scales with
 routes per day — instead of √d (candidate: L. Tang, arXiv 2504.06940, to be
 read in full); and the rare-event relative-error axis (Brassard–Høyer–Mosca–
 Tapp Thm 15, Θ((1/ε)√(1/p)), verified).
+
+## Variance-aware bound (L. Tang, arXiv 2504.06940v3, read in full)
+
+Thm I.2: ℓ∞ error √(tr Σ)/n with O(n log(d/δ)) calls of a state preparation
+that returns the whole d-vector in one call; for indicators tr Σ = Σ_j
+p_j(1−p_j) exactly, whatever the correlations. So the cost is
+O(√(Σ_j v_j)·log(d/δ)/ε) — the √(expected number of failing routes) form.
+Constants are not given (hidden O, an unspecified D); it needs a known bound
+on tr Σ and on ‖E X‖₂; preprint only, optimality for ℓ∞ conjectured.
+
+With constant C = 1 (optimistic) against classical Bernstein:
+
+| plan | d | tr Σ | ratio at ε = 1e-2 / 1e-3 / 1e-4 |
+|---|---:|---:|---|
+| VNN SAA | 375 | 7.5 | 0.26 / 0.028 / 0.0028 |
+| GD SAA | 5 867 | 124 | 1.0 / 0.11 / 0.011 |
+| VNN Det | 257 | 51 | 0.13 / 0.013 / 0.0013 |
+| GD Det | 4 019 | 826 | 0.54 / 0.054 / 0.0054 |
+
+The ratio scales linearly in C, so the crossover precision ε* scales as
+1/C: the whole practical claim rests on a constant nobody has computed.
+
+## Decision (proposed)
+
+Algorithmic contribution of QUASAR = an explicit-constant, variance-aware
+simultaneous certification algorithm for d correlated indicator events
+(route overflow) with one-sided thresholds (certify p_j ≤ α for every j,
+not estimate every p_j), proved and counted gate by gate, plus the coherent
+region-level oracle; evaluated on the 148 region instances against the
+best classical shared-sample certificate. M4 (search inside the optimiser)
+is reported as a negative result.
