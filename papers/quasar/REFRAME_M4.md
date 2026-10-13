@@ -60,3 +60,31 @@ quadratic edge in the number of calls to the source of randomness.
 - Whether the oracle model of those results (a single state-preparation
   unitary producing all d indicators) matches our region oracle.
 - Classical lower bound for shared-sample simultaneous estimation.
+
+## First measurement (2026-10-13, `results/quasar/cert_crossover_v0.txt`)
+
+Route risks of every route of the region plans (20 000 scenarios per
+instance); classical = shared samples with Hoeffding or Bernstein (v = max
+route variance), quantum = Huggins et al. (2022) Thm 4 form
+2·√d·log(d/δ)/ε (variance-agnostic), δ = 0.05.
+
+| plan | d | quantum/classical (Bernstein) at ε = 1e-2 / 1e-3 / 1e-4 |
+|---|---:|---|
+| VNN SAA | 375 | 3.7 / 0.40 / 0.040 |
+| GD SAA | 5 867 | 13.8 / 1.47 / 0.148 |
+| VNN Det | 257 | 0.59 / 0.059 / 0.006 |
+| GD Det | 4 019 | 2.4 / 0.24 / 0.024 |
+
+Correction to point 2 above: a larger network HURTS the simultaneous
+quantum estimator (cost √d against log d classically, since one classical
+sample gives all d indicators). The crossover is roughly √d·ε < v: for the
+well-planned SAA plans (v ≈ 0.05) quantum needs ε ≲ 1e-3 on Northern Vietnam
+and ε ≲ 5e-4 on Guangdong. The variance-agnostic quantum bound is the
+problem: classical Bernstein exploits the small route risks, the quantum
+bound does not.
+
+Next: a variance-aware simultaneous estimator whose cost scales with
+√(Σ_j p_j(1−p_j)) — the square root of the expected number of failing
+routes per day — instead of √d (candidate: L. Tang, arXiv 2504.06940, to be
+read in full); and the rare-event relative-error axis (Brassard–Høyer–Mosca–
+Tapp Thm 15, Θ((1/ε)√(1/p)), verified).
