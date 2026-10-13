@@ -178,3 +178,136 @@ def test_summary_smoke():
         rows.append({"instance": "SYN", "family": "city", "gate": "Det", "customer": c, **rec})
     text = m4b.summary_markdown(pd.DataFrame(rows))
     assert "## eps = 0.01" in text and "| ALL | ALL |" in text
+
+
+# ============================================================
+# step_record refactor and mode rr
+# ============================================================
+
+BIG_ROUTES = [[1, 4, 7, 10, 12], [2, 3, 5, 8], [6, 9, 11]]   # 12 customers, depot 0
+BIG_N_NODES = 13
+
+
+def _big_synthetic(seed: int = 5):
+    """Symmetric Manhattan-type distances on random grid points, integer demands."""
+    rng = np.random.default_rng(seed)
+    xy = rng.integers(0, 30, size=(BIG_N_NODES, 2))
+    Db = np.zeros((BIG_N_NODES, BIG_N_NODES), dtype=np.int64)
+    for i in range(BIG_N_NODES):
+        for j in range(BIG_N_NODES):
+            if i != j:
+                Db[i, j] = int(np.abs(xy[i] - xy[j]).sum()) + 1
+    dsc = rng.integers(0, 5, size=(BIG_N_NODES, N)).astype(np.float64)
+    psc = rng.integers(0, 5, size=(BIG_N_NODES, N)).astype(np.float64)
+    dsc[0] = 0.0
+    psc[0] = 0.0
+    return Db, dsc, psc
+
+
+BIG_D, BIG_DSC, BIG_PSC = _big_synthetic()
+
+
+def _same(a, b) -> bool:
+    if isinstance(a, float) and isinstance(b, float) and math.isnan(a) and math.isnan(b):
+        return True
+    return a == b
+
+
+def test_step_record_on_full_arrays_matches_repair_step():
+    for c in (1, 4, 6):
+        T = m4b._candidate_table(ROUTES, c, D, DSC, PSC, Q_MID)
+        stats = m4b.step_record(T["p"], T["ap"], T["am"], T["varD"], T["M"])
+        rec = m4b.repair_step(ROUTES, c, D, DSC, PSC, Q_MID)
+        for key, val in stats.items():
+            assert _same(rec[key], val), key
+        assert list(rec)[:9] == ["M", "n_routes", "dropped", "p_1", "s", "orig_rank",
+                                 "p_orig", "feasible_routes", "p_sorted_head"]
+        assert set(stats) == set(rec) - {"M", "n_routes", "dropped", "orig_rank", "p_orig",
+                                         "feasible_routes"}
+
+
+@pytest.mark.parametrize("Q", [8.0, 10.0, 12.0, 14.0, 1e9])
+@pytest.mark.parametrize("seed", [1, 2])
+def test_rr_lazy_evaluation_matches_full(Q, seed):
+    lazy_routes, lazy = m4b.rr_round(BIG_ROUTES, BIG_D, BIG_DSC, BIG_PSC, Q,
+                                     np.random.default_rng(seed), full=False)
+    full_routes, full = m4b.rr_round(BIG_ROUTES, BIG_D, BIG_DSC, BIG_PSC, Q,
+                                     np.random.default_rng(seed), full=True)
+    assert lazy_routes == full_routes
+    assert [(k, c) for k, c, _ in lazy] == [(k, c) for k, c, _ in full]
+    for (_, _, r1), (_, _, r2) in zip(lazy, full):
+        assert r2["n_evaluated"] == r2["M"]
+        assert 1 <= r1["n_evaluated"] <= r1["M"]
+        for key in r2:
+            if key != "n_evaluated":
+                assert _same(r1[key], r2[key]), key
+
+
+def test_rr_lazy_evaluation_truncates_when_candidates_are_easy():
+    # Q huge: every candidate has p = 0, so k_e2 = 1 and j_stop = min(M, HEAD).
+    _, steps = m4b.rr_round(BIG_ROUTES, BIG_D, BIG_DSC, BIG_PSC, 1e9, np.random.default_rng(1))
+    recs = [r for _, _, r in steps]
+    assert any(r["M"] > m4b.HEAD and r["n_evaluated"] == m4b.HEAD for r in recs)
+    assert all(r["s"] == 1 and r["new_route"] == 0 for r in recs)
+
+
+@pytest.mark.parametrize("Q", [8.0, 10.0, 12.0, 14.0, 1e9])
+@pytest.mark.parametrize("seed", [1, 2, 3])
+def test_rr_ruin_reinserts_each_customer_once(Q, seed):
+    all_c = sorted(c for r in BIG_ROUTES for c in r)
+    routes, steps = m4b.rr_round(BIG_ROUTES, BIG_D, BIG_DSC, BIG_PSC, Q, np.random.default_rng(seed))
+    removed = [c for _, c, _ in steps]
+    assert len(removed) == len(set(removed)) == max(1, int(m4b.Q_FRAC * len(all_c)))
+    assert set(removed) <= set(all_c)
+    assert sorted(c for r in routes for c in r) == all_c
+    assert all(len(r) > 0 for r in routes)
+    for k, _, rec in steps:
+        assert rec is not None
+        assert rec["chosen_rank"] == rec["s"]
+        assert rec["new_route"] == int(rec["s"] == 0)
+
+
+def test_rr_insertion_is_cheapest_feasible_candidate():
+    Q = 12.0
+    for c in (2, 6, 9):
+        routes = [[x for x in r if x != c] for r in BIG_ROUTES]
+        routes = [r for r in routes if r]
+        reduced = [list(r) for r in routes]
+        cands = []
+        for ri, r in enumerate(reduced):
+            for pos in range(1, len(r) + 2):
+                u = r[pos - 2] if pos >= 2 else 0
+                v = r[pos - 1] if pos <= len(r) else 0
+                cands.append((float(BIG_D[u, c] + BIG_D[c, v] - BIG_D[u, v]), ri, pos))
+        cands.sort()
+        risks = [float((route_peak(_inserted(reduced, ri, pos, c)[ri], BIG_DSC, BIG_PSC) > Q).mean())
+                 for _, ri, pos in cands]
+        expected_s = next((j + 1 for j, pj in enumerate(risks) if pj <= m4b.ALPHA), 0)
+        rec = m4b.rr_insert_step(routes, c, BIG_D, BIG_DSC, BIG_PSC, Q, {})
+        assert rec["M"] == len(cands) and rec["s"] == expected_s
+        if expected_s >= 1:
+            _, ri, pos = cands[expected_s - 1]
+            assert routes == _inserted(reduced, ri, pos, c)
+        else:
+            assert routes[-1] == [c] and rec["new_route"] == 1
+
+
+def test_rr_summary_smoke():
+    import pandas as pd
+
+    _, steps = m4b.rr_round(BIG_ROUTES, BIG_D, BIG_DSC, BIG_PSC, 12.0, np.random.default_rng(4))
+    rows = [{"instance": "SYN", "family": "VNN", "gate": "Det", "round": 1, "step": k,
+             "customer": c, **rec} for k, c, rec in steps]
+    text = m4b.summary_markdown(pd.DataFrame(rows), rr=True)
+    assert text.startswith("# QUASAR M4b repair-step statistics (task B, mode rr")
+    assert "## eps = 0.01" in text and "| VNN | Det |" in text
+    assert "new route share" in text and "chosen rank median" in text
+
+
+def test_family_of_region_and_legacy_names():
+    assert m4b.family_of("VNN-HANOI") == "VNN"
+    assert m4b.family_of("GD-SHENZHENSHI") == "GD"
+    assert m4b.family_of("CON3-0") == "CON"
+    assert m4b.family_of("SCA8-1") == "SCA"
+    assert m4b.family_of("HANOI") == "city"
+    assert "Region" in m4b.DATA_FAMILIES
