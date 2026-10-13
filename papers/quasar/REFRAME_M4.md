@@ -119,3 +119,27 @@ not estimate every p_j), proved and counted gate by gate, plus the coherent
 region-level oracle; evaluated on the 148 region instances against the
 best classical shared-sample certificate. M4 (search inside the optimiser)
 is reported as a negative result.
+
+## Certification measured (Q-CERT vs C-CERT, `results/quasar/cert_region_summary.md`)
+
+10 518 routes of the region plans, α = 0.10, δ = 0.05, explicit constants
+(canonical AE + median + union bound) against the empirical-Bernstein
+classical size (no doubling loss for classical). Per-route ratio
+quantum/classical at ε = 1e-3, by gap |p − α|:
+
+| gap | routes | median ratio |
+|---|---:|---:|
+| ≤ 1e-3 | 1 | 0.09 |
+| 1e-3 – 3e-3 | 8 | 0.25 |
+| 3e-3 – 1e-2 | 21 | 0.84 |
+| 1e-2 – 3e-2 | 58 | 1.9 |
+| 3e-2 – 0.1 | 6 852 | 5.0 |
+| > 0.1 | 3 578 | 11.2 |
+
+The crossover gap is ≈ 5e-3. 99% of the routes of real plans are far from
+the target (SAA plans sit at p ≈ 0.02–0.05 against α = 0.10; Det plans far
+above it), where classical certification needs only hundreds of samples
+and the quantum constants (median of runs under the union bound, 1/√g
+term) dominate. Plan-level totals: quantum/classical 4.7–7.4, except
+Guangdong Det at ε ≤ 1e-3 (1.03; ideal-vs-ideal 0.53). Quantum pays only
+for the few binding routes and for high-precision or rare-event targets.
