@@ -22,8 +22,19 @@ gap of route j.
 **Locality (the structural fact used throughout).** X_j depends only on the
 demands of the L_j customers of route j and on the copula factors. The M2
 oracle A_j for route j therefore acts on 2bL_j demand qubits plus the
-factor register, and costs O(L_j) Toffolis (DESIGN_M2.md formula). A
-classical sample of X_j costs Θ(L_j) operations. Two cost models follow:
+factor register. The M2 oracle has O(L_j log² L_j) Toffolis
+(DESIGN_M2.md) for independent demands; with the copula it needs a factor
+register (the bin-averaged grid of M3) and factor-controlled state
+preparation of the L_j demand registers, whose cost grows with the grid
+size, and the grid adds a discretisation bias that must be charged to ε
+(M3 budget ≈ 3·10⁻⁴). A classical sample of X_j costs Θ(L_j) operations.
+
+**Where the claim lives.** In the BATON demand model P(F_r > Q) has an exact
+dynamic program (plus quadrature over the factor), which beats any sampling
+method; there the experiments are a validated testbed. The claim of this
+note is for a route-level stochastic simulator without such structure (a
+local digital twin: demand, dwell, travel and breakdown processes), where
+the only access is sampling one route-day. Two cost models follow:
 
 - **Local model (L).** One application of A_j or A_j† costs L_j units; one
   classical sample of route j costs L_j units; a classical sample of the
@@ -56,8 +67,10 @@ median. ∎
 
 **Lemma 2 (PROVED).** Given p̂, let I = {q ∈ [0,1] : |p̂ − q| ≤ h_{M,k}(q)}.
 (i) I is an interval. (ii) If |p̂ − p| ≤ h_{M,k}(p) then p ∈ I. (iii) In that
-case, if 2 h_{M,k}(v̄_g) < g with g ≤ |p − α| and
-v̄_g := max{q(1−q) : |q − p| ≤ g} (h written as a function of the variance),
+case, if 0 < g ≤ |p − α| and 2 h_{M,k}(v̄_g) < g, with
+v̄_g := max{q(1−q) : q ∈ [0,1], |q − p| ≤ g} (here and below h_{M,k} is
+written as a function of the variance v = q(1−q), so its largest value is
+h_{M,k}(1/4), attained at q = 1/2),
 then I lies strictly on the same side of α as p.
 *Proof.* (i) f(q) = h_{M,k}(q) − |p̂ − q| is concave on [0,1] (√(q(1−q)) is
 concave and −|·| is concave), so I = {f ≥ 0} is convex. (ii) is the
@@ -78,7 +91,8 @@ for t = 0, 1, 2, ...:
     I = consistent interval of p̂ for h_{M_t, k_t}
     if sup I ≤ α:  certify j, stop
     if inf I > α:  reject j, stop
-    if h_{M_t,k_t}(1/4) ≤ ε/2:  certify j iff p̂ ≤ α, stop      (precision floor)
+    if h_{M_t,k_t}(v_I) ≤ ε/2, v_I = max_{q ∈ I} q(1−q):
+                     certify j iff p̂ ≤ α, stop                 (adaptive precision floor)
 ```
 
 In Fact 1 the parameter k is a parameter of the analysis, not of the
@@ -91,27 +105,33 @@ k ∈ {1, …, 20} per instance set. A run costs 2M_t + 1 applications of A_j
 or A_j† whatever k is.
 
 **Theorem 1 (PROVED).** Q-CERT is an ε-certification with probability at
-least 1 − δ. Route j stops at the first round t with
-2 h_{M_t,k_t}(v̄_{g_j}) < g_j or h_{M_t,k_t}(1/4) ≤ ε/2, and its cost in
+least 1 − δ. Route j stops no later than the first round t with
+2 h_{M_t,k_t}(v̄_{g'_j}) < g'_j, g'_j = max(|p_j − α|, ε/2), and its cost in
 applications of A_j, A_j† is Σ_{s ≤ t} r_s (2 M_s + 1). Consequently the
 cost of route j is O(log(d log(1/g_j)/δ) · (√v̄_j/g_j + 1/√g_j)), and in the
-local model the total cost is Σ_j L_j times that.
+local model the total cost is Σ_j L_j C_j with C_j the cost of route j.
 
 *Proof.* Failure events: by Lemma 1 the round-t estimate of route j is good
 except with probability η_t; Σ_j Σ_t η_t = (6δ/π²) Σ_t (t+1)^{-2} = δ, so
 all estimates of all routes are good with probability ≥ 1 − δ. On that
 event: by Lemma 2(ii) p_j ∈ I at every round, so "sup I ≤ α" implies
 p_j ≤ α (sound) and "inf I > α" implies p_j > α ≥ α − ε (allowed). At the
-precision floor h(q) ≤ h(1/4) ≤ ε/2 for every q, so a certification has
-p_j ≤ p̂ + ε/2 ≤ α + ε/2 and a route with p_j ≤ α − ε has p̂ ≤ α − ε/2 < α
-and is certified. Stopping: by Lemma 2(iii) the interval leaves α as soon as
-2h(v̄_g) < g. The O(·) form follows from h_{M,k} ≈ 2πk√v/M and the
+precision floor p_j ∈ I, so |p̂ − p_j| ≤ h(p_j(1−p_j)) ≤ h(v_I) ≤ ε/2: a
+certification has p_j ≤ p̂ + ε/2 ≤ α + ε/2, and a route with p_j ≤ α − ε has
+p̂ ≤ α − ε/2 < α and is certified. Stopping: with γ_j = |p_j − α| > 0,
+Lemma 2(iii) (g = γ_j) shows the interval has left α no later than the
+first round with 2h(v̄_{γ_j}) < γ_j; and the same convexity argument with
+g = ε/2 shows I ⊆ [p_j − ε/2, p_j + ε/2], hence v_I ≤ v̄_{ε/2} and the
+floor fires, no later than the first round with 2h(v̄_{ε/2}) < ε/2. So route
+j stops no later than the first round with 2h(v̄_{g'_j}) < g'_j,
+g'_j = max(γ_j, ε/2). The O(·) form follows from h_{M,k} ≈ 2πk√v/M and the
 doubling of M_t (the last round costs at most twice the minimal one, the
 geometric sum at most twice the last). ∎
 
 **Classical counterpart (C-CERT).** The same doubling scheme with n_t
-samples of route j per round and an empirical-Bernstein interval (Maurer &
-Pontil 2009) or the exact Clopper–Pearson interval. With the Bernstein form
+samples of route j per round and the empirical-Bernstein interval of
+Audibert, Munos & Szepesvári (2009) (constants √(2v ln(3/η)/n) +
+3 ln(3/η)/n) or the exact Clopper–Pearson interval. With the Bernstein form
 the stopping condition is 2(√(2 v̄ ln(3/η)/n) + 3 ln(3/η)/n) < g, so the
 cost of route j is O(log(d/δ) (v̄_j/g_j² + 1/g_j)) samples, each costing L_j
 in model L. In the experiments the classical side is given the exact
@@ -147,14 +167,24 @@ constants not given) apply, against O(v log(d/δ)/ε²) shared classical
 samples; the measured ratios are in REFRAME_M4.md. Model S is reported but
 is not the claim of the paper.
 
-## 6. What is new (to check against the literature before writing)
+## 6. What is new, after review
 
-1. The certification formulation with one-sided thresholds and per-route
-   gaps, which makes most routes cheap.
-2. The locality reduction: route risk depends only on the route's customers
-   and the shared factor, so per-route oracles are small and the √d (or
-   √tr Σ) of the black-box simultaneous estimators disappears.
-3. An explicit-constant adaptive certification procedure from canonical
-   amplitude estimation (consistent interval, Lemma 2, and the (k, r)
-   optimisation), against the matching classical procedure.
-4. Measured on 148 region instances (≈ 6 000 routes) with real gaps.
+Not new (do not claim): adaptive amplitude estimation with confidence
+intervals and explicit constants (Grinko et al. 2021, Suzuki et al. 2020,
+Aaronson–Rall 2020, Nakaji 2020, Montanaro 2015, Kothari–O'Donnell 2023);
+the concavity of the inversion interval. Q-CERT is a careful instance of
+these, used as the measuring instrument.
+
+Candidate contributions: (1) the certification formulation of a whole plan
+with one-sided thresholds, where most routes are far from the target; (2)
+the locality reduction (route-level oracles) that removes the √d or √tr Σ
+of the black-box simultaneous estimators, with the factor-register cost
+and bias accounted; (3) the measured crossover on 148 region instances,
+algorithm against algorithm and ideal against ideal, with the classical
+rivals that apply to a route-level simulator (sequential tests, conditional
+Monte Carlo over the factor, importance sampling) — and the explicit
+statement that with an exact model (DP) classical wins outright.
+
+Per-route lower bounds (Prop. 2) are minimax bounds at a gap level in the
+black-box sampling model; the k = 1 case of THEORY_M4 Prop. 3(a) needs its
+own two-point argument (Prop. 3(a) is proved for k ≥ 16).
