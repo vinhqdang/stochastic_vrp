@@ -162,6 +162,23 @@ Roles for this project: the master session plans and designs algorithms;
 execution is delegated in small specified modules with tests; review is a
 separate pass.
 
+### Paper 8 — RARECERT (papers/rarecert/, ACTIVE — planning)
+
+*Certifying rare overflow risk of regional pickup-and-delivery plans.*
+Spin-off of QUASAR direction A (2026-10-14): certify service levels
+10⁻³…10⁻⁶ of a given SVRPSPD plan by importance sampling (factor shift +
+stage mixture of conditional twists, extending Glasserman–Li 2005 from a
+sum to a maximum over stages); mixture IS for unions (Owen et al. 2019)
+and the copula two-step are NOT claimable. Uses the region set
+(`data/Region`, `results/plans_Region`). Separation from TEMPO: no
+e-values. Spec: `papers/rarecert/PROJECT.md`.
+
+QUASAR (paper 7) outcome so far: four honest tests (search inside the
+optimiser, black-box simultaneous estimation, per-route certification,
+rare events against mixture IS) found no regime where quantum amplitude
+estimation beats the best classical method on this model; see
+`papers/quasar/REFRAME_M4.md` and `DESIGN_RARE.md`.
+
 ## Layout
 
 - `svrpspd_wdro/` — the shared engine + all experiment scripts (see its

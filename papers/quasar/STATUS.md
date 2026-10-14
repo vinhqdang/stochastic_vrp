@@ -6,7 +6,7 @@
 - **Venue:** not fixed. Candidates: INFORMS Journal on Computing; IEEE
   Transactions on Quantum Engineering. Decide at M3 from the strength of the
   results.
-- **State:** **ACTIVE — M4 in progress (theory and measurements done; next: a search algorithm with smaller constants).** Open for
+- **State:** **PAUSED — negative results recorded (M4 search, simultaneous and per-route certification, rare events vs mixture IS); the positive classical result moved to paper 8 (papers/rarecert).** Open for
   edits.
 - **Sharing:** uses the shared engine's instances, scenario generators and
   route conventions (`svrpspd_wdro/core`); quantum code is separate in
