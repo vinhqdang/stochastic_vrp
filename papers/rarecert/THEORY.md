@@ -45,8 +45,9 @@ gives log P(½ZᵀΘZ > c(1−η)) ≤ −t c(1−η) + O(1); P(R > ηc) decays 
 than any exponential in c; let t ↑ 1/λ, η ↓ 0. For L_k = D_k + P_k the
 blocks are independent (disjoint inputs), so the moment generating
 functions multiply and the rate is the smaller of the two, i.e. 1/λ_k.
-Lower bound: let v be the Perron vector of Θ^{1/2}CΘ^{1/2} (positive), u*
-the corresponding input direction; the event contains a ball around
+Lower bound: let v be the Perron vector of Θ^{1/2}CΘ^{1/2} (positive,
+ρ > 0) and u* = BᵀΘ^{1/2}v/√λ the input direction (Z = Bu, BBᵀ = C), for
+which ½(Bsu*)ᵀΘ(Bsu*) = λs²/2; the event contains a ball around
 (1+η)√(2c/λ)·u* of radius O(1), whose Gaussian mass is
 exp(−(1+η)²c/λ − O(√c)). For F use Proposition 1: P(max(D_0, P_L) > c) ≤
 P(F > c) ≤ P(D_0 + P_L > c), both with rate 1/λ*. ∎
@@ -56,7 +57,9 @@ So, on the logarithmic scale, a route overflows either at the start
 stages have strictly smaller scales whenever every customer has positive
 mean demand, but for long routes λ_k is close to λ* for k near 0 or L.
 
-**Proposition 3 (relative mode mass, PROVED from Theorem 1).**
+**Proposition 3 (relative mode mass, PROVED from Theorem 1, for a fixed
+gap λ_k < λ*; as the gap closes, prefactors decide and the statement is
+silent).**
 P(L_k > c)/P(F > c) = exp(−c(1/λ_k − 1/λ*)(1 + o(1))). In particular, at a
 service level γ = P(F > c), the second end-mode carries relative mass
 γ^{(λ*/λ_other − 1)(1+o(1))}, λ_other = min(λ_0^d, λ_L^p).
@@ -70,75 +73,94 @@ Measured (QUASAR A, 120 routes): single-shift relative error median
 
 ## 3. Single mean shift
 
-Mean-shift IS with shift θ ∈ ℝ^{2L+2}: q = N(θ, I), weight
-w(u) = exp(−⟨u, θ⟩ + |θ|²/2). Second moment
-m₂(θ) = E_p[w 1_A] = e^{|θ|²}(2π)^{-n/2} ∫_A e^{−|u+θ|²/2} du. The estimator
-is logarithmically efficient if log m₂ ~ 2 log P(A).
+Mean-shift IS with shift τ ∈ ℝ^{2L+2}: q = N(τ, I), weight
+w(u) = exp(−⟨u, τ⟩ + |τ|²/2). Second moment m₂(τ) = E_p[w 1_A]; the
+estimator is logarithmically efficient if log m₂ ~ 2 log P(A).
 
 **Lemma 4 (one block, PROVED).** Let h(u) = ½ uᵀMu on a block with
 M = AᵀΘA, A ≥ 0 entrywise, λ1 > λ2 its two largest eigenvalues,
-κ = λ1/λ2, and h₊(u) = ½|Θ^{1/2}(Au)_+|² ≤ h(u). Let θ = r v1 with
+κ = λ1/λ2, and h₊(u) = ½|Θ^{1/2}(Au)_+|² ≤ h(u). Let τ = r v1 with
 r² = 2c/λ1 (v1 the Perron vector). If κ ≥ 4, every u with h₊(u) ≥ c
-satisfies |u + θ|² ≥ 4|θ|².
+satisfies |u + τ|² ≥ 4|τ|².
 *Proof.* Write u = a v1 + u_⊥, b = |u_⊥|. If a ≥ 0: c ≤ h₊(u) ≤ h(u) =
 ½(λ1 a² + u_⊥ᵀMu_⊥) ≤ ½(λ1 a² + λ2 b²), so b² ≥ κ(r² − a²); then
-|u + θ|² = (a + r)² + b² ≥ f(a) := (1 − κ)a² + 2ar + (1+κ)r², concave for
-κ ≥ 1, so on [0, r] its minimum is min(f(0), f(r)) = min((1+κ)r², 4r²) =
-4r² when κ ≥ 3 (and for a ≥ r, |u+θ|² ≥ (a+r)² ≥ 4r²). If a < 0:
-A v1 ≥ 0 gives (Au)_+ ≤ (Au_⊥)_+, so c ≤ h₊(u_⊥) ≤ ½λ2 b², b² ≥ κr², and
-|u+θ|² ≥ b² ≥ κ r² ≥ 4r² when κ ≥ 4. ∎
-(For the one-factor block, λ2 ≤ (1−ρ) max θ_i, so κ ≥ 4 holds as soon as
-ρ Σθ_i ≳ 3(1−ρ) max θ_i — e.g. two equal customers at ρ = 0.6.)
+|u + τ|² = (a + r)² + b² ≥ f(a) := (1 − κ)a² + 2ar + (1+κ)r², concave for
+κ ≥ 1, so on [0, r] its minimum is min((1+κ)r², 4r²) = 4r² when κ ≥ 3 (and
+for a ≥ r, |u+τ|² ≥ (a+r)² ≥ 4r²). If a < 0: A v1 ≥ 0 gives
+(Au)_+ ≤ (Au_⊥)_+, so c ≤ h₊(u_⊥) ≤ ½λ2 b², b² ≥ κr², and
+|u+τ|² ≥ b² ≥ κ r² ≥ 4r² when κ ≥ 4. ∎
+For the one-factor block λ2 ≤ (1−ρ) max θ_i (Weyl) and
+λ1 ≥ ρΣθ_i + (1−ρ) min θ_i, so κ ≥ 4 holds when
+ρΣθ_i + (1−ρ) min θ_i ≥ 4(1−ρ) max θ_i (two equal customers at ρ = 0.6
+give κ = 4 exactly).
 
-**Theorem 2 (single shift: when it works, when it fails, PROVED-SKETCH).**
-(a) If the maximal scale λ* is attained by one end mode only, the block of
-that mode has κ ≥ 4, and every other stage block has scale λ_k ≤ λ*/3, the
-shift at the dominating point θ* = √(2c/λ*) u* is logarithmically
-efficient.
-(b) If the other end mode (disjoint inputs, so orthogonal to θ*) has
-scale λ_other > λ*/3, the shift θ* is not logarithmically efficient:
-log m₂(θ*) − 2 log P(A) ≥ c(3/λ* − 1/λ_other)(1 + o(1)) → ∞.
-*Sketch.* (a) Points of the dominant mode: Lemma 4 gives the exponent
-½|u+θ*|² − |θ*|² ≥ |θ*|² = 2c/λ*. Points of other blocks have
-|u|² ≥ 2c/λ_k ≥ 6c/λ*, and ⟨u, θ*⟩ ≥ −(...) — needs the non-negativity of
-the inner product on the relevant region (to write; holds for the
-disjoint end mode, where it is 0). (b) Evaluate the integrand of m₂ at the
-other mode's dominating point θ_o ⊥ θ*: ½|θ_o + θ*|² − |θ*|² =
-c/λ_other − c/λ*; a ball of radius O(1) around it lies in A, so
-log m₂ ≥ −c/λ_other + 2c/λ* − O(√c), while 2 log P(A) = −2c/λ*(1+o(1)). ∎
+Write ϱ = λ_other/λ* ≤ 1 for the ratio of the weaker to the stronger end
+scale, and τ* = √(2c/λ*) u* for the dominating point of the dominant end
+block, u* = Bᵀ Θ^{1/2} v/√λ* in input space (Z = Bu, BBᵀ = C; all
+components positive).
 
-(b) is asymptotic: at finite c the extra second moment comes from a region
-that the proposal almost never visits, so the sample variance does not
-show it and the estimate is biased low by about the mode mass of
-Proposition 3 with a misleadingly small standard error — the failure
-measured on the balanced routes.
+**Theorem 2 (single shift, PROVED-SKETCH).**
+(b) If ϱ > 1/4, the shift τ* is not logarithmically efficient:
+log m₂(τ*) − 2 log P(A) ≥ c(4/λ* − 1/λ_other)(1 + o(1)) → ∞.
+*Proof.* τ* acts on the dominant block's inputs only, and the other end
+event (say {P_L > c}) depends only on the other block's inputs, so
+m₂ ≥ E_p[w 1{P_L > c}] = E_p[w]·P(P_L > c) = e^{|τ*|²} P(P_L > c)
+= exp(2c/λ* − c/λ_other + o(c)), while 2 log P(A) = −2c/λ*(1+o(1)). ∎
+(a) If ϱ ≤ 1/4 and the dominant end block has λ2 ≤ λ*/4, the shift τ* is
+logarithmically efficient; no condition on the middle stages is needed.
+*Sketch.* A ⊆ {D_0 + P_L > c} (Proposition 1) and, up to the O(log)
+remainders of Lemma 2, D_0 + P_L ≤ h₊ for the block-diagonal form of the
+two end blocks, whose top eigenvalue is λ* and second eigenvalue is
+max(λ_other, λ2(dominant)) ≤ λ*/4; Lemma 4 then gives
+½|u+τ*|² − |τ*|² ≥ |τ*|² on A. The remainder set B (where the O(log)
+terms exceed ηc) is handled by Cauchy–Schwarz,
+E_p[w 1_B] ≤ e^{3|τ|²/2}·P(B)^{1/2}, and P(B) is super-exponentially
+small. ∎
+
+Variance and bias are different matters at finite c. The extra second
+moment in (b) comes from a region the proposal almost never visits, so the
+sample variance does not show it; what a user sees is a low bias of about
+the missing mode mass, γ^{1/ϱ − 1} on the log scale (Proposition 3), with
+a misleadingly small standard error. That bias is negligible unless ϱ is
+close to 1 — the measured split: ϱ ≤ 0.5 gives 0.1–0.2% error, ϱ > 0.75
+gives 3–40%.
 
 ## 4. Stage-mixture importance sampling (closed form)
 
-**Estimator SMIS.** Components θ_m = √(2c/λ_m) u_m for a set of modes m
-(each end mode; each stage k whose relative mass exp(−c(1/λ_k − 1/λ*))
-exceeds a cut η, with u_m the Perron direction of its dominant block), a
-defensive component N(0, I), weights a_m ∝ exp(−c/λ_m) (normalised, with a
-floor). All quantities are closed form (secular equations); no pilot
-simulation.
+**Estimator SMIS.** Components τ_m = dominating points of a set of modes m
+(both end blocks; each stage block whose relative mass
+exp(−c(1/λ_m − 1/λ*)) exceeds a cut η), computed exactly (minimum-norm
+point of {L_k ≥ c} with the exact quantile transform, started on the
+Perron ray), a defensive component N(0, I) with a constant weight a_0, and
+weights a_m ∝ exp(−|τ_m|²/2) on the rest. No pilot simulation.
 
-**Theorem 3 (PROVED-SKETCH under conditions).** If (i) every block of every
-retained mode has κ ≥ 4, (ii) within every retained stage one block
-dominates the other by a factor ≥ 3, and (iii) every stage with
-λ_k > λ*/3 is retained, then SMIS is logarithmically efficient.
-*Sketch.* w ≤ w_m/a_m on each mode region, so
-m₂ ≤ Σ_m a_m^{-1} E_p[w_m 1_{A_m}] + (stages not retained); each term is
-bounded as in Theorem 2(a); non-retained stages have scale ≤ λ*/3 and
-contribute exponentially less. ∎
+**Theorem 3 (PROVED-SKETCH under conditions).** With a constant defensive
+weight, SMIS is logarithmically efficient if (i) every retained block has
+κ ≥ 4 and (ii) within every retained stage one block dominates the other
+by a factor ≥ 4; stages with λ_k ≤ λ*/2 need not be retained (they are
+covered by the defensive component: E_p[1_{A_k}/a_0] ≤ P(A_k)/a_0 and
+P(A_k) ≤ e^{−2c/λ*(1+o(1))} when λ_k ≤ λ*/2).
 
-**Proposition 4 (split points, PROVED).** Condition (ii) cannot be dropped
-for a finite mixture: if a stage has λ_k^d = λ_k^p = λ_k (a within-stage
-tie) with λ_k ≥ λ*(1 − η) and η < 0.26, the mixture of the two block
-directions is not logarithmically efficient. (Points of the stage event
-with energy split between the two blocks at angle φ have exponent
-E + 2√E·max(cos φ, sin φ)·… − … < 2c/λ*; computation in the notes.)
-A continuous arc mixture over φ ∈ [0, π/2] restores efficiency up to a
-polynomial factor (CONJECTURE; discretise with O(√c) angles).
+**Proposition 4 (within-stage ties, COMPUTED, to be written as a proof).**
+If a stage has its two blocks tied, λ_k^d = λ_k^p = xλ*, a mixture with
+only the two block directions of that stage is not logarithmically
+efficient when: x > 0.707 (equal weights), x > √2 − 1 ≈ 0.414 (weights
+∝ e^{−c/λ}), x > 1/2 (with a defensive component); the worst points sit at
+angle 45° between the blocks. A continuous arc of components restores
+efficiency up to a polynomial factor (CONJECTURE). In the linear regime
+the stage where the delivery and pickup loads cross has
+λ ≈ λ*ϱ/(1+ϱ) ≤ λ*/2, so ties matter only for heterogeneous routes.
+
+**Positioning (after review).** Not new importance-sampling theory: the
+single-block statement is the dominating-point setting of Sadowsky &
+Bucklew (1990); Theorem 2(b) is an instance of the multiple-paths failure
+of Glasserman & Wang (1997); mixtures are subsolution constructions in the
+sense of Dupuis & Wang; the quadratic-form structure matches delta–gamma
+VaR (Glasserman, Heidelberger & Shahabuddin 2000, 2002). New for routing:
+the secular-equation scales and the two-end-mode structure of the
+pickup-and-delivery peak, the sharp ϱ > 1/4 criterion with the γ^{1/ϱ−1}
+bias diagnostic, the plan-level extension, and the pilot-free closed-form
+mixture.
 
 ## 5. Plan level
 
@@ -155,6 +177,9 @@ retained (route, stage, block). (Corollary, PROVED-SKETCH.)
 2. Proposition 4 computation written out; arc mixture.
 3. Non-asymptotic statement: the bias of a single shift at finite c in
    terms of the mode mass — what practitioners see.
-4. Check against Glasserman & Li (2005), Glasserman & Wang (1997, Ann.
-   Appl. Probab., counterexamples to single-shift IS), Sadowsky & Bucklew
-   (1990), Dupuis & Wang (2007): which statements are special cases.
+4. Finite-c regime: for cv ≈ 0.3 the gamma quantile is closer to
+   Wilson–Hilferty than to θz²/2 at γ = 1e-3…1e-6, so asymptotic scales
+   may mispredict; SMIS uses exact dominating points to avoid this.
+5. Lemma 2 refinement: x(z) = θz²/2 + θ(2κ_s − 1) log z + O(1).
+6. Review record: Theorem 2 threshold corrected from 1/3 to 1/4
+   (E_p[w] = e^{|τ|²} on the other block was missed in draft 1).
