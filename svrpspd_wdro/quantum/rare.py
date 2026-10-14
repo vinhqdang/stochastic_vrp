@@ -18,9 +18,15 @@ Estimators
 crude         plain Monte Carlo on x ~ N(0, I).
 is_shift      importance sampling by the mean shift x ~ N(theta, I) with
               likelihood ratio w = exp(-x.theta + |theta|^2/2).
-ce_shift      multilevel cross-entropy for theta (self-normalised weights).
-threshold_for capacity c with P(F > c) = gamma, via a CE ladder and an IS
-              survival estimate.
+ce_shift      multilevel cross-entropy for theta (self-normalised weights); can
+              target a single stage load L_k instead of the peak.
+ce_mixture    mixture importance sampling over failure modes: one CE shift per
+              stage load L_k (k = 0..L), stage probabilities q_k from IS, and the
+              proposal sum_k a_k N(theta_k, I) + a_0 N(0, I) (defensive a_0).
+is_mixture    importance sampling with a Mixture proposal (likelihood ratio by
+              log-sum-exp).
+threshold_for capacity c with P(F > c) = gamma, via a CE ladder, then a mixture
+              survival estimate in the inversion.
 dp_check      exact probability for small routes (L <= 8): Gauss-Hermite over
               the two factors, conditional independent discretised demands
               on a level grid, and a truncated backward (A, G) recursion.
@@ -30,7 +36,8 @@ Cost model (95 per cent confidence, relative error eps_rel)
 c_crude, c_is  classical sample counts, z^2 (1-p)/(p eps^2) and z^2 RV/eps^2.
 aqe_cost       explicit canonical amplitude estimation (cert.h, cert.r_needed),
                ideal (M known) and with the doubling search for M, for a fixed k.
-aqe_is_cost    the same with the variance proxy RV p^2 in place of p(1-p).
+aqe_is_cost    idealised quantum cost on the normalised IS variable Y/p (mean 1,
+               variance RV); see its docstring.
 
 Only NumPy, SciPy and quantum.cert are used here; no Qiskit.
 """
@@ -38,6 +45,7 @@ Only NumPy, SciPy and quantum.cert are used here; no Qiskit.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass, field
 
 import numpy as np
 from scipy import stats
@@ -120,32 +128,61 @@ class RouteSim:
         p = np.where(self.act_p[None, :], p, 0.0)
         return d, p
 
-    def peak(self, x, chunk: int = PEAK_CHUNK):
-        """Peak load F = max_k L_k per row of x, shape (N,)."""
+    def peak(self, x, chunk: int = PEAK_CHUNK, stage=None):
+        """Peak load F = max_k L_k per row of x, shape (N,). With stage = k the
+        stage load L_k (k = 0..L; L_0 = sum of deliveries) is returned instead."""
         x = np.asarray(x, dtype=np.float64)
         if x.ndim == 1:
             x = x[None, :]
+        if stage is not None and not 0 <= int(stage) <= self.L:
+            raise ValueError(f"stage must lie in 0..{self.L}, got {stage}")
         out = np.empty(x.shape[0], dtype=np.float64)
         for s in range(0, x.shape[0], chunk):
             d, p = self.demands(x[s:s + chunk])
-            out[s:s + chunk] = _peak_rows(d, p)
+            loads = _loads_rows(d, p)
+            out[s:s + chunk] = loads.max(axis=1) if stage is None else loads[:, int(stage)]
         return out
 
 
-def _peak_rows(d: np.ndarray, p: np.ndarray) -> np.ndarray:
-    """Peak per row for demands d, pickups p of shape (N, L); same recursion as
-    experiments.route_peak with the route 0, ..., L-1."""
+def _loads_rows(d: np.ndarray, p: np.ndarray) -> np.ndarray:
+    """Stage loads per row for demands d, pickups p of shape (N, L): column 0 is
+    L_0 = sum d, column k is L_k = L_{k-1} - d_k + p_k (route 0, ..., L-1, the same
+    recursion as experiments.route_peak). The peak is the row maximum."""
+    N, L = d.shape
+    loads = np.empty((N, L + 1), dtype=np.float64)
     run = d.sum(axis=1)
-    peak = run.copy()
-    for k in range(d.shape[1]):
+    loads[:, 0] = run
+    for k in range(L):
         run = run - d[:, k] + p[:, k]
-        np.maximum(peak, run, out=peak)
-    return peak
+        loads[:, k + 1] = run
+    return loads
 
 
 # ============================================================
 # Crude and importance sampling
 # ============================================================
+
+
+@dataclass
+class Mixture:
+    """Importance proposal sum_k weights[k] N(thetas[k], I).
+
+    Row 0 is the defensive component N(0, I); rows 1.. are the stage shifts
+    (stages[k] is the stage index of row k, None for the defensive row).
+    draws counts every pilot draw spent building the proposal (CE ladders and the
+    stage probability estimates); skipped lists stages whose CE did not converge.
+    """
+
+    thetas: np.ndarray
+    weights: np.ndarray
+    stages: list
+    q: np.ndarray
+    draws: int
+    skipped: list = field(default_factory=list)
+
+    @property
+    def log_a(self) -> np.ndarray:
+        return np.log(self.weights)
 
 
 def crude(sim: RouteSim, c: float, N: int, rng: np.random.Generator,
@@ -167,31 +204,37 @@ def crude(sim: RouteSim, c: float, N: int, rng: np.random.Generator,
     return p, math.sqrt((1.0 - p) / (p * N))
 
 
-def is_shift(sim: RouteSim, c: float, theta, N: int, rng: np.random.Generator,
-             chunk: int = 50_000):
-    """Importance sampling of P(F > c) with the proposal N(theta, I).
+def _draws(thetas: np.ndarray, log_a: np.ndarray, n: int, rng: np.random.Generator):
+    """n draws from the mixture sum_k exp(log_a[k]) N(thetas[k], I) and their
+    likelihood ratios w = phi(x) / q(x), returned as (x, log w). A single component
+    with weight one is the mean shift and gives log w = -x.theta + |theta|^2 / 2."""
+    K = thetas.shape[0]
+    if K == 1:
+        theta = thetas[0]
+        x = rng.standard_normal((n, thetas.shape[1])) + theta
+        return x, -(x @ theta) + 0.5 * float(theta @ theta)
+    weights = np.exp(log_a)
+    comp = rng.choice(K, size=n, p=weights / weights.sum())
+    x = rng.standard_normal((n, thetas.shape[1])) + thetas[comp]
+    sq = (x * x).sum(axis=1)[:, None] - 2.0 * (x @ thetas.T) + (thetas * thetas).sum(axis=1)[None, :]
+    A = log_a[None, :] - 0.5 * sq
+    m = A.max(axis=1, keepdims=True)
+    lse = m[:, 0] + np.log(np.exp(A - m).sum(axis=1))
+    return x, -0.5 * (x * x).sum(axis=1) - lse
 
-    Returns (p, RV, rse, ESS): p = mean of Y = w 1[F > c]; RV = sample variance
-    of Y divided by p^2 (relative variance per draw); rse = sqrt(RV / N) the
-    relative standard error of p; ESS = (sum w)^2 / sum w^2 over all N draws.
-    """
-    theta = np.asarray(theta, dtype=np.float64).ravel()
-    if theta.shape != (sim.dim,):
-        raise ValueError(f"theta must have length {sim.dim}, got {theta.shape}")
+
+def _is_core(sim: RouteSim, c: float, thetas: np.ndarray, log_a: np.ndarray, N: int,
+             rng: np.random.Generator, chunk: int, stage=None):
     N = int(N)
     if N < 2:
         raise ValueError("N must be >= 2")
-    th2 = float(theta @ theta)
-    s1 = 0.0
-    s2 = 0.0
-    sw = 0.0
-    sw2 = 0.0
+    s1 = s2 = sw = sw2 = 0.0
     done = 0
     while done < N:
         n = min(chunk, N - done)
-        x = rng.standard_normal((n, sim.dim)) + theta
-        w = np.exp(-(x @ theta) + 0.5 * th2)
-        y = w * (sim.peak(x) > c)
+        x, logw = _draws(thetas, log_a, n, rng)
+        w = np.exp(logw)
+        y = w * (sim.peak(x, stage=stage) > c)
         s1 += float(y.sum())
         s2 += float(y @ y)
         sw += float(w.sum())
@@ -203,6 +246,30 @@ def is_shift(sim: RouteSim, c: float, theta, N: int, rng: np.random.Generator,
         return 0.0, math.nan, math.nan, sw * sw / sw2
     RV = var / (p * p)
     return p, RV, math.sqrt(RV / N), sw * sw / sw2
+
+
+def is_shift(sim: RouteSim, c: float, theta, N: int, rng: np.random.Generator,
+             chunk: int = 50_000, stage=None):
+    """Importance sampling of P(F > c) with the proposal N(theta, I).
+
+    Returns (p, RV, rse, ESS): p = mean of Y = w 1[F > c]; RV = sample variance
+    of Y divided by p^2 (relative variance per draw); rse = sqrt(RV / N) the
+    relative standard error of p; ESS = (sum w)^2 / sum w^2 over all N draws.
+    With stage = k the event is {L_k > c} instead of {F > c}.
+    """
+    theta = np.asarray(theta, dtype=np.float64).ravel()
+    if theta.shape != (sim.dim,):
+        raise ValueError(f"theta must have length {sim.dim}, got {theta.shape}")
+    return _is_core(sim, c, theta[None, :], np.zeros(1), N, rng, chunk, stage)
+
+
+def is_mixture(sim: RouteSim, c: float, mix: Mixture, N: int, rng: np.random.Generator,
+               chunk: int = 50_000):
+    """Importance sampling of P(F > c) with a Mixture proposal. Same outputs as
+    is_shift: (p, RV, rse, ESS)."""
+    if mix.thetas.shape[1] != sim.dim:
+        raise ValueError(f"mixture dimension {mix.thetas.shape[1]} != {sim.dim}")
+    return _is_core(sim, c, mix.thetas, mix.log_a, N, rng, chunk)
 
 
 def _upper_quantile(F: np.ndarray, w: np.ndarray, g: float) -> float:
@@ -225,7 +292,7 @@ def _ce_update(x: np.ndarray, w: np.ndarray, F: np.ndarray, level: float) -> np.
 
 
 def ce_shift(sim: RouteSim, c: float, rng: np.random.Generator, n_pilot: int = 20_000,
-             rho_q: float = 0.1, max_iter: int = 60) -> np.ndarray:
+             rho_q: float = 0.1, max_iter: int = 60, stage=None, info: dict | None = None) -> np.ndarray:
     """Multilevel cross-entropy for the mean shift theta of the Gaussian inputs.
 
     Tail levels g_j = rho_q^(j+1) (0.1, 0.01, ...) are visited in turn: each
@@ -234,21 +301,76 @@ def ce_shift(sim: RouteSim, c: float, rng: np.random.Generator, n_pilot: int = 2
     likelihood-ratio weighted mean of x over {F >= c_t}. The tail level must
     keep tightening: at a fixed level the mean-shift update reproduces the same
     quantile and stalls far below rare thresholds. The last update is made at
-    level c and the function returns theta.
+    level c and the function returns theta. With stage = k the statistic is the
+    stage load L_k. If info is a dict, info["draws"] receives the pilot draw count.
     """
     dim = sim.dim
     theta = np.zeros(dim)
     g = float(rho_q)
-    for _ in range(max_iter):
-        x = rng.standard_normal((n_pilot, dim)) + theta
-        w = np.exp(-(x @ theta) + 0.5 * float(theta @ theta))
-        F = sim.peak(x)
-        level = min(c, _upper_quantile(F, w, g))
-        theta = _ce_update(x, w, F, level)
-        if level >= c:
-            return theta
-        g *= rho_q
-    raise RuntimeError(f"cross-entropy did not reach level c={c} in {max_iter} iterations")
+    used = 0
+    try:
+        for _ in range(max_iter):
+            x = rng.standard_normal((n_pilot, dim)) + theta
+            w = np.exp(-(x @ theta) + 0.5 * float(theta @ theta))
+            F = sim.peak(x, stage=stage)
+            used += n_pilot
+            level = min(c, _upper_quantile(F, w, g))
+            theta = _ce_update(x, w, F, level)
+            if level >= c:
+                return theta
+            g *= rho_q
+        raise RuntimeError(f"cross-entropy did not reach level c={c} in {max_iter} iterations")
+    finally:
+        if info is not None:
+            info["draws"] = used
+
+
+def ce_mixture(sim: RouteSim, c: float, rng: np.random.Generator, n_pilot: int = 20_000,
+               n_q: int = 20_000, keep_frac: float = 1e-3, max_stages: int = 12,
+               defensive: float = 0.05) -> Mixture:
+    """Mixture proposal over the failure modes of the route at threshold c.
+
+    For each stage k = 0..L the event {L_k > c} gets its own CE shift theta_k
+    (ce_shift with stage=k) and its probability q_k is estimated by IS with n_q
+    draws under N(theta_k, I). Stages with q_k >= keep_frac max_k q_k are kept
+    (at most max_stages, the largest). The proposal is
+        sum_k a_k N(theta_k, I) + a_0 N(0, I),  a_k proportional to q_k,
+        a_0 = defensive (the kept stage weights share 1 - a_0).
+    Every event {L_k > c} is covered by its own component, so the union {F > c}
+    is covered and the likelihood ratio is bounded by 1 / a_0 on the sample.
+    """
+    L = sim.L
+    dim = sim.dim
+    if not 0.0 <= defensive < 1.0:
+        raise ValueError(f"defensive weight must lie in [0, 1), got {defensive}")
+    draws = 0
+    found = []
+    skipped = []
+    for k in range(L + 1):
+        info: dict = {}
+        try:
+            th = ce_shift(sim, c, rng, n_pilot=n_pilot, stage=k, info=info)
+        except RuntimeError:
+            skipped.append(k)
+            draws += info.get("draws", 0)
+            continue
+        draws += info["draws"]
+        qk, _, _, _ = is_shift(sim, c, th, n_q, rng, stage=k)
+        draws += int(n_q)
+        if qk > 0.0:
+            found.append((k, th, qk))
+        else:
+            skipped.append(k)
+    if not found:
+        raise RuntimeError(f"no stage of the route reaches c={c}")
+    qmax = max(f[2] for f in found)
+    kept = sorted((f for f in found if f[2] >= keep_frac * qmax), key=lambda f: -f[2])[:max_stages]
+    qs = np.array([f[2] for f in kept])
+    a = (1.0 - defensive) * qs / qs.sum()
+    thetas = np.vstack([np.zeros(dim)] + [f[1] for f in kept])
+    weights = np.concatenate([[defensive], a])
+    return Mixture(thetas=thetas, weights=weights, stages=[None] + [f[0] for f in kept],
+                   q=qs, draws=int(draws), skipped=skipped)
 
 
 def _upper_quantile_interp(F: np.ndarray, w: np.ndarray, g: float) -> float:
@@ -274,14 +396,34 @@ def _upper_quantile_interp(F: np.ndarray, w: np.ndarray, g: float) -> float:
     return float(Fs[k - 1] + frac * (Fs[k] - Fs[k - 1]))
 
 
+def _survival_quantile(sim: RouteSim, thetas: np.ndarray, log_a: np.ndarray, gamma: float,
+                       n_final: int, rng: np.random.Generator) -> float:
+    """Capacity at level gamma from n_final draws of the proposal (thetas, log_a)."""
+    Fs, ws = [], []
+    done = 0
+    while done < n_final:
+        n = min(50_000, n_final - done)
+        x, logw = _draws(thetas, log_a, n, rng)
+        Fs.append(sim.peak(x))
+        ws.append(np.exp(logw))
+        done += n
+    return _upper_quantile_interp(np.concatenate(Fs), np.concatenate(ws), gamma)
+
+
 def threshold_for(sim: RouteSim, gamma: float, rng: np.random.Generator,
-                  n_step: int = 20_000, n_final: int = 200_000, max_refine: int = 6) -> float:
+                  n_step: int = 20_000, n_final: int = 200_000, max_refine: int = 3,
+                  refine_tol: float = 1e-3) -> float:
     """Capacity c with P(F > c) = gamma (estimated).
 
     Ladder of levels 1e-1, 1e-2, ... down to gamma: at each level the weighted
     upper quantile under the current proposal is computed and the proposal is
-    updated by cross-entropy toward that level. The final c is the weighted
-    upper quantile at gamma from n_final draws under the last proposal.
+    updated by cross-entropy toward that level. The ladder gives a starting c
+    from the single-shift survival. Then the threshold is refined: at the current
+    c a mixture proposal (ce_mixture) is built and its survival estimate is
+    inverted at gamma, until c is stable to refine_tol (at most max_refine rounds). The survival
+    estimate from n_final draws carries a few tenths of a per cent of quantile
+    noise, so refine_tol sits above that noise. The reported p is always the IS
+    estimate at the final c, so the threshold error does not enter the ground truth.
     """
     gamma = float(gamma)
     if not 0.0 < gamma < 1.0:
@@ -300,25 +442,11 @@ def threshold_for(sim: RouteSim, gamma: float, rng: np.random.Generator,
         F = sim.peak(x)
         cg = _upper_quantile(F, w, g)
         theta = _ce_update(x, w, F, cg)
-    def invert(theta):
-        Fs, ws = [], []
-        done = 0
-        while done < n_final:
-            n = min(50_000, n_final - done)
-            x = rng.standard_normal((n, dim)) + theta
-            w = np.exp(-(x @ theta) + 0.5 * float(theta @ theta))
-            Fs.append(sim.peak(x))
-            ws.append(w)
-            done += n
-        return _upper_quantile_interp(np.concatenate(Fs), np.concatenate(ws), gamma)
-
-    c = invert(theta)
-    # Re-centre the proposal on the current threshold and re-invert until stable:
-    # the ladder above leaves the proposal off-centre for deep levels.
+    c = _survival_quantile(sim, theta[None, :], np.zeros(1), gamma, n_final, rng)
     for _ in range(max_refine):
-        theta = ce_shift(sim, c, rng)
-        c_new = invert(theta)
-        done_refine = abs(c_new / c - 1.0) < 1e-4
+        mix = ce_mixture(sim, c, rng)
+        c_new = _survival_quantile(sim, mix.thetas, mix.log_a, gamma, n_final, rng)
+        done_refine = abs(c_new / c - 1.0) < refine_tol
         c = c_new
         if done_refine:
             break
@@ -493,19 +621,34 @@ def aqe_cost(p: float, eps_rel: float, delta: float = 0.05, k: int = 1) -> dict:
 
 
 def aqe_is_cost(RV: float, p: float, eps_rel: float, delta: float = 0.05, k: int = 1) -> dict:
-    """Idealised quantum cost with importance sampling: the crude schedule with the
-    variance p(1-p) replaced by RV p^2, i.e. h_var(M) = 2 pi k p sqrt(RV)/M + pi^2 k^2/M^2
-    against eps_rel p. Equals aqe_cost when RV = (1 - p)/p."""
+    """Idealised quantum cost of estimating P(F > c) by amplitude (mean) estimation
+    of the importance weight times the indicator, under the IS proposal.
+
+    The estimated quantity is the normalised variable Y / p (mean 1, variance RV),
+    so the target is an absolute error eps_rel on it and the amplitude-estimation
+    error is 2 pi k sqrt(RV) / M + pi^2 k^2 / M^2 (no p factor). M is the smallest
+    power of 2 meeting the target; cost r (2M + 1) with r = r_needed(k, delta), and
+    the doubling variant as in aqe_cost.
+
+    This is an idealisation: mean estimation costs O(sigma / eps) with constants
+    taken from the canonical amplitude-estimation bound (Fact 1), and it ignores the
+    reversible likelihood-ratio arithmetic and the heavier tail of the weights. It is
+    optimistic for the quantum side. The cost depends on p only through the validity
+    check: for fixed RV it is constant in p. For RV = (1 - p) / p it is at most the
+    crude cost aqe_cost(p, eps_rel), because the crude floor pi^2 k^2 / (p M^2) is
+    stricter than the IS floor pi^2 k^2 / M^2.
+    """
     if not 0.0 < p < 1.0:
         raise ValueError(f"p must lie in (0, 1), got {p}")
     if not RV > 0:
         raise ValueError(f"RV must be positive, got {RV}")
-    target = eps_rel * p
+    if not eps_rel > 0:
+        raise ValueError(f"eps_rel must be positive, got {eps_rel}")
 
     def err(M):
-        return 2 * math.pi * k * p * math.sqrt(RV) / M + math.pi ** 2 * k * k / (M * M)
+        return 2 * math.pi * k * math.sqrt(RV) / M + math.pi ** 2 * k * k / (M * M)
 
-    M = _min_pow2(err, target)
+    M = _min_pow2(err, eps_rel)
     r = r_needed(k, delta)
     return {"M": M, "ideal": float(r * (2 * M + 1)), "doubling": _doubling_cost(k, delta, M)}
 
