@@ -7,7 +7,7 @@
   be the stronger, positive result.
 - **Venue candidates:** INFORMS Journal on Computing; Transportation
   Science; EJOR. Decide after the novelty check (PROJECT.md §6).
-- **State:** ACTIVE — planning. Open for edits.
+- **State:** ACTIVE — R1/R2 done (proofs to finish); next: plan-level certification, region-scale run, manuscript. Open for edits.
 - **Sharing:** uses the shared engine (instances, scenario generator, plan
   caches incl. the region set `data/Region`, `results/plans_Region`) and
   `svrpspd_wdro/quantum/rare.py` (classical parts) — to be moved to a
@@ -16,9 +16,8 @@
   claims: this paper evaluates a given plan's tail risk.
 
 ## Milestones
-- [ ] R0 novelty check (IS for unions of rare events; rare risk in routing)
-- [ ] R1 theory: structure of the overflow event, efficiency of the
-      stage-mixture estimator, certification procedure
-- [ ] R2 richer simulator where the exact DP does not apply
+- [x] R0 novelty check (IS for unions of rare events; rare risk in routing)
+- [~] R1 theory: draft revised after review (THEORY.md); SMIS measured on 120 routes; full proofs pending
+- [x] R2 richer simulator where the exact DP does not apply (route day: lognormal travel with a shared factor, load-dependent service, time windows; MDIS on 60 routes: error vs 10⁷-draw crude MC 0.76% median / 1.77% q90 at γ = 1e-3, MDIS–CE agreement 0.2–0.24%, RV 4.3–6.1, single shift off by up to 98%, CE costs 1 750–1 830× more samples at ε_rel = 0.1 and 18–19× at 0.01)
 - [ ] R3 experiments on the region set (148 instances) and benchmarks
 - [ ] R4 manuscript
