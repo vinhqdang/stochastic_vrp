@@ -183,3 +183,23 @@ retained (route, stage, block). (Corollary, PROVED-SKETCH.)
 5. Lemma 2 refinement: x(z) = θz²/2 + θ(2κ_s − 1) log z + O(1).
 6. Review record: Theorem 2 threshold corrected from 1/3 to 1/4
    (E_p[w] = e^{|τ|²} on the other block was missed in draft 1).
+
+## 7. Numerical findings that bear on the theory (R1 numerics, 2026-10-14)
+
+- Pre-asymptotic regime: on a 3-stop test route the exact dominating-point
+  energy E satisfies E·λ/c = 0.16 at P ≈ 9e-4 and 0.35 at P ≈ 1.6e-9
+  (shape 1/cv² ≈ 11: the log corrections of Lemma 2 are large), far from
+  the asymptotic value 1. The λ-based rates of Theorem 1 and the mode-mass
+  formula of Proposition 3 are therefore qualitative at γ = 1e-3…1e-6; the
+  estimator and any diagnostic must use exact dominating points (as SMIS
+  does), with the mode mass estimated as exp(−(E_m − E_min)).
+- The simulator clips Φ at 1 − 1e-15 (|z| ≤ 7.94), which caps single
+  demands; harmless at the levels used, to be stated.
+- SMIS on the 120 routes (results/rarecert/smis_summary.md): relative error
+  against the DP (L ≤ 8, γ ≥ 1e-4) or the CE mixture ≤ 0.6% (q90) in every
+  band, RV 3.8–5.9 (CE: 3.8–6.0), 2–7 modes, built in 0.4–0.9 s with no
+  pilot; total sample cost 224–276× below CE at ε_rel = 0.1 and 3.2–3.8×
+  below at ε_rel = 0.01. The single shift fails only in the band ϱ > 0.75
+  (median error 2.9–6.1%, q90 up to 40%), as Section 3 predicts. Below
+  γ = 1e-4 the CE mixture is itself the reference, so its 0.00% error
+  there is not informative.
