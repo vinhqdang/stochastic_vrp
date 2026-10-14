@@ -52,3 +52,28 @@ p at each threshold from IS with 10⁶ samples (relative standard error
 reported); for routes with L ≤ 8 and γ ≥ 1e-4, cross-checked against the
 exact peak DP with a fine Gauss–Hermite quadrature over the two factors
 (M1/M3 machinery).
+
+## Result (2026-10-14, 120 routes, `results/quasar/rare_fair_comparison.md`)
+
+Ground truth: mixture IS agrees with the exact DP in 178/178 cases (max
+0.74%); the single mean shift was off by up to 11–19% with understated
+errors. Classical mixture IS with cross-entropy is near-optimal on these
+routes: relative variance RV ≈ 3.9–5.9 at γ = 1e-3…1e-6, pilot 0.8–1.2·10⁵
+draws per route.
+
+- Quantum crude vs crude Monte Carlo: 0.003–0.5 (the textbook speedup).
+- Quantum crude (no proposal design, doubling search) vs classical IS
+  including its pilot: quantum costs 2.5–380× MORE (median); it is cheaper
+  on 23–34% of routes only at γ = 1e-3…1e-4 with ε_rel ≥ 3%. Even the ideal
+  quantum cost loses except at γ = 1e-3, ε_rel = 0.1 (ratio 0.35).
+- Quantum with IS (idealised, optimistic) vs classical IS sampling: ideal
+  0.14–0.48 at ε_rel ≤ 3%, 1.3–2.2 at 10%; with the doubling search 1–14
+  (quantum loses everywhere).
+
+Conclusion: direction A fails on this model. Rare-event overflow of a route
+is a union of near-linear stage events in Gaussian inputs, which a mixture
+of mean shifts captures almost perfectly; once classical IS has relative
+variance ≈ 5, the quadratic quantum gain cannot repay the constants of a
+rigorous amplitude-estimation schedule. Quantum would need either
+ε_rel ≤ 1% with an IS-equipped oracle and no doubling overhead, or a
+simulator whose failure region defeats importance sampling.
