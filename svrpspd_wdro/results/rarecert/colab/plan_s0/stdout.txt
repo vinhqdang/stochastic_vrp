@@ -2,3 +2,5 @@
 2026-10-15 08:08:12,386 scope sample, hubs 66, gammas (0.001, 1e-05), tasks 66, workers 2, N_hub 100000, N_base 20000, max_evals 6, crude check hubs 20 (N 2000000)
 2026-10-15 08:26:07,727 [1/66] GD-ZHONGSHANSHI-2 n=590 gamma=0.001 done in 1075.3s: c0=52112.1 c=44207.4 b0=0.7371 b_final=0.4736 P_hub=0.000893 ratio=0.893 rse=0.0076 comps=212 cal=converged steps=1 nocand=-
 2026-10-15 08:27:53,240 [2/66] GD-CHAOYANGXIAN-1 n=597 gamma=0.001 done in 1180.8s: c0=53006.3 c=44748.0 b0=0.7669 b_final=0.4916 P_hub=0.000978 ratio=0.978 rse=0.00777 comps=228 cal=converged steps=2 nocand=-
+2026-10-15 08:44:29,033 [3/66] GD-SHUNDESHI n=559 gamma=0.001 done in 1101.3s: c0=52507.5 c=44160.2 b0=0.7502 b_final=0.4720 P_hub=0.00101 ratio=1.01 rse=0.00763 comps=236 cal=converged steps=2 nocand=-
+2026-10-15 08:44:58,045 [4/66] GD-GUANGZHOUSHI-1 n=554 gamma=0.001 done in 1024.8s: c0=51110.1 c=43458.7 b0=0.7037 b_final=0.4486 P_hub=0.000852 ratio=0.852 rse=0.0075 comps=192 cal=converged steps=1 nocand=-
