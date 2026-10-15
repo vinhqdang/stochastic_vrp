@@ -4,3 +4,5 @@
 2026-10-15 08:27:53,240 [2/66] GD-CHAOYANGXIAN-1 n=597 gamma=0.001 done in 1180.8s: c0=53006.3 c=44748.0 b0=0.7669 b_final=0.4916 P_hub=0.000978 ratio=0.978 rse=0.00777 comps=228 cal=converged steps=2 nocand=-
 2026-10-15 08:44:29,033 [3/66] GD-SHUNDESHI n=559 gamma=0.001 done in 1101.3s: c0=52507.5 c=44160.2 b0=0.7502 b_final=0.4720 P_hub=0.00101 ratio=1.01 rse=0.00763 comps=236 cal=converged steps=2 nocand=-
 2026-10-15 08:44:58,045 [4/66] GD-GUANGZHOUSHI-1 n=554 gamma=0.001 done in 1024.8s: c0=51110.1 c=43458.7 b0=0.7037 b_final=0.4486 P_hub=0.000852 ratio=0.852 rse=0.0075 comps=192 cal=converged steps=1 nocand=-
+2026-10-15 08:59:50,849 [5/66] GD-DIANBAXIAN n=499 gamma=0.001 done in 892.8s: c0=52821.6 c=45147.8 b0=0.7607 b_final=0.5049 P_hub=0.000817 ratio=0.817 rse=0.00765 comps=190 cal=converged steps=1 nocand=-
+2026-10-15 09:01:50,274 [6/66] GD-DONGGUANSHI-5 n=520 gamma=0.001 done in 1041.2s: c0=51512.0 c=43494.7 b0=0.7171 b_final=0.4498 P_hub=0.00098 ratio=0.98 rse=0.00745 comps=191 cal=converged steps=2 nocand=-
