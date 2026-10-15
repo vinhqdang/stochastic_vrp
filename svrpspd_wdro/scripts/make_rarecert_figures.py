@@ -88,33 +88,31 @@ def bias_rows():
 
 def fig_bias_varrho():
     rows = bias_rows()
-    fig, ax = plt.subplots(figsize=(5.2, 3.6))
+    fig, ax = plt.subplots(figsize=(5.4, 3.6))
     ax.axvline(VARRHO_LINES[0], color="0.4", ls="--", lw=0.8)
     ax.axvline(VARRHO_LINES[1], color="0.4", ls=":", lw=0.8)
+    rse_med = float(np.median([r[2] for r in rows])) if rows else math.nan
+    if math.isfinite(rse_med):
+        ax.axhspan(-200.0 * rse_med, 200.0 * rse_med, color="0.9", lw=0, zorder=0)
     for src in ("smis", "sens"):
         sub = [r for r in rows if r[3] == src]
         if not sub:
             continue
-        x = np.array([r[0] for r in sub])
-        y = np.array([r[1] for r in sub])
-        e = np.array([2.0 * r[2] for r in sub])
         if src == "smis":
-            ax.errorbar(x, y, yerr=e, fmt="o", ms=2.5, color=GRAY["smis"], ecolor="0.75", elinewidth=0.5,
-                        capsize=0, label="QUASAR table (N = 1e6)")
+            ax.scatter([r[0] for r in sub], [100.0 * r[1] for r in sub], s=6, color="0.55", lw=0,
+                       label="120 routes, 4 levels")
         else:
             for fac, mk in MARKERS.items():
                 s2 = [r for r in sub if r[4] == fac]
-                if not s2:
-                    continue
-                ax.errorbar([r[0] for r in s2], [r[1] for r in s2], yerr=[2.0 * r[2] for r in s2], fmt=mk,
-                            ms=3.5, mfc="none", color="k", ecolor="0.3", elinewidth=0.6, capsize=0,
-                            label=f"sensitivity: {fac}")
+                if s2:
+                    ax.scatter([r[0] for r in s2], [100.0 * r[1] for r in s2], marker=mk, s=16,
+                               facecolors="none", edgecolors="k", linewidths=0.6, label=f"30 routes: {fac}")
     ax.axhline(0.0, color="k", lw=0.6)
-    ax.set_yscale("symlog", linthresh=1e-3)
+    ax.set_yscale("symlog", linthresh=1.0)
     ax.set_xlabel(r"end-mode ratio $\varrho$")
-    ax.set_ylabel("single-shift bias $p_{\\rm single}/p_{\\rm ref}-1$")
+    ax.set_ylabel(r"single-shift error $p_{\rm single}/p_{\rm ref}-1$ (%)")
     ax.set_xlim(0.0, 1.0)
-    ax.legend(fontsize=7, frameon=False, loc="lower right")
+    ax.legend(fontsize=6.5, frameon=False, loc="lower left", ncol=2)
     fig.tight_layout()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     out = FIG_DIR / "rarecert_bias_varrho.pdf"
@@ -123,33 +121,35 @@ def fig_bias_varrho():
     return out, len(rows)
 
 
+M_FLOOR = 1e-6
+
+
 def fig_bias_mhat():
     pts = []
     for r in _read(SENS_CSV):
         if r["error"]:
             continue
-        m, e = _f(r["m_hat"]), _f(r["e_single"])
-        if math.isfinite(m) and m > 0 and math.isfinite(e) and abs(e) > 0:
-            pts.append((m, abs(e), r["factor"]))
-    fig, ax = plt.subplots(figsize=(4.6, 3.8))
+        m, e, rse = _f(r["m_hat"]), _f(r["e_single"]), _f(r["rse_single"])
+        if math.isfinite(e) and math.isfinite(m):
+            pts.append((max(m, M_FLOOR), abs(e), r["factor"], m < M_FLOOR, rse))
+    fig, ax = plt.subplots(figsize=(4.6, 3.6))
     for fac, mk in MARKERS.items():
         s2 = [p for p in pts if p[2] == fac]
         if s2:
-            ax.scatter([p[0] for p in s2], [p[1] for p in s2], marker=mk, s=14, facecolors="none",
+            ax.scatter([p[0] for p in s2], [max(p[1], 1e-5) for p in s2], marker=mk, s=16, facecolors="none",
                        edgecolors="k", linewidths=0.6, label=fac)
+    g = np.logspace(math.log10(M_FLOOR), 0.0, 50)
+    ax.plot(g, g, color="0.45", lw=0.8, ls="--", label=r"$|{\rm error}|=\hat m$")
     if pts:
-        lo = min(min(p[0] for p in pts), min(p[1] for p in pts))
-        hi = max(max(p[0] for p in pts), max(p[1] for p in pts))
-        g = np.logspace(math.log10(lo) - 0.2, math.log10(hi) + 0.2, 50)
-        ax.plot(g, g, color="0.45", lw=0.8, ls="--", label="identity")
+        floor = 2.0 * float(np.median([p[4] for p in pts]))
+        ax.axhline(floor, color="0.6", lw=0.8, ls=":", label="2 standard errors")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlabel(r"exact-energy mode mass $\hat m=\exp(-(E_{\rm other}-E_{\min}))$")
-    ax.set_ylabel("|single-shift bias|")
-    if pts:
-        ax.legend(fontsize=7, frameon=False, loc="upper left")
-    else:
-        ax.text(0.5, 0.5, "no rows with finite m_hat > 0", transform=ax.transAxes, ha="center", fontsize=8)
+    ax.set_xlim(M_FLOOR / 2.0, 2.0)
+    ax.set_ylim(1e-5, 1.0)
+    ax.set_xlabel(r"missed-mode mass $\hat m$ (left edge: $\hat m \leq 10^{-6}$)")
+    ax.set_ylabel("|single-shift error|")
+    ax.legend(fontsize=6.5, frameon=False, loc="upper left")
     fig.tight_layout()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     out = FIG_DIR / "rarecert_bias_mhat.pdf"
