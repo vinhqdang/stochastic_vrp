@@ -1,4 +1,4 @@
-\begin{thebibliography}{18}
+\begin{thebibliography}{23}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -10,6 +10,14 @@ S{\o}ren Asmussen and Peter~W. Glynn.
 \newblock \emph{Stochastic Simulation: Algorithms and Analysis}.
 \newblock Springer, 2007.
 \newblock \doi{10.1007/978-0-387-69033-9}.
+
+\bibitem[Au and Beck(2001)]{AuBeck2001}
+S.-K. Au and J.~L. Beck.
+\newblock Estimation of small failure probabilities in high dimensions by
+  subset simulation.
+\newblock \emph{Probabilistic Engineering Mechanics}, 16\penalty0 (4):\penalty0
+  263--277, 2001.
+\newblock \doi{10.1016/S0266-8920(01)00019-4}.
 
 \bibitem[Bassamboo et~al.(2008)Bassamboo, Juneja, and
   Zeevi]{BassambooJunejaZeevi2008}
@@ -24,6 +32,14 @@ Achal Bassamboo, Sandeep Juneja, and Assaf Zeevi.
 Gilles Brassard, Peter H{\o}yer, Michele Mosca, and Alain Tapp.
 \newblock Quantum amplitude amplification and estimation.
 \newblock \emph{Contemporary Mathematics}, 305:\penalty0 53--74, 2002.
+
+\bibitem[C{\'e}rou et~al.(2012)C{\'e}rou, Del~Moral, Furon, and
+  Guyader]{CerouDelMoralFuronGuyader2012}
+F.~C{\'e}rou, P.~Del~Moral, T.~Furon, and A.~Guyader.
+\newblock Sequential {Monte Carlo} for rare event estimation.
+\newblock \emph{Statistics and Computing}, 22\penalty0 (3):\penalty0 795--808,
+  2012.
+\newblock \doi{10.1007/s11222-011-9231-6}.
 
 \bibitem[de~Boer et~al.(2005)de~Boer, Kroese, Mannor, and
   Rubinstein]{deBoerEtAl2005}
@@ -59,6 +75,14 @@ Erhan Erkut and Vedat Verter.
 \newblock \emph{Operations Research}, 46\penalty0 (5):\penalty0 625--642, 1998.
 \newblock \doi{10.1287/opre.46.5.625}.
 
+\bibitem[Gendreau et~al.(2016)Gendreau, Jabali, and Rei]{GendreauJabaliRei2016}
+M.~Gendreau, O.~Jabali, and W.~Rei.
+\newblock 50th anniversary invited article---future research directions in
+  stochastic vehicle routing.
+\newblock \emph{Transportation Science}, 50\penalty0 (4):\penalty0 1163--1173,
+  2016.
+\newblock \doi{10.1287/trsc.2016.0709}.
+
 \bibitem[Geyer et~al.(2019)Geyer, Papaioannou, and
   Straub]{GeyerPapaioannouStraub2019}
 Sebastian Geyer, Iason Papaioannou, and Daniel Straub.
@@ -73,6 +97,14 @@ Shubhechyya Ghosal and Wolfram Wiesemann.
   problem.
 \newblock \emph{Operations Research}, 68\penalty0 (3):\penalty0 716--732, 2020.
 \newblock \doi{10.1287/opre.2019.1924}.
+
+\bibitem[Glasserman et~al.(2000)Glasserman, Heidelberger, and
+  Shahabuddin]{GlassermanHeidelbergerShahabuddin2000}
+P.~Glasserman, P.~Heidelberger, and P.~Shahabuddin.
+\newblock Variance reduction techniques for estimating value-at-risk.
+\newblock \emph{Management Science}, 46\penalty0 (10):\penalty0 1349--1364,
+  2000.
+\newblock \doi{10.1287/mnsc.46.10.1349.12274}.
 
 \bibitem[Glasserman and Li(2005)]{GlassermanLi2005}
 Paul Glasserman and Jingyi Li.
@@ -100,6 +132,13 @@ Chrysanthos~E. Gounaris, Wolfram Wiesemann, and Christodoulos~A. Floudas.
 \newblock The robust capacitated vehicle routing problem under demand
   uncertainty.
 \newblock \emph{Operations Research}, 61\penalty0 (3):\penalty0 677--693, 2013.
+
+\bibitem[Kurtz and Song(2013)]{KurtzSong2013}
+N.~Kurtz and J.~Song.
+\newblock Cross-entropy-based adaptive importance sampling using {Gaussian}
+  mixture.
+\newblock \emph{Structural Safety}, 42:\penalty0 35--44, 2013.
+\newblock \doi{10.1016/j.strusafe.2013.01.006}.
 
 \bibitem[Montanaro(2015)]{Montanaro2015}
 Ashley Montanaro.

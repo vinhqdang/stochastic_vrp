@@ -130,3 +130,12 @@ GlassermanWang1997 (no DOI yet), SadowskyBucklew1990 (from memory),
 GlassermanLiu1996 (title and pages from memory), GounarisWiesemannFloudas2013
 (no DOI), Dethloff2001 (from memory), GhosalWiesemann2020 (pages 716–732 from
 memory), Brassard2002 (Contemporary Mathematics 305).
+
+## Verified for draft 2 (2026-10-15, Crossref records)
+
+- Au & Beck 2001, PEM 16(4):263-277, 10.1016/S0266-8920(01)00019-4. VERIFIED.
+- Gendreau, Jabali & Rei 2016, Transp. Sci. 50(4):1163-1173, 10.1287/trsc.2016.0709. VERIFIED.
+- Glasserman, Heidelberger & Shahabuddin 2000, Mgmt Sci 46(10):1349-1364, 10.1287/mnsc.46.10.1349.12274. VERIFIED.
+- Cérou, Del Moral, Furon & Guyader 2012, Stat. Comput. 22(3):795-808, 10.1007/s11222-011-9231-6. VERIFIED (initials only).
+- Kurtz & Song 2013, Struct. Saf. 42:35-44, 10.1016/j.strusafe.2013.01.006. VERIFIED.
+- Glasserman & Li 2005 pages 1643-1656 VERIFIED; the abstract claims no asymptotic optimality result, so the paper is cited only for the two-step scheme.

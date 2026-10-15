@@ -2,9 +2,12 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \usepackage{natbib}
 \usepackage{hyperref}
 \usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}[theorem]{Proposition}
@@ -24,85 +27,98 @@
 \author{Quang-Vinh Dang\\
 British University Vietnam, Hung Yen, Vietnam\\
 \texttt{vinh.dq4@buv.edu.vn}\quad ORCID 0000-0002-3877-8024}
-\date{Draft, October 2026}
+\date{Draft 2, October 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Medical, cold-chain and dangerous-goods distribution require that a vehicle
-routing plan meets service levels of $1-\gamma$ with $\gamma$ between
-$10^{-3}$ and $10^{-6}$. We study how to certify such levels for a given
-plan of the vehicle routing problem with simultaneous pickup and delivery,
-where each route overflows if its peak load exceeds capacity. Under gamma
-demands with a Gaussian factor copula we show that, on the logarithmic scale,
-a route overflows in one of two ways --- at the start, through its total
-delivery, or at the end, through its total pickup --- with explicit scales
-given by secular equations, and that middle stages and within-stage
-combinations are close behind on long routes. This structure explains a
-silent failure of single-shift importance sampling: when the weaker end
-scale exceeds a quarter of the stronger one the estimator loses efficiency,
-and at practical levels it underestimates by the mass of the missed mode
-while reporting a small standard error. We propose a closed-form
-stage-mixture estimator that places one component at the exact dominating
-point of each relevant failure mode, needs no pilot simulation, and extends
-to a route-day simulator with stochastic travel and service times and time
-windows, where no exact method exists, and to whole hubs whose routes share
-demand factors. On 148 instances built from population, postal and road data
-for Northern Vietnam and Guangdong (151 million people), the estimator
-matches exact dynamic programming and $10^7$-draw Monte Carlo within
-statistical error, has relative variance 4--6 at every level, and costs
-two to three orders of magnitude fewer samples than cross-entropy mixtures
-at $10\%$ relative precision. We also report that quantum amplitude
-estimation, often proposed for such tasks, does not beat this classical
-estimator on these instances.
+Medical, cold-chain and dangerous-goods distribution ask that a routing plan
+overflow its vehicles with probability at most $\gamma$, with $\gamma$
+between $10^{-3}$ and $10^{-6}$. We study how to verify such a level for a
+given plan of the vehicle routing problem with simultaneous pickup and
+delivery. Under gamma demands with a Gaussian factor copula, the log
+asymptotics of a route's peak load have two end modes --- total delivery at
+the start, total pickup at the end --- with scales from secular equations.
+This anatomy explains when single-shift importance sampling fails: on routes
+whose two end scales are close, a single cross-entropy shift underestimates
+the overflow probability by a median of $4$--$5\%$ (up to $40\%$ at the 90\%
+quantile) while its relative variance stays near $5$, so the error is not
+visible. We give a stage-mixture estimator placed at computed dominating
+points, with no pilot simulation, and extend it to a route-day simulator with
+stochastic travel and service times, where no exact method exists, and to
+hubs whose routes share demand factors, with a calibrated capacity search.
+On 148 instances built from population, postal and road data for Northern
+Vietnam and Guangdong, the route estimator agrees with an exact conditional
+dynamic program within $0.82\%$ in every case where the program applies,
+and the route-day estimator agrees with $10^7$-draw Monte Carlo within its
+error. \pending{one sentence on cost against the exact conditional program
+and on hub buffers.}
 \end{abstract}
 
 \section{Introduction}
 
 Planning models for stochastic vehicle routing control risk through chance
 constraints, robust counterparts or distributionally robust ambiguity sets
-\citep{GounarisWiesemannFloudas2013,DinhFukasawaLuedtke2018,GhosalWiesemann2020}.
-They evaluate route risk inside the optimiser, at moderate levels and with
-exact formulas, approximations or plain sampling. Applications with strict
-service levels need a different step after optimisation: a certificate that
-the plan actually produced meets $\P(\text{failure}) \le \gamma$ for
-$\gamma \in [10^{-6}, 10^{-3}]$, computed for every route and for the plan as
-a whole, at the scale of a regional network.
+\citep{GounarisWiesemannFloudas2013,DinhFukasawaLuedtke2018,GhosalWiesemann2020};
+see \citet{GendreauJabaliRei2016} for a review. They evaluate route risk inside
+the optimiser at moderate levels, with exact formulas, approximations or
+sampling. Applications with strict service levels need a step after
+optimisation: an estimate, with a confidence interval, showing that the plan
+actually produced meets $\P(\text{overflow}) \le \gamma$ for
+$\gamma \in [10^{-6}, 10^{-3}]$, for every route and for the plan as a whole,
+at the scale of a regional network.
 
-At such levels crude Monte Carlo needs of the order of $100/\gamma$ draws per
-route for $10\%$ relative error, which is prohibitive for thousands of routes.
-Importance sampling (IS) is the standard remedy, and for Gaussian-driven
-models mean shifts tuned by the cross-entropy (CE) method are the practitioner's
-default \citep{deBoerEtAl2005}. The difficulty is that the failure of a
-pickup-and-delivery route is a union of events --- an overflow can occur after
-any stop --- and single-mode IS can then fail without warning
+At such levels crude Monte Carlo needs $1.96^2/(\varepsilon^2\gamma)$ draws for
+relative error $\varepsilon$ at 95\% confidence --- $3.8\times10^{8}$ draws per
+route at $\gamma=10^{-6}$ and $\varepsilon=0.1$. Importance sampling (IS) is the
+standard remedy, and mean shifts tuned by the cross-entropy (CE) method are
+the practitioner's default \citep{deBoerEtAl2005}. The failure of a
+pickup-and-delivery route is a union of events --- the vehicle can overflow
+after any stop --- and single-mode IS can then fail without warning
 \citep{GlassermanWang1997}. Mixtures over failure modes
-\citep{OwenMaximovChertkov2019,GeyerPapaioannouStraub2019} cure this when the
-modes are known, at the price of pilot simulation when they are not.
+\citep{OwenMaximovChertkov2019,KurtzSong2013,GeyerPapaioannouStraub2019} cure
+this when the modes are known, at the price of pilot simulation when they are
+not.
+
+\emph{Where IS is needed.} For the demand-only route model used in planning
+there is an exact alternative: given the copula factors the demands are
+independent, so the overflow probability is a two-dimensional integral of a
+one-dimensional dynamic program. We implement it and use it both as the
+reference and as a competitor (Section~\ref{sec:baselines}). It is accurate
+and, on the short routes of our plans, \pending{fast or slow, from the
+baseline run}. It does not extend to route days with stochastic travel and
+service times and time windows, where the event couples loads and times;
+there the mixture estimator is, to our knowledge, the only efficient method,
+and the demand-only model is the setting in which its construction can be
+checked against an exact answer.
 
 \paragraph{Contributions.}
 (i) We formulate the certification of a given plan at service levels
-$10^{-3}$--$10^{-6}$, route-wise and hub-wise.
-(ii) We characterise the large deviations of the peak load of a
+$10^{-3}$--$10^{-6}$, route-wise and hub-wise, as a post-optimisation step.
+(ii) We derive the logarithmic asymptotics of the peak load of a
 pickup-and-delivery route under gamma marginals and a one-factor Gaussian
-copula: the two end modes with explicit spectral scales, and the relative
-mass of every other stage (Section~\ref{sec:structure}).
-(iii) We give a sharp criterion for the failure of single-shift IS and a
-diagnostic for its finite-level bias (Section~\ref{sec:single}).
-(iv) We propose a pilot-free stage-mixture estimator (SMIS) built from exact
+copula: two end modes with spectral scales (Theorem~\ref{thm:ld}, proof
+sketch).
+(iii) We show when single-shift IS loses logarithmic efficiency
+(Theorem~\ref{thm:single}) and measure its finite-level bias on real routes:
+the asymptotic threshold ($\varrho>1/4$) holds for every route of our plans,
+but material bias appears only for $\varrho>0.75$, and it is invisible in the
+reported standard error at $\gamma\le10^{-5}$.
+(iv) We give a pilot-free stage-mixture estimator (SMIS) at computed
 dominating points, its extension to a route-day simulator without exact
-solution (MDIS), and to hubs with shared factors, with risk attribution to
-routes (Section~\ref{sec:estimators}).
-(v) We evaluate on a new set of 148 region-scale instances
-(Section~\ref{sec:experiments}).
-The importance-sampling ingredients are known --- dominating points
+solution (MDIS), and a hub estimator for routes with shared factors, with
+attribution of hub risk to routes and a calibrated capacity search.
+(v) We evaluate on 148 region-scale instances against an exact conditional
+program, Glasserman--Li two-step IS, conditional Monte Carlo, subset
+simulation and CE.
+The IS ingredients are known --- dominating points
 \citep{SadowskyBucklew1990}, multiple-path failure of single shifts
 \citep{GlassermanWang1997}, mixtures as subsolutions \citep{DupuisWang2007},
 factor-copula two-step schemes \citep{GlassermanLi2005,BassambooJunejaZeevi2008}
---- and we do not claim new IS theory. What is new is their exact form for the
-pickup-and-delivery peak, the resulting diagnostic, and a certification
-procedure that is cheap enough for regional plans.
+--- and we do not claim new IS theory. What is new is their form for the
+pickup-and-delivery peak, the measured failure regime, and a certification
+procedure for regional plans.
 
 \section{Related work}
 \label{sec:related}
@@ -110,25 +126,29 @@ procedure that is cheap enough for regional plans.
 \emph{Risk in vehicle routing.} Chance-constrained and robust models
 \citep{GounarisWiesemannFloudas2013,DinhFukasawaLuedtke2018,GhosalWiesemann2020}
 handle route risk inside the optimisation with exact formulas, moment bounds or
-scenario sampling. Hazardous-materials routing measures risk as accident
-probability times consequence along links \citep{ErkutVerter1998}. We found
-no work that certifies an already optimised routing plan at rare levels with
-IS, and none that treats the mid-route peak of the simultaneous
-pickup-and-delivery load \citep{Dethloff2001} as a rare event. The closest IS
-precedent in logistics is stockout simulation in production--inventory
-systems \citep{GlassermanLiu1996}.
+scenario sampling \citep{GendreauJabaliRei2016}. Hazardous-materials routing
+measures risk as accident probability times consequence along links
+\citep{ErkutVerter1998}. We found no work that certifies an already optimised
+routing plan at rare levels with IS, and none that treats the mid-route peak
+of the simultaneous pickup-and-delivery load \citep{Dethloff2001} as a rare
+event. The closest IS precedent in logistics is stockout simulation in
+production--inventory systems \citep{GlassermanLiu1996}.
 
-\emph{Rare-event simulation.} Efficiency notions and the dominating-point
-theory are surveyed by \citet{AsmussenGlynn2007}; \citet{GlassermanWang1997}
-show that a single shift is inefficient when the rare set has several ways
-of occurring; \citet{DupuisWang2007} build efficient schemes from
-subsolutions, of which mixtures are instances; \citet{OwenMaximovChertkov2019}
-bound the variance of a mixture that samples each event of a union
-conditionally; CE with Gaussian mixtures handles multimodal failure regions
-\citep{GeyerPapaioannouStraub2019,PapaioannouGeyerStraub2019}. For Gaussian
-factor copulas, \citet{GlassermanLi2005} combine a factor shift with
-conditional exponential twisting; \citet{BassambooJunejaZeevi2008} treat
-extremal dependence.
+\emph{Rare-event simulation.} Efficiency notions and dominating points are
+surveyed by \citet{AsmussenGlynn2007}; \citet{GlassermanWang1997} show that a
+single shift is inefficient when the rare set has several ways of occurring;
+\citet{DupuisWang2007} build efficient schemes from subsolutions, of which
+mixtures are instances; \citet{OwenMaximovChertkov2019} bound the variance of a
+mixture that samples each event of a union conditionally; CE with Gaussian
+mixtures handles multimodal failure regions
+\citep{KurtzSong2013,GeyerPapaioannouStraub2019,PapaioannouGeyerStraub2019}.
+For Gaussian factor copulas, \citet{GlassermanLi2005} combine a factor shift
+with conditional exponential twisting, and \citet{BassambooJunejaZeevi2008}
+treat extremal dependence; for quadratic losses of Gaussian inputs,
+\citet{GlassermanHeidelbergerShahabuddin2000} use the same eigenstructure that
+gives our scales. Subset simulation \citep{AuBeck2001} and sequential Monte
+Carlo splitting \citep{CerouDelMoralFuronGuyader2012} need no mode
+information and are our model-free rivals.
 
 \section{Problem}
 \label{sec:problem}
@@ -139,20 +159,27 @@ stop $k$ is $L_k = D_k + P_k$ with $D_k = \sum_{i>k} d_i$ and
 $P_k = \sum_{i\le k} p_i$ ($k=0,\dots,L$), the peak is $F = \max_k L_k$, and
 the route overflows a capacity $c$ if $F > c$.
 
-\emph{Demand model.} Each $d_i$ is gamma with shape $\kappa = 1/\mathrm{cv}^2$ and
-scale $\theta^d_i = \bar d_i/\kappa$, likewise $p_i$; dependence is a
-one-factor Gaussian copula per demand type: $d_i = G_{d,i}^{-1}(\Phi(Z_{d,i}))$
-with $Z_{d,i} = \sqrt{\rho}\,W_d + \sqrt{1-\rho}\,E_{d,i}$, and similarly for
-pickups with an independent factor $W_p$. The input
+\emph{Demand model.} Each $d_i$ is gamma with coefficient of variation cv,
+shape $\kappa = 1/\mathrm{cv}^2$ and scale $\theta^d_i = \bar d_i/\kappa$,
+likewise $p_i$. Dependence is a one-factor Gaussian copula per demand type:
+$d_i = G_{d,i}^{-1}(\Phi(Z_{d,i}))$ with
+$Z_{d,i} = \sqrt{\rho}\,W_d + \sqrt{1-\rho}\,E_{d,i}$, and similarly for
+pickups with a factor $W_p$ independent of $W_d$. The input
 $u = (W_d, W_p, E_d, E_p)$ is standard normal. All customers of a hub share the
-two factors.
+two factors; hubs have separate factors. The baseline is $\mathrm{cv}=0.3$ and
+$\rho=0.6$; Section~\ref{sec:sensitivity} varies both, the pickup-to-delivery
+ratio and the marginal family. The independence of $W_d$ and $W_p$ is
+load-bearing: it makes the two end blocks independent, which the theory below
+uses.
 
 \begin{definition}[Certificate]
-Given $\gamma$ and a relative precision $\varepsilon$, a certificate for a
-route (or a hub) is an estimate $\hat p$ of its failure probability $p$ with
-$|\hat p - p| \le \varepsilon p$ at confidence $1-\delta$, together with the
-check $\hat p(1+\varepsilon) \le \gamma$; for a hub, also the attribution of
-$p$ to its routes.
+Given $\gamma$, a relative precision $\varepsilon$ and a confidence $1-\delta$
+(we use $\delta=0.05$), a certificate for a route or a hub is an unbiased
+estimate $\hat p$ of its overflow probability $p$ whose central-limit
+confidence interval has half-width at most $\varepsilon\hat p$, together with
+the check $\hat p(1+\varepsilon) \le \gamma$; for a hub, also the attribution of
+$p$ to its routes. The interval is asymptotic; Section~\ref{sec:sensitivity}
+reports its empirical coverage.
 \end{definition}
 
 \section{Structure of the overflow event}
@@ -166,32 +193,56 @@ $C_S = \rho\mathbf{1}\mathbf{1}^\top + (1-\rho)I$ and
 the largest root of $1 = \rho\sum_{i\in S}\theta_i/(\lambda-(1-\rho)\theta_i)$.
 Write $\lambda^d_k = \lambda(\{i>k\})$ for the delivery block of stage $k$,
 $\lambda^p_k = \lambda(\{i\le k\})$ for its pickup block,
-$\lambda_k = \max(\lambda^d_k,\lambda^p_k)$, and
-$\lambda^\star = \max(\lambda^d_0,\lambda^p_L)$.
+$\lambda_k = \max(\lambda^d_k,\lambda^p_k)$,
+$\lambda^\star = \max(\lambda^d_0,\lambda^p_L)$ and
+$\varrho = \min(\lambda^d_0,\lambda^p_L)/\lambda^\star \in (0,1]$.
 
 \begin{proposition}\label{prop:sandwich}
 $\max(D_0, P_L) \le F \le D_0 + P_L$.
 \end{proposition}
 
-\begin{theorem}\label{thm:ld}
-As $c\to\infty$ with the route fixed,
+\begin{theorem}[proof sketch]\label{thm:ld}
+As $c\to\infty$ with the route fixed and unbounded gamma marginals,
 $\log\P(L_k > c) \sim -c/\lambda_k$ and $\log\P(F > c) \sim -c/\lambda^\star$.
 \end{theorem}
 
-So, on the logarithmic scale, the route overflows at the start (delivery
-block) or at the end (pickup block). With
-$\varrho = \min(\lambda^d_0,\lambda^p_L)/\lambda^\star$, the weaker end mode
-carries relative mass $\gamma^{(1/\varrho-1)(1+o(1))}$ at level $\gamma$
-(Proposition~\ref{prop:mass} in the appendix). On long routes the scales of
-stages near the ends are close to $\lambda^\star$, so they also matter at
-practical levels.
+The proof (Appendix~\ref{app:proofs}) is a sketch: the uniformity of the
+logarithmic remainder of the gamma quantile (Lemma~A1) is not written out. Our
+simulator clips $\Phi$ at $1-10^{-15}$, so its demands are bounded and the
+theorem describes the unclipped model; at our thresholds the clipping is
+inactive except where reported.
+
+So, on the logarithmic scale, a route overflows at the start (delivery block)
+or at the end (pickup block). Middle stages have strictly smaller scales: the
+stage where the two partial blocks cross has $\lambda_k\le\lambda^\star/2$ on
+homogeneous routes. A stage $k$ carries relative mass
+$\exp(-c(1/\lambda_k-1/\lambda^\star)(1+o(1)))$
+(Proposition~\ref{prop:mass}); with $c\approx\lambda^\star\log(1/\gamma)$ the
+weaker end mode carries $\gamma^{(1/\varrho-1)(1+o(1))}$. This is qualitative
+guidance only:
 
 \begin{remark}[Pre-asymptotic regime]
-At $\gamma\in[10^{-9},10^{-3}]$ and $\mathrm{cv}=0.3$ the exact dominating-point
-energies are only $16$--$35\%$ of their asymptotic values $c/\lambda$ (the
-log corrections of the gamma quantile are large). The scales are therefore a
-qualitative guide; the estimators below use exact dominating points.
+For a three-stop test route with $\mathrm{cv}=0.3$, the exact dominating-point
+energy is $16\%$ of its asymptotic value $c/\lambda^\star$ at
+$P\approx 9\times10^{-4}$ and $35\%$ at $P\approx 1.6\times10^{-9}$; the
+logarithmic corrections of the gamma quantile are large at practical levels.
+The estimators therefore use computed dominating points, and the finite-level
+mass of a mode is measured by $\exp(-(E_m-E_{\min}))$ with exact energies $E_m$
+(Section~\ref{sec:single}).
 \end{remark}
+
+Figure~\ref{fig:energies} shows the computed mode energies against the stage
+for one Northern Vietnam and one Guangdong route.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/rarecert_mode_energies.pdf}
+\caption{Computed dominating-point energies $E_k$ of the stage events
+$\{L_k>c\}$ (delivery and pickup blocks) against the stage $k$, for one route
+of Northern Vietnam (balanced pickups) and one of Guangdong, at
+$\gamma=10^{-4}$, with the asymptotic prediction $c/\lambda_k$.}
+\label{fig:energies}
+\end{figure}
 
 \section{When a single shift fails}
 \label{sec:single}
@@ -200,131 +251,327 @@ Mean-shift IS with shift $\tau$ uses the proposal $N(\tau,I)$ and weight
 $w(u) = \exp(-\langle u,\tau\rangle + |\tau|^2/2)$.
 
 \begin{theorem}\label{thm:single}
-Let $\tau^\star$ be the dominating point of the dominant end mode.
+Let $\tau^\star$ be the asymptotic dominating point of the dominant end mode.
 (a) If $\varrho > 1/4$, the shift $\tau^\star$ is not logarithmically efficient:
-$\log m_2(\tau^\star) - 2\log\P(F>c) \ge c\,(4/\lambda^\star - 1/\lambda_{\rm other})(1+o(1))$.
-(b) If $\varrho \le 1/4$ and the dominant end block has its second eigenvalue
-at most $\lambda^\star/4$, the shift is logarithmically efficient.
+$\log m_2(\tau^\star) - 2\log\P(F>c) \ge c\,(4/\lambda^\star - 1/(\varrho\lambda^\star))(1+o(1))>0$.
+(b) (proof sketch) If $\varrho \le 1/4$ and the dominant end block has second
+eigenvalue at most $\lambda^\star/4$, the shift is logarithmically efficient.
 \end{theorem}
 
-The extra second moment in (a) comes from a region the proposal almost never
-visits, so the sample variance does not reveal it; in practice the estimate is
-biased low by about the missed mode mass with a small reported error. Our
-measurements match: on 120 real routes the single CE shift is accurate
-(median error $0.1$--$0.2\%$) when $\varrho\le 0.5$ and off by $3$--$6\%$ in
-median and up to $40\%$ when $\varrho > 0.75$, which is the case of balanced
-deliveries and pickups (Northern Vietnam). $\varrho$ is computed in closed form
-from the route data, so the diagnostic costs nothing.
+Part (a) rests on Theorem~\ref{thm:ld}; (a) and (b) have different hypotheses,
+so $1/4$ is not a sharp threshold. The extra second moment in (a) comes from
+a region the proposal almost never visits, so the sample variance does not
+reveal it, and at finite levels the estimate is biased low by about the mass
+of the missed mode.
+
+\emph{What the data show.} The asymptotic criterion is uninformative for our
+plans: all 5\,920 routes with two or more customers have $\varrho>1/4$
+(Guangdong median $0.36$, Northern Vietnam median $0.93$). The practical
+regime is narrower. On 120 routes (Table~\ref{tab:routes}) the single CE shift
+has median error $0.10$--$0.27\%$ when $\varrho\le0.75$, close to the mixture
+estimators, and $2.9$, $5.1$, $6.0$ and $6.1\%$ (90\% quantile $7.6$, $21.7$,
+$26.7$, $39.9\%$) when $\varrho>0.75$ at $\gamma=10^{-3},\dots,10^{-6}$. The
+error is an underestimate in $62\%$ of these rows at $10^{-3}$ and in
+$93$--$95\%$ at $\gamma\le10^{-4}$ (median signed error $-4.3$ to $-4.7\%$). It
+is visible at $10^{-3}$ and $10^{-4}$, where the single shift's relative
+variance is $512$ and $87$, and invisible at $10^{-5}$ and $10^{-6}$, where it
+is $5.2$ and $5.5$ (reported relative standard error $0.2\%$ at $10^6$ draws,
+against a $6\%$ bias). Figure~\ref{fig:bias} plots the measured bias against
+$\varrho$ and against the computed mass of the missed mode.
+
+Two cautions. First, in our instances $\varrho>0.75$ occurs only in Northern
+Vietnam, where the pickup rate was set equal to the delivery rate because no
+regional pickup statistic is published; region, $\varrho$ and that assumption
+are confounded. Section~\ref{sec:sensitivity} breaks the confounding by
+scaling the pickup means of the same routes. Second, $\varrho$ is computed in
+closed form from the route data, so the diagnostic is free, but the threshold
+$0.75$ is empirical.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{figures/rarecert_bias_varrho.pdf}\hfill
+\includegraphics[width=0.48\textwidth]{figures/rarecert_bias_mhat.pdf}
+\caption{Signed relative error of the single CE shift against $\varrho$
+(left; 120 routes, four levels) and against the computed mass
+$\hat m=\exp(-(E_{\rm other}-E_{\min}))$ of the weaker end mode (right;
+sensitivity routes). Bands: $\pm2$ reported standard errors.}
+\label{fig:bias}
+\end{figure}
 
 \section{Estimators}
 \label{sec:estimators}
 
-\paragraph{SMIS.} For every stage $k$ and block, compute the exact minimum-norm
-point $u_m$ of $\{L_k(u)\ge c\}$ (constrained minimisation started on the
-block's Perron direction, using the exact quantile transform), keep the modes
-whose energy $E_m=|u_m|^2/2$ is within $\log(1/\eta)$ of the smallest, and
-sample from
-$q = a_0 N(0,I) + \sum_m a_m N(u_m, I)$ with $a_m\propto e^{-(E_m-E_{\min})}$
-and a constant defensive weight $a_0$. No pilot simulation is needed.
-Theorem~\ref{thm:mixture} (appendix) gives conditions for logarithmic
-efficiency.
+\paragraph{SMIS.} Algorithm~\ref{alg:smis} computes, for every stage $k$ and
+block, a minimum-norm point $u_m$ of $\{L_k(u)\ge c\}$ by constrained local
+minimisation (SLSQP) started on the block's Perron direction, with the exact
+quantile transform. The set is not convex, so $u_m$ is a computed local
+minimiser, not a certified global one. Modes with energy
+$E_m=|u_m|^2/2$ within $\log(1/\eta)$ of the smallest are kept, and the
+estimator samples from
+\[
+q = a_0\,N(0,I) + \sum_m a_m\,N(u_m, I),\qquad a_m\propto e^{-(E_m-E_{\min})},
+\]
+with likelihood ratio
+$\varphi(u)/q(u) = \big(a_0 + \sum_m a_m e^{\langle u,u_m\rangle-|u_m|^2/2}\big)^{-1}$.
+The tuning constants are $\eta=10^{-3}$ (hubs $10^{-4}$) and $a_0=0.05$, fixed
+for every experiment; there is no pilot simulation. An optional variant
+(SMIS3) adds $3$ points on arcs between modes of adjacent stages; it changes
+nothing measurable on our routes and we report $n_{\rm arc}=0$ (SMIS0)
+throughout. Theorem~\ref{thm:mixture} (Appendix) is a sketch of logarithmic
+efficiency under spectral-gap conditions; at $\rho=0.6$ they hold for every end
+block of our plans, at $\rho=0.3$ for $0.4\%$ of them, and
+Section~\ref{sec:sensitivity} tests SMIS in both cases.
+
+\begin{algorithm}[t]
+\caption{SMIS for one route}\label{alg:smis}
+\begin{algorithmic}[1]
+\Require route means $\bar d,\bar p$; cv, $\rho$; capacity $c$; $\eta$, $a_0$, $N$
+\For{$k=0,\dots,L$ and block $b\in\{d,p\}$}
+  \State $v\gets$ Perron vector of $\Theta_b^{1/2}C\Theta_b^{1/2}$ on the block's inputs
+  \State $u_{k,b}\gets\arg\min\{|u|^2/2 : L_k(u)\ge c\}$ by SLSQP from the ray along $v$
+  \Comment{skip if $c$ is unreachable}
+\EndFor
+\State keep modes with $E_m\le E_{\min}+\log(1/\eta)$; $a_m\gets(1-a_0)e^{-(E_m-E_{\min})}/\sum_{m'}e^{-(E_{m'}-E_{\min})}$
+\State draw $u^{(1)},\dots,u^{(N)}\sim q$; $\hat p\gets N^{-1}\sum_j \mathbf 1\{F(u^{(j)})>c\}\,\varphi(u^{(j)})/q(u^{(j)})$
+\State \Return $\hat p$, its standard error, ESS
+\end{algorithmic}
+\end{algorithm}
+
+Cost: $2(L+1)$ local minimisations of dimension $2+2L$, each a few dozen
+quantile evaluations, then $N$ simulator calls and $N\times(\#\text{modes})$
+inner products.
 
 \paragraph{MDIS.} The same construction applies to any simulator that exposes
-its failure modes as scalar functions $g_m(u) > 0$. We use it for a route-day
-model with lognormal travel times (shared congestion factor), service times
-that grow with the handled load, and time windows; no exact method applies.
+its failure modes as scalar functions $g_m(u) > 0$ of a Gaussian input. We
+use it for a route-day model (Section~\ref{sec:routeday}): demands as above,
+lognormal travel times per leg $T_l=\bar t_l\exp(\sigma_T(\sqrt{\rho_T}V+
+\sqrt{1-\rho_T}H_l)-\sigma_T^2/2)$ with $\bar t_l$ the road distance at
+$40$\,km/h, $\sigma_T=0.25$ and a shared congestion factor ($\rho_T=0.5$),
+service times of $10$ minutes plus $6$ minutes per tonne handled, and a failure
+if the vehicle overflows at any stage, arrives at any stop later than its
+nominal time plus a slack $s$, or returns later than nominal plus $2s$.
+Dominating points of the load, lateness and return modes are computed from
+several structured starts. No exact method applies: the event couples a
+maximum of copula sums with lognormal sums and load-dependent service.
 
-\paragraph{Hubs.} The routes of a hub share the factors, so the hub failure
-$\bigcup_r\{F_r > c\}$ is again a union of stage events. We embed the route
-modes in the hub input, compute the likelihood ratio with sparse inner
-products (each component touches the two factors and one route's
-coordinates), and estimate from the same draws the probability that each
-route fails and that it is the only one failing --- an attribution of the hub
-risk to routes. Hubs of a region have independent factors, so the region risk
-is $1-\prod_h(1-p_h)$.
+\paragraph{Hubs.} The routes of a hub share the factors, so the hub event
+$\bigcup_r\{F_r > c\}$ is again a union of stage events, now in dimension
+$2+2n$ for $n$ customers. Every route's SMIS modes are embedded in the hub
+input (the two factors and that route's coordinates, zeros elsewhere), modes
+are kept over all routes with $\eta=10^{-4}$, and the likelihood ratio
+\[
+\log\frac{\varphi(x)}{q(x)} = -\log\Big(a_0+\sum_m a_m\exp\big(\langle x,\theta_m\rangle-|\theta_m|^2/2\big)\Big)
+\]
+is computed with sparse inner products, since $\theta_m$ has $2+2L_r$ nonzero
+coordinates. From the same draws we estimate each route's overflow
+probability and the probability that it is the only route to overflow --- an
+attribution of hub risk to routes. A route that cannot reach $c$ contributes
+no mode and zero probability.
+
+\paragraph{Capacity calibration.} To report the buffer a hub needs for
+$\gamma$, we search for $c$ with $\hat P_{\rm hub}(c)=\gamma$: a Laplace-type
+proxy $\log\sum_r e^{-E_r(c)}=\log\gamma$ gives a starting point $c_0$ (the
+proxy is not a bound and was $15$--$45$ times off in a first run), then at most
+three secant steps on $\log\hat P_{\rm hub}(c)-\log\gamma$ with $2\times10^4$
+hub draws per evaluation, stopping when $|\log(\hat P_{\rm hub}/\gamma)|<\log1.25$;
+the final $\hat P_{\rm hub}$ uses $10^5$ draws. The buffer is $b=c/Q-1$.
+
+\paragraph{Exact conditional reference.} Given $(W_d,W_p)$ the demands are
+independent, so $\P(F>c\mid W)$ is a one-dimensional dynamic program over the
+discretised load (we use $V=256$ and $512$ levels with Richardson
+extrapolation), and
+$\P(F>c)=\iint\P(F>c\mid w)\,\varphi(w_d)\varphi(w_p)\,dw$ is a product
+trapezoid on $[-6,9]^2$. For a hub, the routes are conditionally independent,
+so $\P_{\rm hub}=\iint[1-\prod_r(1-\P(F_r>c\mid w))]\varphi\varphi\,dw$. The
+error estimate combines the Richardson difference and a nested-grid
+quadrature difference.
 
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Instances}
+\subsection{Instances and plans}
 We built 148 instances, one per depot area: the 25 provinces of Northern
-Vietnam (Hanoi split into two hubs) and 122 county-level areas of Guangdong.
-Service points aggregate Kontur population hexagons (15\,000 people per point
-in Vietnam, 4\,000 in Guangdong) by weighted $k$-means; distances are OSRM road
-distances. Daily demand rates come from official postal statistics: 0.087
-parcels per person per day in Vietnam (3.2 billion items in 2024) and, for
-Guangdong, 0.34 received and 0.91 sent (national and provincial 2024
-volumes); 1~kg per parcel and truck capacities of 15 and 30 tonnes are
-assumptions. The set has 40\,099 service points serving 151 million people.
-Plans are solved with the deterministic and the sample-average chance gates;
-we certify the latter.
+Vietnam (Hanoi split into two hubs) and 122 county-level areas of Guangdong
+(Table~\ref{tab:instances}). Service points aggregate Kontur population
+hexagons (15\,000 people per point in Vietnam, 4\,000 in Guangdong) by
+weighted $k$-means; distances are OSRM road distances. Daily demand rates
+come from official postal statistics: $0.087$ parcels per person per day in
+Vietnam (3.2 billion items in 2024) and, for Guangdong, $0.34$ received and
+$0.91$ sent per person per day (2024 volumes). The following are assumptions:
+1~kg per parcel; truck capacities of 15 (Vietnam) and 30 (Guangdong) tonnes;
+the Vietnamese pickup rate equal to the delivery rate (no regional figure is
+published). The service points represent 115.5 million people in the
+Kontur grid (official 2023 figures: 127.8 million); provinces follow the
+pre-2025 boundaries. Plans are solved by ALNS with the sample-average chance
+gate; we certify these plans. Routes are short: the median route has 6
+(Guangdong) and 7 (Vietnam) stops.
+
+\begin{table}[t]
+\centering\small
+\caption{Instances and plans (sample-average gate). Utilisation is the
+larger of mean total delivery and mean total pickup over $Q$, per route.}
+\label{tab:instances}
+\resizebox{\textwidth}{!}{\begin{tabular}{lrrrrrrrr}
+\toprule
+region & instances & customers & routes & stops q25/50/75 (max) & $Q$ (t) & pickup/delivery & utilisation (median) & $\varrho$ (median) \\
+\midrule
+Northern Vietnam & 26 & 2\,612 & 375 & 6 / 7 / 8 (15) & 15 & 1.01 & 0.62 & 0.93 \\
+Guangdong & 122 & 37\,487 & 5\,867 & 5 / 6 / 8 (40) & 30 & 2.70 & 0.65 & 0.36 \\
+\bottomrule
+\end{tabular}}
+\end{table}
 
 \subsection{Routes under the demand model}
-On 120 routes (stratified by region and length) and
-$\gamma\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$, the CE mixture used as a
-classical rival agrees with exact dynamic programming (fine quadrature over
-both factors, routes with $L\le 8$) in 178 of 178 cases, maximal deviation
-$0.74\%$. SMIS has relative error at most $0.6\%$ (90\% quantile) in every
-$\varrho$ band, relative variance $3.8$--$5.9$ (CE: $3.8$--$6.0$), $2$--$7$
-components, and is built in $0.4$--$0.9$\,s. Including CE's pilot draws
-($0.8$--$1.2\times10^5$ per route), CE costs $224$--$276$ times more samples
-than SMIS at $\varepsilon=0.1$ and $3.2$--$3.8$ times more at $\varepsilon=0.01$.
+\label{sec:routes}
+We use 120 routes (80 Guangdong, 40 Northern Vietnam; 4 to 15 stops, median
+7) and four levels $\gamma\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$; $c$ is set so
+that the overflow probability is close to $\gamma$. Every estimator uses
+$N=10^6$ draws. The CE mixture uses a pilot of $0.8$--$1.2\times10^5$ draws per
+route. Table~\ref{tab:routes} reports errors against the reference.
+
+\emph{Against the exact program.} On the 89 routes with $L\le8$ at
+$\gamma\in\{10^{-3},10^{-4}\}$ (178 cases), SMIS deviates from the exact
+conditional program by $0.15$ and $0.16\%$ in median, $0.38$ and $0.44\%$ at the
+90\% quantile, and at most $0.82\%$; the deviation is within $1.96$ reported
+standard errors in $90\%$ and $87\%$ of cases (the program has its own
+discretisation error). \pending{exact-program comparison at $10^{-6}$ and for
+$L>8$ from the baseline run.}
+
+\emph{Across all levels.} SMIS has relative error at most $0.61\%$ at the
+90\% quantile in every $\varrho$ band with more than one route, relative
+variance $3.8$--$5.9$ (CE mixture $3.8$--$6.0$, single shift $3.5$--$5.5$
+where it is unbiased), $2$--$7$ components, and a median build time of
+$0.39$--$0.86$\,s. At $\gamma\le10^{-5}$ the reference for routes without an
+exact program is the CE mixture.
+
+\emph{Samples.} Counting CE's pilot, the CE mixture needs $224$--$276$ times
+more draws than SMIS for $\varepsilon=0.1$ at 95\% confidence and $3.2$--$3.8$
+times more for $\varepsilon=0.01$: the advantage is the saved pilot, not a
+smaller variance.
+
+\begin{table}[t]
+\centering\small
+\caption{Route model: relative error against the reference (exact program
+where available, else CE mixture), median / 90\% quantile, and relative
+variance (median). 120 routes, $N=10^6$; band $(0.5,0.75]$ has one route and
+is omitted.}
+\label{tab:routes}
+\begin{tabular}{llrrrrrr}
+\toprule
+$\gamma$ & $\varrho$ band & $n$ & SMIS & CE mixture & single shift & RV SMIS & RV single \\
+\midrule
+$10^{-3}$ & $[0,1/3]$ & 17 & 0.19 / 0.58\% & 0.12 / 0.39\% & 0.17 / 0.45\% & 3.76 & 3.51 \\
+ & $(1/3,0.5]$ & 62 & 0.13 / 0.38\% & 0.09 / 0.30\% & 0.18 / 0.43\% & 3.78 & 3.51 \\
+ & $(0.75,1]$ & 40 & 0.22 / 0.44\% & 0.05 / 0.32\% & 2.86 / 7.57\% & 4.05 & 512 \\
+$10^{-4}$ & $[0,1/3]$ & 17 & 0.16 / 0.51\% & 0.17 / 0.52\% & 0.14 / 0.65\% & 4.50 & 4.23 \\
+ & $(1/3,0.5]$ & 62 & 0.17 / 0.45\% & 0.10 / 0.36\% & 0.18 / 0.44\% & 4.52 & 4.23 \\
+ & $(0.75,1]$ & 40 & 0.20 / 0.42\% & 0.07 / 0.36\% & 5.10 / 21.7\% & 4.71 & 87 \\
+$10^{-5}$ & $[0,1/3]$ & 17 & 0.19 / 0.55\% & ref. & 0.15 / 0.45\% & 5.18 & 4.88 \\
+ & $(1/3,0.5]$ & 62 & 0.22 / 0.45\% & ref. & 0.18 / 0.51\% & 5.18 & 4.88 \\
+ & $(0.75,1]$ & 40 & 0.26 / 0.58\% & ref. & 6.00 / 26.7\% & 5.31 & 5.22 \\
+$10^{-6}$ & $[0,1/3]$ & 17 & 0.24 / 0.61\% & ref. & 0.19 / 0.60\% & 5.79 & 5.46 \\
+ & $(1/3,0.5]$ & 62 & 0.26 / 0.55\% & ref. & 0.23 / 0.54\% & 5.79 & 5.46 \\
+ & $(0.75,1]$ & 40 & 0.22 / 0.52\% & ref. & 6.05 / 39.9\% & 5.88 & 5.50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Classical rivals and the exact program}
+\label{sec:baselines}
+\pending{Table: exact conditional program (accuracy, wall time), SMIS,
+Glasserman--Li two-step (crude and shifted factors), conditional Monte Carlo
+over the factors with the exact inner program, subset simulation, CE: error
+against the exact program, RV, build time, samples and seconds for
+$\varepsilon=0.1$ and $0.01$, at $\gamma=10^{-4}$ and $10^{-6}$ on 30 routes;
+hub check against the exact hub program on 6 hubs.}
+
+\subsection{Sensitivity and coverage}
+\label{sec:sensitivity}
+\pending{Table: SMIS, single shift and CE under $\rho\in\{0.3,0.8\}$,
+cv $\in\{0.2,0.5\}$, pickup means scaled by $s\in\{0.5,2\}$ (unconfounding
+$\varrho$ from region), lognormal marginals; model risk (how $p$ moves at fixed
+$c$); coverage of the 95\% interval over replications.}
 
 \subsection{Route days without an exact method}
-On 60 routes with thresholds that split the failure probability evenly
-between load and time modes, MDIS deviates from $10^7$-draw crude Monte Carlo
-by $0.76\%$ in median ($1.77\%$ at the 90\% quantile, within the Monte Carlo
-error of about $1\%$) at $\gamma=10^{-3}$; CE deviates by $0.89\%$ and
-$1.75\%$; the single CE shift by $2.2\%$ and $22\%$. MDIS and CE agree within
-$0.20$--$0.24\%$ at all levels, while the single shift diverges by up to
-$28\%$, $63\%$ and $98\%$ (90\% quantile) at $10^{-3}$, $10^{-4}$ and
-$10^{-5}$. Relative variances: MDIS $4.3$--$6.1$, CE $4.4$--$6.0$, single shift
-$357$--$1\,430$. MDIS is built in $3$--$4$\,s against $43$--$55$\,s for CE, and
-CE costs $1\,750$--$1\,830$ times more samples at $\varepsilon=0.1$ and
-$18$--$19$ times more at $\varepsilon=0.01$.
+\label{sec:routeday}
+On 60 routes we set the slack $s$ and the capacity so that the load modes and
+the time modes each carry about half of the failure probability --- a design
+that makes the failure multimodal on purpose, to test the estimator where a
+single shift is known to struggle. The threshold search is common to all
+methods and not counted. MDIS keeps $6$--$8$ modes (median) of the $20$--$30$
+candidates; $16$--$21$ candidate modes per route cannot reach their threshold
+and are dropped. Table~\ref{tab:routeday} gives the results. At
+$\gamma=10^{-3}$, against $10^7$-draw crude Monte Carlo (relative standard
+error about $1\%$), MDIS deviates by $0.76\%$ in median and $1.77\%$ at the 90\%
+quantile, CE by $0.89\%$ and $1.75\%$, and the single CE shift by $2.2\%$ and
+$22\%$. At $10^{-4}$ and $10^{-5}$ there is no crude reference; MDIS and the CE
+mixture, built independently from the same simulator, agree within $0.24\%$ in
+median and $0.59\%$ at the 90\% quantile. MDIS is built in $3$--$4$\,s against
+$43$--$55$\,s for the CE pilot, and CE needs about $1\,800$ times more draws for
+$\varepsilon=0.1$ and $18$--$19$ times more for $\varepsilon=0.01$.
+
+\begin{table}[t]
+\centering\small
+\caption{Route-day simulator, 60 routes: deviation (median / 90\% quantile),
+relative variance (median), build time (median).}
+\label{tab:routeday}
+\resizebox{\textwidth}{!}{\begin{tabular}{lrrrrrrr}
+\toprule
+$\gamma$ & MDIS vs crude & CE vs crude & single vs crude & MDIS vs CE & MDIS vs single & RV MDIS / CE / single & build MDIS / CE (s) \\
+\midrule
+$10^{-3}$ & 0.76 / 1.77\% & 0.89 / 1.75\% & 2.18 / 21.9\% & 0.20 / 0.47\% & 1.98 / 28.4\% & 4.33 / 4.41 / 742 & 3.1 / 43.1 \\
+$10^{-4}$ & --- & --- & --- & 0.24 / 0.53\% & 3.42 / 63.3\% & 5.25 / 5.24 / 1430 & 3.5 / 49.4 \\
+$10^{-5}$ & --- & --- & --- & 0.23 / 0.59\% & 9.25 / 97.6\% & 6.12 / 6.04 / 357 & 3.8 / 55.1 \\
+\bottomrule
+\end{tabular}}
+\end{table}
 
 \subsection{Hubs}
-On 66 hubs (all of Northern Vietnam, 40 sampled from Guangdong), the hub
-estimate lies between $\max_r p_r$ and $\sum_r p_r$ in every case and agrees
-with $2\times10^6$-draw crude Monte Carlo on the 19 smallest hubs
-($|z|\le 1.67$). Ignoring the shared factors --- treating routes as
-independent --- overstates hub risk by a factor $1.75$--$2.2$ in median and up
-to $3.2$, and $27$--$37\%$ of failing days have two or more failing routes:
-standby capacity should be planned for clusters of failures.
-\pending{Capacity buffers for $\gamma=10^{-3}$ and $10^{-5}$ and region totals
-from the calibrated rerun.}
+\label{sec:hubs}
+\pending{Calibrated rerun on 66 hubs (all 26 Northern Vietnam hubs, 40
+Guangdong hubs stratified by size) at $\gamma=10^{-3}$ and $10^{-5}$: buffers
+by region, $P_h/\gamma$ after calibration, envelope
+$\max_r p_r\le P_h\le\sum_r p_r$, independence overstatement, multi-route
+failure share, attribution, crude check on the smallest hubs, region totals.}
 
 \subsection{A note on quantum amplitude estimation}
-Quantum amplitude estimation offers a quadratic reduction in the number of
-simulator calls for estimating a probability \citep{Brassard2002,Montanaro2015}.
-On the same 120 routes, with explicit constants for a rigorous schedule, it
-needs $0.003$--$0.5$ times the calls of crude Monte Carlo, but $2.5$--$380$
-times more calls than classical IS once IS is available, and with an IS-equipped
-oracle it is cheaper than classical IS only in an idealised accounting at
-$\varepsilon\le 3\%$. On this problem the structure exploited by the mixture,
-not the quadratic speed-up, is what makes certification cheap.
+Quantum amplitude estimation reduces the number of simulator calls for a
+probability quadratically \citep{Brassard2002,Montanaro2015}. On the same 120
+routes, counting oracle calls only (no qubit or error-correction cost) with
+explicit constants for a rigorous schedule, it needs $0.003$--$0.5$ times the
+calls of crude Monte Carlo, but $27$--$3\,550$ times more than the sampling
+stage of classical IS ($2.5$--$380$ times more if the IS pilot is counted).
+With an IS-equipped oracle it needs fewer calls than classical IS only in an
+idealised accounting at $\varepsilon\le3\%$ ($0.14$--$0.48$ times). On this
+problem the mode structure, not the quadratic speed-up, is what makes
+certification cheap.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Rare overflow of a pickup-and-delivery route has a simple anatomy --- two end
-modes with closed-form scales, near-end stages close behind --- and this
-anatomy decides when common IS shortcuts fail and how to build an estimator
-that needs no tuning. The resulting certificates are accurate to a fraction
-of a percent at $10^{-3}$--$10^{-6}$, extend to route days without exact
-solution and to hubs with shared demand factors, and are cheap enough to run
-on regional networks. Open points: full proofs of the efficiency results at
-the stated generality, calibration of the capacity search, region-wide
-factors that couple hubs, and data-driven demand and travel models.
+Rare overflow of a pickup-and-delivery route has a simple anatomy on the
+logarithmic scale --- two end modes with closed-form scales --- that tells
+when a single IS shift is at risk. In our plans the asymptotic criterion
+holds everywhere, while a material and silent bias appears only on routes
+with nearly balanced end scales. A mixture at computed dominating points
+removes it without pilot simulation, extends to route days without an exact
+method, and to hubs with shared factors. \pending{conclusion on cost against
+the exact program and on hub buffers.} Open points: full proofs at the stated
+generality, region-wide factors that couple hubs, correlated pickup and
+delivery factors, and demand and travel models estimated from operator data.
+
+\paragraph{Code and data.} The instances, plans, simulator, estimators and
+every script that produces a number or table in this paper are released with
+the paper; each table regenerates from one script.
 
 \appendix
-\section{Proofs}
+\section{Proofs and sketches}
 \label{app:proofs}
 
 \paragraph{Proof of Proposition~\ref{prop:sandwich}.} $L_0 = D_0$ and $L_L = P_L$
 are stage loads, and $D_k\le D_0$, $P_k\le P_L$ for all $k$. \qed
 
-\paragraph{Lemma A1 (quantile).} For the gamma law,
+\paragraph{Lemma A1 (quantile; stated without proof).} For the gamma law,
 $x(z) = G^{-1}(\Phi(z)) = \theta z^2/2 + \theta(2\kappa-1)\log z + O(1)$ as
 $z\to\infty$, and $0\le x(z)\le x(0)$ for $z\le 0$.
 
@@ -332,14 +579,14 @@ $z\to\infty$, and $0\le x(z)\le x(0)$ for $z\le 0$.
 $D_k\le \tfrac12 Z^\top\Theta Z + R$ with $R$ a sum of logarithmic terms; for
 $t<1/\lambda$, $\E\exp(t\,\tfrac12 Z^\top\Theta Z) =
 \det(I - t\Theta^{1/2}C\Theta^{1/2})^{-1/2}<\infty$, so Chernoff's bound gives the
-rate $1/\lambda$, and $R$ is negligible. The delivery and pickup blocks have
-disjoint inputs, so their moment generating functions multiply and $L_k$ has
-rate $1/\lambda_k$. Lower bound: a ball of radius $O(1)$ around
-$(1+\eta)\sqrt{2c/\lambda}\,u^\star$, with $u^\star = B^\top\Theta^{1/2}v/\sqrt\lambda$
-($Z=Bu$, $BB^\top = C$, $v$ the Perron vector), lies in the event. For $F$ use
-Proposition~\ref{prop:sandwich}. \qed
+rate $1/\lambda$, and $R$ is negligible if Lemma A1 holds uniformly (not
+written out). The delivery and pickup blocks have disjoint inputs, so their
+moment generating functions multiply and $L_k$ has rate $1/\lambda_k$. Lower
+bound: a ball of radius $O(1)$ around $(1+\eta)\sqrt{2c/\lambda}\,u^\star$, with
+$u^\star = B^\top\Theta^{1/2}v/\sqrt\lambda$ ($Z=Bu$, $BB^\top = C$, $v$ the Perron
+vector), lies in the event. For $F$ use Proposition~\ref{prop:sandwich}.
 
-\begin{proposition}\label{prop:mass}
+\begin{proposition}[from Theorem~\ref{thm:ld}]\label{prop:mass}
 For a fixed gap $\lambda_k<\lambda^\star$,
 $\P(L_k>c)/\P(F>c) = \exp(-c(1/\lambda_k-1/\lambda^\star)(1+o(1)))$.
 \end{proposition}
@@ -355,20 +602,22 @@ whose minimum on $[0,r]$ is $\min((1+\kappa)r^2,4r^2) = 4r^2$ for $\kappa\ge3$;
 for $a\ge r$, $|u+\tau|^2\ge(a+r)^2\ge4r^2$. If $a<0$, then $Av_1\ge0$ gives
 $(Au)_+\le(Au_\perp)_+$, so $b^2\ge\kappa r^2\ge4r^2$. \qed
 
-\paragraph{Proof of Theorem~\ref{thm:single}(a).} $\tau^\star$ acts on the
-dominant block's inputs only and the other end event depends on the other
-block's inputs only, so $m_2\ge\E[w]\,\P(\text{other end})=
+\paragraph{Proof of Theorem~\ref{thm:single}(a), given Theorem~\ref{thm:ld}.}
+$\tau^\star$ acts on the dominant block's inputs only and the other end event
+depends on the other block's inputs only, so $m_2\ge\E[w]\,\P(\text{other end})=
 e^{|\tau^\star|^2}\P(\text{other end}) = \exp(2c/\lambda^\star - c/\lambda_{\rm other}+o(c))$,
 while $2\log\P(F>c) = -2c/\lambda^\star(1+o(1))$. \qed
-(b) follows from Proposition~\ref{prop:sandwich} and Lemma A2 applied to the
-block-diagonal form of the two end blocks; the logarithmic remainders are
-handled by Cauchy--Schwarz (sketch).
+
+\paragraph{Sketch of Theorem~\ref{thm:single}(b).} Proposition~\ref{prop:sandwich}
+and Lemma A2 applied to the block-diagonal form of the two end blocks; the
+logarithmic remainders would be handled by Cauchy--Schwarz.
 
 \begin{theorem}[sketch]\label{thm:mixture}
-With a constant defensive weight, SMIS is logarithmically efficient if every
-retained block has $\kappa\ge4$ and in every retained stage one block
-dominates the other by a factor of at least 4; stages with
-$\lambda_k\le\lambda^\star/2$ need not be retained.
+With a constant defensive weight, SMIS with modes at the asymptotic
+dominating points is logarithmically efficient if every retained block has
+$\kappa\ge4$ and in every retained stage one block dominates the other by a
+factor of at least 4; stages with $\lambda_k\le\lambda^\star/2$ need not be
+retained.
 \end{theorem}
 
 \bibliographystyle{plainnat}
