@@ -86,10 +86,13 @@ there is an exact alternative: given the copula factors the demands are
 independent, so the overflow probability is a two-dimensional integral of a
 one-dimensional dynamic program. We implement it and use it both as the
 reference and as a competitor (Section~\ref{sec:baselines}). It is accurate
-and, on the short routes of our plans, \pending{fast or slow, from the
-baseline run}. It does not extend to route days with stochastic travel and
-service times and time windows, where the event couples loads and times;
-there the mixture estimator is, to our knowledge, the only efficient method,
+and needs no tuning, but on the short routes of our plans it takes about
+five minutes per route and level at the accuracy we need, against about three
+seconds for the mixture estimator at $1\%$ precision
+(Section~\ref{sec:baselines}). It does not extend to route days with
+stochastic travel and service times and time windows, where the event couples
+loads and times; there, of the methods we compare, only the mixture estimators
+are accurate,
 and the demand-only model is the setting in which its construction can be
 checked against an exact answer.
 
@@ -478,12 +481,76 @@ $10^{-6}$ & $[0,1/3]$ & 17 & 0.24 / 0.61\% & ref. & 0.19 / 0.60\% & 5.79 & 5.46 
 
 \subsection{Classical rivals and the exact program}
 \label{sec:baselines}
-\pending{Table: exact conditional program (accuracy, wall time), SMIS,
-Glasserman--Li two-step (crude and shifted factors), conditional Monte Carlo
-over the factors with the exact inner program, subset simulation, CE: error
-against the exact program, RV, build time, samples and seconds for
-$\varepsilon=0.1$ and $0.01$, at $\gamma=10^{-4}$ and $10^{-6}$ on 30 routes;
-hub check against the exact hub program on 6 hubs.}
+On 30 of the 120 routes (15 with $\varrho>0.75$) at $\gamma=10^{-4}$ and
+$10^{-6}$ we compare all methods with the exact conditional program
+(Table~\ref{tab:rivals}). The rivals are Glasserman--Li two-step IS
+\citep{GlassermanLi2005} with the factor shift at the dominant point (crude
+inner sampling, inner exponential shift, and a shift tuned on a pilot grid),
+conditional Monte Carlo over the two factors with the exact inner program and
+a tuned factor shift, and subset simulation \citep{AuBeck2001} with five
+replications of $2\,000$ draws per level. Costs are stated per unit of work
+(a simulator call, or one inner program for conditional Monte Carlo) and
+converted to the wall time needed for relative precision $\varepsilon$ at 95\%
+confidence, build and pilot included, on one core.
+
+\begin{table}[t]
+\centering\small
+\caption{Rivals against the exact conditional program, 30 routes (median over
+routes; error also as maximum). RV is per unit of work; $t(\varepsilon)$ is the
+one-core wall time for relative precision $\varepsilon$ at 95\% confidence,
+build and pilot included. The exact program needs no sampling; its time is
+per evaluation.}
+\label{tab:rivals}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{$\gamma=10^{-4}$} & \multicolumn{3}{c}{$\gamma=10^{-6}$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+method & error med / max & RV & $t(0.01)$ (s) & error med / max & RV & $t(0.01)$ (s) \\
+\midrule
+exact conditional program & reference & --- & 297 & reference & --- & 303 \\
+SMIS & 0.11 / 0.51\% & 4.6 & 2.6 & 0.16 / 0.58\% & 5.8 & 3.3 \\
+CE mixture & 0.16 / 0.38\% & 4.6 & 4.6 & 0.29 / 0.85\% & 5.9 & 6.4 \\
+single CE shift & 0.41 / 23.5\% & 4.3 & 2.5 & 0.36 / 94.7\% & 5.5 & 2.5 \\
+Glasserman--Li, crude inner & 5.0 / 47.8\% & 29 & 15 & 7.1 / 48.9\% & 57 & 32 \\
+Glasserman--Li, shifted inner & 3.1 / 47.1\% & 11 & 5.4 & 2.9 / 47.6\% & 13 & 6.6 \\
+Glasserman--Li, tuned shift & 2.9 / 45.3\% & 83 & 41 & 4.1 / 82.7\% & 15 & 16 \\
+conditional Monte Carlo & 2.6 / 93.7\% & 6.5 & 9\,310 & 3.1 / 63.0\% & 1.4 & 2\,190 \\
+subset simulation & 8.1 / 38.1\% & 716 & 431 & 21.6 / 108\% & 4\,430 & 1\,800 \\
+\midrule
+\multicolumn{7}{l}{routes with $\varrho>0.75$ only (15): median error} \\
+single CE shift & 6.2\% & 212 & & 9.7\% & 5.5 & \\
+Glasserman--Li, shifted inner & 15.5\% & 12 & & 7.4\% & 13 & \\
+conditional Monte Carlo & 13.7\% & 57 & & 13.2\% & 153 & \\
+SMIS & 0.15\% & 4.7 & & 0.15\% & 5.9 & \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+Four findings. First, SMIS agrees with the exact program within $0.58\%$ on
+every route, including the 15 routes with $\varrho>0.75$ and $\gamma=10^{-6}$,
+which the comparison with the CE mixture in Section~\ref{sec:routes} could
+not check independently. Second, the exact program costs about five minutes
+per route and level with $41^2$ factor nodes and two level counts; its own
+error estimate (nested-grid difference) has a median of $1.2\%$ of $p$, which
+is conservative given the $0.1$--$0.2\%$ agreement with SMIS. SMIS reaches
+$\varepsilon=0.01$ in $2.6$--$3.3$\,s, two orders of magnitude less. Third,
+the factor-based rivals inherit the single-mode failure, because both shift
+the factors towards one dominating point. On routes with $\varrho>0.75$,
+Glasserman--Li with a shifted inner step is off by $7$--$16\%$ in median
+while its sampling error is about $2.5\%$ (relative variance $12$--$13$ at
+$2\times10^4$ calls), so most of that error is bias. Conditional Monte Carlo's
+relative variance jumps from about $1$ to $57$--$153$ per inner program on the
+same routes, which is the same missed-mode effect seen through the variance;
+its $13\%$ median error there is mostly sampling error at $2\,000$ inner
+programs. Elsewhere the two are accurate to $1$--$5\%$ in median at these
+budgets.
+Fourth, subset simulation needs no mode information but has a relative
+variance of $700$--$4\,400$ per draw and needs $7$--$30$ minutes for
+$\varepsilon=0.01$. Errors in the table include sampling error at the budgets
+used ($2\times10^4$ simulator calls for Glasserman--Li, $2\,000$ inner programs
+for conditional Monte Carlo, $5\times$ the levels for subset simulation).
+\pending{exact hub program on 6 hubs.}
 
 \subsection{Sensitivity and coverage}
 \label{sec:sensitivity}
