@@ -448,6 +448,8 @@ def main(argv=None) -> int:
     ap.add_argument("--n-check", type=int, default=N_CHECK)
     ap.add_argument("--check-smallest", type=int, default=CHECK_SMALLEST)
     ap.add_argument("--out-dir", default=str(OUT_DIR))
+    ap.add_argument("--reverse", action="store_true",
+                    help="run the shard's tasks last first (a second machine works the shard from the other end)")
     ap.add_argument("--shard", default="0/1", help="i/n: run only the tasks with index %% n == i")
     ap.add_argument("--merge-from", default=None,
                     help="comma-separated shard output dirs: merge their CSVs into --out-dir and rebuild the summary")
@@ -484,6 +486,8 @@ def main(argv=None) -> int:
     # largest hubs first, so the long tasks do not all end at the end of the run
     tasks.sort(key=lambda t: -t["meta"]["n_customers"])
     tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
+    if args.reverse:
+        tasks = tasks[::-1]
     log.info("shard %d/%d", shard_i, shard_n)
     log.info("scope %s, hubs %d, gammas %s, tasks %d, workers %d, N_hub %d, N_base %d, max_evals %d, "
              "crude check hubs %d (N %d)", args.scope, len(hubs), gammas, len(tasks), args.workers, N_HUB,
