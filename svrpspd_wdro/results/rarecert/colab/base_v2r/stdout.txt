@@ -1,0 +1,3 @@
+2026-10-15 14:38:40,820 routes 30, route-gamma tasks 60, hub tasks 6, workers 2, grid 41, n_factor 2000
+2026-10-15 16:07:21,788 [1/66] hub VNN-LAOCAI gamma=0.001 done: p_ref=0.0008783 smis=0.0008835 z=0.16
+2026-10-15 16:10:27,709 [2/66] hub VNN-DIENBIEN gamma=0.001 done: p_ref=0.0009377 smis=0.0009563 z=0.46
