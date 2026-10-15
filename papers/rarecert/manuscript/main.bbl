@@ -1,0 +1,135 @@
+\begin{thebibliography}{18}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Asmussen and Glynn(2007)]{AsmussenGlynn2007}
+S{\o}ren Asmussen and Peter~W. Glynn.
+\newblock \emph{Stochastic Simulation: Algorithms and Analysis}.
+\newblock Springer, 2007.
+\newblock \doi{10.1007/978-0-387-69033-9}.
+
+\bibitem[Bassamboo et~al.(2008)Bassamboo, Juneja, and
+  Zeevi]{BassambooJunejaZeevi2008}
+Achal Bassamboo, Sandeep Juneja, and Assaf Zeevi.
+\newblock Portfolio credit risk with extremal dependence: asymptotic analysis
+  and efficient simulation.
+\newblock \emph{Operations Research}, 56\penalty0 (3):\penalty0 593--606, 2008.
+\newblock \doi{10.1287/opre.1080.0513}.
+
+\bibitem[Brassard et~al.(2002)Brassard, H{\o}yer, Mosca, and
+  Tapp]{Brassard2002}
+Gilles Brassard, Peter H{\o}yer, Michele Mosca, and Alain Tapp.
+\newblock Quantum amplitude amplification and estimation.
+\newblock \emph{Contemporary Mathematics}, 305:\penalty0 53--74, 2002.
+
+\bibitem[de~Boer et~al.(2005)de~Boer, Kroese, Mannor, and
+  Rubinstein]{deBoerEtAl2005}
+Pieter-Tjerk de~Boer, Dirk~P. Kroese, Shie Mannor, and Reuven~Y. Rubinstein.
+\newblock A tutorial on the cross-entropy method.
+\newblock \emph{Annals of Operations Research}, 134\penalty0 (1):\penalty0
+  19--67, 2005.
+\newblock \doi{10.1007/s10479-005-5724-z}.
+
+\bibitem[Dethloff(2001)]{Dethloff2001}
+Jan Dethloff.
+\newblock Vehicle routing and reverse logistics: the vehicle routing problem
+  with simultaneous delivery and pick-up.
+\newblock \emph{OR Spektrum}, 23\penalty0 (1):\penalty0 79--96, 2001.
+
+\bibitem[Dinh et~al.(2018)Dinh, Fukasawa, and Luedtke]{DinhFukasawaLuedtke2018}
+Thai Dinh, Ricardo Fukasawa, and James Luedtke.
+\newblock Exact algorithms for the chance-constrained vehicle routing problem.
+\newblock \emph{Mathematical Programming}, 172:\penalty0 105--138, 2018.
+\newblock \doi{10.1007/s10107-017-1151-6}.
+
+\bibitem[Dupuis and Wang(2007)]{DupuisWang2007}
+Paul Dupuis and Hui Wang.
+\newblock Subsolutions of an {I}saacs equation and efficient schemes for
+  importance sampling.
+\newblock \emph{Mathematics of Operations Research}, 32\penalty0 (3):\penalty0
+  723--757, 2007.
+\newblock \doi{10.1287/moor.1070.0266}.
+
+\bibitem[Erkut and Verter(1998)]{ErkutVerter1998}
+Erhan Erkut and Vedat Verter.
+\newblock Modeling of transport risk for hazardous materials.
+\newblock \emph{Operations Research}, 46\penalty0 (5):\penalty0 625--642, 1998.
+\newblock \doi{10.1287/opre.46.5.625}.
+
+\bibitem[Geyer et~al.(2019)Geyer, Papaioannou, and
+  Straub]{GeyerPapaioannouStraub2019}
+Sebastian Geyer, Iason Papaioannou, and Daniel Straub.
+\newblock Cross entropy-based importance sampling using {G}aussian densities
+  revisited.
+\newblock \emph{Structural Safety}, 76:\penalty0 15--27, 2019.
+\newblock \doi{10.1016/j.strusafe.2018.07.001}.
+
+\bibitem[Ghosal and Wiesemann(2020)]{GhosalWiesemann2020}
+Shubhechyya Ghosal and Wolfram Wiesemann.
+\newblock The distributionally robust chance-constrained vehicle routing
+  problem.
+\newblock \emph{Operations Research}, 68\penalty0 (3):\penalty0 716--732, 2020.
+\newblock \doi{10.1287/opre.2019.1924}.
+
+\bibitem[Glasserman and Li(2005)]{GlassermanLi2005}
+Paul Glasserman and Jingyi Li.
+\newblock Importance sampling for portfolio credit risk.
+\newblock \emph{Management Science}, 51\penalty0 (11):\penalty0 1643--1656,
+  2005.
+\newblock \doi{10.1287/mnsc.1050.0415}.
+
+\bibitem[Glasserman and Liu(1996)]{GlassermanLiu1996}
+Paul Glasserman and Tai-Wen Liu.
+\newblock Rare-event simulation for multistage production-inventory systems.
+\newblock \emph{Management Science}, 42\penalty0 (9):\penalty0 1292--1307,
+  1996.
+
+\bibitem[Glasserman and Wang(1997)]{GlassermanWang1997}
+Paul Glasserman and Yashan Wang.
+\newblock Counterexamples in importance sampling for large deviations
+  probabilities.
+\newblock \emph{The Annals of Applied Probability}, 7\penalty0 (3):\penalty0
+  731--746, 1997.
+
+\bibitem[Gounaris et~al.(2013)Gounaris, Wiesemann, and
+  Floudas]{GounarisWiesemannFloudas2013}
+Chrysanthos~E. Gounaris, Wolfram Wiesemann, and Christodoulos~A. Floudas.
+\newblock The robust capacitated vehicle routing problem under demand
+  uncertainty.
+\newblock \emph{Operations Research}, 61\penalty0 (3):\penalty0 677--693, 2013.
+
+\bibitem[Montanaro(2015)]{Montanaro2015}
+Ashley Montanaro.
+\newblock Quantum speedup of {M}onte {C}arlo methods.
+\newblock \emph{Proceedings of the Royal Society A}, 471\penalty0
+  (2181):\penalty0 20150301, 2015.
+\newblock \doi{10.1098/rspa.2015.0301}.
+
+\bibitem[Owen et~al.(2019)Owen, Maximov, and Chertkov]{OwenMaximovChertkov2019}
+Art~B. Owen, Yury Maximov, and Michael Chertkov.
+\newblock Importance sampling the union of rare events with an application to
+  power systems analysis.
+\newblock \emph{Electronic Journal of Statistics}, 13\penalty0 (1):\penalty0
+  231--254, 2019.
+\newblock \doi{10.1214/18-EJS1527}.
+
+\bibitem[Papaioannou et~al.(2019)Papaioannou, Geyer, and
+  Straub]{PapaioannouGeyerStraub2019}
+Iason Papaioannou, Sebastian Geyer, and Daniel Straub.
+\newblock Improved cross entropy-based importance sampling with a flexible
+  mixture model.
+\newblock \emph{Reliability Engineering \& System Safety}, 191:\penalty0
+  106564, 2019.
+\newblock \doi{10.1016/j.ress.2019.106564}.
+
+\bibitem[Sadowsky and Bucklew(1990)]{SadowskyBucklew1990}
+John~S. Sadowsky and James~A. Bucklew.
+\newblock On large deviations theory and asymptotically efficient {M}onte
+  {C}arlo estimation.
+\newblock \emph{IEEE Transactions on Information Theory}, 36\penalty0
+  (3):\penalty0 579--588, 1990.
+
+\end{thebibliography}

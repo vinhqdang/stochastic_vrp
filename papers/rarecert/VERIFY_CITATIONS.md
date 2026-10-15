@@ -122,3 +122,11 @@ Searches found no paper that uses importance sampling or rare-event simulation t
 5. Dinh, Fukasawa & Luedtke (2018) and Ghosal & Wiesemann (2020): exact and DRO treatments of route-level chance constraints.
 
 Caveats: most items are checked only from search snippets. Confirm DOIs at doi.org and full texts before citing. The 1989 Laporte et al. citation needs correcting (EJOR location-routing; the VRP paper is TS 1992). The 1e-6 HAZMAT rate and any GDP-type target remain unverified.
+
+## manuscript/references.bib status (2026-10-15)
+Entered from the R0 snippet checks and memory; every entry must be checked
+against the publisher page before submission, in particular:
+GlassermanWang1997 (no DOI yet), SadowskyBucklew1990 (from memory),
+GlassermanLiu1996 (title and pages from memory), GounarisWiesemannFloudas2013
+(no DOI), Dethloff2001 (from memory), GhosalWiesemann2020 (pages 716–732 from
+memory), Brassard2002 (Contemporary Mathematics 305).

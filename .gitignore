@@ -234,3 +234,7 @@ svrpspd_wdro/results/quasar/*_moves.csv.gz
 svrpspd_wdro/data/Region/_raw/
 svrpspd_wdro/results/quasar/m4b_rr_region_steps.csv
 svrpspd_wdro/results/rarecert/*_stdout.txt
+papers/rarecert/manuscript/*.aux
+papers/rarecert/manuscript/*.log
+papers/rarecert/manuscript/*.blg
+papers/rarecert/manuscript/*.out
