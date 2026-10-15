@@ -8,10 +8,10 @@
 (b) rarecert_bias_mhat.pdf: absolute single-shift relative bias against the exact-energy
     mode mass m_hat of the weaker end mode (sensitivity_routes.csv only, the sole file that
     records m_hat), log-log, with the identity line.
-(c) rarecert_mode_energies.pdf: norm |x*| = sqrt(2 E) of the dominating point of every
+(c) rarecert_mode_energies.pdf: energy E = |x*|^2 / 2 of the dominating point of every
     stage block (delivery block of stage k, pickup block of stage k) for one Northern Vietnam
     and one Guangdong route at gamma = 1e-4 (threshold c from smis_routes.csv), against the
-    asymptotic c / lambda_k of the same block (lambda_k = lam_d[k] or lam_p[k] from
+    asymptotic energy c / lambda_k of the same block (lambda_k = lam_d[k] or lam_p[k] from
     rarecert.smis.stage_scales).
 
 Usage (from svrpspd_wdro/):  python3 scripts/make_rarecert_figures.py
@@ -197,17 +197,17 @@ def fig_mode_energies():
                 except Unreachable:
                     continue
                 kk.append(k)
-                norms.append(float(np.linalg.norm(x)))
+                norms.append(0.5 * float(np.dot(x, x)))  # energy E = |x*|^2 / 2
                 asym.append(c / lam[k])
             if kk:
                 ax.plot(kk, norms, mk, mfc="none" if block == "d" else "k", color="k", ms=4,
-                        label=f"{'delivery' if block == 'd' else 'pickup'} block: $|x^*|$")
+                        label=f"{'delivery' if block == 'd' else 'pickup'} block: $E_k=|x^*|^2/2$")
                 ax.plot(kk, asym, "-" if block == "d" else ":", color="0.4", lw=0.9,
                         label=f"{'delivery' if block == 'd' else 'pickup'} block: $c/\\lambda_k$")
         ax.set_yscale("log")
         ax.set_xlabel("stage $k$")
         ax.set_title(f"{title}, {rid}, $L={sim.L}$", fontsize=8)
-        ax.set_ylabel(r"norm $|x^*|=\sqrt{2E}$")
+        ax.set_ylabel(r"energy $E_k$ (computed) and $c/\lambda_k$ (asymptotic)")
         ax.legend(fontsize=6, frameon=False)
         summary.append((rid, sim.L, c))
     fig.tight_layout()
