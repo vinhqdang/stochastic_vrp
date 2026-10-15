@@ -451,6 +451,8 @@ def main(argv=None) -> int:
     ap.add_argument("--reps", type=int, default=N_REP)
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--out-dir", default=str(OUT_DIR))
+    ap.add_argument("--reverse", action="store_true",
+                    help="run the (shard's) tasks last first, so a second machine can work a shard from the other end; concatenate the two checkpoints into one out-dir and rerun to collect")
     ap.add_argument("--shard", default="0/1", help="i/n: run only the tasks with index %% n == i")
     ap.add_argument("--merge-from", default=None,
                     help="comma-separated shard output dirs: merge their CSVs into --out-dir and rebuild the summary")
@@ -497,6 +499,8 @@ def main(argv=None) -> int:
                 tasks.append({"route": r, "setting": st, "sidx": sidx, "n_main": args.draws,
                               "n_ref": args.ref_draws})
         tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
+        if args.reverse:
+            tasks = tasks[::-1]
         log.info("sensitivity tasks: %d (shard %d/%d)", len(tasks), shard_i, shard_n)
         sens_rows = _pool_map(run_setting, tasks, args.workers, log, "sens", sens_key, out / CKPT)
         for r in sens_rows:
@@ -514,6 +518,8 @@ def main(argv=None) -> int:
         tasks = [{"route": r, "n_cov": args.cov_draws, "reps": args.reps, "n_ref": args.ref_draws}
                  for r in routes[: args.cov_routes]]
         tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
+        if args.reverse:
+            tasks = tasks[::-1]
         log.info("coverage routes: %d (shard %d/%d)", len(tasks), shard_i, shard_n)
         nested = _pool_map(run_coverage_route, tasks, args.workers, log, "cov", cov_key, out / CKPT)
         cov_rows = [row for rows in nested for row in rows]

@@ -533,6 +533,8 @@ def main(argv=None) -> int:
     ap.add_argument("--v-pair", default="256,512", help="two level counts V of the Richardson pair")
     ap.add_argument("--v-cond", type=int, default=256, help="level count of the conditional DP (cond MC, shift pilot)")
     ap.add_argument("--out-dir", default=str(OUT_DIR))
+    ap.add_argument("--reverse", action="store_true",
+                    help="run the (shard's) tasks last first, so a second machine can work a shard from the other end; concatenate the two checkpoints into one out-dir and rerun to collect")
     ap.add_argument("--shard", default="0/1", help="i/n: run only the tasks with index %% n == i")
     ap.add_argument("--merge-from", default=None,
                     help="comma-separated shard output dirs: merge their CSVs into --out-dir and rebuild the summary")
@@ -577,6 +579,8 @@ def main(argv=None) -> int:
     rows, hub_rows, fails = [], [], []
     ctx = mp.get_context("fork")
     all_tasks = [t for k, t in enumerate(tasks + hub_tasks) if k % shard_n == shard_i]
+    if args.reverse:
+        all_tasks = all_tasks[::-1]
     if args.merge_from:
         all_tasks = []
         for d in args.merge_from.split(","):
