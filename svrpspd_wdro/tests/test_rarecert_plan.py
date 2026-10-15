@@ -14,8 +14,17 @@ import math
 import numpy as np
 from scipy.special import logsumexp
 
+import rarecert.plan as plan_mod
 from quantum.rare import RouteSim
-from rarecert.plan import HubSim, hub_estimate, route_baselines
+from rarecert.plan import (
+    HubSim,
+    NoSMISCandidate,
+    calibrate_capacity,
+    hub_estimate,
+    log_S,
+    route_baselines,
+    route_min_energy,
+)
 
 CV = 0.3
 RHO = 0.6
@@ -140,3 +149,76 @@ def test_hub_estimate_agrees_with_crude_and_bounds_hold():
     assert np.all(est["route_attr"] >= 0.0)
     assert est["route_attr"].sum() <= 1.0 + 1e-12
     assert 0.0 <= est["multi_frac"] <= 1.0
+
+
+def test_route_without_smis_candidate_has_zero_mass(monkeypatch):
+    """Route 1 reaches c (its simulator peak exceeds c) but its SMIS build finds no candidate:
+    P_r = 0 at this c, so it is excluded from the proposal, from S(c) and from the baselines,
+    while the hub estimate stays unbiased through the defensive component."""
+    plan = _synthetic_plan()
+    hub = HubSim(plan, cv=CV, rho=RHO)
+    gamma = 1e-2
+    c = _calibrated_capacity(hub, gamma)
+    victim = 1
+    assert hub.reachable(victim, c)
+    real = plan_mod.route_mixture
+
+    def no_candidate_for_victim(sim, c_, eta=plan_mod.ETA_HUB, defensive=plan_mod.DEFENSIVE):
+        if sim is hub.sims[victim]:
+            raise NoSMISCandidate("forced for the test")
+        return real(sim, c_, eta=eta, defensive=defensive)
+
+    monkeypatch.setattr(plan_mod, "route_mixture", no_candidate_for_victim)
+    mix = hub.build_mixture(c)
+    assert not mix.extra["empty"]
+    assert mix.extra["nocand_routes"] == [victim]
+    assert victim not in mix.route.tolist()
+    assert route_min_energy(hub, victim, c) is None
+    base = route_baselines(hub, c, np.random.default_rng(8), N_r=50_000)
+    assert base["route_p_smis"][victim] == 0.0
+    assert base["route_modes"][victim] == 0
+    others = [-route_min_energy(hub, r, c) for r in range(hub.R) if r != victim]
+    assert math.isclose(log_S(hub, c), float(logsumexp(others)), rel_tol=1e-12)
+    est = hub_estimate(hub, c, 200_000, np.random.default_rng(9))
+    assert est["routes_nocand"] == [victim]
+    crude_p, crude_rse = _crude_hub(hub, c, 1_000_000, np.random.default_rng(10))
+    comb = math.sqrt((est["rse"] * est["p_hub"]) ** 2 + (crude_rse * crude_p) ** 2)
+    assert abs(est["p_hub"] - crude_p) <= 4.0 * comb
+
+
+def test_hub_without_reachable_route_has_zero_probability(monkeypatch):
+    plan = _synthetic_plan()
+    hub = HubSim(plan, cv=CV, rho=RHO)
+    c = 1e9   # above every route's supremum peak
+    assert not any(hub.reachable(r, c) for r in range(hub.R))
+    est = hub_estimate(hub, c, 1000, np.random.default_rng(12))
+    assert est["p_hub"] == 0.0
+    assert est["routes_nocand"] == []
+    base = route_baselines(hub, c, np.random.default_rng(13), N_r=1000)
+    assert base["upper_sum"] == 0.0 and base["lower_max"] == 0.0
+    assert log_S(hub, c) == -math.inf
+
+    # reachable routes, but no SMIS candidate for any of them: still P_hub = 0
+    def no_candidate(sim, c_, eta=plan_mod.ETA_HUB, defensive=plan_mod.DEFENSIVE):
+        raise NoSMISCandidate("forced for the test")
+
+    monkeypatch.setattr(plan_mod, "route_mixture", no_candidate)
+    c2 = _calibrated_capacity(hub, 1e-2)
+    est2 = hub_estimate(hub, c2, 1000, np.random.default_rng(14))
+    assert est2["p_hub"] == 0.0
+    assert sorted(est2["routes_nocand"]) == [r for r in range(hub.R) if hub.reachable(r, c2)]
+
+
+def test_calibrate_capacity_moves_hub_estimate_towards_gamma():
+    plan = _synthetic_plan()
+    hub = HubSim(plan, cv=CV, rho=RHO)
+    gamma = 1e-2
+    c_target = _calibrated_capacity(hub, gamma)
+    c0 = 0.9 * c_target          # proxy-like starting point, below the target
+    cal = calibrate_capacity(hub, gamma, c0, seed_of=lambda k: np.random.default_rng([21, k]),
+                             N=20_000)
+    assert 0 <= cal["steps"] <= 3
+    assert cal["evals"] == 2 + cal["steps"]
+    assert cal["pts"][0]["c"] == c0 and math.isclose(cal["pts"][1]["c"], 0.97 * c0)
+    est = hub_estimate(hub, cal["c"], 200_000, np.random.default_rng(22))
+    assert abs(math.log(est["p_hub"] / gamma)) < math.log(2.0)

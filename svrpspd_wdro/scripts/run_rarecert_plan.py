@@ -5,19 +5,24 @@ instance with its SAA plan (results/plans_Region/{name}.json, gate SAA): all rou
 capacity c common to the routes, the hub overflow event = some route overflows.
 
 For every hub and gamma in {1e-3, 1e-5}:
-* c from capacity_for: Laplace-type proxy log S(c) = log sum_r exp(-E_r(c)), E_r(c) the
-  smallest dominating-point energy of route r (route SMIS build, no draws); c solves
+* c0 from capacity_for: Laplace-type proxy log S(c) = log sum_r exp(-E_r(c)), E_r(c) the
+  smallest dominating-point energy of route r (route SMIS build, no draws); c0 solves
   log S(c) = log gamma by a safeguarded secant on [Q, 3Q] in at most 6 evaluations. S is a
-  proxy, not a bound, and is used only to locate c. Buffer b = c/Q - 1, Q the instance
-  capacity;
-* hub_estimate: P_hub by SMIS with N = 1e5 hub draws at that c (eta_hub = 1e-4), with rse,
+  proxy, not a bound, and is used only to start the search. Proxy buffer b0 = c0/Q - 1;
+* calibrate_capacity: the exact hub SMIS estimate is matched to gamma. Starting from the
+  pair (c0, 0.97 c0), up to 3 secant steps on f(c) = log P_hub(c) - log gamma, each P_hub
+  from hub_estimate with N = 2e4 draws (proposal rebuilt at each c), stop when |f| < log 1.25.
+  The final c is c_final; buffer b_final = c_final/Q - 1;
+* hub_estimate at c_final: P_hub by SMIS with N = 1e5 hub draws (eta_hub = 1e-4), with rse,
   RV, ESS, components and the risk attribution from the same draws. P_hub is the result and
-  need not equal gamma;
-* route_baselines at the same c: p_r by smis_estimate (N_r = 2e4), the bounds
+  need not equal gamma (the ratio P_hub/gamma is reported);
+* route_baselines at c_final: p_r by smis_estimate (N_r = 2e4), the bounds
   max_r p_r <= P_hub <= sum_r p_r, and the independence approximation 1 - prod_r (1 - p_r).
-For the 20 smallest hubs at gamma = 1e-3 also a crude Monte Carlo check with N = 2e6.
+  A route with no SMIS candidate at c has p_r = 0 (see rarecert/plan.py NoSMISCandidate);
+  a hub with no contributing route has P_hub = 0.
+For the 20 smallest hubs at gamma = 1e-3 also a crude Monte Carlo check with N = 2e6 at c_final.
 Region totals: P_region = 1 - prod_h (1 - P_h) over the hubs of a region (exact in the
-model, since hubs have separate factors), and buffers by region (median, q90).
+model, since hubs have separate factors), and b_final by region (median, q90).
 
 --scope all runs the 148 hubs. --scope sample runs the 26 VNN hubs plus 40 GD hubs chosen
 stratified by number of customers: GD hubs sorted by customers, split into 40 equal-size
@@ -52,7 +57,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rarecert.plan import (  # noqa: E402
+    CAL_STEPS,
     HubSim,
+    calibrate_capacity,
     capacity_for,
     hub_estimate,
     route_baselines,
@@ -67,7 +74,8 @@ SEED = 2026
 GAMMAS_DEFAULT = (1e-3, 1e-5)
 MAX_EVALS = 6         # capacity evaluations (log S secant on [Q, 3Q]), no draws
 N_BASE = 20_000       # draws per route for the route baselines, at the final c only
-N_HUB = 100_000       # hub SMIS draws
+N_HUB = 100_000       # hub SMIS draws at the final c
+N_CAL = 20_000        # hub SMIS draws per calibration evaluation (secant on log P_hub)
 SAMPLE_VNN_ALL = True
 SAMPLE_GD_BINS = 40
 SAMPLE_SEED = 31
@@ -81,8 +89,11 @@ SUMMARY_MD = "plan_summary.md"
 LOG_FILE = "plan.log"
 
 HUB_COLUMNS = [
-    "name", "region", "n_customers", "n_routes", "max_L", "Q", "gamma", "status", "c", "buffer",
-    "logS_at_c", "cap_evals", "cap_residual", "p_hub", "RV", "rse", "ESS", "n_components", "n_arc_fallback", "build_seconds", "sample_seconds",
+    "name", "region", "n_customers", "n_routes", "max_L", "Q", "gamma",
+    "status", "c0", "b0", "logS_at_c", "cap_evals", "cap_residual",
+    "cal_status", "cal_steps", "cal_evals", "cal_residual", "cal_trace",
+    "c", "b_final", "p_hub", "ratio_gamma", "RV", "rse", "ESS", "n_components", "n_arc_fallback",
+    "nocand_routes", "build_seconds", "sample_seconds",
     "p_upper_sum", "p_lower_max", "p_indep", "bounds_ok", "multi_frac", "top5_routes",
     "crude_N", "crude_p", "crude_rse", "crude_z", "seconds", "error",
 ]
@@ -139,25 +150,37 @@ def run_task(task: dict) -> dict:
     attr_rows = []
     try:
         hub = HubSim(meta["plan"], cv=CV, rho=RHO)
+        Q = hub.Q
         cap = capacity_for(hub, gamma, max_evals=MAX_EVALS)
-        c = cap["c"]
+        c0 = cap["c"]
+        cal = calibrate_capacity(
+            hub, gamma, c0, seed_of=lambda k: _seed(task["idx"], _gamma_key(gamma), 10 + k), N=N_CAL)
+        c = cal["c"]
         est = hub_estimate(hub, c, N_HUB, _seed(task["idx"], _gamma_key(gamma), 1))
         base = route_baselines(hub, c, _seed(task["idx"], _gamma_key(gamma), 2), N_r=N_BASE)
         p_r = base["route_p_smis"]
         rse_r = base["route_rse"]
         rel_max = float(np.max(rse_r[p_r > 0])) if np.any(p_r > 0) else 0.0
         p = est["p_hub"]
-        slack = 4.0 * (est["rse"] + rel_max) if math.isfinite(est["rse"]) else math.inf
-        bounds_ok = bool(p * (1.0 + slack) >= base["lower_max"] and p * (1.0 - slack) <= base["upper_sum"])
+        if p > 0.0:
+            slack = 4.0 * (est["rse"] + rel_max) if math.isfinite(est["rse"]) else math.inf
+            bounds_ok = bool(p * (1.0 + slack) >= base["lower_max"] and p * (1.0 - slack) <= base["upper_sum"])
+        else:   # P_hub = 0 is consistent only if every route probability is 0 too
+            bounds_ok = bool(base["lower_max"] <= 0.0)
         top = np.argsort(-est["route_attr"])[:5]
         top5 = "; ".join(f"r{int(r)}(L{len(hub.routes[r])}) attr={est['route_attr'][r]:.3f} p={p_r[r]:.3g}"
                          for r in top)
+        trace = " ".join(f"{q['c']:.6g}:{q['p_hub']:.3g}" for q in cal["pts"])
         row = _nan_row(meta, gamma, "")
         row.update({
-            "status": cap["status"], "c": c, "buffer": cap["buffer"], "logS_at_c": cap["logS_at_c"],
+            "status": cap["status"], "c0": c0, "b0": cap["buffer"], "logS_at_c": cap["logS_at_c"],
             "cap_evals": cap["evals"], "cap_residual": cap["residual"],
+            "cal_status": cal["status"], "cal_steps": cal["steps"], "cal_evals": cal["evals"],
+            "cal_residual": cal["residual"], "cal_trace": trace,
+            "c": c, "b_final": c / Q - 1.0, "ratio_gamma": p / gamma,
             "p_hub": p, "RV": est["RV"], "rse": est["rse"], "ESS": est["ESS"],
             "n_components": est["n_components"], "n_arc_fallback": est["n_arc_fallback"],
+            "nocand_routes": " ".join(str(r) for r in est["routes_nocand"]),
             "build_seconds": est["build_seconds"],
             "sample_seconds": est["sample_seconds"], "p_upper_sum": base["upper_sum"],
             "p_lower_max": base["lower_max"], "p_indep": base["indep"], "bounds_ok": bounds_ok,
@@ -241,31 +264,39 @@ def summary_markdown(rows, attr_rows, gammas, n_hubs, elapsed, n_fail, n_check) 
     L.append("# RARECERT plan level: certified overflow of the region hubs\n")
     L.append(
         f"{n_hubs} hubs (results/plans_Region, gate SAA), gamma in {', '.join(f'{g:g}' for g in gammas)} "
-        f"({len(ok)} hub-gamma rows ok, {n_fail} failed). Capacity: Laplace-type proxy log S(c) = log sum_r "
-        f"exp(-E_r(c)) (a proxy, not a bound), secant on [Q, 3Q] within {MAX_EVALS} evaluations. Hub SMIS: "
-        f"N = {N_HUB:,} draws at that c, eta_hub = 1e-4. Route baselines "
-        f"N_r = {N_BASE:,}. Wall time {elapsed / 60:.1f} min.\n")
+        f"({len(ok)} hub-gamma rows ok, {n_fail} failed). Proxy c0: Laplace-type log S(c) = log sum_r "
+        f"exp(-E_r(c)) (a proxy, not a bound), secant on [Q, 3Q] within {MAX_EVALS} evaluations. Calibration: "
+        f"exact hub SMIS with N = {N_CAL:,} draws per evaluation, secant on log P_hub - log gamma from "
+        f"(c0, 0.97 c0), at most {CAL_STEPS} steps, stop at |f| < log 1.25; final c_final by hub SMIS with "
+        f"N = {N_HUB:,} draws, eta_hub = 1e-4. Route baselines N_r = {N_BASE:,} at c_final. "
+        f"Wall time {elapsed / 60:.1f} min.\n")
     L.append("P_region = 1 - prod over the hubs of the region of (1 - P_h), with P_h the hub SMIS estimate at "
-             "its own c (exact in the model: hubs have separate factors). Buffer b = c/Q - 1.\n")
+             "the calibrated c_final (exact in the model: hubs have separate factors). b_final = c_final/Q - 1 "
+             "is the calibrated buffer; b0 = c0/Q - 1 is the proxy buffer, kept for comparison.\n")
     L.append("## Region totals and buffers\n")
-    L.append("| gamma | region | hubs | P_region (SMIS) | median buffer | q90 buffer | median P_h | "
-             "capacity status (bisect / capped / below Q) |")
-    L.append("|---|---|---|---|---|---|---|---|")
+    L.append("| gamma | region | hubs | P_region (SMIS) | median b_final | q90 b_final | median b0 (proxy) | "
+             "median P_h | calibration converged / max_steps / stalled | median steps |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|")
     for g in gammas:
         for reg in REGIONS + ("all",):
             sub = [r for r in ok if r["gamma"] == g and (reg == "all" or r["region"] == reg)]
             if not sub:
                 continue
             ps = _vals(sub, "p_hub")
-            bs = _vals(sub, "buffer")
+            bs = _vals(sub, "b_final")
+            b0s = _vals(sub, "b0")
+            steps = _vals(sub, "cal_steps")
             st = {}
             for r in sub:
-                st[r["status"]] = st.get(r["status"], 0) + 1
-            st_s = " / ".join(f"{st.get(k, 0)}" for k in ("bisect", "capped_3Q", "at_or_below_Q"))
+                st[r["cal_status"]] = st.get(r["cal_status"], 0) + 1
+            st_s = " / ".join(f"{st.get(k, 0)}" for k in ("converged", "max_steps", "stalled"))
             med_bs = float(np.median(bs)) if bs.size else math.nan
             q90_bs = float(np.quantile(bs, 0.9)) if bs.size else math.nan
+            med_b0 = float(np.median(b0s)) if b0s.size else math.nan
             L.append(f"| {g:g} | {reg} | {len(sub)} | {_f(region_prob(ps))} | {_f(med_bs, '.4f')} | "
-                     f"{_f(q90_bs, '.4f')} | {_f(float(np.median(ps)) if ps.size else math.nan)} | {st_s} |")
+                     f"{_f(q90_bs, '.4f')} | {_f(med_b0, '.4f')} | "
+                     f"{_f(float(np.median(ps)) if ps.size else math.nan)} | {st_s} | "
+                     f"{_f(float(np.median(steps)) if steps.size else math.nan, '.1f')} |")
     L.append("")
     L.append("## Baselines and bounds\n")
     L.append("| gamma | bounds hold (hubs) | P_h / max p_r (median) | P_h / sum p_r (median) | "
@@ -284,15 +315,30 @@ def summary_markdown(rows, attr_rows, gammas, n_hubs, elapsed, n_fail, n_check) 
         L.append(f"| {g:g} | {nb} / {len(sub)} | {_f(np.median(ratio_max))} | {_f(np.median(ratio_sum))} | "
                  f"{_f(np.median(ind))} | {_f(np.quantile(ind, 0.9))} | {_f(np.median(mf) if mf.size else math.nan)} |")
     L.append("")
-    L.append("Bounds are checked with slack 4 (rse_hub + max rse_r) on both sides. The capacity proxy "
-             "is not a bound, so P_h at the chosen c can sit above or below gamma; the ratio is reported below.\n")
-    L.append("| gamma | median P_h / gamma | q90 P_h / gamma | min P_h / gamma |")
-    L.append("|---|---|---|---|")
+    L.append("Bounds are checked with slack 4 (rse_hub + max rse_r) on both sides. Calibration stops at "
+             f"|log(P_h/gamma)| < log 1.25 (or after {CAL_STEPS} secant steps, N = {N_CAL:,} per evaluation); "
+             "the final P_h (N = 1e5 at c_final) is then compared with gamma below.\n")
+    L.append("## P_h / gamma distribution (final estimate at c_final)\n")
+    L.append("| gamma | region | hubs | median P_h / gamma | q10 | q90 | min | max | outside log 1.25 band |")
+    L.append("|---|---|---|---|---|---|---|---|---|")
     for g in gammas:
-        sub = [r for r in ok if r["gamma"] == g]
-        rat = _vals(sub, "p_hub") / g
-        if rat.size:
-            L.append(f"| {g:g} | {_f(np.median(rat))} | {_f(np.quantile(rat, 0.9))} | {_f(rat.min())} |")
+        for reg in REGIONS + ("all",):
+            sub = [r for r in ok if r["gamma"] == g and (reg == "all" or r["region"] == reg)]
+            rat = _vals(sub, "ratio_gamma")
+            if rat.size:
+                off = int(np.sum(np.abs(np.log(np.maximum(rat, 1e-300))) > math.log(1.25)))
+                L.append(f"| {g:g} | {reg} | {len(sub)} | {_f(np.median(rat))} | {_f(np.quantile(rat, 0.1))} | "
+                         f"{_f(np.quantile(rat, 0.9))} | {_f(rat.min())} | {_f(rat.max())} | {off} / {rat.size} |")
+    L.append("")
+    nocand = [r for r in ok if str(r.get("nocand_routes", "")).strip()]
+    L.append("## Routes without an SMIS candidate (P_r = 0 at c_final)\n")
+    if nocand:
+        L.append(f"{len(nocand)} hub-gamma rows have at least one route with no SMIS candidate at c_final "
+                 "(treated as P_r = 0; excluded from the mixture and from S(c)).\n")
+        for r in nocand:
+            L.append(f"- {r['name']} gamma={float(r['gamma']):g}: routes {r['nocand_routes']} of {r['n_routes']}")
+    else:
+        L.append("None.")
     L.append("")
     if n_check:
         L.append(f"## Crude Monte Carlo check (gamma = {CHECK_GAMMA:g}, {N_CHECK:,} draws, 20 smallest hubs)\n")
@@ -392,9 +438,11 @@ def main(argv=None) -> int:
                 log.error("[%d/%d] %s gamma=%g FAILED: %s", k, len(tasks), name, g, res["error"])
             else:
                 r = res["row"]
-                log.info("[%d/%d] %s n=%s gamma=%g done in %.1fs: c=%.1f b=%.4f P_hub=%.3g rse=%.3g "
-                         "comps=%s evals=%s status=%s", k, len(tasks), name, r["n_customers"], g, r["seconds"],
-                         r["c"], r["buffer"], r["p_hub"], r["rse"], r["n_components"], r["cap_evals"], r["status"])
+                log.info("[%d/%d] %s n=%s gamma=%g done in %.1fs: c0=%.1f c=%.1f b0=%.4f b_final=%.4f "
+                         "P_hub=%.3g ratio=%.3g rse=%.3g comps=%s cal=%s steps=%s nocand=%s",
+                         k, len(tasks), name, r["n_customers"], g, r["seconds"], r["c0"], r["c"], r["b0"],
+                         r["b_final"], r["p_hub"], r["ratio_gamma"], r["rse"], r["n_components"],
+                         r["cal_status"], r["cal_steps"], r["nocand_routes"] or "-")
 
     rows.sort(key=lambda r: (r["name"], -float(r["gamma"])))
     attrs.sort(key=lambda r: (r["name"], -float(r["gamma"]), int(r["route"])))

@@ -20,7 +20,11 @@ a defensive N(0, I) component of weight `defensive`. Each embedded component is
 sparse (2 + 2 L_r nonzeros), so the likelihood ratio uses index lists.
 
 Entry points: HubSim (simulator, embedding, proposal, likelihood ratio),
-hub_estimate, route_baselines, capacity_for.
+hub_estimate, route_baselines, capacity_for (proxy c0), calibrate_capacity (exact-SMIS c).
+
+A route whose peak reaches c but for which no SMIS candidate exists (NoSMISCandidate) has
+P_r = 0 at that c: it contributes no mixture component and no term to S(c) or the baselines.
+A hub with no contributing route has P_hub = 0 at that c.
 """
 
 from __future__ import annotations
@@ -75,12 +79,19 @@ class HubMixture:
 ARC_FALLBACK = (3, 8)   # route builds: n_arc = 0 first; arc candidates only if no ray reaches c
 
 
+class NoSMISCandidate(RuntimeError):
+    """No SMIS candidate (block ray or arc) reaches c although the route's simulator peak
+    exceeds c. Hub callers treat such a route as P_r = 0 at this c: it is excluded from the
+    proposal and from S(c), and the hub estimate remains unbiased through the defensive
+    component."""
+
+
 def route_mixture(sim: RouteSim, c: float, eta: float = ETA_HUB, defensive: float = DEFENSIVE):
     """Route-level SMIS build (smis.smis_mixture). The block rays of smis.py reach c only
     if one block alone can push the stage load past c; a route whose peak needs both blocks
     at the same stage has no block-ray candidate (IndexError inside smis_mixture). Then the
     arc candidates between the two blocks of a stage are used (n_arc = 3, then 8). Returns
-    (mixture, diagnostics, n_arc used)."""
+    (mixture, diagnostics, n_arc used). Raises NoSMISCandidate if no candidate reaches c."""
     last = None
     for n_arc in (0,) + ARC_FALLBACK:
         try:
@@ -89,7 +100,7 @@ def route_mixture(sim: RouteSim, c: float, eta: float = ETA_HUB, defensive: floa
             last = exc
             continue
         return mix, diag, n_arc
-    raise RuntimeError(f"no SMIS candidate reaches c={c} (also with arcs): {last}")
+    raise NoSMISCandidate(f"no SMIS candidate reaches c={c} (also with arcs): {last}")
 
 
 class HubSim:
@@ -184,31 +195,45 @@ class HubSim:
 
     def build_mixture(self, c: float, eta: float = ETA_HUB, defensive: float = DEFENSIVE,
                       keep: float = None) -> HubMixture:
-        """Hub proposal at capacity c from the route-level SMIS builds (no simulation)."""
+        """Hub proposal at capacity c from the route-level SMIS builds (no simulation).
+
+        A route contributes no component when its peak cannot reach c (P_r = 0 exactly) or
+        when no SMIS candidate reaches c (NoSMISCandidate, P_r = 0 by convention at this c);
+        the latter routes are listed in extra["nocand_routes"]. When no route contributes the
+        mixture is the defensive component alone with extra["empty"] = True, and hub_estimate
+        returns P_hub = 0 at this c."""
         if keep is None:
             keep = 1.0 - defensive
         t0 = time.perf_counter()
         cand = []   # (energy, route, route-coordinate mean)
         n_fallback = 0
+        nocand = []
         for r in range(self.R):
             if not self.reachable(r, c):
                 continue   # P(F_r > c) = 0 exactly in the simulator
-            mix_r, diag_r, n_arc = route_mixture(self.sims[r], c, eta=eta, defensive=defensive)
+            try:
+                mix_r, diag_r, n_arc = route_mixture(self.sims[r], c, eta=eta, defensive=defensive)
+            except NoSMISCandidate:
+                nocand.append(r)
+                continue
             n_fallback += int(n_arc > 0)
             E_r = diag_r["E"]
             if not E_r:
                 raise RuntimeError(f"route {r} has no SMIS mode at c={c}")
             for m, E in enumerate(E_r, start=1):
                 cand.append((float(E), r, mix_r.thetas[m]))
-        if not cand:
-            raise RuntimeError(f"no route of the hub reaches c={c}")
-        E_all = np.array([t[0] for t in cand])
-        E_min = float(E_all.min())
-        keep_mask = E_all <= E_min + math.log(1.0 / eta)
-        sel = [cand[i] for i in np.nonzero(keep_mask)[0]]
-        E = np.array([t[0] for t in sel])
-        mass = np.exp(-(E - E_min))
-        a = keep * mass / mass.sum()
+        if cand:
+            E_all = np.array([t[0] for t in cand])
+            E_min = float(E_all.min())
+            keep_mask = E_all <= E_min + math.log(1.0 / eta)
+            sel = [cand[i] for i in np.nonzero(keep_mask)[0]]
+            E = np.array([t[0] for t in sel])
+            mass = np.exp(-(E - E_min))
+            a = keep * mass / mass.sum()
+        else:   # empty hub proposal: hub_estimate returns P_hub = 0 (extra["empty"])
+            E_min = math.nan
+            sel = []
+            a = np.zeros(0)
         idx = [np.zeros(0, dtype=int)]
         val = [np.zeros(0)]
         log_a = [math.log(defensive)] if defensive > 0 else [-math.inf]
@@ -227,7 +252,8 @@ class HubSim:
         return HubMixture(idx=idx, val=val, log_a=np.array(log_a), sq=np.array(sq),
                           energy=np.array(energy), route=np.array(route, dtype=int),
                           build_seconds=time.perf_counter() - t0,
-                          extra={"E_min": E_min, "n_candidates": len(cand), "n_arc_fallback": n_fallback})
+                          extra={"E_min": E_min, "n_candidates": len(cand), "n_arc_fallback": n_fallback,
+                                 "nocand_routes": nocand, "empty": not cand})
 
     def log_weights(self, x, mix: HubMixture) -> np.ndarray:
         """log w(x) = log phi(x) - log q(x), with q = sum_m a_m N(theta_m, I).
@@ -277,6 +303,13 @@ def hub_estimate(hub: HubSim, c: float, N: int, rng: np.random.Generator,
         raise ValueError("N must be >= 2")
     if mix is None:
         mix = hub.build_mixture(c)
+    if mix.extra.get("empty"):   # no route can overflow c, or none has a candidate: P_hub = 0
+        return {
+            "p_hub": 0.0, "RV": math.nan, "rse": math.nan, "ESS": math.nan, "n_components": 0,
+            "build_seconds": mix.build_seconds, "n_arc_fallback": 0, "routes_nocand": mix.extra["nocand_routes"],
+            "sample_seconds": 0.0, "N": N, "route_p": np.zeros(hub.R),
+            "route_attr": np.full(hub.R, math.nan), "multi_frac": math.nan,
+        }
     chunk = int(chunk) if chunk else hub.row_chunk
     t0 = time.perf_counter()
     s1 = s2 = sw = sw2 = 0.0
@@ -318,7 +351,7 @@ def hub_estimate(hub: HubSim, c: float, N: int, rng: np.random.Generator,
     return {
         "p_hub": p, "RV": RV, "rse": rse, "ESS": sw * sw / sw2 if sw2 > 0 else math.nan,
         "n_components": mix.n_components, "build_seconds": mix.build_seconds,
-        "n_arc_fallback": mix.extra["n_arc_fallback"],
+        "n_arc_fallback": mix.extra["n_arc_fallback"], "routes_nocand": mix.extra["nocand_routes"],
         "sample_seconds": time.perf_counter() - t0, "N": N,
         "route_p": route_w / N, "route_attr": attr, "multi_frac": multi,
     }
@@ -335,7 +368,11 @@ def route_baselines(hub: HubSim, c: float, rng: np.random.Generator, N_r: int = 
         if not hub.reachable(r, c):
             p[r], rse[r], n_modes[r] = 0.0, 0.0, 0   # exact zero, see HubSim.route_max_peak
             continue
-        mix, diag, _ = route_mixture(hub.sims[r], c, eta=ETA_HUB)
+        try:
+            mix, diag, _ = route_mixture(hub.sims[r], c, eta=ETA_HUB)
+        except NoSMISCandidate:
+            p[r], rse[r], n_modes[r] = 0.0, math.nan, 0   # P_r = 0 by convention at this c
+            continue
         p_hat, _, rse_r, _ = is_mixture(hub.sims[r], c, mix, int(N_r), rng)
         p[r], rse[r], n_modes[r] = p_hat, rse_r, diag["n_modes"]
     return {
@@ -350,7 +387,10 @@ def route_min_energy(hub: HubSim, r: int, c: float):
     build (no draws). None if no route point reaches c (P_r = 0 exactly)."""
     if not hub.reachable(r, c):
         return None
-    _, diag, _ = route_mixture(hub.sims[r], c, eta=ETA_HUB)
+    try:
+        _, diag, _ = route_mixture(hub.sims[r], c, eta=ETA_HUB)
+    except NoSMISCandidate:
+        return None   # no SMIS candidate: excluded from S(c), as P_r = 0 at this c
     return float(diag["E_min"])
 
 
@@ -418,3 +458,55 @@ def capacity_for(hub: HubSim, gamma: float, max_evals: int = 6, tol: float = 0.0
             last = 1
     return {"c": hi, "buffer": hi / Q - 1.0, "logS_at_c": fhi + lg, "residual": fhi,
             "evals": evals, "status": "secant"}
+
+
+CAL_TOL = math.log(1.25)   # calibration stops when |log P_hub(c) - log gamma| < log 1.25
+CAL_STEPS = 3              # secant steps after the starting pair
+CAL_START = 0.97           # second starting point is CAL_START * c0
+
+
+def calibrate_capacity(hub: HubSim, gamma: float, c0: float, seed_of, N: int = 20_000,
+                       steps: int = CAL_STEPS, tol: float = CAL_TOL, start: float = CAL_START) -> dict:
+    """Refine the proxy capacity c0 so that the exact hub SMIS estimate matches gamma.
+
+    f(c) = log P_hub(c) - log gamma, with P_hub(c) = hub_estimate(c, N draws); the proposal is
+    rebuilt at each c. Evaluations: the pair (c0, start * c0), then up to `steps` secant steps
+    on the two most recent points, each clamped to [c0 / 2, 2 c0]. The loop stops as soon as
+    the best |f| is below tol. A zero estimate enters f floored at 1/N (zero_hits counts them).
+    seed_of(k) returns the generator of the k-th evaluation.
+
+    Returns c (the evaluated point with the smallest |f|), residual (its f), steps taken,
+    evals, status ('converged', 'max_steps' or 'stalled') and the evaluation log pts."""
+    if not 0.0 < gamma < 1.0:
+        raise ValueError(f"gamma must lie in (0, 1), got {gamma}")
+    lg = math.log(gamma)
+    pts = []
+
+    def evaluate(c):
+        est = hub_estimate(hub, float(c), int(N), seed_of(len(pts)))
+        p = est["p_hub"]
+        f = math.log(p if p > 0.0 else 1.0 / N) - lg
+        pts.append({"c": float(c), "f": f, "p_hub": p, "rse": est["rse"], "zero": not p > 0.0})
+
+    evaluate(c0)
+    evaluate(start * c0)
+    taken = 0
+    status = "max_steps"
+    while True:
+        best = min(pts, key=lambda q: abs(q["f"]))
+        if abs(best["f"]) < tol:
+            status = "converged"
+            break
+        if taken >= steps:
+            break
+        a, b = pts[-2], pts[-1]
+        if b["f"] == a["f"] or b["c"] == a["c"]:
+            status = "stalled"
+            break
+        c_new = b["c"] - b["f"] * (b["c"] - a["c"]) / (b["f"] - a["f"])
+        c_new = min(max(c_new, 0.5 * c0), 2.0 * c0)
+        evaluate(c_new)
+        taken += 1
+    best = min(pts, key=lambda q: abs(q["f"]))
+    return {"c": best["c"], "residual": best["f"], "steps": taken, "evals": len(pts),
+            "status": status, "pts": pts}
