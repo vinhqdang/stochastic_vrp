@@ -413,6 +413,23 @@ def _pool_map(fn, tasks, workers, log, label):
     return out
 
 
+def _retype(rows):
+    """CSV rows back to numbers where possible (merge path)."""
+    out = []
+    for r in rows:
+        q = {}
+        for k, v in r.items():
+            if v in ("", None):
+                q[k] = None if k != "error" else ""
+                continue
+            try:
+                q[k] = int(v) if v.lstrip("-").isdigit() else float(v)
+            except ValueError:
+                q[k] = v
+        out.append(q)
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--part", choices=("all", "sensitivity", "coverage"), default="all")
@@ -424,7 +441,11 @@ def main(argv=None) -> int:
     ap.add_argument("--reps", type=int, default=N_REP)
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--out-dir", default=str(OUT_DIR))
+    ap.add_argument("--shard", default="0/1", help="i/n: run only the tasks with index %% n == i")
+    ap.add_argument("--merge-from", default=None,
+                    help="comma-separated shard output dirs: merge their CSVs into --out-dir and rebuild the summary")
     args = ap.parse_args(argv)
+    shard_i, shard_n = (int(v) for v in args.shard.split("/"))
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -434,6 +455,26 @@ def main(argv=None) -> int:
     t_start = time.time()
     cfg = {"routes": args.routes, "cov_routes": args.cov_routes, "draws": args.draws,
            "ref_draws": args.ref_draws, "cov_draws": args.cov_draws, "reps": args.reps}
+
+    if args.merge_from:
+        sens_rows, cov_rows = [], []
+        for d in args.merge_from.split(","):
+            d = Path(d)
+            if (d / SENS_CSV).exists():
+                with open(d / SENS_CSV) as fh:
+                    sens_rows += list(csv.DictReader(fh))
+            if (d / COV_CSV).exists():
+                with open(d / COV_CSV) as fh:
+                    cov_rows += list(csv.DictReader(fh))
+        for rows, cols, name in ((sens_rows, SENS_COLUMNS, SENS_CSV), (cov_rows, COV_COLUMNS, COV_CSV)):
+            with open(out / name, "w", newline="") as fh:
+                wr = csv.DictWriter(fh, fieldnames=cols)
+                wr.writeheader()
+                for r in rows:
+                    wr.writerow({k: r.get(k, "") for k in cols})
+        (out / SUMMARY_MD).write_text(summary_markdown(_retype(sens_rows), _retype(cov_rows), cfg, 0.0))
+        log.info("merged %d sensitivity rows and %d coverage rows", len(sens_rows), len(cov_rows))
+        return
 
     routes = build_route_list(max(args.routes, args.cov_routes))
     log.info("routes loaded: %d (sensitivity %d, coverage %d)", len(routes), args.routes, args.cov_routes)
@@ -445,7 +486,8 @@ def main(argv=None) -> int:
             for sidx, st in enumerate(SETTINGS):
                 tasks.append({"route": r, "setting": st, "sidx": sidx, "n_main": args.draws,
                               "n_ref": args.ref_draws})
-        log.info("sensitivity tasks: %d", len(tasks))
+        tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
+        log.info("sensitivity tasks: %d (shard %d/%d)", len(tasks), shard_i, shard_n)
         sens_rows = _pool_map(run_setting, tasks, args.workers, log, "sens")
         for r in sens_rows:
             if r["error"]:
@@ -461,7 +503,8 @@ def main(argv=None) -> int:
     if args.part in ("all", "coverage"):
         tasks = [{"route": r, "n_cov": args.cov_draws, "reps": args.reps, "n_ref": args.ref_draws}
                  for r in routes[: args.cov_routes]]
-        log.info("coverage routes: %d", len(tasks))
+        tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
+        log.info("coverage routes: %d (shard %d/%d)", len(tasks), shard_i, shard_n)
         nested = _pool_map(run_coverage_route, tasks, args.workers, log, "cov")
         cov_rows = [row for rows in nested for row in rows]
         with open(out / COV_CSV, "w", newline="") as fh:
