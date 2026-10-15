@@ -57,6 +57,7 @@ if str(ROOT / "scripts") not in sys.path:
 import run_quasar_rare as rq  # noqa: E402  (CV, RHO)
 import run_rarecert_smis as rs  # noqa: E402  (csv loaders, route means, bands)
 from quantum.rare import RouteSim  # noqa: E402
+from rarecert.checkpoint import resumable_map  # noqa: E402
 from rarecert.baselines import (  # noqa: E402
     cond_mc,
     cond_shift,
@@ -74,6 +75,7 @@ SMIS_CSV = ROOT / "results" / "rarecert" / "smis_routes.csv"
 HUBS_IN_CSV = ROOT / "results" / "rarecert" / "plan_hubs.csv"
 OUT_DIR = ROOT / "results" / "rarecert"
 GATE = "SAA"
+CKPT = "baselines_checkpoint.jsonl"
 ROUTES_CSV = "baselines_routes.csv"
 HUBS_CSV = "baselines_hubs.csv"
 SUMMARY_MD = "baselines_summary.md"
@@ -296,6 +298,10 @@ def run_hub_task(task: dict) -> dict:
     except Exception as exc:
         row["error"] = f"{type(exc).__name__}: {exc}"
     return {"kind": "hub", "key": (task["name"], task["gamma"]), "row": row, "error": row["error"]}
+
+
+def task_key(t: dict):
+    return (t["kind"], t["rid"] if t["kind"] == "route" else t["name"], t["gamma"])
 
 
 def run_task(task: dict) -> dict:
@@ -580,7 +586,7 @@ def main(argv=None) -> int:
                     with open(d / name) as fh:
                         dest.extend(dict(r) for r in csv.DictReader(fh))
     with ctx.Pool(processes=max(1, args.workers)) as pool_:
-        for k, res in enumerate(pool_.imap_unordered(run_task, all_tasks, chunksize=1) if all_tasks else [], 1):
+        for k, res in enumerate(resumable_map(run_task, all_tasks, task_key, out / CKPT, pool_), 1):
             if res["kind"] == "route":
                 rows.append(res["row"])
                 tag = f"{res['key'][0]} gamma={res['key'][1]:g}"

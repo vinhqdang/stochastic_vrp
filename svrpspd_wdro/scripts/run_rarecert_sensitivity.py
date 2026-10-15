@@ -63,6 +63,7 @@ if str(ROOT / "scripts") not in sys.path:
 import run_rarecert_smis as rs  # noqa: E402  (QUASAR route sampler, CV, RHO, route means)
 from quantum.rare import ce_mixture, ce_shift, is_mixture, is_shift, threshold_for  # noqa: E402
 from rarecert.baselines import exact_reference  # noqa: E402
+from rarecert.checkpoint import resumable_map  # noqa: E402
 from rarecert.family import FamilyRouteSim  # noqa: E402
 from rarecert.smis import (  # noqa: E402
     Unreachable,
@@ -76,6 +77,7 @@ RARE_CSV = rs.RARE_CSV
 OUT_DIR = ROOT / "results" / "rarecert"
 SENS_CSV = "sensitivity_routes.csv"
 COV_CSV = "coverage.csv"
+CKPT = "sensitivity_checkpoint.jsonl"
 SUMMARY_MD = "sensitivity_summary.md"
 LOG_FILE = "sensitivity.log"
 
@@ -398,16 +400,24 @@ def summary_markdown(sens: list[dict], cov: list[dict], cfg: dict, elapsed: floa
 # ============================================================
 
 
-def _pool_map(fn, tasks, workers, log, label):
+def sens_key(t: dict):
+    return ("sens", t["route"]["route_id"], t["sidx"])
+
+
+def cov_key(t: dict):
+    return ("cov", t["route"]["route_id"])
+
+
+def _pool_map(fn, tasks, workers, log, label, keyfn, ckpt):
     out = []
     if workers <= 1:
-        for k, t in enumerate(tasks, 1):
-            out.append(fn(t))
+        for k, res in enumerate(resumable_map(fn, tasks, keyfn, ckpt), 1):
+            out.append(res)
             log.info("%s [%d/%d] done", label, k, len(tasks))
         return out
     ctx = mp.get_context("fork")
     with ctx.Pool(processes=workers) as pool:
-        for k, res in enumerate(pool.imap_unordered(fn, tasks, chunksize=1), 1):
+        for k, res in enumerate(resumable_map(fn, tasks, keyfn, ckpt, pool), 1):
             out.append(res)
             log.info("%s [%d/%d] done", label, k, len(tasks))
     return out
@@ -488,7 +498,7 @@ def main(argv=None) -> int:
                               "n_ref": args.ref_draws})
         tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
         log.info("sensitivity tasks: %d (shard %d/%d)", len(tasks), shard_i, shard_n)
-        sens_rows = _pool_map(run_setting, tasks, args.workers, log, "sens")
+        sens_rows = _pool_map(run_setting, tasks, args.workers, log, "sens", sens_key, out / CKPT)
         for r in sens_rows:
             if r["error"]:
                 log.error("%s %s FAILED: %s", r["route_id"], r["setting"], r["error"])
@@ -505,7 +515,7 @@ def main(argv=None) -> int:
                  for r in routes[: args.cov_routes]]
         tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
         log.info("coverage routes: %d (shard %d/%d)", len(tasks), shard_i, shard_n)
-        nested = _pool_map(run_coverage_route, tasks, args.workers, log, "cov")
+        nested = _pool_map(run_coverage_route, tasks, args.workers, log, "cov", cov_key, out / CKPT)
         cov_rows = [row for rows in nested for row in rows]
         with open(out / COV_CSV, "w", newline="") as fh:
             wr = csv.DictWriter(fh, fieldnames=COV_COLUMNS)

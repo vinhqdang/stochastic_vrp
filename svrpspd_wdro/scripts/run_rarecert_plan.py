@@ -56,6 +56,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from rarecert.checkpoint import resumable_map  # noqa: E402
 from rarecert.plan import (  # noqa: E402
     CAL_STEPS,
     HubSim,
@@ -83,6 +84,7 @@ N_CHECK = 2_000_000
 CHECK_SMALLEST = 20
 CHECK_GAMMA = 1e-3
 REGIONS = ("VNN", "GD")
+CKPT = "plan_checkpoint.jsonl"
 HUBS_CSV = "plan_hubs.csv"
 ATTR_CSV = "plan_attribution.csv"
 SUMMARY_MD = "plan_summary.md"
@@ -428,6 +430,10 @@ def merge_shards(dirs, out: Path, gammas, log) -> int:
     return 0
 
 
+def task_key(t: dict):
+    return (t["meta"]["name"], t["gamma"])
+
+
 def main(argv=None) -> int:
     global N_HUB, N_BASE, MAX_EVALS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -486,7 +492,7 @@ def main(argv=None) -> int:
     rows, attrs, fails = [], [], []
     ctx = mp.get_context("fork")
     with ctx.Pool(processes=max(1, args.workers)) as pool_:
-        for k, res in enumerate(pool_.imap_unordered(run_task, tasks, chunksize=1), 1):
+        for k, res in enumerate(resumable_map(run_task, tasks, task_key, out / CKPT, pool_), 1):
             rows.append(res["row"])
             attrs.extend(res["attr"])
             name, g = res["key"]
