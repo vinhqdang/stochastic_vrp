@@ -437,8 +437,10 @@ $\gamma\in\{10^{-3},10^{-4}\}$ (178 cases), SMIS deviates from the exact
 conditional program by $0.15$ and $0.16\%$ in median, $0.38$ and $0.44\%$ at the
 90\% quantile, and at most $0.82\%$; the deviation is within $1.96$ reported
 standard errors in $90\%$ and $87\%$ of cases (the program has its own
-discretisation error). \pending{exact-program comparison at $10^{-6}$ and for
-$L>8$ from the baseline run.}
+discretisation error). The exact program also covers $\gamma=10^{-6}$ and
+routes with more than eight stops (Section~\ref{sec:baselines}): on the ten
+longest of 30 routes ($L\ge9$) SMIS deviates by $0.13\%$ ($10^{-4}$) and
+$0.20\%$ ($10^{-6}$) in median and at most $0.58\%$.
 
 \emph{Across all levels.} SMIS has relative error at most $0.61\%$ at the
 90\% quantile in every $\varrho$ band with more than one route, relative
@@ -550,7 +552,7 @@ variance of $700$--$4\,400$ per draw and needs $7$--$30$ minutes for
 $\varepsilon=0.01$. Errors in the table include sampling error at the budgets
 used ($2\times10^4$ simulator calls for Glasserman--Li, $2\,000$ inner programs
 for conditional Monte Carlo, $5\times$ the levels for subset simulation).
-\pending{exact hub program on 6 hubs.}
+Section~\ref{sec:hubs} compares the hub estimate with the exact hub program.
 
 \subsection{Sensitivity and coverage}
 \label{sec:sensitivity}
@@ -642,8 +644,14 @@ probability is $3.4$--$3.7$ times the riskiest route's and $0.37$--$0.51$
 times the sum over routes (medians). Against $2\times10^6$-draw crude Monte
 Carlo on the 20 smallest hubs at $\gamma=10^{-3}$ (relative standard error
 $2.2$--$2.5\%$), 19 of 20 standardised differences are within $\pm2$ (one is
-$2.84$), but their mean is $+0.59$: the hub estimate may be biased up by
-about $1\%$. \pending{exact hub program on 6 hubs, from the baseline run.}
+$2.84$), but their mean is $+0.59$. The exact conditional program settles this on
+the six smallest hubs (25--55 customers, 5--9 routes): the hub estimate
+deviates from it by $-0.8$ to $+2.0\%$ (median $+0.6\%$, five of six
+positive) with a relative standard error of $0.67\%$, so a small upward bias
+of the order of the standard error cannot be excluded; it is conservative for
+certification. The exact hub program takes $13$--$31$ minutes per hub and
+level, against about $35$\,s for the hub estimate, and its cost grows
+linearly with the number of routes.
 
 \emph{Shared factors.} Treating the routes of a hub as independent
 overstates the hub probability by a factor $2.7$ in median ($4.6$ at the 90\%
