@@ -382,6 +382,52 @@ def select_files(files: list, scope: str) -> list:
     return sorted(vnn + picked)
 
 
+def _retype(rows):
+    """CSV rows back to numbers where possible (merge path)."""
+    out = []
+    for r in rows:
+        q = {}
+        for k, v in r.items():
+            if v in ("", None):
+                q[k] = ""
+                continue
+            try:
+                q[k] = int(v) if v.lstrip("-").isdigit() else float(v)
+            except ValueError:
+                q[k] = v
+        out.append(q)
+    return out
+
+
+def merge_shards(dirs, out: Path, gammas, log) -> int:
+    rows, attrs = [], []
+    for d in dirs:
+        with open(d / HUBS_CSV, newline="") as fh:
+            rows.extend(csv.DictReader(fh))
+        with open(d / ATTR_CSV, newline="") as fh:
+            attrs.extend(csv.DictReader(fh))
+    rows, attrs = _retype(rows), _retype(attrs)
+    for r in rows:
+        r["name"], r["region"] = str(r["name"]), str(r["region"])
+    for r in attrs:
+        r["name"] = str(r["name"])
+    rows.sort(key=lambda r: (r["name"], -float(r["gamma"])))
+    attrs.sort(key=lambda r: (r["name"], -float(r["gamma"]), int(r["route"])))
+    for fname, cols, data in ((HUBS_CSV, HUB_COLUMNS, rows), (ATTR_CSV, ATTR_COLUMNS, attrs)):
+        with open(out / fname, "w", newline="") as fh:
+            wr = csv.DictWriter(fh, fieldnames=cols)
+            wr.writeheader()
+            for r in data:
+                wr.writerow({k: r.get(k, "") for k in cols})
+    n_fail = sum(1 for r in rows if r.get("error"))
+    n_check = sum(1 for r in rows if r.get("crude_p") not in ("", None))
+    n_hubs = len({r["name"] for r in rows})
+    md = summary_markdown(rows, attrs, gammas, n_hubs, 0.0, n_fail, n_check)
+    (out / SUMMARY_MD).write_text(md)
+    log.info("merged %d hub rows and %d attribution rows from %d shards", len(rows), len(attrs), len(dirs))
+    return 0
+
+
 def main(argv=None) -> int:
     global N_HUB, N_BASE, MAX_EVALS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -396,8 +442,14 @@ def main(argv=None) -> int:
     ap.add_argument("--n-check", type=int, default=N_CHECK)
     ap.add_argument("--check-smallest", type=int, default=CHECK_SMALLEST)
     ap.add_argument("--out-dir", default=str(OUT_DIR))
+    ap.add_argument("--shard", default="0/1", help="i/n: run only the tasks with index %% n == i")
+    ap.add_argument("--merge-from", default=None,
+                    help="comma-separated shard output dirs: merge their CSVs into --out-dir and rebuild the summary")
     args = ap.parse_args(argv)
     N_HUB, N_BASE, MAX_EVALS = args.n_hub, args.n_base, args.max_evals
+    shard_i, shard_n = (int(v) for v in args.shard.split("/"))
+    if not 0 <= shard_i < shard_n:
+        raise SystemExit(f"bad --shard {args.shard!r}")
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -406,6 +458,9 @@ def main(argv=None) -> int:
     log = logging.getLogger("plan")
     t_start = time.time()
     gammas = tuple(float(g) for g in args.gammas.split(",") if g.strip())
+
+    if args.merge_from:
+        return merge_shards([Path(d) for d in args.merge_from.split(",") if d.strip()], out, gammas, log)
 
     files = sorted(glob.glob(str(PLANS / args.hubs)))
     if not files:
@@ -422,6 +477,8 @@ def main(argv=None) -> int:
                           "check": h["name"] in smallest and args.n_check > 0})
     # largest hubs first, so the long tasks do not all end at the end of the run
     tasks.sort(key=lambda t: -t["meta"]["n_customers"])
+    tasks = [t for k, t in enumerate(tasks) if k % shard_n == shard_i]
+    log.info("shard %d/%d", shard_i, shard_n)
     log.info("scope %s, hubs %d, gammas %s, tasks %d, workers %d, N_hub %d, N_base %d, max_evals %d, "
              "crude check hubs %d (N %d)", args.scope, len(hubs), gammas, len(tasks), args.workers, N_HUB,
              N_BASE, MAX_EVALS, len(smallest), args.n_check)
