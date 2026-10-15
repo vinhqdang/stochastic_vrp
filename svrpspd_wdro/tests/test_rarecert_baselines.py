@@ -155,3 +155,17 @@ def test_exact_hub_zero_when_unreachable():
     hub = HubSim(_two_route_hub(), cv=CV, rho=RHO)
     out = exact_hub_prob(hub, 1e12, V=256, rule="trapz", n=N_TRAPZ)
     assert out["p"] == 0.0 and out["R"] == 0 and out["dp_calls"] == 0
+
+
+def test_exceed_prob_matches_loop_reference():
+    from quantum.rare import exceed_prob, exceed_prob_loop
+    rng = np.random.default_rng(2)
+    for L, V, T in ((1, 10, 0), (3, 30, 20), (6, 120, 100), (4, 64, 70)):
+        pd = rng.gamma(1.0, 1.0, (L, V)) * (rng.random((L, V)) < 0.4)
+        pp = rng.gamma(1.0, 1.0, (L, V)) * (rng.random((L, V)) < 0.4)
+        pd[:, 0] += 1e-3
+        pp[:, 0] += 1e-3
+        pd /= pd.sum(axis=1, keepdims=True)
+        pp /= pp.sum(axis=1, keepdims=True)
+        a, b = exceed_prob_loop(pd, pp, T), exceed_prob(pd, pp, T)
+        assert abs(a - b) <= 1e-13 * max(a, 1e-300) + 1e-300, (L, V, T, a, b)

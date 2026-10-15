@@ -458,8 +458,68 @@ def threshold_for(sim: RouteSim, gamma: float, rng: np.random.Generator,
 # ============================================================
 
 
+def _toeplitz_lower(w: np.ndarray, S: int) -> np.ndarray:
+    """S x S matrix M[i, j] = w[i - j] for i >= j (0 elsewhere): M @ x convolves x with w
+    and keeps levels 0..S-1."""
+    col = np.zeros(S)
+    m = min(S, w.size)
+    col[:m] = w[:m]
+    i = np.arange(S)
+    d = i[:, None] - i[None, :]
+    return np.where(d >= 0, col[np.clip(d, 0, S - 1)], 0.0)
+
+
 def exceed_prob(pmf_d: np.ndarray, pmf_p: np.ndarray, T: int) -> float:
     """P(F > T) for independent discrete demands on levels 0..V-1.
+
+    pmf_d, pmf_p : shape (L, V); row k is the pmf of stop k (route order).
+    Backward recursion over (A, G) with A_k = sum_{l>k} d_l and
+    G_{k-1} = max(A_{k-1}, p_k + G_k), A_{k-1} = A_k + d_k (classical.peak_distribution
+    derivation). States with A > T or G > T are absorbed: A_k <= F and G_k <= F, and
+    F is non-decreasing in both, so their mass is exactly the exceedance mass.
+
+    The two convolution sub-steps are products with lower-triangular Toeplitz matrices
+    (the same sums as exceed_prob_loop, evaluated with BLAS); the mass leaving the state
+    space is computed from the pmf tails, so no subtraction of nearly equal totals occurs.
+    """
+    pmf_d = np.asarray(pmf_d, dtype=np.float64)
+    pmf_p = np.asarray(pmf_p, dtype=np.float64)
+    if pmf_d.ndim != 2 or pmf_d.shape != pmf_p.shape:
+        raise ValueError("pmf_d and pmf_p must be 2-D with equal shape")
+    L, V = pmf_d.shape
+    T = int(T)
+    if T < 0:
+        return 1.0
+    S = T + 1
+    idx = np.arange(S)
+    diffs = idx[:, None] - idx[None, :]          # A' - g
+    upper = idx[None, :] > idx[:, None]          # G' > A' (strict)
+    P = np.zeros((S, S))
+    P[0, 0] = 1.0
+    exc = 0.0
+    for k in reversed(range(L)):
+        wd = np.where(pmf_d[k] < _PMF_TOL, 0.0, pmf_d[k])
+        wp = np.where(pmf_p[k] < _PMF_TOL, 0.0, pmf_p[k])
+        # delivery sub-step: A' = a + d; row a leaves when d > T - a
+        cdf_d = np.cumsum(wd)
+        tail_d = cdf_d[-1] - cdf_d[np.minimum(T - idx, V - 1)]
+        exc += float(P.sum(axis=1) @ tail_d)
+        Q = _toeplitz_lower(wd, S) @ P
+        # pickup sub-step: G' = max(A', g + p); column g leaves when p > T - g
+        cdf_p = np.cumsum(wp)
+        Mcdf = np.where(diffs >= 0, cdf_p[np.clip(diffs, 0, V - 1)], 0.0)
+        R_diag = (Q * Mcdf).sum(axis=1)          # g + p <= A' : G' = A'
+        tail_p = cdf_p[-1] - cdf_p[np.minimum(T - idx, V - 1)]
+        exc += float(Q.sum(axis=0) @ tail_p)
+        R = Q @ _toeplitz_lower(wp, S).T         # R[a, j] = sum_g Q[a, g] wp[j - g]
+        R = np.where(upper, R, 0.0)              # keep g + p > A' only
+        R[idx, idx] = R_diag
+        P = R
+    return float(exc)
+
+
+def exceed_prob_loop(pmf_d: np.ndarray, pmf_p: np.ndarray, T: int) -> float:
+    """Reference loop implementation of exceed_prob (kept for tests).
 
     pmf_d, pmf_p : shape (L, V); row k is the pmf of stop k (route order).
     Backward recursion over (A, G) with A_k = sum_{l>k} d_l and
