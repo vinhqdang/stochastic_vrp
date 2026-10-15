@@ -528,11 +528,66 @@ $10^{-5}$ & --- & --- & --- & 0.23 / 0.59\% & 9.25 / 97.6\% & 6.12 / 6.04 / 357 
 
 \subsection{Hubs}
 \label{sec:hubs}
-\pending{Calibrated rerun on 66 hubs (all 26 Northern Vietnam hubs, 40
-Guangdong hubs stratified by size) at $\gamma=10^{-3}$ and $10^{-5}$: buffers
-by region, $P_h/\gamma$ after calibration, envelope
-$\max_r p_r\le P_h\le\sum_r p_r$, independence overstatement, multi-route
-failure share, attribution, crude check on the smallest hubs, region totals.}
+We certify 66 hubs: all 26 of Northern Vietnam and 40 of Guangdong,
+one drawn at random from each of 40 equal-size groups of the 122 hubs ordered
+by number of customers (25 to 597 customers, 5 to 100 routes). For each hub
+and $\gamma\in\{10^{-3},10^{-5}\}$ we search the common capacity $c$ at which
+the hub overflow probability equals $\gamma$ (Section~\ref{sec:estimators})
+and report the buffer $b=c/Q-1$ over the planned capacity
+(Table~\ref{tab:hubs}). All 132 searches converged, 121 of them after one
+secant step and 11 after two; no route was unreachable. The final estimate lies within a
+factor $1.25$ of $\gamma$ in every case (median $P_h/\gamma=0.92$ at $10^{-3}$
+and $0.94$ at $10^{-5}$, range $0.80$--$1.13$). The final hub estimate takes
+a median of $35$\,s on one core ($10^5$ draws, $16$--$447$ components, median $80$); the
+whole task, with calibration, route-level baselines and checks, takes
+$3.4$--$4.4$ minutes in median and at most $21$ minutes.
+
+\begin{table}[t]
+\centering\small
+\caption{Hubs: capacity buffer $b=c/Q-1$ needed for hub overflow probability
+$\gamma$ (median / 90\% quantile over hubs), the buffer the Laplace-type proxy
+would set, and the region probability $1-\prod_h(1-P_h)$ over the certified
+hubs (Guangdong: the 40 sampled hubs only).}
+\label{tab:hubs}
+\begin{tabular}{llrrrr}
+\toprule
+$\gamma$ & region & hubs & buffer $b$ & proxy buffer & $P_{\rm region}$ \\
+\midrule
+$10^{-3}$ & Northern Vietnam & 26 & 35.1 / 37.7\% & 53.0\% & 0.024 \\
+ & Guangdong & 40 & 43.4 / 47.3\% & 68.5\% & 0.036 \\
+$10^{-5}$ & Northern Vietnam & 26 & 64.5 / 68.0\% & 81.5\% & $2.5\times10^{-4}$ \\
+ & Guangdong & 40 & 75.8 / 80.0\% & 96.8\% & $3.8\times10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The buffers are large because the plans were built with a sample-average
+gate at a moderate level and a coefficient of variation of $0.3$ with
+strongly correlated demands ($\rho=0.6$): moving from $10^{-3}$ to $10^{-5}$
+costs another $30$ points of capacity. A per-hub level of $10^{-3}$ gives a
+regional day with some overflow somewhere with probability $2$--$4\%$; a
+regional level $\gamma$ needs a per-hub level near $\gamma$ divided by the
+number of hubs.
+
+\emph{Checks.} The hub estimate lies between $\max_r p_r$ and $\sum_r p_r$,
+with tolerance four combined standard errors, at all 132 points; the hub
+probability is $3.4$--$3.7$ times the riskiest route's and $0.37$--$0.51$
+times the sum over routes (medians). Against $2\times10^6$-draw crude Monte
+Carlo on the 20 smallest hubs at $\gamma=10^{-3}$ (relative standard error
+$2.2$--$2.5\%$), 19 of 20 standardised differences are within $\pm2$ (one is
+$2.84$), but their mean is $+0.59$: the hub estimate may be biased up by
+about $1\%$. \pending{exact hub program on 6 hubs, from the baseline run.}
+
+\emph{Shared factors.} Treating the routes of a hub as independent
+overstates the hub probability by a factor $2.7$ in median ($4.6$ at the 90\%
+quantile) at $10^{-3}$ and $2.0$ ($2.9$) at $10^{-5}$, so a certificate built
+from route-wise estimates would demand too much capacity. With the shared
+factors, $47\%$ (at $10^{-3}$) and $33\%$ (at $10^{-5}$) of the overflow days
+of a hub have two or more routes overflowing (medians over hubs): standby
+capacity should be planned for clusters. The attribution shows how
+concentrated the risk is: the riskiest route carries $28$--$29\%$ of the hub
+risk and the three riskiest $66$--$79\%$ (medians), so reinforcing a few
+routes, not all, is what a planner would do with the certificate.
 
 \subsection{A note on quantum amplitude estimation}
 Quantum amplitude estimation reduces the number of simulator calls for a
