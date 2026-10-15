@@ -527,7 +527,11 @@ def main(argv=None) -> int:
     ap.add_argument("--v-pair", default="256,512", help="two level counts V of the Richardson pair")
     ap.add_argument("--v-cond", type=int, default=256, help="level count of the conditional DP (cond MC, shift pilot)")
     ap.add_argument("--out-dir", default=str(OUT_DIR))
+    ap.add_argument("--shard", default="0/1", help="i/n: run only the tasks with index %% n == i")
+    ap.add_argument("--merge-from", default=None,
+                    help="comma-separated shard output dirs: merge their CSVs into --out-dir and rebuild the summary")
     args = ap.parse_args(argv)
+    shard_i, shard_n = (int(v) for v in args.shard.split("/"))
     v_pair = tuple(int(x) for x in args.v_pair.split(","))
     if len(v_pair) != 2 or v_pair[0] >= v_pair[1]:
         raise SystemExit("--v-pair needs two increasing level counts, e.g. 256,512")
@@ -566,9 +570,17 @@ def main(argv=None) -> int:
 
     rows, hub_rows, fails = [], [], []
     ctx = mp.get_context("fork")
-    all_tasks = tasks + hub_tasks
+    all_tasks = [t for k, t in enumerate(tasks + hub_tasks) if k % shard_n == shard_i]
+    if args.merge_from:
+        all_tasks = []
+        for d in args.merge_from.split(","):
+            d = Path(d)
+            for name, dest in ((ROUTES_CSV, rows), (HUBS_CSV, hub_rows)):
+                if (d / name).exists():
+                    with open(d / name) as fh:
+                        dest.extend(dict(r) for r in csv.DictReader(fh))
     with ctx.Pool(processes=max(1, args.workers)) as pool_:
-        for k, res in enumerate(pool_.imap_unordered(run_task, all_tasks, chunksize=1), 1):
+        for k, res in enumerate(pool_.imap_unordered(run_task, all_tasks, chunksize=1) if all_tasks else [], 1):
             if res["kind"] == "route":
                 rows.append(res["row"])
                 tag = f"{res['key'][0]} gamma={res['key'][1]:g}"
