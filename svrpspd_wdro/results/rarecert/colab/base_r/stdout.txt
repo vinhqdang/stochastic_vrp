@@ -1,0 +1,9 @@
+2026-10-15 10:54:20,769 routes 30, route-gamma tasks 60, hub tasks 6, workers 2, grid 41, n_factor 2000
+2026-10-15 10:54:20,786 [1/66] VNN-HANAM#2 gamma=1e-06 done in 1184s: ref=1.005e-06 relerr smis=0.0011 ce=0.0029 gl_s=0.093 cond=0.15 sub=0.43
+2026-10-15 10:54:20,786 [2/66] VNN-HANAM#2 gamma=0.0001 done in 1378s: ref=9.963e-05 relerr smis=0.0023 ce=0.0014 gl_s=0.2 cond=0.086 sub=0.34
+2026-10-15 10:54:20,786 [3/66] GD-HAIKANGXIAN#5 gamma=1e-06 done in 1067s: ref=9.967e-07 relerr smis=0.001 ce=0.0017 gl_s=0.023 cond=0.012 sub=0.46
+2026-10-15 10:54:20,786 [4/66] GD-HAIKANGXIAN#5 gamma=0.0001 done in 1227s: ref=9.997e-05 relerr smis=0.0014 ce=0.00036 gl_s=0.015 cond=0.026 sub=0.18
+2026-10-15 10:54:20,787 [5/66] GD-GUANGZHOUSHI-4#93 gamma=1e-06 done in 980s: ref=9.942e-07 relerr smis=0.002 ce=0.0035 gl_s=0.0025 cond=0.0067 sub=0.58
+2026-10-15 10:54:20,787 [6/66] GD-GUANGZHOUSHI-4#93 gamma=0.0001 done in 1154s: ref=9.98e-05 relerr smis=0.00087 ce=0.0003 gl_s=0.021 cond=0.01 sub=0.15
+2026-10-15 10:54:20,787 [7/66] GD-PANYUSHI-2#17 gamma=1e-06 done in 992s: ref=9.969e-07 relerr smis=0.00094 ce=0.0036 gl_s=0.022 cond=0.016 sub=0.33
+2026-10-15 10:54:20,787 [8/66] GD-PANYUSHI-2#17 gamma=0.0001 done in 1121s: ref=0.0001 relerr smis=0.0028 ce=0.0011 gl_s=0.0068 cond=0.027 sub=0.21
