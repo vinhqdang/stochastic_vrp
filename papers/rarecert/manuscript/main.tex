@@ -34,33 +34,23 @@ British University Vietnam, Hung Yen, Vietnam\\
 
 \begin{abstract}
 Medical, cold-chain and dangerous-goods distribution ask that a routing plan
-overflow its vehicles with probability at most $\gamma$, with $\gamma$
-between $10^{-3}$ and $10^{-6}$. We study how to verify such a level for a
-given plan of the vehicle routing problem with simultaneous pickup and
-delivery. Under gamma demands with a Gaussian factor copula, the log
-asymptotics of a route's peak load have two end modes --- total delivery at
-the start, total pickup at the end --- with scales from secular equations.
-This anatomy explains when single-shift importance sampling fails: on routes
-whose two end scales are close, a single cross-entropy shift underestimates
-the overflow probability by about $5\%$ in median ($40\%$ at the 90\%
-quantile at $10^{-6}$), and at $10^{-5}$ and below its relative variance stays
-near $5$, so the error is not visible. Halving the pickups of other routes
-produces the same failure, so it follows the end-mode structure, not the
-region. We give a stage-mixture estimator placed at computed dominating
-points, with no pilot simulation, and extend it to a route-day simulator with
-stochastic travel and service times, where no exact method exists, and to
-hubs whose routes share demand factors, with a calibrated capacity search.
-On 148 instances built from population, postal and road data for Northern
-Vietnam and Guangdong, the route estimator agrees with an exact conditional
-dynamic program within $0.82\%$ in every case where the program applies,
-and the route-day estimator agrees with $10^7$-draw Monte Carlo within its
-error. The mixture reaches $1\%$ precision in about
-three seconds per route, at least two orders of magnitude faster than the
-exact program, conditional Monte Carlo or subset simulation, while Glasserman--Li
-two-step sampling inherits the single-mode bias. Calibrated capacity buffers
-for hub overflow probabilities $10^{-3}$ and $10^{-5}$ are $35$--$43\%$ and
-$64$--$76\%$ (median by region), and treating routes as independent would
-overstate hub risk two- to threefold.
+overflow its vehicles with probability at most $\gamma$, between $10^{-3}$ and
+$10^{-6}$. We study how to verify such a level for a given plan of the vehicle
+routing problem with simultaneous pickup and delivery. Under gamma demands with
+a Gaussian factor copula, a route overflows through one of two end modes: total
+delivery at the start or total pickup at the end. A single importance-sampling
+shift misses the weaker mode and underestimates by about $0.8$ times its
+computed mass; the error follows the route's structure, not its region, hides
+in the estimator's own variance at $\gamma\le10^{-5}$, and is shared by
+Glasserman--Li two-step sampling. A mixture of two computed dominating points
+removes it without pilot simulation, and extends to a route-day simulator and to
+hubs with shared factors. On 148 instances from Northern Vietnam and Guangdong
+(6\,242 routes) it agrees with a quadrature reference within $0.6\%$ and with
+crude Monte Carlo wherever that is affordable, and its 95\% intervals cover at
+$95\%$ on balanced routes at $10^{-5}$ and $10^{-6}$, where the single shift
+covers in a third of the cases. Plans built for a per-route risk of $0.10$ do
+not pass: no hub meets any level at its planned capacity, and $35$--$76\%$
+more capacity is needed.
 \end{abstract}
 
 \section{Introduction}
@@ -113,17 +103,20 @@ sketch).
 (iii) We show when single-shift IS loses logarithmic efficiency
 (Theorem~\ref{thm:single}) and measure its finite-level bias on real routes:
 the asymptotic threshold ($\varrho>1/4$) holds for every route of our plans,
-but material bias appears only for $\varrho>0.75$, follows the end-mode
-structure when the pickups are rescaled, is of the order of the computed
-missed-mode mass, and is invisible in the reported standard error at
-$\gamma\le10^{-5}$.
+but material bias appears only when the computed mass $\hat m$ of the weaker
+end mode is large; the error is about $0.8\,\hat m$, follows the end-mode
+structure when the pickups are rescaled, and is invisible in the reported
+variance at $\gamma\le10^{-5}$.
 (iv) We give a pilot-free stage-mixture estimator (SMIS) at computed
-dominating points, its extension to a route-day simulator without exact
-solution (MDIS), and a hub estimator for routes with shared factors, with
-attribution of hub risk to routes and a calibrated capacity search.
+dominating points, which on our routes reduces to two end modes, its extension
+to a route-day simulator without exact solution (MDIS), and a hub estimator for
+routes with shared factors, with attribution of hub risk to routes and a
+calibrated capacity search.
 (v) We evaluate on 148 region-scale instances against a quadrature
-reference, Glasserman--Li two-step IS, conditional Monte Carlo, subset
-simulation and CE.
+reference, crude Monte Carlo at the levels where it is affordable,
+Glasserman--Li two-step IS, conditional Monte Carlo, subset simulation and CE,
+and we report the plan-level result: at their planned capacity none of the 148
+hubs meets $10^{-3}$ or any smaller level.
 The IS ingredients are known --- dominating points
 \citep{SadowskyBucklew1990}, multiple-path failure of single shifts
 \citep{GlassermanWang1997}, mixtures as subsolutions \citep{DupuisWang2007},
@@ -944,21 +937,26 @@ certification cheap.
 \label{sec:conclusion}
 
 Rare overflow of a pickup-and-delivery route has a simple anatomy on the
-logarithmic scale --- two end modes with closed-form scales --- that tells
-when a single IS shift is at risk. In our plans the asymptotic criterion
-holds everywhere, while a material and silent bias appears only on routes
-with nearly balanced end scales. A mixture at computed dominating points
-removes it without pilot simulation, extends to route days without an exact
-method, and to hubs with shared factors. Against an exact conditional program
-that exists for the demand-only model, the mixture is about a hundred times
-faster at $1\%$ precision and agrees within $0.6\%$; the factor-based rivals
-and subset simulation are slower or biased on balanced routes. On the
-regional plans, certified buffers are large ($35$--$43\%$ at $10^{-3}$,
-$64$--$76\%$ at $10^{-5}$), a route-wise analysis that ignores the shared
-factors would overstate hub risk two- to threefold, and model risk in the demand
-variability moves the needed capacity far more than estimation error does. Open points: full proofs at the stated
-generality, region-wide factors that couple hubs, correlated pickup and
-delivery factors, and demand and travel models estimated from operator data.
+logarithmic scale --- two end modes with closed-form scales --- and the computed
+mass of the weaker end mode predicts how much a single importance-sampling shift
+underestimates (about $0.8$ times that mass), on Vietnamese and Guangdong routes
+alike. A mixture at the two computed dominating points removes the bias without
+pilot simulation, extends to route days without an exact method and to hubs with
+shared factors, and gives intervals that cover at their nominal level on the
+balanced routes where the single shift covers in a third of the cases. Its
+agreement with a quadrature reference, with crude Monte Carlo where affordable
+and with an independent route-day check is within the sampling error of those
+references; it is about \pending{N} times faster than the quadrature reference
+at $1\%$ precision. The plan-level result is the main finding for practice: the
+plans, built for a per-route risk of $0.10$, do not meet any level between
+$10^{-3}$ and $10^{-6}$ at their planned capacity (a hub overflows with
+probability about $8$--$11\%$), they need $35$--$43\%$ more capacity at
+$10^{-3}$ and $64$--$76\%$ at $10^{-5}$, ignoring the shared factors would
+overstate hub risk two- to threefold, and the demand variability moves the
+needed capacity far more than estimation error does. Open points: full proofs at
+the stated generality, region-wide factors that couple hubs, a theory for
+correlated pickup and delivery factors, a hub check against an independent
+method at $10^{-5}$, and demand and travel models estimated from operator data.
 
 {\sloppy\paragraph{Code and data.} The instances, plans, simulators, estimators and
 every script that produces a number, table or figure in this paper are in the
