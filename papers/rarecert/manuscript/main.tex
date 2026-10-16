@@ -89,18 +89,19 @@ this when the modes are known, at the price of pilot simulation when they are
 not.
 
 \emph{Where IS is needed.} For the demand-only route model used in planning
-there is an exact alternative: given the copula factors the demands are
+there is a deterministic alternative: given the copula factors the demands are
 independent, so the overflow probability is a two-dimensional integral of a
-one-dimensional dynamic program. We implement it and use it both as the
-reference and as a competitor (Section~\ref{sec:baselines}). It is accurate
-and needs no tuning, but on the short routes of our plans it takes about
-five minutes per route and level at the accuracy we need, against about three
-seconds for the mixture estimator at $1\%$ precision
-(Section~\ref{sec:baselines}). It does not extend to route days with
-stochastic travel and service times and time windows, where the event couples
-loads and times; there, of the methods we compare, only the mixture estimators
-are accurate, and the demand-only model is the setting in which their
-construction can be checked against an exact answer.
+one-dimensional dynamic program. We implement it, call it the quadrature
+reference (it is discretised, extrapolated and truncated, so not exact), and
+use it both as the reference and as a competitor
+(Section~\ref{sec:baselines}). It needs no tuning, but at the grid that gives
+about $1\%$ accuracy it takes \pending{X} seconds per route and level, against
+\pending{Y} seconds for the mixture estimator at the same precision. It does
+not extend to route days with stochastic travel and service times and
+lateness, where the event couples loads and times; there, of the methods we
+compare, only the mixture estimators are accurate, and the demand-only model
+is the setting in which their construction can be checked against a
+deterministic answer.
 
 \paragraph{Contributions.}
 (i) We formulate the certification of a given plan at service levels
@@ -120,8 +121,8 @@ $\gamma\le10^{-5}$.
 dominating points, its extension to a route-day simulator without exact
 solution (MDIS), and a hub estimator for routes with shared factors, with
 attribution of hub risk to routes and a calibrated capacity search.
-(v) We evaluate on 148 region-scale instances against an exact conditional
-program, Glasserman--Li two-step IS, conditional Monte Carlo, subset
+(v) We evaluate on 148 region-scale instances against a quadrature
+reference, Glasserman--Li two-step IS, conditional Monte Carlo, subset
 simulation and CE.
 The IS ingredients are known --- dominating points
 \citep{SadowskyBucklew1990}, multiple-path failure of single shifts
@@ -406,7 +407,7 @@ three secant steps on $\log\hat P_{\rm hub}(c)-\log\gamma$ with $2\times10^4$
 hub draws per evaluation, stopping when $|\log(\hat P_{\rm hub}/\gamma)|<\log1.25$;
 the final $\hat P_{\rm hub}$ uses $10^5$ draws. The buffer is $b=c/Q-1$.
 
-\paragraph{Exact conditional reference.} Given $(W_d,W_p)$ the demands are
+\paragraph{Quadrature reference.} Given $(W_d,W_p)$ the demands are
 independent, so $\P(F>c\mid W)$ is a one-dimensional dynamic program over the
 discretised load (we use $V=256$ and $512$ levels with Richardson
 extrapolation), and
@@ -461,12 +462,12 @@ that the overflow probability is close to $\gamma$. Every estimator uses
 $N=10^6$ draws. The CE mixture uses a pilot of $0.8$--$1.2\times10^5$ draws per
 route. Table~\ref{tab:routes} reports errors against the reference.
 
-\emph{Against the exact program.} On the 89 routes with $L\le8$ at
-$\gamma\in\{10^{-3},10^{-4}\}$ (178 cases), SMIS deviates from the exact
-conditional program by $0.15$ and $0.16\%$ in median, $0.38$ and $0.44\%$ at the
+\emph{Against the quadrature reference.} On the 89 routes with $L\le8$ at
+$\gamma\in\{10^{-3},10^{-4}\}$ (178 cases), SMIS deviates from the quadrature
+reference by $0.15$ and $0.16\%$ in median, $0.38$ and $0.44\%$ at the
 90\% quantile, and at most $0.82\%$; the deviation is within $1.96$ reported
 standard errors in $90\%$ and $87\%$ of cases (the program has its own
-discretisation error). The exact program also covers $\gamma=10^{-6}$ and
+discretisation error). The reference also covers $\gamma=10^{-6}$ and
 routes with more than eight stops (Section~\ref{sec:baselines}): on the ten
 longest of 30 routes ($L\ge9$) SMIS deviates by $0.13\%$ ($10^{-4}$) and
 $0.20\%$ ($10^{-6}$) in median and at most $0.58\%$.
@@ -476,7 +477,7 @@ $0.20\%$ ($10^{-6}$) in median and at most $0.58\%$.
 variance $3.8$--$5.9$ (CE mixture $3.8$--$6.0$, single shift $3.5$--$5.5$
 where it is unbiased), $2$--$7$ components, and a median build time of
 $0.39$--$0.86$\,s. At $\gamma\le10^{-5}$ the reference for routes without an
-exact program is the CE mixture.
+quadrature reference is the CE mixture.
 
 \emph{Samples.} Counting CE's pilot, the CE mixture needs $224$--$276$ times
 more draws than SMIS for $\varepsilon=0.1$ at 95\% confidence and $3.2$--$3.8$
@@ -485,8 +486,8 @@ smaller variance.
 
 \begin{table}[t]
 \centering\small
-\caption{Route model: relative error against the reference (exact program
-where available, else CE mixture), median / 90\% quantile, and relative
+\caption{Route model: relative error against the reference (quadrature
+reference where available, else CE mixture), median / 90\% quantile, and relative
 variance (median). 120 routes, $N=10^6$; band $(0.5,0.75]$ has one route and
 is omitted.}
 \label{tab:routes}
@@ -510,10 +511,10 @@ $10^{-6}$ & $[0,1/3]$ & 17 & 0.24 / 0.61\% & ref. & 0.19 / 0.60\% & 5.79 & 5.46 
 \end{tabular}
 \end{table}
 
-\subsection{Classical rivals and the exact program}
+\subsection{Classical rivals and the quadrature reference}
 \label{sec:baselines}
 On 30 of the 120 routes (15 with $\varrho>0.75$) at $\gamma=10^{-4}$ and
-$10^{-6}$ we compare all methods with the exact conditional program
+$10^{-6}$ we compare all methods with the quadrature reference
 (Table~\ref{tab:rivals}). The rivals are Glasserman--Li two-step IS
 \citep{GlassermanLi2005} with the factor shift at the dominant point (crude
 inner sampling, inner exponential shift, and a shift tuned on a pilot grid),
