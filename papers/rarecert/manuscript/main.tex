@@ -417,6 +417,16 @@ Cost: $2(L+1)$ local minimisations of dimension $2+2L$, each a few dozen
 quantile evaluations, then $N$ simulator calls and $N\times(\#\text{modes})$
 inner products.
 
+\paragraph{CE baselines.} The single CE shift uses the multilevel
+cross-entropy method with tail levels $0.1^j$, $20\,000$ draws per iteration
+and at most $60$ iterations per level. The CE mixture runs it for every stage
+event $\{L_k>c\}$ separately, estimates each stage probability with
+$20\,000$ draws under its shift, keeps the stages whose probability is at least
+$10^{-3}$ of the largest (at most 12), weights them by these probabilities and
+adds a defensive $N(0,I)$ component of weight $0.05$. The draws spent on the
+ladders and on the stage probabilities (its pilot) are counted in its sample
+cost; they are $0.8$--$1.2\times10^5$ per route.
+
 \paragraph{MDIS.} The same construction applies to any simulator that exposes
 its failure modes as scalar functions $g_m(u) > 0$ of a Gaussian input. We
 use it for a route-day model (Section~\ref{sec:routeday}): demands as above,
@@ -503,8 +513,17 @@ Guangdong & 122 & 37\,487 & 5\,867 & 5 / 6 / 8 (40) & 30 & 2.70 & 0.65 & 0.36 \\
 
 \subsection{Routes under the demand model}
 \label{sec:routes}
-We use 120 routes (80 Guangdong, 40 Northern Vietnam; 4 to 15 stops, median
-7) and four levels $\gamma\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$; $c$ is set so
+The 120 routes are a random sample of the routes of the region plans (fixed
+seed), stratified by region and by tercile of the number of stops: 80 from
+Guangdong, 40 from Northern Vietnam, 4 to 15 stops, median 7. They are listed in
+round-robin order over the strata. The 30 routes of Section~\ref{sec:baselines}
+are the first 30 in this order (15 per region), and the 10 routes of the
+coverage study are the first 10 of the 30 of Section~\ref{sec:sensitivity}.
+The sensitivity study of Section~\ref{sec:sensitivity} takes the first 30 rows
+of the route file, which lists the Guangdong routes first, so those 30 routes
+all belong to Guangdong; this is an artefact of the file order, not a design
+choice, and Section~\ref{sec:single} tests the Vietnamese routes separately.
+We use four levels $\gamma\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$; $c$ is set so
 that the overflow probability is close to $\gamma$. Every estimator uses
 $N=10^6$ draws. The CE mixture uses a pilot of $0.8$--$1.2\times10^5$ draws per
 route. Table~\ref{tab:routes} reports errors against the reference.
@@ -536,7 +555,11 @@ smaller variance.
 \caption{Route model: relative error against the reference (quadrature
 reference where available, else CE mixture), median / 90\% quantile, and relative
 variance (median). 120 routes, $N=10^6$; band $(0.5,0.75]$ has one route and
-is omitted.}
+is omitted. The reference is the quadrature reference for 178 of the 480
+route--level rows (routes with at most eight stops at $10^{-3}$ and $10^{-4}$)
+and the CE mixture for the other 302, so the CE columns at $10^{-5}$ and
+$10^{-6}$ are the reference itself (``ref.''). Section~\ref{sec:baselines}
+adds an independent reference at $10^{-4}$ and $10^{-6}$ for 30 routes.}
 \label{tab:routes}
 \begin{tabular}{llrrrrrr}
 \toprule
@@ -910,17 +933,23 @@ variability moves the needed capacity far more than estimation error does. Open 
 generality, region-wide factors that couple hubs, correlated pickup and
 delivery factors, and demand and travel models estimated from operator data.
 
-{\sloppy\paragraph{Code and data.} The instances, plans, simulator, estimators and
-every script that produces a number, table or figure in this paper are
-released with the paper. Table~\ref{tab:instances} is computed from the plan
-files; Table~\ref{tab:routes} from \texttt{run\_rarecert\_smis.py};
-Table~\ref{tab:rivals} and the exact hub checks from
-\texttt{run\_rarecert\_baselines.py}; Table~\ref{tab:sens} and the coverage
-study from \texttt{run\_rarecert\_sensitivity.py};
+{\sloppy\paragraph{Code and data.} The instances, plans, simulators, estimators and
+every script that produces a number, table or figure in this paper are in the
+repository \url{https://github.com/vinhqdang/stochastic_vrp} (directory
+\texttt{svrpspd\_wdro}); the version of this paper corresponds to the commit
+\pending{commit} and a copy will be deposited with a persistent identifier at
+submission. Table~\ref{tab:instances} is computed from the plan files;
+Table~\ref{tab:routes} from \texttt{run\_rarecert\_smis.py};
+Tables~\ref{tab:rivals} and~\ref{tab:fair}, the quadrature grids and the
+exact hub checks from \texttt{run\_rarecert\_baselines.py} and
+\texttt{run\_rarecert\_r3.py}; Table~\ref{tab:sens} and the coverage study
+from \texttt{run\_rarecert\_sensitivity.py} and \texttt{run\_rarecert\_r3.py};
 Table~\ref{tab:routeday} from \texttt{run\_rarecert\_r2.py};
-Table~\ref{tab:hubs} from \texttt{run\_rarecert\_plan.py}; the figures from
-\texttt{make\_rarecert\_figures.py}. The long runs write per-task
-checkpoints and can be split into shards and merged.\par}
+Tables~\ref{tab:hubs} and~\ref{tab:pass} from
+\texttt{run\_rarecert\_plan.py} and \texttt{run\_rarecert\_r3.py}; the timings
+from \texttt{run\_rarecert\_timing.py}; the figures from
+\texttt{make\_rarecert\_figures.py} and \texttt{analyze\_rarecert\_r3.py}. The long
+runs write per-task checkpoints and can be split into shards and merged.
 
 \appendix
 \section{Proofs and sketches}
