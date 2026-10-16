@@ -94,10 +94,10 @@ Wall time to reach relative precision 0.01 at 95% confidence (build + 1.96^2 RV 
 
 | gamma | method | routes | coverage pooled | min | max | median mean error | median sd |
 |---|---|---|---|---|---|---|---|
-| 1e-05 | smis | 7 | 0.947 | 0.930 | 0.963 | 0.04% | 2.27% |
-| 1e-05 | single_rebuilt | 7 | 0.336 | 0.020 | 0.960 | -3.84% | 15.77% |
-| 1e-06 | smis | 7 | 0.943 | 0.930 | 0.960 | 0.04% | 2.44% |
-| 1e-06 | single_rebuilt | 7 | 0.476 | 0.013 | 0.950 | -5.74% | 9.64% |
+| 1e-05 | smis | 10 | 0.949 | 0.930 | 0.970 | 0.10% | 2.27% |
+| 1e-05 | single_rebuilt | 10 | 0.338 | 0.020 | 0.953 | -5.17% | 13.59% |
+| 1e-06 | smis | 10 | 0.953 | 0.930 | 0.987 | -0.01% | 2.40% |
+| 1e-06 | single_rebuilt | 10 | 0.364 | 0.007 | 0.963 | -8.22% | 13.70% |
 
 ## Hub SMIS against crude Monte Carlo (gamma = 1e-3 calibrated capacity)
 
@@ -106,15 +106,16 @@ Wall time to reach relative precision 0.01 at 95% confidence (build + 1.96^2 RV 
 | VNN-BACKAN | 25 | 5 | 0.000986 | 0.21% | 0.000988 | 0.71% | -0.37 | -0.27% | 0.000985 | 5.13% | 0.09% |
 | VNN-LAICHAU | 29 | 5 | 0.000852 | 0.21% | 0.00086 | 0.76% | -1.16 | -0.91% | 0.000853 | 4.01% | -0.07% |
 | VNN-CAOBANG | 50 | 7 | 0.000823 | 0.21% | 0.000821 | 0.78% | 0.35 | 0.28% | 0.000822 | 9.06% | 0.10% |
+| VNN-THAINGUYEN | 102 | 14 | 0.000939 | 0.22% | 0.000943 | 0.73% | -0.66 | -0.50% | n/a | n/a | n/a |
 
-Mean z -0.39 over 3 hubs (t = -0.90); mean relative difference -0.30%, median -0.27%.
+Mean z -0.46 over 4 hubs (t = -1.46); mean relative difference -0.35%, median -0.39%.
 
 ## Routes with 15 or more stops (crude Monte Carlo reference)
 
 | gamma | rows | L range | crude draws | ref rse median | SMIS e median / max (abs) | single e median / max | CE e median / max | SMIS RV | single RV | CE RV |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 0.001 | 4 | 15-17 | 50,000,000 | 0.45% | 0.36% / 0.69% | 0.31% / 0.42% | 0.37% / 0.56% | 3.81 | 3.53 | 3.96 |
-| 0.0001 | 3 | 15-17 | 100,000,000 | 1.00% | 1.10% / 1.48% | 1.40% / 1.53% | 1.26% / 1.77% | 4.56 | 4.25 | 4.67 |
+| 0.001 | 5 | 15-17 | 50,000,000 | 0.45% | 0.36% / 0.93% | 0.30% / 0.32% | 0.31% / 0.52% | 3.81 | 3.52 | 3.94 |
+| 0.0001 | 5 | 15-33 | 100,000,000 | 1.00% | 0.88% / 1.48% | 0.53% / 1.53% | 1.02% / 1.77% | 4.56 | 4.25 | 4.68 |
 
 ## Route-day simulator: crude Monte Carlo at gamma = 1e-4 and 1e-5
 

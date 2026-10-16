@@ -743,13 +743,27 @@ for lognormal marginals. These shifts are one to two orders of magnitude
 larger than the estimation error, so a certificate is only as good as the
 demand model, and cv in particular should be estimated from operator data.
 
-\emph{Coverage.} On 10 of the routes (base setting) we rebuild nothing and
-draw 300 independent replications of $10^4$ draws each. The nominal 95\%
-interval of SMIS covers the reference in $93.0$--$95.7\%$ of replications
-(pooled $94.4\%$), with no zero estimates; the single shift, on these
-routes with $\varrho<0.75$, covers in $94.0$--$98.0\%$ (pooled $95.8\%$). At
-$10^4$ draws the relative standard error is about $2\%$, so the CLT interval
-is adequate well below the sample sizes we use.
+\emph{Coverage.} We drew 300 independent replications of $10^4$ draws each and
+counted how often the nominal 95\% interval contains the reference. On 10
+Guangdong routes at $10^{-4}$ (base setting, the SMIS proposal built once) the
+interval of SMIS covers in $93.0$--$95.7\%$ of the replications (pooled
+$94.4\%$, no zero estimates) and that of the single shift, on these routes with
+$\varrho<0.75$, in $94.0$--$98.0\%$ (pooled $95.8\%$). The harder case is the
+balanced routes at the rarer levels. On 10 Vietnamese routes with at most
+eight stops ($\varrho$ from $0.84$ to $0.99$), at $10^{-5}$ and $10^{-6}$, the
+SMIS interval covers in $93.0$--$98.7\%$ of the replications (pooled $94.9\%$
+and $95.3\%$; the proposal is built once, but the sample is independent in
+each replication) against the quadrature reference, whose own error estimate is
+$1.6\%$ and $0.9\%$ of $p$ in median. The single shift, rebuilt in every
+replication so that its pilot variability is included, covers in only
+$34\%$ and $36\%$ of the replications (routes between $0.7\%$ and
+$96\%$): it is biased by $-5.2\%$ and $-8.2\%$ in median, against a standard
+deviation of $13.6\%$ across replications. At $10^4$ draws the relative
+standard error of SMIS is about $2.3\%$, so the central-limit interval is
+adequate well below the sample sizes we use. We therefore keep the word
+certificate for the SMIS interval at the levels and on the route types tested
+(1e-4 on Guangdong routes; $10^{-5}$ and $10^{-6}$ on short balanced
+routes), and nowhere else.
 
 \subsection{Route days without an exact method}
 \label{sec:routeday}
