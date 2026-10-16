@@ -606,29 +606,73 @@ SMIS & 0.15\% & 4.7 & & 0.15\% & 5.9 & \\
 \end{tabular}}
 \end{table}
 
-Four findings. First, SMIS agrees with the exact program within $0.58\%$ on
-every route, including the 15 routes with $\varrho>0.75$ and $\gamma=10^{-6}$,
-which the comparison with the CE mixture in Section~\ref{sec:routes} could
-not check independently. Second, the exact program costs about five minutes
-per route and level with $41^2$ factor nodes and two level counts; its own
-error estimate (nested-grid difference) has a median of $1.2\%$ of $p$, which
-is conservative given the $0.1$--$0.2\%$ agreement with SMIS. SMIS reaches
-$\varepsilon=0.01$ in $2.6$--$3.3$\,s, two orders of magnitude less. Third,
+Four findings from Table~\ref{tab:rivals}. First, SMIS agrees with the
+quadrature reference within $0.58\%$ on every route, including the 15 routes
+with $\varrho>0.75$ at $\gamma=10^{-6}$, which the comparison with the CE
+mixture in Section~\ref{sec:routes} could not check independently. Second,
 the factor-based rivals inherit the single-mode failure, because both shift
 the factors towards one dominating point. On routes with $\varrho>0.75$,
-Glasserman--Li with a shifted inner step is off by $7$--$16\%$ in median
-while its sampling error is about $2.5\%$ (relative variance $12$--$13$ at
-$2\times10^4$ calls), so most of that error is bias. Conditional Monte Carlo's
-relative variance jumps from about $1$ to $57$--$153$ per inner program on the
-same routes, which is the same missed-mode effect seen through the variance;
-its $13\%$ median error there is mostly sampling error at $2\,000$ inner
-programs. Elsewhere the two are accurate to $1$--$5\%$ in median at these
-budgets.
-Fourth, subset simulation needs no mode information but has a relative
-variance of $700$--$4\,400$ per draw and needs $7$--$30$ minutes for
-$\varepsilon=0.01$. Errors in the table include sampling error at the budgets
-used ($2\times10^4$ simulator calls for Glasserman--Li, $2\,000$ inner programs
-for conditional Monte Carlo, $5\times$ the levels for subset simulation).
+Glasserman--Li with a shifted inner step is off by $7$--$16\%$ in median at
+$2\times10^4$ calls; Table~\ref{tab:fair} repeats this at $10^6$ calls (the
+budget of the other estimators), where its sampling error falls to about
+$0.5\%$ and the error stays at $-15\%$ ($10^{-4}$) and $-6.6\%$ ($10^{-6}$),
+so the error is bias. Conditional Monte Carlo's relative variance jumps from
+about $1$ to $57$--$153$ per inner program on the same routes, the same
+missed-mode effect seen through the variance. Third, subset simulation needs
+no mode information but has a relative variance of $700$--$4\,400$ per draw
+and needs $7$--$30$ minutes for $\varepsilon=0.01$. Fourth, the cost of the
+quadrature reference depends on its grid, and the grid we used as reference is
+finer than needed (next paragraph).
+
+\emph{Budget-fair comparison.} Table~\ref{tab:fair} gives every sampling
+method $10^6$ simulator evaluations on the same 30 routes. Two further
+estimators separate what SMIS adds from what CE adds. The first keeps only the
+two end modes of the SMIS mixture (delivery block of stage $0$, pickup block of
+stage $L$, with the same weights and defensive component); it is as accurate
+and as efficient as full SMIS (median error $0.08$--$0.19\%$, relative
+variance $4.5$--$5.9$), so on these routes the modes at intermediate stages
+add nothing measurable and the gain over a single shift is the second end mode
+at its computed dominating point. The second is a CE mixture with a pilot of
+$2\,000$ draws per iteration; shrinking the iteration size did not shrink the
+pilot, which still takes $1.2$--$4.0\times10^5$ draws because the
+cross-entropy ladder runs for every stage, so the pilot saving of SMIS
+persists, while the accuracy of this CE variant equals SMIS ($0.10$--$0.23\%$).
+
+\begin{table}[t]
+\centering\small
+\caption{Budget-fair comparison, 30 routes, $N=10^6$ simulator evaluations
+for each sampling method: absolute relative error against the quadrature
+reference (median / maximum) and relative variance per draw (median). SMIS,
+the two-end mixture and the CE mixture are unbiased on all routes; the
+Glasserman--Li estimator (shifted inner step) is biased low on balanced
+routes.}
+\label{tab:fair}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{$\gamma=10^{-4}$} & \multicolumn{2}{c}{$\gamma=10^{-6}$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+method & balanced (15) & other (15) & balanced (15) & other (15) \\
+\midrule
+SMIS & 0.15 / 0.57\% (4.7) & 0.17 / 0.38\% (4.5) & 0.12 / 0.57\% (6.0) & 0.24 / 0.58\% (5.8) \\
+two end modes only & 0.13 / 0.59\% (4.6) & 0.08 / 0.45\% (4.5) & 0.13 / 0.39\% (5.9) & 0.19 / 0.60\% (5.8) \\
+CE mixture, pilot $2\,000$ & 0.10 / 0.30\% (5.0) & 0.12 / 0.56\% (4.8) & 0.13 / 0.51\% (6.3) & 0.23 / 0.49\% (6.1) \\
+Glasserman--Li, shifted inner & 15.0 / 31.2\% (30) & 0.27 / 0.92\% (10.6) & 6.6 / 48.5\% (13.9) & 0.24 / 0.70\% (12.2) \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\emph{The quadrature reference at coarser grids.} The reference of
+Table~\ref{tab:rivals} uses $41^2$ factor nodes and $V=256$ and $512$ levels.
+On the same 60 route--level rows, $41$ nodes with $V=128$ and $256$ differs
+from it by $0.01\%$ in median ($0.44\%$ at the 90\% quantile, $0.97\%$ at
+most) and costs about a third of the time ($95$\,s against $300$\,s per
+evaluation under load). With $21$ nodes the error is $1.2\%$ in median
+($8.5\%$ at most) and with $11$ nodes $48\%$: the trapezoid rule on
+$[-6,9]^2$ with a step above $0.5$ does not resolve the tails that dominate
+the rare event. The cheapest grid that keeps the error below $1\%$ is therefore
+$41$ nodes with $V=128$ and $256$, and at that grid SMIS reaches the same
+$1\%$ precision about \pending{N} times faster (Table~\ref{tab:timing}).
 Section~\ref{sec:hubs} compares the hub estimate with the exact hub program.
 
 \subsection{Sensitivity and coverage}

@@ -61,32 +61,32 @@ By level (gamma) for rows with m_hat >= 1e-3:
 
 ## Budget-fair rivals and quadrature grids
 
-52 route-gamma rows (N = 1e6 simulator evaluations for every sampling method). Times are wall times on a loaded shared machine (indicative).
+60 route-gamma rows (N = 1e6 simulator evaluations for every sampling method). Times are wall times on a loaded shared machine (indicative).
 
 | gamma | group | rows | SMIS e med / max | two-end e med / max | GL shifted e med / max | CE small-pilot e med / max | SMIS RV | two-end RV | GL RV | CE small RV | CE small pilot | GL signed e median | SMIS signed e median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0.0001 | balanced (VNN) | 10 | 0.14% / 0.57% | 0.14% / 0.39% | 11.78% / 28.04% | 0.09% / 0.20% | 4.72 | 4.64 | 57.1 | 4.97 | 1.23e+05 | -11.78% | 0.01% |
+| 0.0001 | balanced (VNN) | 15 | 0.15% / 0.57% | 0.13% / 0.59% | 14.99% / 31.20% | 0.10% / 0.30% | 4.74 | 4.64 | 30 | 5.02 | 1.2e+05 | -14.99% | -0.02% |
 | 0.0001 | other (GD) | 15 | 0.17% / 0.38% | 0.08% / 0.45% | 0.27% / 0.92% | 0.12% / 0.56% | 4.52 | 4.47 | 10.6 | 4.75 | 2.76e+05 | -0.02% | -0.05% |
-| 0.0001 | all | 25 | 0.16% / 0.57% | 0.09% / 0.45% | 0.57% / 28.04% | 0.10% / 0.56% | 4.54 | 4.48 | 11.5 | 4.82 | 1.94e+05 | -0.29% | -0.02% |
-| 1e-06 | balanced (VNN) | 12 | 0.17% / 0.57% | 0.13% / 0.39% | 4.57% / 41.56% | 0.12% / 0.51% | 5.87 | 5.83 | 13.6 | 6.31 | 1.46e+05 | -4.57% | -0.05% |
+| 0.0001 | all | 30 | 0.16% / 0.57% | 0.09% / 0.59% | 0.66% / 31.20% | 0.11% / 0.56% | 4.55 | 4.48 | 11.9 | 4.86 | 1.52e+05 | -0.58% | -0.03% |
+| 1e-06 | balanced (VNN) | 15 | 0.12% / 0.57% | 0.13% / 0.39% | 6.63% / 48.54% | 0.13% / 0.51% | 5.95 | 5.86 | 13.9 | 6.32 | 1.54e+05 | -6.63% | -0.08% |
 | 1e-06 | other (GD) | 15 | 0.24% / 0.58% | 0.19% / 0.60% | 0.24% / 0.70% | 0.23% / 0.49% | 5.78 | 5.76 | 12.2 | 6.12 | 4.02e+05 | -0.10% | 0.03% |
-| 1e-06 | all | 27 | 0.23% / 0.58% | 0.15% / 0.60% | 0.50% / 41.56% | 0.16% / 0.51% | 5.8 | 5.76 | 12.8 | 6.19 | 2.5e+05 | -0.32% | 0.02% |
+| 1e-06 | all | 30 | 0.18% / 0.58% | 0.14% / 0.60% | 0.62% / 48.54% | 0.15% / 0.51% | 5.81 | 5.77 | 12.9 | 6.24 | 2.41e+05 | -0.44% | -0.02% |
 
 Quadrature reference on coarser grids (error against the fine reference p_ref, wall time per evaluation):
 
 | grid (nodes, V pair) | rows | abs e median | q90 | max | wall s median | q90 |
 |---|---|---|---|---|---|---|
-| 41, (128,256) | 52 | 0.01% | 0.64% | 0.97% | 91.2 | 156 |
-| 21, (256,512) | 52 | 1.16% | 4.52% | 8.45% | 135 | 231 |
-| 21, (128,256) | 52 | 1.16% | 4.17% | 8.45% | 23.5 | 38.7 |
-| 11, (256,512) | 52 | 48.61% | 59.94% | 70.86% | 36.3 | 62.3 |
+| 41, (128,256) | 60 | 0.01% | 0.44% | 0.97% | 94.9 | 157 |
+| 21, (256,512) | 60 | 1.18% | 4.65% | 8.45% | 140 | 231 |
+| 21, (128,256) | 60 | 1.20% | 4.64% | 8.45% | 24.1 | 38.9 |
+| 11, (256,512) | 60 | 48.50% | 59.11% | 70.86% | 38.2 | 62.6 |
 
 Reference grid for comparison: 41 nodes, V = (256, 512); median wall time in baselines_summary.md.
 
 Wall time to reach relative precision 0.01 at 95% confidence (build + 1.96^2 RV / 0.01^2 draws at the measured per-draw time; medians over rows):
 
-- SMIS: median 5 s (q90 9.34 s)
-- CE small pilot: median 9.26 s (q90 17.2 s)
+- SMIS: median 5.06 s (q90 9.37 s)
+- CE small pilot: median 9.09 s (q90 16.2 s)
 
 ## Coverage at rare levels on balanced routes
 
@@ -94,10 +94,10 @@ Wall time to reach relative precision 0.01 at 95% confidence (build + 1.96^2 RV 
 
 | gamma | method | routes | coverage pooled | min | max | median mean error | median sd |
 |---|---|---|---|---|---|---|---|
-| 1e-05 | smis | 4 | 0.947 | 0.930 | 0.963 | 0.08% | 2.34% |
-| 1e-05 | single_rebuilt | 4 | 0.270 | 0.020 | 0.617 | -5.17% | 24.42% |
-| 1e-06 | smis | 4 | 0.943 | 0.930 | 0.960 | -0.03% | 2.42% |
-| 1e-06 | single_rebuilt | 4 | 0.365 | 0.013 | 0.860 | -8.22% | 10.82% |
+| 1e-05 | smis | 7 | 0.947 | 0.930 | 0.963 | 0.04% | 2.27% |
+| 1e-05 | single_rebuilt | 7 | 0.336 | 0.020 | 0.960 | -3.84% | 15.77% |
+| 1e-06 | smis | 7 | 0.943 | 0.930 | 0.960 | 0.04% | 2.44% |
+| 1e-06 | single_rebuilt | 7 | 0.476 | 0.013 | 0.950 | -5.74% | 9.64% |
 
 ## Hub SMIS against crude Monte Carlo (gamma = 1e-3 calibrated capacity)
 
