@@ -1,0 +1,304 @@
+\begin{thebibliography}{51}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+
+\bibitem[{Akhmetbek(2024)}]{akhmetbek2024stochastic}
+Akhmetbek Y (2024) Stochastic dynamic vehicle routing problem survey.
+  \emph{Suleyman Demirel University Bulletin: Natural and Technical Sciences}
+  62(1):75--87, \urlprefix\url{http://dx.doi.org/10.47344/sdubnts.v62i1.959}.
+
+\bibitem[{Asmussen \protect\BIBand{} Glynn(2007)}]{AsmussenGlynn2007}
+Asmussen S, Glynn PW (2007) \emph{Stochastic Simulation: Algorithms and
+  Analysis} (Springer),
+  \urlprefix\url{http://dx.doi.org/10.1007/978-0-387-69033-9}.
+
+\bibitem[{Au \protect\BIBand{} Beck(2001)}]{AuBeck2001}
+Au SK, Beck JL (2001) Estimation of small failure probabilities in high
+  dimensions by subset simulation. \emph{Probabilistic Engineering Mechanics}
+  16(4):263--277,
+  \urlprefix\url{http://dx.doi.org/10.1016/S0266-8920(01)00019-4}.
+
+\bibitem[{Bai \protect\BIBand{} Lam(2024)}]{Bai2024Uncertainty}
+Bai Y, Lam H (2024) Uncertainty quantification and confidence intervals for
+  naive rare-event estimators. \emph{Journal of Applied Probability}
+  62:84--110, \urlprefix\url{http://dx.doi.org/10.1017/jpr.2024.43}.
+
+\bibitem[{Bassamboo et~al.(2008)Bassamboo, Juneja, \protect\BIBand{}
+  Zeevi}]{BassambooJunejaZeevi2008}
+Bassamboo A, Juneja S, Zeevi A (2008) Portfolio credit risk with extremal
+  dependence: asymptotic analysis and efficient simulation. \emph{Operations
+  Research} 56(3):593--606,
+  \urlprefix\url{http://dx.doi.org/10.1287/opre.1080.0513}.
+
+\bibitem[{Blanchet et~al.(2025)Blanchet, Hamoudi, Szegedy, \protect\BIBand{}
+  Wang}]{Blanchet2025Quantum}
+Blanchet J, Hamoudi Y, Szegedy M, Wang G (2025) Quantum speedup of non-linear
+  monte carlo problems. \emph{Advances in Neural Information Processing Systems
+  38}, 21289--21313, \urlprefix\url{http://dx.doi.org/10.52202/085713-0631}.
+
+\bibitem[{Brassard et~al.(2002)Brassard, H{\o}yer, Mosca, \protect\BIBand{}
+  Tapp}]{Brassard2002}
+Brassard G, H{\o}yer P, Mosca M, Tapp A (2002) Quantum amplitude amplification
+  and estimation. \emph{Contemporary Mathematics} 305:53--74.
+
+\bibitem[{C{\'e}rou et~al.(2012)C{\'e}rou, Del~Moral, Furon, \protect\BIBand{}
+  Guyader}]{CerouDelMoralFuronGuyader2012}
+C{\'e}rou F, Del~Moral P, Furon T, Guyader A (2012) Sequential {Monte Carlo}
+  for rare event estimation. \emph{Statistics and Computing} 22(3):795--808,
+  \urlprefix\url{http://dx.doi.org/10.1007/s11222-011-9231-6}.
+
+\bibitem[{Chakrabarti et~al.(2021)Chakrabarti, Krishnakumar, Mazzola,
+  Stamatopoulos, Woerner, \protect\BIBand{} Zeng}]{Chakrabarti2021Threshold}
+Chakrabarti S, Krishnakumar R, Mazzola G, Stamatopoulos N, Woerner S, Zeng WJ
+  (2021) A threshold for quantum advantage in derivative pricing.
+  \emph{Quantum} 5:463,
+  \urlprefix\url{http://dx.doi.org/10.22331/q-2021-06-01-463}.
+
+\bibitem[{Chatterjee \protect\BIBand{} Diaconis(2018)}]{Chatterjee2018Sample}
+Chatterjee S, Diaconis P (2018) The sample size required in importance
+  sampling. \emph{The Annals of Applied Probability} 28(2):1099--1135,
+  \urlprefix\url{http://dx.doi.org/10.1214/17-aap1326}.
+
+\bibitem[{Conroy \protect\BIBand{} Olvera-Cravioto(2022)}]{Conroy2022Maxima}
+Conroy M, Olvera-Cravioto M (2022) Efficient rare event estimation for maxima
+  of branching random walks. \emph{2022 Winter Simulation Conference (WSC)},
+  145--155, \urlprefix\url{http://dx.doi.org/10.1109/WSC57314.2022.10015264}.
+
+\bibitem[{Dalzell et~al.(2023)Dalzell, McArdle, Berta, Bienias, Chen,
+  Gily{\'e}n, Hann, Kastoryano, Khabiboulline, Kubica, Salton, Wang,
+  \protect\BIBand{} Brand{\~a}o}]{Dalzell2023Survey}
+Dalzell AM, McArdle S, Berta M, Bienias P, Chen CF, Gily{\'e}n A, Hann CT,
+  Kastoryano MJ, Khabiboulline ET, Kubica A, Salton G, Wang S, Brand{\~a}o FGSL
+  (2023) Quantum algorithms: A survey of applications and end-to-end
+  complexities. Crossref lists the monograph DOI 10.1017/9781009639651 (2025),
+  titled Quantum Algorithms; the publisher was not checked.
+
+\bibitem[{de~Boer et~al.(2005)de~Boer, Kroese, Mannor, \protect\BIBand{}
+  Rubinstein}]{deBoerEtAl2005}
+de~Boer PT, Kroese DP, Mannor S, Rubinstein RY (2005) A tutorial on the
+  cross-entropy method. \emph{Annals of Operations Research} 134(1):19--67,
+  \urlprefix\url{http://dx.doi.org/10.1007/s10479-005-5724-z}.
+
+\bibitem[{Dethloff(2001)}]{Dethloff2001}
+Dethloff J (2001) Vehicle routing and reverse logistics: the vehicle routing
+  problem with simultaneous delivery and pick-up. \emph{OR Spektrum}
+  23(1):79--96.
+
+\bibitem[{Dinh et~al.(2018)Dinh, Fukasawa, \protect\BIBand{}
+  Luedtke}]{DinhFukasawaLuedtke2018}
+Dinh T, Fukasawa R, Luedtke J (2018) Exact algorithms for the
+  chance-constrained vehicle routing problem. \emph{Mathematical Programming}
+  172:105--138, \urlprefix\url{http://dx.doi.org/10.1007/s10107-017-1151-6}.
+
+\bibitem[{Dupuis \protect\BIBand{} Wang(2007)}]{DupuisWang2007}
+Dupuis P, Wang H (2007) Subsolutions of an {I}saacs equation and efficient
+  schemes for importance sampling. \emph{Mathematics of Operations Research}
+  32(3):723--757, \urlprefix\url{http://dx.doi.org/10.1287/moor.1070.0266}.
+
+\bibitem[{Egger et~al.(2021)Egger, Garc{\'i}a~Guti{\'e}rrez, Mestre,
+  \protect\BIBand{} Woerner}]{Egger2021Credit}
+Egger DJ, Garc{\'i}a~Guti{\'e}rrez R, Mestre JC, Woerner S (2021) Credit risk
+  analysis using quantum computers. \emph{IEEE Transactions on Computers}
+  70(12):2136--2145, \urlprefix\url{http://dx.doi.org/10.1109/tc.2020.3038063}.
+
+\bibitem[{Erkut \protect\BIBand{} Verter(1998)}]{ErkutVerter1998}
+Erkut E, Verter V (1998) Modeling of transport risk for hazardous materials.
+  \emph{Operations Research} 46(5):625--642,
+  \urlprefix\url{http://dx.doi.org/10.1287/opre.46.5.625}.
+
+\bibitem[{Fang et~al.(2026)Fang, Shen, \protect\BIBand{} Wang}]{Fang2026ISCOS}
+Fang F, Shen X, Wang Q (2026) Importance sampling enhanced with the {COS}
+  method for the portfolio risk allocation.
+  \urlprefix\url{https://arxiv.org/abs/2608.30749}.
+
+\bibitem[{Feld et~al.(2019)Feld, Roch, Gabor, Seidel, Neukart, Galter, Mauerer,
+  \protect\BIBand{} Linnhoff-Popien}]{Feld2019Hybrid}
+Feld S, Roch C, Gabor T, Seidel C, Neukart F, Galter I, Mauerer W,
+  Linnhoff-Popien C (2019) A hybrid solution method for the capacitated vehicle
+  routing problem using a quantum annealer. \emph{Frontiers in ICT} 6:13,
+  \urlprefix\url{http://dx.doi.org/10.3389/fict.2019.00013}.
+
+\bibitem[{Florio et~al.(2023)Florio, Gendreau, Hartl, Minner, \protect\BIBand{}
+  Vidal}]{Florio2023Recent}
+Florio AM, Gendreau M, Hartl RF, Minner S, Vidal T (2023) Recent advances in
+  vehicle routing with stochastic demands: {B}ayesian learning for correlated
+  demands and elementary branch-price-and-cut. \emph{European Journal of
+  Operational Research} 306(3):1081--1093,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ejor.2022.10.045}.
+
+\bibitem[{Gendreau et~al.(2016)Gendreau, Jabali, \protect\BIBand{}
+  Rei}]{GendreauJabaliRei2016}
+Gendreau M, Jabali O, Rei W (2016) 50th anniversary invited article---future
+  research directions in stochastic vehicle routing. \emph{Transportation
+  Science} 50(4):1163--1173,
+  \urlprefix\url{http://dx.doi.org/10.1287/trsc.2016.0709}.
+
+\bibitem[{Geyer et~al.(2019)Geyer, Papaioannou, \protect\BIBand{}
+  Straub}]{GeyerPapaioannouStraub2019}
+Geyer S, Papaioannou I, Straub D (2019) Cross entropy-based importance sampling
+  using {G}aussian densities revisited. \emph{Structural Safety} 76:15--27,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.strusafe.2018.07.001}.
+
+\bibitem[{Ghosal et~al.(2024)Ghosal, Ho, \protect\BIBand{}
+  Wiesemann}]{Ghosal2024Unifying}
+Ghosal S, Ho CP, Wiesemann W (2024) A unifying framework for the capacitated
+  vehicle routing problem under risk and ambiguity. \emph{Operations Research}
+  72(2):425--443, \urlprefix\url{http://dx.doi.org/10.1287/opre.2021.0669}.
+
+\bibitem[{Ghosal \protect\BIBand{} Wiesemann(2020)}]{GhosalWiesemann2020}
+Ghosal S, Wiesemann W (2020) The distributionally robust chance-constrained
+  vehicle routing problem. \emph{Operations Research} 68(3):716--732,
+  \urlprefix\url{http://dx.doi.org/10.1287/opre.2019.1924}.
+
+\bibitem[{Glasserman et~al.(2000)Glasserman, Heidelberger, \protect\BIBand{}
+  Shahabuddin}]{GlassermanHeidelbergerShahabuddin2000}
+Glasserman P, Heidelberger P, Shahabuddin P (2000) Variance reduction
+  techniques for estimating value-at-risk. \emph{Management Science}
+  46(10):1349--1364,
+  \urlprefix\url{http://dx.doi.org/10.1287/mnsc.46.10.1349.12274}.
+
+\bibitem[{Glasserman \protect\BIBand{} Li(2005)}]{GlassermanLi2005}
+Glasserman P, Li J (2005) Importance sampling for portfolio credit risk.
+  \emph{Management Science} 51(11):1643--1656,
+  \urlprefix\url{http://dx.doi.org/10.1287/mnsc.1050.0415}.
+
+\bibitem[{Glasserman \protect\BIBand{} Liu(1996)}]{GlassermanLiu1996}
+Glasserman P, Liu TW (1996) Rare-event simulation for multistage
+  production-inventory systems. \emph{Management Science} 42(9):1292--1307.
+
+\bibitem[{Glasserman \protect\BIBand{} Wang(1997)}]{GlassermanWang1997}
+Glasserman P, Wang Y (1997) Counterexamples in importance sampling for large
+  deviations probabilities. \emph{The Annals of Applied Probability}
+  7(3):731--746.
+
+\bibitem[{Gounaris et~al.(2013)Gounaris, Wiesemann, \protect\BIBand{}
+  Floudas}]{GounarisWiesemannFloudas2013}
+Gounaris CE, Wiesemann W, Floudas CA (2013) The robust capacitated vehicle
+  routing problem under demand uncertainty. \emph{Operations Research}
+  61(3):677--693.
+
+\bibitem[{Grinko et~al.(2021)Grinko, Gacon, Zoufal, \protect\BIBand{}
+  Woerner}]{Grinko2021Iterative}
+Grinko D, Gacon J, Zoufal C, Woerner S (2021) Iterative quantum amplitude
+  estimation. \emph{npj Quantum Information} 7(1):52,
+  \urlprefix\url{http://dx.doi.org/10.1038/s41534-021-00379-1}.
+
+\bibitem[{Heakl et~al.(2025)Heakl, Shaaban, Takac, Lahlou, \protect\BIBand{}
+  Iklassov}]{Heakl2025SVRPBench}
+Heakl A, Shaaban YS, Takac M, Lahlou S, Iklassov Z (2025) {SVRPBench}: A
+  realistic benchmark for stochastic vehicle routing problem
+  \urlprefix\url{https://arxiv.org/abs/2505.21887}, arXiv preprint
+  arXiv:2505.21887.
+
+\bibitem[{Helal \protect\BIBand{} Elvira(2026)}]{Helal2026Multimodal}
+Helal S, Elvira V (2026) Efficient rare event estimation for multimodal and
+  high-dimensional system reliability via subset adaptive importance sampling.
+  \emph{Reliability Engineering \& System Safety} 272:112473,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ress.2026.112473}.
+
+\bibitem[{Herbert(2022)}]{Herbert2022Quantum}
+Herbert S (2022) Quantum monte carlo integration: The full advantage in minimal
+  circuit depth. \emph{Quantum} 6:823,
+  \urlprefix\url{http://dx.doi.org/10.22331/q-2022-09-29-823}.
+
+\bibitem[{Hu \protect\BIBand{} Tao(2025)}]{hu2025vehicle}
+Hu H, Tao F (2025) Vehicle routing problem for simultaneous pickup and delivery
+  in rural areas: considering uncertain demand and government subsidy.
+  \emph{Annals of Operations Research} 358(3):1285--1327,
+  \urlprefix\url{http://dx.doi.org/10.1007/s10479-025-06877-1}.
+
+\bibitem[{Karimi et~al.(2026)Karimi, Zhang, \protect\BIBand{}
+  Fackrell}]{karimi2026stochastic}
+Karimi A, Zhang L, Fackrell M (2026) Stochastic vehicle routing problem:
+  classification and review. \emph{Transportation Letters} 1--21,
+  \urlprefix\url{http://dx.doi.org/10.1080/19427867.2026.2726413}.
+
+\bibitem[{Kurtz \protect\BIBand{} Song(2013)}]{KurtzSong2013}
+Kurtz N, Song J (2013) Cross-entropy-based adaptive importance sampling using
+  {Gaussian} mixture. \emph{Structural Safety} 42:35--44,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.strusafe.2013.01.006}.
+
+\bibitem[{Montanaro(2015)}]{Montanaro2015}
+Montanaro A (2015) Quantum speedup of {M}onte {C}arlo methods.
+  \emph{Proceedings of the Royal Society A} 471(2181):20150301,
+  \urlprefix\url{http://dx.doi.org/10.1098/rspa.2015.0301}.
+
+\bibitem[{Owen et~al.(2019)Owen, Maximov, \protect\BIBand{}
+  Chertkov}]{OwenMaximovChertkov2019}
+Owen AB, Maximov Y, Chertkov M (2019) Importance sampling the union of rare
+  events with an application to power systems analysis. \emph{Electronic
+  Journal of Statistics} 13(1):231--254,
+  \urlprefix\url{http://dx.doi.org/10.1214/18-EJS1527}.
+
+\bibitem[{Papaioannou et~al.(2019)Papaioannou, Geyer, \protect\BIBand{}
+  Straub}]{PapaioannouGeyerStraub2019}
+Papaioannou I, Geyer S, Straub D (2019) Improved cross entropy-based importance
+  sampling with a flexible mixture model. \emph{Reliability Engineering \&
+  System Safety} 191:106564,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ress.2019.106564}.
+
+\bibitem[{Phillipson(2024)}]{Phillipson2024Quantum}
+Phillipson F (2024) Quantum computing in logistics and supply chain management
+  an overview. ArXiv only; no journal record checked.
+
+\bibitem[{Sadowsky \protect\BIBand{} Bucklew(1990)}]{SadowskyBucklew1990}
+Sadowsky JS, Bucklew JA (1990) On large deviations theory and asymptotically
+  efficient {M}onte {C}arlo estimation. \emph{IEEE Transactions on Information
+  Theory} 36(3):579--588.
+
+\bibitem[{Salavati-Khoshghalb et~al.(2019)Salavati-Khoshghalb, Gendreau,
+  Jabali, \protect\BIBand{} Rei}]{salavati2019rulebased}
+Salavati-Khoshghalb M, Gendreau M, Jabali O, Rei W (2019) A rule-based recourse
+  for the vehicle routing problem with stochastic demands. \emph{Transportation
+  Science} 53(5):1334--1353,
+  \urlprefix\url{http://dx.doi.org/10.1287/trsc.2018.0876}.
+
+\bibitem[{Thiebaut \protect\BIBand{} Pessoa(2022)}]{thiebaut2022approximating}
+Thiebaut K, Pessoa A (2022) Approximating the chance-constrained capacitated
+  vehicle routing problem with robust optimization. \emph{4OR} 21(3):513--531,
+  \urlprefix\url{http://dx.doi.org/10.1007/s10288-022-00523-3}.
+
+\bibitem[{Vehtari et~al.(2024)Vehtari, Simpson, Gelman, Yao, \protect\BIBand{}
+  Gabry}]{Vehtari2024PSIS}
+Vehtari A, Simpson D, Gelman A, Yao Y, Gabry J (2024) Pareto smoothed
+  importance sampling. \emph{Journal of Machine Learning Research}
+  25(72):1--58.
+
+\bibitem[{Wang et~al.(2025)Wang, Jian, \protect\BIBand{}
+  Fang}]{wang2025simulation}
+Wang NN, Jian M, Fang X (2025) Simulation-based robustness evaluation of
+  coordination under stochastic demand. \emph{International Journal of
+  Simulation Modelling} 24(4):730--741,
+  \urlprefix\url{http://dx.doi.org/10.2507/ijsimm24-4-co20}.
+
+\bibitem[{Wang et~al.(2023)Wang, Yang, Yang, \protect\BIBand{}
+  Gao}]{wang2023distributionally}
+Wang W, Yang K, Yang L, Gao Z (2023) Distributionally robust chance-constrained
+  programming for multi-period emergency resource allocation and vehicle
+  routing in disaster response operations. \emph{Omega} 120:102915,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.omega.2023.102915}.
+
+\bibitem[{Woerner \protect\BIBand{} Egger(2019)}]{Woerner2019Quantum}
+Woerner S, Egger DJ (2019) Quantum risk analysis. \emph{npj Quantum
+  Information} 5(1):15,
+  \urlprefix\url{http://dx.doi.org/10.1038/s41534-019-0130-6}.
+
+\bibitem[{Yin \protect\BIBand{} Zhao(2022)}]{yin2022distributionally}
+Yin F, Zhao Y (2022) Distributionally robust equilibrious hybrid vehicle
+  routing problem under twofold uncertainty. \emph{Information Sciences}
+  609:1239--1255, \urlprefix\url{http://dx.doi.org/10.1016/j.ins.2022.07.140}.
+
+\bibitem[{Zhang et~al.(2021)Zhang, Li, Sun, \protect\BIBand{}
+  Hou}]{Zhang2021Vehicle}
+Zhang D, Li D, Sun H, Hou L (2021) A vehicle routing problem with distribution
+  uncertainty in deadlines. \emph{European Journal of Operational Research}
+  292:311--326, \urlprefix\url{http://dx.doi.org/10.1016/j.ejor.2020.10.026}.
+
+\bibitem[{Zhang \protect\BIBand{} Ma(2026)}]{Zhang2026GMM}
+Zhang Y, Ma J (2026) Nonparametric gaussian mixture models enhanced by
+  sequential importance sampling for high-dimensional rare event analysis.
+  \emph{Computers \& Structures} 325:108198,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.compstruc.2026.108198}.
+
+\end{thebibliography}

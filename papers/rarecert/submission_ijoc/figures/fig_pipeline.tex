@@ -1,0 +1,24 @@
+% Certification pipeline (TikZ); included from main.tex
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw=black!70, rounded corners=2pt, fill=#1, minimum height=11mm, text width=2.75cm, align=center, inner sep=2pt},
+  box/.default=white,
+  arr/.style={-{Stealth[length=2mm]}, thick, black!70},
+  lab/.style={font=\scriptsize\itshape, text=black!65},
+  cal/.style={draw=black!70, dashed, rounded corners=2pt, inner sep=3pt}
+]
+\definecolor{cplan}{HTML}{EEF3FA}\definecolor{cmode}{HTML}{FBE9D6}\definecolor{ccert}{HTML}{E4F1E8}
+\node[box=cplan] (plan) {planned routes\\ $Q$, means $\bar d_i,\bar p_i$};
+\node[box=cplan, right=6mm of plan] (model) {demand model\\ gamma marginals,\\ one-factor copula};
+\node[box=cmode, right=6mm of model] (modes) {computed end modes\\ $x_m=\arg\min|u|^2/2$\\ $L_k(u)\ge c$};
+\node[box=cmode, right=6mm of modes] (mix) {mixture $q$\\ $a_m\propto e^{-(E_m-E_{\min})}$\\ $+$ defensive $N(0,I)$};
+\node[box=ccert, below=11mm of mix] (draw) {$N$ draws $u\sim q$\\ weight $\varphi(u)/q(u)$\\ peak $F(u)>c$?};
+\node[box=ccert, left=6mm of draw] (est) {$\hat p$, relative s.e.,\\ ESS, 95\% interval};
+\node[box=ccert, left=6mm of est] (cert) {certificate\\ $\hat p(1+\varepsilon)\le\gamma$?};
+\node[box=cplan, left=6mm of cert] (hub) {hub: shared factors,\\ $1-\prod_r$, attribution,\\ capacity search $c$};
+\draw[arr] (plan) -- (model);\draw[arr] (model) -- (modes);\draw[arr] (modes) -- (mix);
+\draw[arr] (mix) -- (draw);\draw[arr] (draw) -- (est);\draw[arr] (est) -- (cert);\draw[arr] (cert) -- (hub);
+\draw[arr, dashed] (hub.north) -- ++(0,5mm) -| node[lab, pos=0.2, above, fill=white, inner sep=1pt]{buffer $b=c/Q-1$, re-run with the new $c$} (modes.south west);
+\node[lab, above=1mm of modes] {no pilot simulation};
+\node[lab, below=1mm of draw] {$2(L{+}1)$ local searches, then one pass};
+\end{tikzpicture}
