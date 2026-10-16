@@ -54,11 +54,14 @@ if str(ROOT / "scripts") not in sys.path:
 
 import run_quasar_rare as rq  # noqa: E402
 import run_rarecert_smis as rs  # noqa: E402
+import run_rarecert_r2 as r2  # noqa: E402
 import run_rarecert_sensitivity as sens  # noqa: E402
 from quantum.rare import (  # noqa: E402
     Mixture, RouteSim, ce_mixture, crude, ce_shift, is_mixture, is_shift, threshold_for)
 from rarecert.baselines import exact_reference, exact_route_prob, gl_two_step  # noqa: E402
+from rarecert import modes as MD  # noqa: E402
 from rarecert.checkpoint import load, resumable_map  # noqa: E402
+from rarecert.sim2 import RouteDay  # noqa: E402
 from rarecert.plan import HubSim, hub_estimate, route_baselines  # noqa: E402
 from rarecert.smis import smis_mixture, stage_scales  # noqa: E402
 
@@ -374,8 +377,29 @@ def task_long(t):
     return row
 
 
+def task_r2crude(t):
+    """Crude Monte Carlo reference for the route-day simulator at the stored thresholds of r2_routes.csv."""
+    t0 = time.time()
+    row = {"route_id": t["route_id"], "gamma": t["gamma"], "n_crude": t["n_crude"], "error": "",
+           "p_mdis": t["p_mdis"], "p_ce": t["p_ce"], "p_single": t["p_single"], "cls": t["cls"], "L": t["L"]}
+    try:
+        legs = r2.legs_of(t["instance"], t["nodes"])
+        sim = RouteDay(t["dbar"], t["pbar"], legs, cv=CV, rho=RHO, Qc=t["Qc"], slack=t["slack"])
+        rng = _rng("r2crude", t["route_id"], int(-math.log10(t["gamma"])))
+        tc = time.time()
+        cr = MD.crude_generic(sim, t["n_crude"], rng)
+        row.update({"p_crude": cr["p"], "rse_crude": cr["rse"], "crude_seconds": time.time() - tc})
+        for k in ("mdis", "ce", "single"):
+            row[f"rel_{k}"] = row[f"p_{k}"] / cr["p"] - 1.0 if cr["p"] > 0 else math.nan
+    except Exception as exc:
+        row["error"] = f"{type(exc).__name__}: {exc}"
+    row["seconds"] = time.time() - t0
+    return row
+
+
 TASK_FN = {"passrate": task_passrate, "mhat": task_mhat, "unconf": task_unconf, "hubcrude": task_hubcrude,
-           "rivals2": task_rivals2, "coverage2": task_coverage2, "long": task_long}
+           "rivals2": task_rivals2, "coverage2": task_coverage2, "long": task_long,
+           "r2crude": task_r2crude}
 
 
 def task_key(t):
@@ -422,6 +446,28 @@ def build_tasks(part):
             for g in LONG_GAMMAS:
                 tasks.append({"key": ["long", d["route_id"], g], **d, "gamma": g, "n": N_LONG,
                               "n_crude": N_LONG_CRUDE[g]})
+        return tasks
+    if part == "r2crude":
+        recs = {r["route_id"]: r for r in r2.route_records()}
+        rows = [r for r in _csv(RES / "r2_routes.csv") if not r["error"]]
+        pick_routes = {"1e-04": [], "1e-05": []}
+        by = {}
+        for r in rows:
+            by.setdefault(r["route_id"], {})[float(r["gamma"])] = r
+        ids = [rid for rid in by if 1e-4 in by[rid]]
+        vn = [rid for rid in ids if rid.startswith("VNN")][::5][:4]
+        gd = [rid for rid in ids if rid.startswith("GD")][::7][:4]
+        for rid in vn + gd:
+            for g, n in ((1e-4, 100_000_000), (1e-5, 200_000_000)):
+                if g == 1e-5 and rid not in (vn[:2] + gd[:1]):
+                    continue
+                r = by[rid][g]
+                rec = recs[rid]
+                tasks.append({"key": ["r2crude", rid, g], "route_id": rid, "gamma": g, "n_crude": n,
+                              "instance": rec["instance"], "nodes": rec["nodes"], "dbar": rec["dbar"],
+                              "pbar": rec["pbar"], "Qc": float(r["Qc"]), "slack": float(r["slack"]),
+                              "p_mdis": float(r["p_mdis"]), "p_ce": float(r["p_ce"]),
+                              "p_single": float(r["p_single"]), "cls": r["cls"], "L": int(r["L"])})
         return tasks
     means = rs.route_means()
     if part == "mhat":

@@ -33,11 +33,11 @@ import matplotlib.pyplot as plt  # noqa: E402
 RES = ROOT / "results" / "rarecert"
 FIG = ROOT.parent / "papers" / "rarecert" / "manuscript" / "figures"
 GAMMAS = (1e-3, 1e-4, 1e-5, 1e-6)
-PARTS = ("passrate", "mhat", "unconf", "rivals2", "coverage2", "hubcrude", "long")
+PARTS = ("passrate", "mhat", "unconf", "rivals2", "coverage2", "hubcrude", "long", "r2crude")
 
 
 def merged(part: str) -> list[dict]:
-    files = glob.glob(str(RES / "r3_local" / "s*" / part / f"{part}_checkpoint.jsonl"))
+    files = glob.glob(str(RES / "r3_local" / "*" / part / f"{part}_checkpoint.jsonl"))
     files += glob.glob(str(RES / "r3_colab" / "*" / "s*" / part / f"{part}_checkpoint.jsonl"))
     files += glob.glob(str(RES / "r3_colab" / "*" / "*" / "s*" / part / f"{part}_checkpoint.jsonl"))
     done = {}
@@ -386,7 +386,26 @@ def sec_long(L, rows):
     L.append("")
 
 
-SECTIONS = {"passrate": sec_passrate, "mhat": sec_mhat, "unconf": sec_unconf, "rivals2": sec_rivals2,
+def sec_r2crude(L, rows):
+    L.append("## Route-day simulator: crude Monte Carlo at gamma = 1e-4 and 1e-5\n")
+    if not rows:
+        L.append("No rows yet.\n")
+        return
+    L.append("| route | L | gamma | class | crude draws | crude p | rse | MDIS e | CE mixture e | single e |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|")
+    for r in sorted(rows, key=lambda r: (-fl(r["gamma"]), r["route_id"])):
+        L.append(f"| {r['route_id']} | {r['L']} | {fl(r['gamma']):g} | {r['cls']} | {int(fl(r['n_crude'])):,} | "
+                 f"{g3(fl(r['p_crude']))} | {pct(fl(r['rse_crude']))} | {pct(fl(r['rel_mdis']))} | "
+                 f"{pct(fl(r['rel_ce']))} | {pct(fl(r['rel_single']))} |")
+    for g in (1e-4, 1e-5):
+        sub = [r for r in rows if math.isclose(fl(r["gamma"]), g, rel_tol=1e-6)]
+        if sub:
+            L.append(f"\ngamma {g:g}: {len(sub)} routes, MDIS abs e median {pct(med([abs(fl(r['rel_mdis'])) for r in sub]))}, "
+                     f"max {pct(max(abs(fl(r['rel_mdis'])) for r in sub))}; median crude rse {pct(med([fl(r['rse_crude']) for r in sub]))}.")
+    L.append("")
+
+
+SECTIONS = {"r2crude": sec_r2crude, "passrate": sec_passrate, "mhat": sec_mhat, "unconf": sec_unconf, "rivals2": sec_rivals2,
             "coverage2": sec_coverage2, "hubcrude": sec_hubcrude, "long": sec_long}
 
 
