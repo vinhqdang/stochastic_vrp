@@ -44,18 +44,18 @@ By level (gamma) for rows with m_hat >= 1e-3:
 
 ## Pickup rescaling and correlated factors
 
-78 rows. Reference = SMIS with 1e6 draws; e = p_method / p_ref - 1.
+131 rows. Reference = SMIS with 1e6 draws; e = p_method / p_ref - 1.
 
 | region | pickup scale s | factor corr r | gamma | rows | varrho median | m_hat median | single e median | min | max | share e < 0 | share abs e > 2 rse | CE mixture abs e median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| GD | 0.5 | 0 | 1e-05 | 10 | 0.717 | 3.6e-05 | 0.09% | -42.61% | 0.62% | 0.40 | 0.10 | 0.27% |
-| GD | 0.5 | 0 | 1e-06 | 11 | 0.767 | 9.05e-05 | -0.07% | -40.75% | 0.74% | 0.55 | 0.09 | 0.56% |
+| GD | 0.5 | 0 | 1e-05 | 22 | 0.73 | 6.49e-05 | 0.11% | -42.61% | 0.62% | 0.41 | 0.05 | 0.33% |
+| GD | 0.5 | 0 | 1e-06 | 22 | 0.727 | 1.45e-05 | -0.08% | -40.75% | 0.74% | 0.64 | 0.14 | 0.52% |
 | GD | 1 | 0.5 | 0.0001 | 3 | 0.307 | 0 | -0.17% | -0.62% | -0.14% | 1.00 | 0.00 | 0.59% |
-| VNN | 0.5 | 0 | 0.0001 | 13 | 0.481 | 1.62e-12 | -0.30% | -0.67% | 0.61% | 0.77 | 0.00 | 0.22% |
-| VNN | 0.5 | 0 | 1e-06 | 13 | 0.481 | 0 | 0.29% | -0.42% | 1.43% | 0.38 | 0.23 | 0.65% |
-| VNN | 2 | 0 | 0.0001 | 13 | 0.495 | 7.01e-12 | 0.19% | -1.27% | 1.17% | 0.46 | 0.31 | 0.48% |
-| VNN | 2 | 0 | 1e-06 | 12 | 0.499 | 3.24e-14 | 0.04% | -0.72% | 1.13% | 0.50 | 0.08 | 0.44% |
-| VNN | 1 | 0.5 | 0.0001 | 3 | 0.942 | 0.262 | 1.54% | -3.76% | 47.16% | 0.33 | 0.33 | 0.18% |
+| VNN | 0.5 | 0 | 0.0001 | 20 | 0.51 | 2.55e-11 | -0.23% | -0.67% | 0.61% | 0.65 | 0.00 | 0.26% |
+| VNN | 0.5 | 0 | 1e-06 | 20 | 0.51 | 9.95e-15 | 0.11% | -1.72% | 1.43% | 0.45 | 0.20 | 0.61% |
+| VNN | 2 | 0 | 0.0001 | 20 | 0.49 | 4.91e-12 | 0.13% | -1.27% | 1.17% | 0.45 | 0.25 | 0.46% |
+| VNN | 2 | 0 | 1e-06 | 20 | 0.49 | 1.01e-15 | -0.21% | -0.92% | 1.13% | 0.60 | 0.05 | 0.38% |
+| VNN | 1 | 0.5 | 0.0001 | 4 | 0.947 | 0.284 | -1.11% | -5.79% | 47.16% | 0.50 | 0.50 | 0.21% |
 
 ## Budget-fair rivals and quadrature grids
 
@@ -109,13 +109,17 @@ Mean z -0.39 over 3 hubs (t = -0.90); mean relative difference -0.30%, median -0
 
 ## Routes with 15 or more stops (crude Monte Carlo reference)
 
-No rows yet.
+| gamma | rows | L range | crude draws | ref rse median | SMIS e median / max (abs) | single e median / max | CE e median / max | SMIS RV | single RV | CE RV |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.001 | 2 | 15-15 | 50,000,000 | 0.45% | 0.21% / 0.32% | 0.19% / 0.31% | 0.16% / 0.21% | 3.83 | 3.52 | 3.95 |
 
 ## Route-day simulator: crude Monte Carlo at gamma = 1e-4 and 1e-5
 
 | route | L | gamma | class | crude draws | crude p | rse | MDIS e | CE mixture e | single e |
 |---|---|---|---|---|---|---|---|---|---|
 | GD-BOLUOXIAN#50 | 11 | 0.0001 | mixed | 100,000,000 | 9.82e-05 | 1.01% | -0.15% | 0.06% | -16.38% |
+| GD-DONGGUANSHI-4#48 | 6 | 0.0001 | mixed | 100,000,000 | 7.57e-05 | 1.15% | -0.00% | -0.11% | 0.38% |
+| GD-SHENZHENSHI-1#5 | 6 | 0.0001 | mixed | 100,000,000 | 7.02e-05 | 1.19% | 2.03% | 1.51% | 1.70% |
 | VNN-BACNINH#6 | 9 | 0.0001 | mixed | 100,000,000 | 0.000101 | 0.99% | -2.06% | -2.47% | -27.77% |
 | VNN-HAIDUONG#14 | 9 | 0.0001 | mixed | 100,000,000 | 9.93e-05 | 1.00% | -1.21% | -1.56% | -37.84% |
 | VNN-HANAM#4 | 7 | 0.0001 | mixed | 100,000,000 | 9.8e-05 | 1.01% | -0.33% | 0.34% | -14.33% |
@@ -123,6 +127,6 @@ No rows yet.
 | VNN-BACNINH#6 | 9 | 1e-05 | mixed | 200,000,000 | 9.97e-06 | 2.24% | 1.84% | 1.79% | -39.77% |
 | VNN-HAIDUONG#14 | 9 | 1e-05 | mixed | 200,000,000 | 1.03e-05 | 2.20% | -4.85% | -4.66% | -45.02% |
 
-gamma 0.0001: 5 routes, MDIS abs e median 0.43%, max 2.06%; median crude rse 1.01%.
+gamma 0.0001: 7 routes, MDIS abs e median 0.43%, max 2.06%; median crude rse 1.01%.
 
 gamma 1e-05: 2 routes, MDIS abs e median 3.34%, max 4.85%; median crude rse 2.22%.
