@@ -8,6 +8,8 @@
 \usepackage{xcolor}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,backgrounds,decorations.pathreplacing}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}[theorem]{Proposition}
@@ -26,7 +28,7 @@
 \author{Quang-Vinh Dang\\
 British University Vietnam, Hung Yen, Vietnam\\
 \texttt{vinh.dq4@buv.edu.vn}\quad ORCID 0000-0002-3877-8024}
-\date{Draft 2, October 2026}
+\date{Draft 3, October 2026}
 
 \begin{document}
 \maketitle
@@ -57,7 +59,9 @@ more capacity is needed.
 Planning models for stochastic vehicle routing control risk through chance
 constraints, robust counterparts or distributionally robust ambiguity sets
 \citep{GounarisWiesemannFloudas2013,DinhFukasawaLuedtke2018,GhosalWiesemann2020};
-see \citet{GendreauJabaliRei2016} for a review. They evaluate route risk inside
+see \citet{GendreauJabaliRei2016}, \citet{akhmetbek2024stochastic} and \citet{karimi2026stochastic} for reviews,
+and \citet{Ghosal2024Unifying} and \citet{wang2023distributionally,yin2022distributionally} for recent
+risk-measure and distributionally robust formulations. They evaluate route risk inside
 the optimiser at moderate levels, with exact formulas, approximations or
 sampling. Applications with strict service levels need a step after
 optimisation: an estimate, with a confidence interval, showing that the plan
@@ -75,7 +79,10 @@ after any stop --- and single-mode IS can then fail without warning
 \citep{GlassermanWang1997}. Mixtures over failure modes
 \citep{OwenMaximovChertkov2019,KurtzSong2013,GeyerPapaioannouStraub2019} cure
 this when the modes are known, at the price of pilot simulation when they are
-not.
+not; adaptive and flow-based proposals for multimodal failure sets are an
+active line \citep{Helal2026Multimodal,Zhang2026GMM,Dasgupta2024REIN}, but
+their fit error is not part of the reported interval. Figure~\ref{fig:pipeline}
+shows the pipeline we propose and Section~\ref{sec:estimators} gives its steps.
 
 \emph{Where IS is needed.} For the demand-only route model used in planning
 there is a deterministic alternative: given the copula factors the demands are
@@ -137,6 +144,17 @@ routing plan at rare levels with IS, and none that treats the mid-route peak
 of the simultaneous pickup-and-delivery load \citep{Dethloff2001} as a rare
 event. The closest IS precedent in logistics is stockout simulation in
 production--inventory systems \citep{GlassermanLiu1996}.
+Recent planning work keeps adding uncertain demand to pickup-and-delivery
+variants \citep{hu2025vehicle}, recourse policies
+\citep{salavati2019rulebased}, distributionally robust and Wasserstein
+formulations \citep{yin2022distributionally,wang2023distributionally,Ghosal2024Unifying}
+and CVaR approximations of chance constraints \citep{Zhang2021Vehicle,thiebaut2022approximating};
+the complexity of pricing routes under scenario-based demand is studied by
+\citet{ota2025hardness}. Plans are then checked by simulation
+\citep{wang2025simulation}, at levels where crude sampling is enough. Correlated
+demand is modelled through a latent factor in routing \citep{Florio2023Recent},
+and stochastic benchmarks with congestion and accidents have appeared
+\citep{Heakl2025SVRPBench}; none of these certify rare levels.
 
 \emph{Rare-event simulation.} Efficiency notions and dominating points are
 surveyed by \citet{AsmussenGlynn2007}; \citet{GlassermanWang1997} show that a
@@ -152,7 +170,21 @@ treat extremal dependence; for quadratic losses of Gaussian inputs,
 \citet{GlassermanHeidelbergerShahabuddin2000} use the same eigenstructure that
 gives our scales. Subset simulation \citep{AuBeck2001} and sequential Monte
 Carlo splitting \citep{CerouDelMoralFuronGuyader2012} need no mode
-information; we use subset simulation as the model-free rival.
+information; we use subset simulation as the model-free rival. Recent work extends mixtures
+and splitting to multimodal and high-dimensional failure sets
+\citep{Helal2026Multimodal,Zhang2026GMM,Cerou2019Adaptive,Wagner2020Multilevel},
+and treats the maximum of a dependent process \citep{Conroy2022Maxima} and
+chance constraints inside an operations problem \citep{Lukashevich2024Chance};
+Gaussian and Student-$t$ factor copulas still use shifted proposals
+\citep{Fang2026ISCOS}, and VaR and CVaR of black-box models have importance-sampling
+estimators with asymptotic optimality \citep{Deo2021Blackbox}. What these
+methods do not give is a computed, structure-based mixture for the peak of a
+pickup-and-delivery route. On reporting, the sample size that importance
+sampling needs grows with the divergence between target and proposal
+\citep{Chatterjee2018Sample}, the Pareto-tail diagnostic of the weights
+\citep{Vehtari2024PSIS} detects heavy tails but not a missed mode, and
+naive intervals for rare probabilities can fail to cover \citep{Bai2024Uncertainty};
+\citet{LEcuyer2023RQMC} give valid intervals for randomised quasi-Monte Carlo.
 
 \section{Problem}
 \label{sec:problem}
@@ -259,7 +291,20 @@ figure shows the pre-asymptotic gap as well as the anatomy.}
 \label{sec:single}
 
 Mean-shift IS with shift $\tau$ uses the proposal $N(\tau,I)$ and weight
-$w(u) = \exp(-\langle u,\tau\rangle + |\tau|^2/2)$.
+$w(u) = \exp(-\langle u,\tau\rangle + |\tau|^2/2)$. Figure~\ref{fig:geometry}
+shows why one shift is not enough on a balanced route.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/rarecert_geometry.pdf}
+\caption{The two end modes in the plane of the two dominating points
+(route VNN-BACNINH\#6, $\gamma=10^{-4}$). The shaded region is the overflow set
+in this slice through the origin; the stars are the delivery-end and pickup-end
+dominating points with their energies. Left: a single shift placed at one end
+puts draws only there, so the other mode is reached, if at all, with enormous
+weights. Right: the SMIS mixture places a component at each computed point.}
+\label{fig:geometry}
+\end{figure}
 
 \begin{theorem}\label{thm:single}
 Let $\tau^\star$ be the asymptotic dominating point of the dominant end mode.
@@ -368,6 +413,17 @@ dotted line at $\varrho=0.75$.}
 
 \section{Estimators}
 \label{sec:estimators}
+
+\begin{figure}[t]
+\centering
+\resizebox{\textwidth}{!}{\input{figures/fig_pipeline.tex}}
+\caption{The certification pipeline. Everything left of the draws is computed
+from the route and the threshold $c$, with no pilot simulation; the interval and
+the diagnostics come from the weighted draws. For a hub the same mixture is
+built per route and the capacity $c$ is searched; the dashed arrow is that
+search.}
+\label{fig:pipeline}
+\end{figure}
 
 \paragraph{SMIS.} Algorithm~\ref{alg:smis} computes, for every stage $k$ and
 block, a minimum-norm point $u_m$ of $\{L_k(u)\ge c\}$ by constrained local
@@ -713,6 +769,17 @@ median & & 2.5 & 3.0 & 21.4 & 7.3 & 38 & 210 \\
 \end{tabular}}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/rarecert_cost_vs_level.pdf}
+\caption{Cost of certification. Left: draws for $95\%$ confidence at relative
+precision $\varepsilon$, as a function of the service level $\gamma$, for crude
+Monte Carlo and for SMIS with its measured relative variance (solid
+$\varepsilon=0.1$, dashed $\varepsilon=0.01$). Right: seconds to $1\%$ precision
+on the six routes of Table~\ref{tab:timing} (bar: median).}
+\label{fig:cost}
+\end{figure}
+
 \emph{The quadrature reference at coarser grids.} The reference of
 Table~\ref{tab:rivals} uses $41^2$ factor nodes and $V=256$ and $512$ levels.
 On the same 60 route--level rows, $41$ nodes with $V=128$ and $256$ differs
@@ -907,6 +974,17 @@ a median of $36$\,s on one core (build $13$\,s plus $10^5$ draws, $16$--$447$ co
 whole task, with calibration, route-level baselines and checks, takes
 $3.4$--$4.4$ minutes in median and at most $21$ minutes.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/rarecert_hubs.pdf}
+\caption{Hubs. Left: overflow probability of each hub at its planned capacity
+$Q$ (no hub is below $10^{-3}$). Middle: capacity buffer needed, against the
+number of customers of the hub. Right: cumulative share of the route risk
+carried by the riskiest routes of a hub, in order (median and $10$--$90\%$ band
+over the $66$ hubs).}
+\label{fig:hubfig}
+\end{figure}
+
 \begin{table}[t]
 \centering\small
 \caption{Hubs: capacity buffer $b=c/Q-1$ needed for hub overflow probability
@@ -978,17 +1056,76 @@ not shares that sum to one; relative to the sum of the route probabilities they
 are $11$--$14\%$ and $30$--$34\%$). Reinforcing a few routes, not all, is what
 a planner would do with the certificate.
 
-\subsection{A note on quantum amplitude estimation}
-Quantum amplitude estimation reduces the number of simulator calls for a
-probability quadratically \citep{Brassard2002,Montanaro2015}. On the same 120
-routes, counting oracle calls only (no qubit or error-correction cost) with
-explicit constants for a rigorous schedule, it needs $0.003$--$0.5$ times the
-calls of crude Monte Carlo, but $27$--$3\,550$ times more than the sampling
-stage of classical IS ($2.5$--$380$ times more if the IS pilot is counted).
-With an IS-equipped oracle it needs fewer calls than classical IS only in an
-idealised accounting at $\varepsilon\le3\%$ ($0.14$--$0.48$ times). On this
-problem the mode structure, not the quadratic speed-up, is what makes
-certification cheap.
+\subsection{Quantum amplitude estimation}
+\label{sec:quantum}
+Quantum amplitude estimation (QAE) estimates a probability with error $\varepsilon$
+from $O(1/\varepsilon)$ oracle calls instead of $O(1/\varepsilon^{2})$ samples
+\citep{Brassard2002,Montanaro2015}, and phase-estimation-free variants avoid the
+controlled operations of the original \citep{Suzuki2020Amplitude,Grinko2021Iterative}.
+In finance it has been applied to VaR, CVaR and option pricing
+\citep{Woerner2019Quantum,Stamatopoulos2020Option,Egger2021Credit}. Whether a
+speed-up survives the cost of the oracle is the open question: resource estimates
+for fault-tolerant pricing are large \citep{Chakrabarti2021Threshold}, depth-limited
+schemes narrow the gap \citep{Herbert2022Quantum}, end-to-end accounting changes the
+comparison \citep{Dalzell2023Survey}, and quadratic speed-ups exist for non-linear and
+heavy-tailed quantities \citep{Blanchet2025Quantum}. Recent preprints test tail
+probabilities in insurance, scheduling, power systems and structural reliability
+\citep{Kirke2026Quantum,Srikant2026Quantum,Jong2023Quantum,Tabarraei2026Bayesian};
+quantum work on routing itself addresses deterministic problems
+\citep{Feld2019Hybrid,Fitzek2024Applying,Phillipson2024Quantum}. We examine the
+overflow of one route, where the event is a predicate of the demand vector.
+
+\paragraph{The oracle.} The peak-load event is a reversible circuit
+(Figure~\ref{fig:circuit}). A state-preparation unitary $P$ loads the $2L$ demands,
+each on $b$ qubits, in superposition; $U_{\rm eval}$ adds the demands stage by
+stage, compares each load with $c$, and counts the stages above it; one objective
+qubit records whether the count is positive. The amplitude of that qubit is the
+overflow probability $p$. We built this circuit in Qiskit and counted its resources
+from the compiled circuit, not from a formula (Figure~\ref{fig:oracle}): for $L=8$
+stops and $b=8$ bits per demand the oracle has $995$ Toffoli gates per call, and
+the count grows linearly in $L$ and in $b$.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.95\textwidth}{!}{\input{figures/fig_circuit.tex}}
+\caption{Amplitude estimation around the peak-load oracle. The estimate is read
+from $y$; the cost is the number of applications of $\mathcal A$ and
+$\mathcal A^\dagger$ inside the controlled powers of $\mathcal Q$.}
+\label{fig:circuit}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/rarecert_oracle_resources.pdf}
+\caption{Resources of the coherent peak-load oracle, from the compiled Qiskit
+circuit, against the number of stops $L$ for several demand precisions.}
+\label{fig:oracle}
+\end{figure}
+
+\paragraph{Calls.} On the same 120 routes, counting oracle calls only (no
+qubit or error-correction cost) with explicit constants for a rigorous schedule,
+QAE needs $0.003$--$0.5$ times the calls of crude Monte Carlo, but
+$27$--$3\,550$ times more than the sampling stage of classical IS
+($2.5$--$380$ times more if the IS pilot is counted). With an IS-equipped
+oracle it needs fewer calls than classical IS only in an idealised accounting at
+$\varepsilon\le3\%$ ($0.14$--$0.48$ times). Figure~\ref{fig:qcalls} shows the
+calls as functions of $\varepsilon$; its last panel converts the comparison into
+the time per Toffoli gate at which QAE with an IS oracle ties classical IS. At
+$\varepsilon=1\%$ that time is about $4\times10^{-8}$\,s, well below the
+$1\,\mu$s order commonly assumed for fault-tolerant logical gates; the $1\,\mu$s
+line is a reference value, not a hardware claim. On this problem the mode
+structure, not the quadratic speed-up, is what makes certification cheap.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/rarecert_quantum_calls.pdf}
+\caption{Simulator or oracle calls to reach relative precision $\varepsilon$ at
+two service levels (left, middle): crude Monte Carlo, classical IS with the SMIS
+relative variance, and QAE with a crude and with an idealised IS oracle. Right:
+time per Toffoli gate at which QAE with an IS oracle ties classical IS, against
+the measured numpy draw time and an assumed compiled draw time.}
+\label{fig:qcalls}
+\end{figure}
 
 \section{Conclusion}
 \label{sec:conclusion}

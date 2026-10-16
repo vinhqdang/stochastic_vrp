@@ -1,9 +1,16 @@
-\begin{thebibliography}{23}
+\begin{thebibliography}{65}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Akhmetbek(2024)]{akhmetbek2024stochastic}
+Yernar Akhmetbek.
+\newblock Stochastic dynamic vehicle routing problem survey.
+\newblock \emph{Suleyman Demirel University Bulletin: Natural and Technical
+  Sciences}, 62\penalty0 (1):\penalty0 75--87, 2024.
+\newblock \doi{10.47344/sdubnts.v62i1.959}.
 
 \bibitem[Asmussen and Glynn(2007)]{AsmussenGlynn2007}
 S{\o}ren Asmussen and Peter~W. Glynn.
@@ -19,6 +26,13 @@ S.-K. Au and J.~L. Beck.
   263--277, 2001.
 \newblock \doi{10.1016/S0266-8920(01)00019-4}.
 
+\bibitem[Bai and Lam(2024)]{Bai2024Uncertainty}
+Yuanlu Bai and Henry Lam.
+\newblock Uncertainty quantification and confidence intervals for naive
+  rare-event estimators.
+\newblock \emph{Journal of Applied Probability}, 62:\penalty0 84--110, 2024.
+\newblock \doi{10.1017/jpr.2024.43}.
+
 \bibitem[Bassamboo et~al.(2008)Bassamboo, Juneja, and
   Zeevi]{BassambooJunejaZeevi2008}
 Achal Bassamboo, Sandeep Juneja, and Assaf Zeevi.
@@ -26,6 +40,14 @@ Achal Bassamboo, Sandeep Juneja, and Assaf Zeevi.
   and efficient simulation.
 \newblock \emph{Operations Research}, 56\penalty0 (3):\penalty0 593--606, 2008.
 \newblock \doi{10.1287/opre.1080.0513}.
+
+\bibitem[Blanchet et~al.(2025)Blanchet, Hamoudi, Szegedy, and
+  Wang]{Blanchet2025Quantum}
+Jose Blanchet, Yassine Hamoudi, Mario Szegedy, and Guanyang Wang.
+\newblock Quantum speedup of non-linear monte carlo problems.
+\newblock In \emph{Advances in Neural Information Processing Systems 38}, pages
+  21289--21313, 2025.
+\newblock \doi{10.52202/085713-0631}.
 
 \bibitem[Brassard et~al.(2002)Brassard, H{\o}yer, Mosca, and
   Tapp]{Brassard2002}
@@ -41,6 +63,57 @@ F.~C{\'e}rou, P.~Del~Moral, T.~Furon, and A.~Guyader.
   2012.
 \newblock \doi{10.1007/s11222-011-9231-6}.
 
+\bibitem[C{\'e}rou et~al.(2019)C{\'e}rou, Guyader, and
+  Rousset]{Cerou2019Adaptive}
+Fr{\'e}d{\'e}ric C{\'e}rou, Arnaud Guyader, and Mathias Rousset.
+\newblock Adaptive multilevel splitting: Historical perspective and recent
+  results.
+\newblock \emph{Chaos: An Interdisciplinary Journal of Nonlinear Science},
+  29\penalty0 (4), 2019.
+\newblock \doi{10.1063/1.5082247}.
+
+\bibitem[Chakrabarti et~al.(2021)Chakrabarti, Krishnakumar, Mazzola,
+  Stamatopoulos, Woerner, and Zeng]{Chakrabarti2021Threshold}
+Shouvanik Chakrabarti, Rajiv Krishnakumar, Guglielmo Mazzola, Nikitas
+  Stamatopoulos, Stefan Woerner, and William~J. Zeng.
+\newblock A threshold for quantum advantage in derivative pricing.
+\newblock \emph{Quantum}, 5:\penalty0 463, 2021.
+\newblock \doi{10.22331/q-2021-06-01-463}.
+
+\bibitem[Chatterjee and Diaconis(2018)]{Chatterjee2018Sample}
+Sourav Chatterjee and Persi Diaconis.
+\newblock The sample size required in importance sampling.
+\newblock \emph{The Annals of Applied Probability}, 28\penalty0 (2):\penalty0
+  1099--1135, 2018.
+\newblock \doi{10.1214/17-aap1326}.
+
+\bibitem[Conroy and Olvera-Cravioto(2022)]{Conroy2022Maxima}
+Michael Conroy and Mariana Olvera-Cravioto.
+\newblock Efficient rare event estimation for maxima of branching random walks.
+\newblock In \emph{2022 Winter Simulation Conference (WSC)}, pages 145--155,
+  2022.
+\newblock \doi{10.1109/WSC57314.2022.10015264}.
+
+\bibitem[Dalzell et~al.(2023)Dalzell, McArdle, Berta, Bienias, Chen,
+  Gily{\'e}n, Hann, Kastoryano, Khabiboulline, Kubica, Salton, Wang, and
+  Brand{\~a}o]{Dalzell2023Survey}
+Alexander~M. Dalzell, Sam McArdle, Mario Berta, Przemyslaw Bienias, Chi-Fang
+  Chen, Andr{\'a}s Gily{\'e}n, Connor~T. Hann, Michael~J. Kastoryano, Emil~T.
+  Khabiboulline, Aleksander Kubica, Grant Salton, Samson Wang, and Fernando G.
+  S.~L. Brand{\~a}o.
+\newblock Quantum algorithms: A survey of applications and end-to-end
+  complexities, 2023.
+\newblock Crossref lists the monograph DOI 10.1017/9781009639651 (2025), titled
+  Quantum Algorithms; the publisher was not checked.
+
+\bibitem[Dasgupta and Johnson(2024)]{Dasgupta2024REIN}
+Agnimitra Dasgupta and Erik~A. Johnson.
+\newblock Rein: Reliability estimation via importance sampling with normalizing
+  flows.
+\newblock \emph{Reliability Engineering \& System Safety}, 242:\penalty0
+  109729, 2024.
+\newblock \doi{10.1016/j.ress.2023.109729}.
+
 \bibitem[de~Boer et~al.(2005)de~Boer, Kroese, Mannor, and
   Rubinstein]{deBoerEtAl2005}
 Pieter-Tjerk de~Boer, Dirk~P. Kroese, Shie Mannor, and Reuven~Y. Rubinstein.
@@ -48,6 +121,12 @@ Pieter-Tjerk de~Boer, Dirk~P. Kroese, Shie Mannor, and Reuven~Y. Rubinstein.
 \newblock \emph{Annals of Operations Research}, 134\penalty0 (1):\penalty0
   19--67, 2005.
 \newblock \doi{10.1007/s10479-005-5724-z}.
+
+\bibitem[Deo and Murthy(2021)]{Deo2021Blackbox}
+Anand Deo and Karthyek Murthy.
+\newblock Efficient black-box importance sampling for {VaR} and {CVaR}
+  estimation, June 2021.
+\newblock URL \url{https://arxiv.org/abs/2106.10236}.
 
 \bibitem[Dethloff(2001)]{Dethloff2001}
 Jan Dethloff.
@@ -69,11 +148,54 @@ Paul Dupuis and Hui Wang.
   723--757, 2007.
 \newblock \doi{10.1287/moor.1070.0266}.
 
+\bibitem[Egger et~al.(2021)Egger, Garc{\'i}a~Guti{\'e}rrez, Mestre, and
+  Woerner]{Egger2021Credit}
+Daniel~J. Egger, Ricardo Garc{\'i}a~Guti{\'e}rrez, Jordi~Cahu{\'e} Mestre, and
+  Stefan Woerner.
+\newblock Credit risk analysis using quantum computers.
+\newblock \emph{IEEE Transactions on Computers}, 70\penalty0 (12):\penalty0
+  2136--2145, 2021.
+\newblock \doi{10.1109/tc.2020.3038063}.
+
 \bibitem[Erkut and Verter(1998)]{ErkutVerter1998}
 Erhan Erkut and Vedat Verter.
 \newblock Modeling of transport risk for hazardous materials.
 \newblock \emph{Operations Research}, 46\penalty0 (5):\penalty0 625--642, 1998.
 \newblock \doi{10.1287/opre.46.5.625}.
+
+\bibitem[Fang et~al.(2026)Fang, Shen, and Wang]{Fang2026ISCOS}
+Fang Fang, Xiaoyu Shen, and Qinling Wang.
+\newblock Importance sampling enhanced with the {COS} method for the portfolio
+  risk allocation, August 2026.
+\newblock URL \url{https://arxiv.org/abs/2608.30749}.
+
+\bibitem[Feld et~al.(2019)Feld, Roch, Gabor, Seidel, Neukart, Galter, Mauerer,
+  and Linnhoff-Popien]{Feld2019Hybrid}
+Sebastian Feld, Christoph Roch, Thomas Gabor, Christian Seidel, Florian
+  Neukart, Isabella Galter, Wolfgang Mauerer, and Claudia Linnhoff-Popien.
+\newblock A hybrid solution method for the capacitated vehicle routing problem
+  using a quantum annealer.
+\newblock \emph{Frontiers in ICT}, 6:\penalty0 13, 2019.
+\newblock \doi{10.3389/fict.2019.00013}.
+
+\bibitem[Fitzek et~al.(2024)Fitzek, Ghandriz, Laine, Granath, and
+  Kockum]{Fitzek2024Applying}
+David Fitzek, Toheed Ghandriz, Leo Laine, Mats Granath, and Anton~Frisk Kockum.
+\newblock Applying quantum approximate optimization to the heterogeneous
+  vehicle routing problem.
+\newblock \emph{Scientific Reports}, 14\penalty0 (1):\penalty0 25415, 2024.
+\newblock \doi{10.1038/s41598-024-76967-w}.
+
+\bibitem[Florio et~al.(2023)Florio, Gendreau, Hartl, Minner, and
+  Vidal]{Florio2023Recent}
+Alexandre~M. Florio, Michel Gendreau, Richard~F. Hartl, Stefan Minner, and
+  Thibaut Vidal.
+\newblock Recent advances in vehicle routing with stochastic demands:
+  {B}ayesian learning for correlated demands and elementary
+  branch-price-and-cut.
+\newblock \emph{European Journal of Operational Research}, 306\penalty0
+  (3):\penalty0 1081--1093, 2023.
+\newblock \doi{10.1016/j.ejor.2022.10.045}.
 
 \bibitem[Gendreau et~al.(2016)Gendreau, Jabali, and Rei]{GendreauJabaliRei2016}
 M.~Gendreau, O.~Jabali, and W.~Rei.
@@ -97,6 +219,13 @@ Shubhechyya Ghosal and Wolfram Wiesemann.
   problem.
 \newblock \emph{Operations Research}, 68\penalty0 (3):\penalty0 716--732, 2020.
 \newblock \doi{10.1287/opre.2019.1924}.
+
+\bibitem[Ghosal et~al.(2024)Ghosal, Ho, and Wiesemann]{Ghosal2024Unifying}
+Soumyadeep Ghosal, Chin~Pang Ho, and Wolfram Wiesemann.
+\newblock A unifying framework for the capacitated vehicle routing problem
+  under risk and ambiguity.
+\newblock \emph{Operations Research}, 72\penalty0 (2):\penalty0 425--443, 2024.
+\newblock \doi{10.1287/opre.2021.0669}.
 
 \bibitem[Glasserman et~al.(2000)Glasserman, Heidelberger, and
   Shahabuddin]{GlassermanHeidelbergerShahabuddin2000}
@@ -133,6 +262,66 @@ Chrysanthos~E. Gounaris, Wolfram Wiesemann, and Christodoulos~A. Floudas.
   uncertainty.
 \newblock \emph{Operations Research}, 61\penalty0 (3):\penalty0 677--693, 2013.
 
+\bibitem[Grinko et~al.(2021)Grinko, Gacon, Zoufal, and
+  Woerner]{Grinko2021Iterative}
+Dmitry Grinko, Julien Gacon, Christa Zoufal, and Stefan Woerner.
+\newblock Iterative quantum amplitude estimation.
+\newblock \emph{npj Quantum Information}, 7\penalty0 (1):\penalty0 52, 2021.
+\newblock \doi{10.1038/s41534-021-00379-1}.
+
+\bibitem[Heakl et~al.(2025)Heakl, Shaaban, Takac, Lahlou, and
+  Iklassov]{Heakl2025SVRPBench}
+Ahmed Heakl, Yahia~Salaheldin Shaaban, Martin Takac, Salem Lahlou, and Zangir
+  Iklassov.
+\newblock {SVRPBench}: A realistic benchmark for stochastic vehicle routing
+  problem.
+\newblock May 2025.
+\newblock URL \url{https://arxiv.org/abs/2505.21887}.
+\newblock arXiv preprint arXiv:2505.21887.
+
+\bibitem[Helal and Elvira(2026)]{Helal2026Multimodal}
+Sara Helal and V{\'i}ctor Elvira.
+\newblock Efficient rare event estimation for multimodal and high-dimensional
+  system reliability via subset adaptive importance sampling.
+\newblock \emph{Reliability Engineering \& System Safety}, 272:\penalty0
+  112473, 2026.
+\newblock \doi{10.1016/j.ress.2026.112473}.
+
+\bibitem[Herbert(2022)]{Herbert2022Quantum}
+Steven Herbert.
+\newblock Quantum monte carlo integration: The full advantage in minimal
+  circuit depth.
+\newblock \emph{Quantum}, 6:\penalty0 823, 2022.
+\newblock \doi{10.22331/q-2022-09-29-823}.
+
+\bibitem[Hu and Tao(2025)]{hu2025vehicle}
+Hanru Hu and Fengming Tao.
+\newblock Vehicle routing problem for simultaneous pickup and delivery in rural
+  areas: considering uncertain demand and government subsidy.
+\newblock \emph{Annals of Operations Research}, 358\penalty0 (3):\penalty0
+  1285--1327, 2025.
+\newblock \doi{10.1007/s10479-025-06877-1}.
+
+\bibitem[Jong et~al.(2023)Jong, S{\ae}varsson, J{\'o}hannsson, and
+  Chatzivasileiadis]{Jong2023Quantum}
+Emilie Jong, Brynjar S{\ae}varsson, Hj{\"o}rtur J{\'o}hannsson, and Spyros
+  Chatzivasileiadis.
+\newblock Quantum amplitude estimation for probabilistic methods in power
+  systems, 2023.
+\newblock arXiv only; no journal record checked.
+
+\bibitem[Karimi et~al.(2026)Karimi, Zhang, and Fackrell]{karimi2026stochastic}
+Amin Karimi, Lele Zhang, and Mark Fackrell.
+\newblock Stochastic vehicle routing problem: classification and review.
+\newblock \emph{Transportation Letters}, pages 1--21, 2026.
+\newblock \doi{10.1080/19427867.2026.2726413}.
+
+\bibitem[Kirke(2026)]{Kirke2026Quantum}
+Alexis Kirke.
+\newblock Quantum amplitude estimation for catastrophe insurance tail-risk
+  pricing: Empirical convergence and nisq noise analysis, 2026.
+\newblock arXiv only; submitted 2026-03-10.
+
 \bibitem[Kurtz and Song(2013)]{KurtzSong2013}
 N.~Kurtz and J.~Song.
 \newblock Cross-entropy-based adaptive importance sampling using {Gaussian}
@@ -140,12 +329,38 @@ N.~Kurtz and J.~Song.
 \newblock \emph{Structural Safety}, 42:\penalty0 35--44, 2013.
 \newblock \doi{10.1016/j.strusafe.2013.01.006}.
 
+\bibitem[L'Ecuyer et~al.(2023)L'Ecuyer, Nakayama, Owen, and
+  Tuffin]{LEcuyer2023RQMC}
+Pierre L'Ecuyer, Marvin~K. Nakayama, Art~B. Owen, and Bruno Tuffin.
+\newblock Confidence intervals for randomized quasi-monte carlo estimators.
+\newblock In \emph{2023 Winter Simulation Conference (WSC)}, pages 445--456,
+  2023.
+\newblock \doi{10.1109/WSC60868.2023.10408613}.
+
+\bibitem[Lukashevich et~al.(2024)Lukashevich, Gorchakov, Vorobev, Deka, and
+  Maximov]{Lukashevich2024Chance}
+Aleksander Lukashevich, Vyacheslav Gorchakov, Petr Vorobev, Deepjyoti Deka, and
+  Yury Maximov.
+\newblock Importance sampling approach to chance-constrained dc optimal power
+  flow.
+\newblock \emph{IEEE Transactions on Control of Network Systems}, 11\penalty0
+  (2):\penalty0 928--937, 2024.
+\newblock \doi{10.1109/tcns.2023.3330232}.
+
 \bibitem[Montanaro(2015)]{Montanaro2015}
 Ashley Montanaro.
 \newblock Quantum speedup of {M}onte {C}arlo methods.
 \newblock \emph{Proceedings of the Royal Society A}, 471\penalty0
   (2181):\penalty0 20150301, 2015.
 \newblock \doi{10.1098/rspa.2015.0301}.
+
+\bibitem[Ota and Fukasawa(2025)]{ota2025hardness}
+Matheus~J. Ota and Ricardo Fukasawa.
+\newblock Hardness of pricing routes for two-stage stochastic vehicle routing
+  problems with scenarios.
+\newblock \emph{Operations Research}, 73\penalty0 (4):\penalty0 2177--2187,
+  2025.
+\newblock \doi{10.1287/opre.2023.0569}.
 
 \bibitem[Owen et~al.(2019)Owen, Maximov, and Chertkov]{OwenMaximovChertkov2019}
 Art~B. Owen, Yury Maximov, and Michael Chertkov.
@@ -164,11 +379,120 @@ Iason Papaioannou, Sebastian Geyer, and Daniel Straub.
   106564, 2019.
 \newblock \doi{10.1016/j.ress.2019.106564}.
 
+\bibitem[Phillipson(2024)]{Phillipson2024Quantum}
+Frank Phillipson.
+\newblock Quantum computing in logistics and supply chain management an
+  overview, 2024.
+\newblock arXiv only; no journal record checked.
+
 \bibitem[Sadowsky and Bucklew(1990)]{SadowskyBucklew1990}
 John~S. Sadowsky and James~A. Bucklew.
 \newblock On large deviations theory and asymptotically efficient {M}onte
   {C}arlo estimation.
 \newblock \emph{IEEE Transactions on Information Theory}, 36\penalty0
   (3):\penalty0 579--588, 1990.
+
+\bibitem[Salavati-Khoshghalb et~al.(2019)Salavati-Khoshghalb, Gendreau, Jabali,
+  and Rei]{salavati2019rulebased}
+Majid Salavati-Khoshghalb, Michel Gendreau, Ola Jabali, and Walter Rei.
+\newblock A rule-based recourse for the vehicle routing problem with stochastic
+  demands.
+\newblock \emph{Transportation Science}, 53\penalty0 (5):\penalty0 1334--1353,
+  2019.
+\newblock \doi{10.1287/trsc.2018.0876}.
+
+\bibitem[Srikant(2026)]{Srikant2026Quantum}
+R.~Srikant.
+\newblock Quantum estimation of delay tail probabilities in scheduling and load
+  balancing, 2026.
+\newblock arXiv only; submitted 2026-02-08.
+
+\bibitem[Stamatopoulos et~al.(2020)Stamatopoulos, Egger, Sun, Zoufal, Iten,
+  Shen, and Woerner]{Stamatopoulos2020Option}
+Nikitas Stamatopoulos, Daniel~J. Egger, Yue Sun, Christa Zoufal, Raban Iten,
+  Ning Shen, and Stefan Woerner.
+\newblock Option pricing using quantum computers.
+\newblock \emph{Quantum}, 4:\penalty0 291, 2020.
+\newblock \doi{10.22331/q-2020-07-06-291}.
+
+\bibitem[Suzuki et~al.(2020)Suzuki, Uno, Raymond, Tanaka, Onodera, and
+  Yamamoto]{Suzuki2020Amplitude}
+Yohichi Suzuki, Shumpei Uno, Rudy Raymond, Tomoki Tanaka, Tamiya Onodera, and
+  Naoki Yamamoto.
+\newblock Amplitude estimation without phase estimation.
+\newblock \emph{Quantum Information Processing}, 19\penalty0 (2):\penalty0 75,
+  2020.
+\newblock \doi{10.1007/s11128-019-2565-2}.
+
+\bibitem[Tabarraei(2026)]{Tabarraei2026Bayesian}
+Alireza Tabarraei.
+\newblock Bayesian sequential quantum amplitude estimation for rare-event
+  structural failure probability, 2026.
+\newblock arXiv only; submitted 2026-07-21.
+
+\bibitem[Thiebaut and Pessoa(2022)]{thiebaut2022approximating}
+Karina Thiebaut and Artur Pessoa.
+\newblock Approximating the chance-constrained capacitated vehicle routing
+  problem with robust optimization.
+\newblock \emph{4OR}, 21\penalty0 (3):\penalty0 513--531, 2022.
+\newblock \doi{10.1007/s10288-022-00523-3}.
+
+\bibitem[Vehtari et~al.(2024)Vehtari, Simpson, Gelman, Yao, and
+  Gabry]{Vehtari2024PSIS}
+Aki Vehtari, Daniel Simpson, Andrew Gelman, Yuling Yao, and Jonah Gabry.
+\newblock Pareto smoothed importance sampling.
+\newblock \emph{Journal of Machine Learning Research}, 25\penalty0
+  (72):\penalty0 1--58, 2024.
+
+\bibitem[Wagner et~al.(2020)Wagner, Latz, Papaioannou, and
+  Ullmann]{Wagner2020Multilevel}
+F.~Wagner, J.~Latz, I.~Papaioannou, and E.~Ullmann.
+\newblock Multilevel sequential importance sampling for rare event estimation.
+\newblock \emph{SIAM Journal on Scientific Computing}, 42\penalty0
+  (4):\penalty0 A2062--A2087, 2020.
+\newblock \doi{10.1137/19m1289601}.
+
+\bibitem[Wang et~al.(2025)Wang, Jian, and Fang]{wang2025simulation}
+N.~N. Wang, M.~Jian, and X.~Fang.
+\newblock Simulation-based robustness evaluation of coordination under
+  stochastic demand.
+\newblock \emph{International Journal of Simulation Modelling}, 24\penalty0
+  (4):\penalty0 730--741, 2025.
+\newblock \doi{10.2507/ijsimm24-4-co20}.
+
+\bibitem[Wang et~al.(2023)Wang, Yang, Yang, and Gao]{wang2023distributionally}
+Weiqiao Wang, Kai Yang, Lixing Yang, and Ziyou Gao.
+\newblock Distributionally robust chance-constrained programming for
+  multi-period emergency resource allocation and vehicle routing in disaster
+  response operations.
+\newblock \emph{Omega}, 120:\penalty0 102915, 2023.
+\newblock \doi{10.1016/j.omega.2023.102915}.
+
+\bibitem[Woerner and Egger(2019)]{Woerner2019Quantum}
+Stefan Woerner and Daniel~J. Egger.
+\newblock Quantum risk analysis.
+\newblock \emph{npj Quantum Information}, 5\penalty0 (1):\penalty0 15, 2019.
+\newblock \doi{10.1038/s41534-019-0130-6}.
+
+\bibitem[Yin and Zhao(2022)]{yin2022distributionally}
+Fanghao Yin and Yi~Zhao.
+\newblock Distributionally robust equilibrious hybrid vehicle routing problem
+  under twofold uncertainty.
+\newblock \emph{Information Sciences}, 609:\penalty0 1239--1255, 2022.
+\newblock \doi{10.1016/j.ins.2022.07.140}.
+
+\bibitem[Zhang et~al.(2021)Zhang, Li, Sun, and Hou]{Zhang2021Vehicle}
+Dezhi Zhang, Dan Li, Huijun Sun, and Lu~Hou.
+\newblock A vehicle routing problem with distribution uncertainty in deadlines.
+\newblock \emph{European Journal of Operational Research}, 292:\penalty0
+  311--326, 2021.
+\newblock \doi{10.1016/j.ejor.2020.10.026}.
+
+\bibitem[Zhang and Ma(2026)]{Zhang2026GMM}
+Yuming Zhang and Juan Ma.
+\newblock Nonparametric gaussian mixture models enhanced by sequential
+  importance sampling for high-dimensional rare event analysis.
+\newblock \emph{Computers \& Structures}, 325:\penalty0 108198, 2026.
+\newblock \doi{10.1016/j.compstruc.2026.108198}.
 
 \end{thebibliography}

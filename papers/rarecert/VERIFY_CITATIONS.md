@@ -139,3 +139,10 @@ memory), Brassard2002 (Contemporary Mathematics 305).
 - Cérou, Del Moral, Furon & Guyader 2012, Stat. Comput. 22(3):795-808, 10.1007/s11222-011-9231-6. VERIFIED (initials only).
 - Kurtz & Song 2013, Struct. Saf. 42:35-44, 10.1016/j.strusafe.2013.01.006. VERIFIED.
 - Glasserman & Li 2005 pages 1643-1656 VERIFIED; the abstract claims no asymptotic optimality result, so the paper is cited only for the two-step scheme.
+
+## Draft 3 additions (recent references)
+
+Sources: `manuscript/refs_new_{rare,vrp,quantum,models}.md`, each entry checked against Crossref or the arXiv abstract page by the search pass.
+Cited only for what the abstract/record supports. Preprints cited without quoting results: Kirke2026, Srikant2026, Jong2023, Tabarraei2026 (full texts not read).
+Not cited: Budde2021 (no proceedings title), Sartori2020 (OSM/OSRM detail from README only), Kontur/WorldPop/GHSL methodology (unverified).
+Giraud2022osrm, Calka2020GHS, Pesaresi2024Advances, Arnold2019Efficiently are in references.bib but not yet cited.
