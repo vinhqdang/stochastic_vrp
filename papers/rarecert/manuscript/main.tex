@@ -689,6 +689,22 @@ $[-6,9]^2$ with a step above $0.5$ does not resolve the tails that dominate
 the rare event. The cheapest grid that keeps the error below $1\%$ is therefore
 $41$ nodes with $V=128$ and $256$, and at that grid SMIS reaches the same
 $1\%$ precision about \pending{N} times faster (Table~\ref{tab:timing}).
+\emph{Longer routes.} The 30 routes above have at most 13 stops. We also ran
+eight routes with 15 to 33 stops, drawn at random from eight equal groups of the
+routes of the plans with 15 or more stops (seven from Guangdong, one from
+Northern Vietnam). The quadrature reference is too expensive for these at the
+accuracy we need, so the reference is crude Monte Carlo: $5\times10^7$ draws at
+$10^{-3}$ (relative standard error $0.45\%$) and $10^8$ at $10^{-4}$
+($1.0\%$). SMIS deviates from it by $0.34\%$ in median and $0.93\%$ at most at
+$10^{-3}$, and by $0.90\%$ and $1.5\%$ at $10^{-4}$, at most about two standard
+errors of the reference; the CE mixture is as accurate. The single shift is
+accurate on the seven Guangdong routes ($\varrho$ from $0.34$ to $0.41$) and
+fails on the one balanced Vietnamese route ($\varrho=0.96$): $+5.4\%$ at
+$10^{-3}$ and $-9.2\%$ at $10^{-4}$, with relative variances of $7\,016$ and
+$24\,386$ per draw, so on this route the failure shows in the variance. The
+$33$-stop route behaves like the others. Eight routes are a small sample, and
+none has more than 33 stops.
+
 Section~\ref{sec:hubs} compares the hub estimate with the exact hub program.
 
 \subsection{Sensitivity and coverage}
