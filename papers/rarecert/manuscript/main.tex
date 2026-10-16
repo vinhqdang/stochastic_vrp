@@ -332,7 +332,17 @@ $0.73$, $42$ of the 60 rows have $\varrho>0.7$ and $13$ have
 $\hat m\ge10^{-3}$, four of those have an error beyond $2\%$ (two routes,
 $-41$ to $-43\%$ and $-6$ to $-8\%$), and the median ratio of error to
 $\hat m$ on the 13 rows is $0.84$. The failure follows the end-mode structure,
-not the region. \pending{correlated pickup and delivery factors, from unconf2.}
+not the region. Correlating the delivery and pickup factors ($r=\pm0.5$ between $W_d$ and
+$W_p$, at $10^{-4}$, 10 Vietnamese and 10 Guangdong routes each) leaves the
+Guangdong routes unaffected ($\varrho\approx0.35$, errors below $0.9\%$) and
+makes the Vietnamese failure worse and, for $r=-0.5$, silent: the single shift
+underestimates by $2$ to $80\%$ (median $24\%$) on all 10 routes, while its
+reported relative variance is $4.3$--$5.3$; for $r=+0.5$ the error has both
+signs and the relative variance is $5$ to $25\,000$. The CE mixture agrees
+with the SMIS reference within $1.1\%$ in both cases, so the reference is not
+the problem. SMIS keeps its construction here, since its dominating points are
+computed on the simulator, but the theory of Section~\ref{sec:structure} no
+longer applies and we report only this agreement.
 $\varrho$ is computed in closed form and the threshold $0.75$ remains
 empirical; $\hat m$ is the sharper indicator.
 
