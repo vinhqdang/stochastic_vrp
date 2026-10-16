@@ -3,9 +3,10 @@
 - **Working title:** QUASAR: quantum amplitude estimation for stochastic
   vehicle routing — coherent feasibility oracles, common random numbers in
   superposition, and nested search for chance-constrained SVRPSPD.
-- **Venue:** not fixed. Candidates: INFORMS Journal on Computing; IEEE
-  Transactions on Quantum Engineering. Decide at M3 from the strength of the
-  results.
+- **Venue:** not JoC (RARECERT, paper 8, is submitted there; a second JoC
+  submission would look like salami slicing). Proposed: IEEE Transactions on
+  Quantum Engineering; fallbacks ACM Transactions on Quantum Computing,
+  Quantum Science and Technology. To be confirmed by the author.
 - **State:** **PAUSED — negative results recorded (M4 search, simultaneous and per-route certification, rare events vs mixture IS); the positive classical result moved to paper 8 (papers/rarecert).** Open for
   edits.
 - **Sharing:** uses the shared engine's instances, scenario generators and
