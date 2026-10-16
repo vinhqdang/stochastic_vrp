@@ -238,3 +238,4 @@ papers/rarecert/manuscript/*.aux
 papers/rarecert/manuscript/*.log
 papers/rarecert/manuscript/*.blg
 papers/rarecert/manuscript/*.out
+svrpspd_wdro/results/rarecert/r3_colab/*/ck.tgz
