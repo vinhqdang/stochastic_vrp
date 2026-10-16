@@ -13,7 +13,7 @@ test executed zero times and still reported success. Vacuous checks are
 worse than no checks; each one now asserts a minimum match count.)
 
 Checks:
-  1. main.pdf newer than main.tex, references.bib and the figures.
+  1. eclair.pdf newer than eclair.tex, references.bib and the figures.
   2. results are a PUBLICATION run (n_reps >= 100) with a provenance
      block, a manifest, a clean-tree commit, and recorded solver params.
   3. Table 4 is parsed row by row: per-policy detection and certified
@@ -60,17 +60,17 @@ def wilson(k, n, z):
 
 
 def main() -> int:
-    tex, pdf = PAPER / "main.tex", PAPER / "main.pdf"
+    tex, pdf = PAPER / "eclair.tex", PAPER / "eclair.pdf"
 
     # 1. PDF freshness ----------------------------------------------------
     if not pdf.exists():
-        fails.append("main.pdf missing")
+        fails.append("eclair.pdf missing")
         return report()
     newest_src = max(
         [tex.stat().st_mtime, (PAPER / "references.bib").stat().st_mtime]
         + [f.stat().st_mtime for f in (PAPER / "figures").glob("*.pdf")])
     check(pdf.stat().st_mtime >= newest_src,
-          "main.pdf is at least as new as source + figures")
+          "eclair.pdf is at least as new as source + figures")
 
     # 2. provenance -------------------------------------------------------
     if not RES.exists():

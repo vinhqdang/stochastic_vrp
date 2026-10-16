@@ -20,4 +20,4 @@
 - [~] R1 theory: draft revised after review (THEORY.md); SMIS measured on 120 routes; full proofs pending
 - [x] R2 richer simulator where the exact DP does not apply (route day: lognormal travel with a shared factor, load-dependent service, time windows; MDIS on 60 routes: error vs 10⁷-draw crude MC 0.76% median / 1.77% q90 at γ = 1e-3, MDIS–CE agreement 0.2–0.24%, RV 4.3–6.1, single shift off by up to 98%, CE costs 1 750–1 830× more samples at ε_rel = 0.1 and 18–19× at 0.01)
 - [x] R3 experiments: 66 calibrated hubs at 1e-3 and 1e-5 (buffers 35–43% / 64–76% median by region), exact conditional program and Glasserman–Li / conditional MC / subset simulation on 30 routes, exact hub program on 6 hubs, sensitivity (rho, cv, pickup scaling, lognormal) and CI coverage on 30 routes
-- [~] R4 manuscript: draft 3 (manuscript/main.tex, 18 pages), no pending sections; round-2 experiments in svrpspd_wdro/results/rarecert/r3_summary.md
+- [~] R4 manuscript: draft 3 (manuscript/rarecert.tex, 25 pages), no pending sections; round-2 experiments in svrpspd_wdro/results/rarecert/r3_summary.md

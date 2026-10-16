@@ -84,7 +84,7 @@ def and_pair(S):
 
 # (B) Pure saturation: modular relevance, convex load penalty, no
 #     complementarity anywhere. Each fact is individually useful; the
-#     receiver degrades once loaded. Matches main.tex's Proposition 3
+#     receiver degrades once loaded. Matches parcel.tex's Proposition 3
 #     witness (a) exactly: F={a,b}, rel(S)=conf(S)=|S|, rho(0)=0,
 #     rho(1)=0.5, rho(2)=3 -- giving marginals +0.5 then -1.5.
 RHO = {0: 0.0, 1: 0.5, 2: 3.0}

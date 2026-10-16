@@ -8,7 +8,7 @@
   Autonomous Agents and Multiagent Systems, **Hanoi, Vietnam,
   3–7 May 2027**. Main track.
 - **State:** **ACTIVE — drafting.** Manuscript at **8 pages of body**
-  (`main.tex`, AAMAS `sigconf` anonymous mode) — the full allowance,
+  (`parcel.tex`, AAMAS `sigconf` anonymous mode) — the full allowance,
   with references spilling to page 9 and therefore not counted.
   Compiles clean with zero errors against the official class. Theory in `THEORY.md`,
   empirical record in `RESULTS.md`, spec in `PROJECT.md`.
@@ -36,7 +36,7 @@
 4. Author list, affiliations, `\acmSubmissionID` (blank pending
    OpenReview registration).
 5. The 8 calibration citations in `VERIFY_CITATIONS.md` remain
-   unverified; none of them is currently load-bearing in `main.tex`.
+   unverified; none of them is currently load-bearing in `parcel.tex`.
 6. ✅ Page budget: **8 of 8 used**, body ending on page 8 with
    references starting there and running onto page 9. All proofs are
    in-body (appendices are not exempted). Any further addition now
@@ -57,7 +57,7 @@
    - **Proposition 3 was malformed**: its formal statement claimed
      `rel` modular for *both* halves, but the submodularity-violation
      witness is necessarily non-modular (superadditive). Split into two
-     explicit witnesses with their own hypotheses (§4.2 in `main.tex`).
+     explicit witnesses with their own hypotheses (§4.2 in `parcel.tex`).
    - **The "scalar budget price" claim was false in general.** A
      Lagrange multiplier decentralizes the DP's optimum only when every
      `v_i` is concave; Proposition 4 explicitly allows non-concave

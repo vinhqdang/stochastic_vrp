@@ -248,7 +248,7 @@ corrected in `PROJECT.md` §10.2: BPS's *objective* is non-monotone and
 they say so (it is the *benefit* that is monotone submodular), and
 their penalty coefficient is described by them as a **first-order**
 per-token sensitivity, so "linearization" is the fair word, not
-"error". The pre-emption that survives, and is now in `main.tex`: their
+"error". The pre-emption that survives, and is now in `parcel.tex`: their
 benefit is a concave-coverage form, additive across capability
 dimensions, in which a separately-inert jointly-decisive pair has no
 representation at all.
@@ -257,4 +257,4 @@ representation at all.
 - `Cut the Crap` (2410.02506) is listed here at v1 only; check whether
   a peer-reviewed version now exists before camera-ready.
 - The 8 calibration citations above remain unverified. None is
-  load-bearing in `main.tex` as it stands.
+  load-bearing in `parcel.tex` as it stands.

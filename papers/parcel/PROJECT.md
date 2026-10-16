@@ -530,7 +530,7 @@ right, two of which correct earlier notes here:
    inert and jointly decisive has no representation in this form**,
    because `G_E` is submodular by construction. That is F2, and it is
    genuinely outside their model. This is the single strongest
-   pre-emption available and it is now in `main.tex`'s related work.
+   pre-emption available and it is now in `parcel.tex`'s related work.
 2. **Their penalty is** `c_E(S) = κ_E · ℓ(S)`, and they call `κ_E` the
    executor's **"first-order per-token context sensitivity"** — i.e.
    they name it as a linearization. Our `ρ_i(conf_i(S))` is the

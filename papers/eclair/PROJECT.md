@@ -357,7 +357,7 @@ REVERSED calibration split (0.804 detect — transfer is
 bidirectional), and across pool sizes k∈{4,6,10} and routing priors
 {0.3,0.5,0.7} (priors move power 0.74–0.93, never the level).
 
-**Manuscript:** `main.tex` at 28 pages (see STATUS.md). Remaining
+**Manuscript:** `eclair.tex` at 28 pages (see STATUS.md). Remaining
 substance-backed growth toward ~35–38 pp: benchmark breadth (more
 CSPLib families), a repair-loop experiment, and formal
 global-constraint MR theorems.

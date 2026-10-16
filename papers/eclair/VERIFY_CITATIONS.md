@@ -82,4 +82,4 @@ off here.
 - [ ] An exponentiated-gradient / online-learning regret reference if
       the EG routing-regret result enters the final theory section
       (Kivinen & Warmuth 1997 or Cesa-Bianchi & Lugosi book) — not
-      currently cited in main.tex.
+      currently cited in eclair.tex.
