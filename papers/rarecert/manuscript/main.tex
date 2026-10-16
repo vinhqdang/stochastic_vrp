@@ -85,8 +85,8 @@ one-dimensional dynamic program. We implement it, call it the quadrature
 reference (it is discretised, extrapolated and truncated, so not exact), and
 use it both as the reference and as a competitor
 (Section~\ref{sec:baselines}). It needs no tuning, but at the grid that gives
-about $1\%$ accuracy it takes \pending{X} seconds per route and level, against
-\pending{Y} seconds for the mixture estimator at the same precision. It does
+about $1\%$ accuracy it takes about $38$ seconds per route and level (one core, an idle machine),
+against $2.5$ seconds for the mixture estimator at the same precision. It does
 not extend to route days with stochastic travel and service times and
 lateness, where the event couples loads and times; there, of the methods we
 compare, only the mixture estimators are accurate, and the demand-only model
@@ -418,7 +418,15 @@ $20\,000$ draws under its shift, keeps the stages whose probability is at least
 $10^{-3}$ of the largest (at most 12), weights them by these probabilities and
 adds a defensive $N(0,I)$ component of weight $0.05$. The draws spent on the
 ladders and on the stage probabilities (its pilot) are counted in its sample
-cost; they are $0.8$--$1.2\times10^5$ per route.
+cost; with these settings they are $1.5$--$4.2\times10^6$ draws per route
+(measured on six routes, Table~\ref{tab:timing}). In the 120-route study
+(Tables~\ref{tab:routes} and~\ref{tab:rivals}) the classical rival, called the
+CE rival there, is the better of the two CE estimators on each route and level:
+the single shift (pilot $0.8$--$1.2\times10^5$ draws) when its estimate agrees
+with that of the mixture within two standard errors and has the smaller relative
+variance, and the mixture otherwise. This is the choice a practitioner with
+both estimators at hand would make; it makes the rival strong on routes where
+the single shift is unbiased and costly on the others.
 
 \paragraph{MDIS.} The same construction applies to any simulator that exposes
 its failure modes as scalar functions $g_m(u) > 0$ of a Gaussian input. We
@@ -518,8 +526,9 @@ all belong to Guangdong; this is an artefact of the file order, not a design
 choice, and Section~\ref{sec:single} tests the Vietnamese routes separately.
 We use four levels $\gamma\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$; $c$ is set so
 that the overflow probability is close to $\gamma$. Every estimator uses
-$N=10^6$ draws. The CE mixture uses a pilot of $0.8$--$1.2\times10^5$ draws per
-route. Table~\ref{tab:routes} reports errors against the reference.
+$N=10^6$ draws. The CE rival uses a pilot of $0.8$--$1.2\times10^5$ draws on
+the routes where it is the single shift and up to $3.9\times10^6$ where it is the
+mixture. Table~\ref{tab:routes} reports errors against the reference.
 
 \emph{Against the quadrature reference.} On the 89 routes with $L\le8$ at
 $\gamma\in\{10^{-3},10^{-4}\}$ (178 cases), SMIS deviates from the quadrature
@@ -533,12 +542,12 @@ $0.20\%$ ($10^{-6}$) in median and at most $0.58\%$.
 
 \emph{Across all levels.} SMIS has relative error at most $0.61\%$ at the
 90\% quantile in every $\varrho$ band with more than one route, relative
-variance $3.8$--$5.9$ (CE mixture $3.8$--$6.0$, single shift $3.5$--$5.5$
+variance $3.8$--$5.9$ (CE rival $3.8$--$6.0$, single shift $3.5$--$5.5$
 where it is unbiased), $2$--$7$ components, and a median build time of
 $0.39$--$0.86$\,s. At $\gamma\le10^{-5}$ the reference for routes without an
-quadrature reference is the CE mixture.
+quadrature reference is the CE rival.
 
-\emph{Samples.} Counting CE's pilot, the CE mixture needs $224$--$276$ times
+\emph{Samples.} Counting CE's pilot, the CE rival needs $224$--$276$ times
 more draws than SMIS for $\varepsilon=0.1$ at 95\% confidence and $3.2$--$3.8$
 times more for $\varepsilon=0.01$: the advantage is the saved pilot, not a
 smaller variance.
@@ -546,17 +555,17 @@ smaller variance.
 \begin{table}[t]
 \centering\small
 \caption{Route model: relative error against the reference (quadrature
-reference where available, else CE mixture), median / 90\% quantile, and relative
+reference where available, else CE rival), median / 90\% quantile, and relative
 variance (median). 120 routes, $N=10^6$; band $(0.5,0.75]$ has one route and
 is omitted. The reference is the quadrature reference for 178 of the 480
 route--level rows (routes with at most eight stops at $10^{-3}$ and $10^{-4}$)
-and the CE mixture for the other 302, so the CE columns at $10^{-5}$ and
+and the CE rival for the other 302, so the CE columns at $10^{-5}$ and
 $10^{-6}$ are the reference itself (``ref.''). Section~\ref{sec:baselines}
 adds an independent reference at $10^{-4}$ and $10^{-6}$ for 30 routes.}
 \label{tab:routes}
 \begin{tabular}{llrrrrrr}
 \toprule
-$\gamma$ & $\varrho$ band & $n$ & SMIS & CE mixture & single shift & RV SMIS & RV single \\
+$\gamma$ & $\varrho$ band & $n$ & SMIS & CE rival & single shift & RV SMIS & RV single \\
 \midrule
 $10^{-3}$ & $[0,1/3]$ & 17 & 0.19 / 0.58\% & 0.12 / 0.39\% & 0.17 / 0.45\% & 3.76 & 3.51 \\
  & $(1/3,0.5]$ & 62 & 0.13 / 0.38\% & 0.09 / 0.30\% & 0.18 / 0.43\% & 3.78 & 3.51 \\
@@ -581,7 +590,7 @@ $10^{-6}$ we compare all methods with the quadrature reference
 (Table~\ref{tab:rivals}). The rivals are Glasserman--Li two-step IS
 \citep{GlassermanLi2005} with the factor shift at the dominant point (crude
 inner sampling, inner exponential shift, and a shift tuned on a pilot grid),
-conditional Monte Carlo over the two factors with the exact inner program and
+conditional Monte Carlo over the two factors with the inner dynamic program and
 a tuned factor shift, and subset simulation \citep{AuBeck2001} with five
 replications of $2\,000$ draws per level. Costs are stated per unit of work
 (a simulator call, or one inner program for conditional Monte Carlo) and
@@ -590,11 +599,12 @@ confidence, build and pilot included, on one core.
 
 \begin{table}[t]
 \centering\small
-\caption{Rivals against the exact conditional program, 30 routes (median over
+\caption{Rivals against the quadrature reference, 30 routes (median over
 routes; error also as maximum). RV is per unit of work; $t(\varepsilon)$ is the
 one-core wall time for relative precision $\varepsilon$ at 95\% confidence,
-build and pilot included. The exact program needs no sampling; its time is
-per evaluation.}
+build and pilot included, measured on a shared machine with several jobs
+running (indicative; Table~\ref{tab:timing} repeats the main comparison on an
+idle machine). The reference needs no sampling; its time is per evaluation.}
 \label{tab:rivals}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lrrrrrr}
@@ -603,9 +613,9 @@ per evaluation.}
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
 method & error med / max & RV & $t(0.01)$ (s) & error med / max & RV & $t(0.01)$ (s) \\
 \midrule
-exact conditional program & reference & --- & 297 & reference & --- & 303 \\
+quadrature reference (fine grid) & reference & --- & 297 & reference & --- & 303 \\
 SMIS & 0.11 / 0.51\% & 4.6 & 2.6 & 0.16 / 0.58\% & 5.8 & 3.3 \\
-CE mixture & 0.16 / 0.38\% & 4.6 & 4.6 & 0.29 / 0.85\% & 5.9 & 6.4 \\
+CE rival & 0.16 / 0.38\% & 4.6 & 4.6 & 0.29 / 0.85\% & 5.9 & 6.4 \\
 single CE shift & 0.41 / 23.5\% & 4.3 & 2.5 & 0.36 / 94.7\% & 5.5 & 2.5 \\
 Glasserman--Li, crude inner & 5.0 / 47.8\% & 29 & 15 & 7.1 / 48.9\% & 57 & 32 \\
 Glasserman--Li, shifted inner & 3.1 / 47.1\% & 11 & 5.4 & 2.9 / 47.6\% & 13 & 6.6 \\
@@ -649,10 +659,11 @@ and as efficient as full SMIS (median error $0.08$--$0.19\%$, relative
 variance $4.5$--$5.9$), so on these routes the modes at intermediate stages
 add nothing measurable and the gain over a single shift is the second end mode
 at its computed dominating point. The second is a CE mixture with a pilot of
-$2\,000$ draws per iteration; shrinking the iteration size did not shrink the
-pilot, which still takes $1.2$--$4.0\times10^5$ draws because the
-cross-entropy ladder runs for every stage, so the pilot saving of SMIS
-persists, while the accuracy of this CE variant equals SMIS ($0.10$--$0.23\%$).
+$2\,000$ draws per iteration instead of $20\,000$: its pilot falls from
+$1.5$--$4.2\times10^6$ to $1.2$--$4.0\times10^5$ draws (the ladder still runs
+for every stage) and its accuracy equals that of SMIS
+($0.10$--$0.23\%$ in median). A pilot is therefore not intrinsic to CE, but
+it remains the dominant cost of the mixture: Table~\ref{tab:timing}.
 
 \begin{table}[t]
 \centering\small
@@ -678,6 +689,31 @@ Glasserman--Li, shifted inner & 15.0 / 31.2\% (30) & 0.27 / 0.92\% (10.6) & 6.6 
 \end{tabular}}
 \end{table}
 
+\begin{table}[t]
+\centering\small
+\caption{Wall-clock time (s) to reach relative precision $0.01$ at 95\%
+confidence, $\gamma=10^{-4}$, on an idle machine (one core, one task at a time,
+load average $1.0$--$1.2$): build time plus $1.96^2\,\mathrm{RV}/0.01^2$ draws
+at the measured per-draw time; the quadrature columns are the wall time of one
+evaluation at two grids ($41$ nodes per factor axis, $V=128,256$ and
+$V=256,512$ levels). Balanced routes first.}
+\label{tab:timing}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrr}
+\toprule
+route & $L$ & SMIS & single CE shift & CE mixture & Glasserman--Li & quadrature (128,256) & quadrature (256,512) \\
+\midrule
+VNN-DIENBIEN\#2 & 10 & 3.4 & 3.1 & 22.6 & 8.7 & 41 & 222 \\
+VNN-HAIDUONG\#14 & 9 & 2.4 & 2.9 & 19.6 & 7.1 & 36 & 201 \\
+VNN-HAIPHONG\#3 & 10 & 2.8 & 220.6 & 19.5 & 11.5 & 40 & 219 \\
+GD-BOLUOXIAN\#50 & 11 & 2.7 & 3.2 & 53.7 & 7.6 & 45 & 245 \\
+GD-DONGGUANSHI-2\#9 & 7 & 1.8 & 2.0 & 23.9 & 5.0 & 29 & 155 \\
+GD-DONGGUANSHI-4\#48 & 6 & 1.6 & 1.6 & 20.1 & 3.8 & 24 & 133 \\
+median & & 2.5 & 3.0 & 21.4 & 7.3 & 38 & 210 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
 \emph{The quadrature reference at coarser grids.} The reference of
 Table~\ref{tab:rivals} uses $41^2$ factor nodes and $V=256$ and $512$ levels.
 On the same 60 route--level rows, $41$ nodes with $V=128$ and $256$ differs
@@ -688,7 +724,13 @@ evaluation under load). With $21$ nodes the error is $1.2\%$ in median
 $[-6,9]^2$ with a step above $0.5$ does not resolve the tails that dominate
 the rare event. The cheapest grid that keeps the error below $1\%$ is therefore
 $41$ nodes with $V=128$ and $256$, and at that grid SMIS reaches the same
-$1\%$ precision about \pending{N} times faster (Table~\ref{tab:timing}).
+$1\%$ precision about $15$ times faster ($12$ to $17$ times on the six routes
+of Table~\ref{tab:timing}, median $2.5$\,s against $38$\,s) and $83$ times
+faster than the finer grid used as reference ($210$\,s). The Glasserman--Li
+estimator needs $7$\,s but is biased on balanced routes, the CE mixture $21$\,s
+(pilot included), and the single shift $3.0$\,s except on the balanced route
+where it fails, where its relative variance makes it need $221$\,s, as much as
+the quadrature reference.
 \emph{Longer routes.} The 30 routes above have at most 13 stops. We also ran
 eight routes with 15 to 33 stops, drawn at random from eight equal groups of the
 routes of the plans with 15 or more stops (seven from Guangdong, one from
@@ -705,7 +747,7 @@ $24\,386$ per draw, so on this route the failure shows in the variance. The
 $33$-stop route behaves like the others. Eight routes are a small sample, and
 none has more than 33 stops.
 
-Section~\ref{sec:hubs} compares the hub estimate with the exact hub program.
+Section~\ref{sec:hubs} compares the hub estimate with the quadrature reference and with crude Monte Carlo.
 
 \subsection{Sensitivity and coverage}
 \label{sec:sensitivity}
@@ -714,7 +756,7 @@ input at a time: $\rho\in\{0.3,0.8\}$, cv $\in\{0.2,0.5\}$, the pickup means
 scaled by $s\in\{0.5,2\}$, and lognormal instead of gamma marginals with the
 same mean and cv (Table~\ref{tab:sens}). In each setting the capacity is reset
 so that the overflow probability is close to $10^{-4}$, every estimator uses
-$2\times10^5$ draws, and the reference is the exact program for gamma
+$2\times10^5$ draws, and the reference is the quadrature reference for gamma
 marginals with $L\le8$ (25 routes) and a $10^6$-draw CE mixture otherwise.
 
 \begin{table}[t]
@@ -839,17 +881,17 @@ the buffers below say how much capacity it takes to meet it.
 probability at most $\gamma$ (route SMIS), and the overflow probability of a
 hub, by region (148 hubs, 6\,242 routes). No hub passes at any $\gamma$.}
 \label{tab:pass}
-\begin{tabular}{lrrrrrr}
+\resizebox{\textwidth}{!}{\begin{tabular}{lrrrrrr}
 \toprule
- & hubs & routes & \multicolumn{4}{c}{share of routes with $P_{\rm route}(Q)\le\gamma$} \\
+ & median & median & \multicolumn{4}{c}{share of routes with $P_{\rm route}(Q)\le\gamma$} \\
 \cmidrule(lr){4-7}
-region & median $P_{\rm hub}(Q)$ & median $P_{\rm route}(Q)$ & $10^{-3}$ & $10^{-4}$ & $10^{-5}$ & $10^{-6}$ \\
+region & $P_{\rm hub}(Q)$ & $P_{\rm route}(Q)$ & $10^{-3}$ & $10^{-4}$ & $10^{-5}$ & $10^{-6}$ \\
 \midrule
-Northern Vietnam (26 hubs, 375 routes) & 7.9\% & 2.2\% & 11.5\% & 9.9\% & 9.6\% & 9.1\% \\
+N.\ Vietnam (26 hubs, 375 routes) & 7.9\% & 2.2\% & 11.5\% & 9.9\% & 9.6\% & 9.1\% \\
 Guangdong (122 hubs, 5\,867 routes) & 10.8\% & 2.4\% & 12.2\% & 8.6\% & 6.7\% & 5.8\% \\
 all & 10.2\% & 2.4\% & 12.2\% & 8.7\% & 6.8\% & 6.0\% \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \paragraph{Capacity needed.} We certify 66 hubs: all 26 of Northern Vietnam and 40 of Guangdong,
@@ -859,7 +901,7 @@ and $\gamma\in\{10^{-3},10^{-5}\}$ we search the common capacity $c$ at which
 the hub overflow probability equals $\gamma$ (Section~\ref{sec:estimators})
 and report the buffer $b=c/Q-1$ over the planned capacity
 (Table~\ref{tab:hubs}). All 132 searches converged, 121 of them after one
-secant step and 11 after two. Every route that can reach $c$ has an SMIS mode; routes whose largest possible peak (with the demands bounded by the clipping of $\Phi$) is at most $c$ contribute exactly zero, which is why the exact hub program reports fewer reachable routes than the hub has (for example 3 of 5 at Bac Kan). The final estimate lies within a
+secant step and 11 after two. Every route that can reach $c$ has an SMIS mode; routes whose largest possible peak (with the demands bounded by the clipping of $\Phi$) is at most $c$ contribute exactly zero, which is why the quadrature hub program reports fewer reachable routes than the hub has (for example 3 of 5 at Bac Kan). The final estimate lies within a
 factor $1.25$ of $\gamma$ in every case (median $P_h/\gamma=0.92$ at $10^{-3}$
 and $0.94$ at $10^{-5}$, range $0.80$--$1.13$). The final hub estimate takes
 a median of $36$\,s on one core (build $13$\,s plus $10^5$ draws, $16$--$447$ components, median $80$); the
@@ -962,8 +1004,8 @@ shared factors, and gives intervals that cover at their nominal level on the
 balanced routes where the single shift covers in a third of the cases. Its
 agreement with a quadrature reference, with crude Monte Carlo where affordable
 and with an independent route-day check is within the sampling error of those
-references; it is about \pending{N} times faster than the quadrature reference
-at $1\%$ precision. The plan-level result is the main finding for practice: the
+references; it is about $15$ times faster than the quadrature reference
+at $1\%$ precision (at the cheapest grid that keeps its error below $1\%$). The plan-level result is the main finding for practice: the
 plans, built for a per-route risk of $0.10$, do not meet any level between
 $10^{-3}$ and $10^{-6}$ at their planned capacity (a hub overflows with
 probability about $8$--$11\%$), they need $35$--$43\%$ more capacity at
@@ -982,7 +1024,7 @@ repository \url{https://github.com/vinhqdang/stochastic_vrp} (directory
 submission. Table~\ref{tab:instances} is computed from the plan files;
 Table~\ref{tab:routes} from \texttt{run\_rarecert\_smis.py};
 Tables~\ref{tab:rivals} and~\ref{tab:fair}, the quadrature grids and the
-exact hub checks from \texttt{run\_rarecert\_baselines.py} and
+hub checks against the quadrature reference from \texttt{run\_rarecert\_baselines.py} and
 \texttt{run\_rarecert\_r3.py}; Table~\ref{tab:sens} and the coverage study
 from \texttt{run\_rarecert\_sensitivity.py} and \texttt{run\_rarecert\_r3.py};
 Table~\ref{tab:routeday} from \texttt{run\_rarecert\_r2.py};
