@@ -21,7 +21,7 @@ Parts (--part), each a list of independent tasks with a checkpoint, --shard and 
              SMIS (its proposal is deterministic, built once) and the single CE shift
              rebuilt in every replication.
   long       routes with 15 or more stops from the region plans at 1e-4 and 1e-6:
-             SMIS, single shift, CE mixture against the quadrature reference.
+             SMIS, single shift, CE mixture against crude Monte Carlo (5e7 and 1e8 draws).
 
 Usage (from svrpspd_wdro/):
     python3 scripts/run_rarecert_r3.py --part PART [--workers 3] [--shard i/n] [--reverse]
@@ -56,7 +56,7 @@ import run_quasar_rare as rq  # noqa: E402
 import run_rarecert_smis as rs  # noqa: E402
 import run_rarecert_sensitivity as sens  # noqa: E402
 from quantum.rare import (  # noqa: E402
-    Mixture, RouteSim, ce_mixture, ce_shift, is_mixture, is_shift, threshold_for)
+    Mixture, RouteSim, ce_mixture, crude, ce_shift, is_mixture, is_shift, threshold_for)
 from rarecert.baselines import exact_reference, exact_route_prob, gl_two_step  # noqa: E402
 from rarecert.checkpoint import load, resumable_map  # noqa: E402
 from rarecert.plan import HubSim, hub_estimate, route_baselines  # noqa: E402
@@ -74,7 +74,7 @@ N_ROUTE_Q = 20_000
 N_UNCONF = 200_000
 N_UNCONF_REF = 1_000_000
 N_HUB_SMIS = 1_000_000
-N_HUB_CRUDE = 100_000_000
+N_HUB_CRUDE = 20_000_000
 CRUDE_CHUNK = 200_000
 N_RIVAL = 1_000_000
 CE_SMALL_PILOT = 2_000
@@ -83,8 +83,10 @@ COV_REPS = 300
 COV_N = 10_000
 N_LONG = 1_000_000
 LONG_MIN_L = 15
-LONG_ROUTES = 12
-HUBCRUDE_EXTRA = ("VNN-THAINGUYEN", "VNN-BACGIANG")
+LONG_ROUTES = 8
+N_LONG_CRUDE = {1e-3: 50_000_000, 1e-4: 100_000_000}
+LONG_GAMMAS = (1e-3, 1e-4)
+HUBCRUDE_EXTRA = ("VNN-THAINGUYEN",)
 HUBCRUDE_SMALLEST = 6
 
 
@@ -360,10 +362,12 @@ def task_long(t):
         cem = ce_mixture(sim, c, rng)
         p, RV, rse, _ = is_mixture(sim, c, cem, t["n"], rng)
         row.update({"ce_p": p, "ce_RV": RV, "ce_rse": rse, "ce_pilot": cem.draws})
-        ref = exact_reference(sim, c)
-        row.update({"p_ref": ref["p_ext"], "ref_err_est": ref["err_est"], "ref_s": ref["wall_s"]})
+        tc = time.time()
+        p_ref, rse_ref = crude(sim, c, t["n_crude"], rng)
+        row.update({"p_ref": p_ref, "rse_ref": rse_ref, "ref_s": time.time() - tc, "ref_kind": "crude",
+                    "n_crude": t["n_crude"]})
         for k in ("smis", "single", "ce"):
-            row[f"{k}_rel"] = row[f"{k}_p"] / ref["p_ext"] - 1.0
+            row[f"{k}_rel"] = row[f"{k}_p"] / p_ref - 1.0
     except Exception as exc:
         row["error"] = f"{type(exc).__name__}: {exc}"
     row["seconds"] = time.time() - t0
@@ -415,8 +419,9 @@ def build_tasks(part):
         groups = np.array_split(np.arange(len(cands)), LONG_ROUTES)
         pick = [cands[g[int(rng.integers(len(g)))]] for g in groups if len(g)]
         for d in pick:
-            for g in (1e-4, 1e-6):
-                tasks.append({"key": ["long", d["route_id"], g], **d, "gamma": g, "n": N_LONG})
+            for g in LONG_GAMMAS:
+                tasks.append({"key": ["long", d["route_id"], g], **d, "gamma": g, "n": N_LONG,
+                              "n_crude": N_LONG_CRUDE[g]})
         return tasks
     means = rs.route_means()
     if part == "mhat":
@@ -434,14 +439,14 @@ def build_tasks(part):
     vnn = [r for r in rids if r.startswith("VNN")]
     gd = [r for r in rids if r.startswith("GD")]
     if part == "unconf":
-        for rid in vnn:
+        for rid in vnn[:20]:
             for s in (0.5, 2.0):
                 for g in (1e-4, 1e-6):
                     tasks.append({"key": ["unconf", rid, s, 0.0, g], "route_id": rid, "s": s, "r": 0.0, "gamma": g})
-        for rid in gd:
+        for rid in gd[:30]:
             for g in (1e-5, 1e-6):
                 tasks.append({"key": ["unconf", rid, 0.5, 0.0, g], "route_id": rid, "s": 0.5, "r": 0.0, "gamma": g})
-        for rid in vnn[:20] + gd[:20]:
+        for rid in vnn[:10] + gd[:10]:
             for r in (0.5, -0.5):
                 tasks.append({"key": ["unconf", rid, 1.0, r, 1e-4], "route_id": rid, "s": 1.0, "r": r, "gamma": 1e-4})
         for t in tasks:
