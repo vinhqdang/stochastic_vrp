@@ -251,9 +251,14 @@ for one Northern Vietnam and one Guangdong route.
 \centering
 \includegraphics[width=0.85\textwidth]{figures/rarecert_mode_energies.pdf}
 \caption{Computed dominating-point energies $E_k$ of the stage events
-$\{L_k>c\}$ (delivery and pickup blocks) against the stage $k$, for one route
-of Northern Vietnam (balanced pickups) and one of Guangdong, at
-$\gamma=10^{-4}$, with the asymptotic prediction $c/\lambda_k$.}
+$\{L_k>c\}$ (open circles: delivery blocks; filled squares: pickup blocks)
+against the stage $k$, with the asymptotic prediction $c/\lambda_k$ (lines),
+at $\gamma=10^{-4}$. Left: a route of Northern Vietnam (balanced pickups and
+deliveries), where both end modes exist. Right: a route of Guangdong, where
+pickups are $2.7$ times the deliveries and no delivery block reaches $c$ (the
+demands are bounded by the clipping of $\Phi$): the failure has a single end
+mode. The computed energies are $5$--$10$ times below the asymptote, so the
+figure shows the pre-asymptotic gap as well as the anatomy.}
 \label{fig:energies}
 \end{figure}
 
@@ -342,7 +347,7 @@ for every experiment; there is no pilot simulation. An optional variant
 nothing measurable on our routes and we report $n_{\rm arc}=0$ (SMIS0)
 throughout. Theorem~\ref{thm:mixture} (Appendix) is a sketch of logarithmic
 efficiency under spectral-gap conditions; at $\rho=0.6$ they hold for every end
-block of our plans, at $\rho=0.3$ for $0.4\%$ of them, and
+block of our plans, at $\rho=0.3$ for $0.4\%$ of the routes ($1.4\%$ of the end blocks), and
 Section~\ref{sec:sensitivity} tests SMIS in both cases.
 
 \begin{algorithm}[t]
@@ -613,7 +618,7 @@ lognormal marginals & 0.37 & 0.43 / 0.86\% & 0.29 / 0.67\% & 0.35 / 0.70\% & 1.0
 SMIS stays within its sampling error (median $0.27$--$0.43\%$ against a
 relative standard error of about $0.47\%$) in every setting, including
 $\rho=0.3$, where the spectral-gap condition of Theorem~\ref{thm:mixture}
-holds for only $0.4\%$ of the end blocks of our plans, and lognormal
+holds for only $0.4\%$ of the routes of our plans ($1.4\%$ of the end blocks), and lognormal
 marginals, which the theory does not cover. The single shift is also accurate
 on these routes except where halving the pickups makes the two end scales
 nearly equal (Section~\ref{sec:single}). The last column is the model risk:
@@ -637,8 +642,8 @@ On 60 routes we set the slack $s$ and the capacity so that the load modes and
 the time modes each carry about half of the failure probability --- a design
 that makes the failure multimodal on purpose, to test the estimator where a
 single shift is known to struggle. The threshold search is common to all
-methods and not counted. MDIS keeps $6$--$8$ modes (median) of the $20$--$30$
-candidates; $16$--$21$ candidate modes per route cannot reach their threshold
+methods and not counted. MDIS keeps $6$--$8$ modes (median) of the $62$--$65$
+candidates (median); $16$--$21$ candidate modes per route cannot reach their threshold
 and are dropped. Table~\ref{tab:routeday} gives the results. At
 $\gamma=10^{-3}$, against $10^7$-draw crude Monte Carlo (relative standard
 error about $1\%$), MDIS deviates by $0.76\%$ in median and $1.77\%$ at the 90\%
@@ -674,10 +679,10 @@ and $\gamma\in\{10^{-3},10^{-5}\}$ we search the common capacity $c$ at which
 the hub overflow probability equals $\gamma$ (Section~\ref{sec:estimators})
 and report the buffer $b=c/Q-1$ over the planned capacity
 (Table~\ref{tab:hubs}). All 132 searches converged, 121 of them after one
-secant step and 11 after two; no route was unreachable. The final estimate lies within a
+secant step and 11 after two. Every route that can reach $c$ has an SMIS mode; routes whose largest possible peak (with the demands bounded by the clipping of $\Phi$) is at most $c$ contribute exactly zero, which is why the exact hub program reports fewer reachable routes than the hub has (for example 3 of 5 at Bac Kan). The final estimate lies within a
 factor $1.25$ of $\gamma$ in every case (median $P_h/\gamma=0.92$ at $10^{-3}$
 and $0.94$ at $10^{-5}$, range $0.80$--$1.13$). The final hub estimate takes
-a median of $35$\,s on one core ($10^5$ draws, $16$--$447$ components, median $80$); the
+a median of $36$\,s on one core (build $13$\,s plus $10^5$ draws, $16$--$447$ components, median $80$); the
 whole task, with calibration, route-level baselines and checks, takes
 $3.4$--$4.4$ minutes in median and at most $21$ minutes.
 
@@ -703,9 +708,11 @@ $10^{-5}$ & Northern Vietnam & 26 & 64.5 / 68.0\% & 81.5\% & $2.5\times10^{-4}$ 
 The buffers are large because the plans were built with a sample-average
 gate at a moderate level and a coefficient of variation of $0.3$ with
 strongly correlated demands ($\rho=0.6$): moving from $10^{-3}$ to $10^{-5}$
-costs another $30$ points of capacity. A per-hub level of $10^{-3}$ gives a
-regional day with some overflow somewhere with probability $2$--$4\%$; a
-regional level $\gamma$ needs a per-hub level near $\gamma$ divided by the
+costs another $30$ points of capacity. A per-hub level of $10^{-3}$ gives, over the hubs we certified,
+a probability of $2.4\%$ (26 hubs of Northern Vietnam) and $3.6\%$ (40 of the
+122 hubs of Guangdong) that some hub overflows on a given day; the same
+per-hub level over all 122 Guangdong hubs would give about $10\%$. A regional
+level $\gamma$ therefore needs a per-hub level near $\gamma$ divided by the
 number of hubs.
 
 \emph{Checks.} The hub estimate lies between $\max_r p_r$ and $\sum_r p_r$,
@@ -730,9 +737,12 @@ from route-wise estimates would demand too much capacity. With the shared
 factors, $47\%$ (at $10^{-3}$) and $33\%$ (at $10^{-5}$) of the overflow days
 of a hub have two or more routes overflowing (medians over hubs): standby
 capacity should be planned for clusters. The attribution shows how
-concentrated the risk is: the riskiest route carries $28$--$29\%$ of the hub
-risk and the three riskiest $66$--$79\%$ (medians), so reinforcing a few
-routes, not all, is what a planner would do with the certificate.
+concentrated the risk is: the overflow probability of the riskiest route is
+$28$--$29\%$ of the hub probability, and that of the three riskiest routes
+together $66$--$79\%$ (medians over hubs; route events overlap, so these are
+not shares that sum to one; relative to the sum of the route probabilities they
+are $11$--$14\%$ and $30$--$34\%$). Reinforcing a few routes, not all, is what
+a planner would do with the certificate.
 
 \subsection{A note on quantum amplitude estimation}
 Quantum amplitude estimation reduces the number of simulator calls for a
