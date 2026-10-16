@@ -1,0 +1,621 @@
+%% BioMed_Central_Bib_Style_v1.01
+
+\begin{thebibliography}{37}
+% BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
+\ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
+\ifx \binits  \undefined \def \binits#1{#1}\fi
+\ifx \bauthor  \undefined \def \bauthor#1{#1}\fi
+\ifx \batitle  \undefined \def \batitle#1{#1}\fi
+\ifx \bjtitle  \undefined \def \bjtitle#1{#1}\fi
+\ifx \bvolume  \undefined \def \bvolume#1{\textbf{#1}}\fi
+\ifx \byear  \undefined \def \byear#1{#1}\fi
+\ifx \bissue  \undefined \def \bissue#1{#1}\fi
+\ifx \bfpage  \undefined \def \bfpage#1{#1}\fi
+\ifx \blpage  \undefined \def \blpage #1{#1}\fi
+\ifx \burl  \undefined \def \burl#1{\textsf{#1}}\fi
+\ifx \doiurl  \undefined \def \doiurl#1{\url{https://doi.org/#1}}\fi
+\ifx \betal  \undefined \def \betal{\textit{et al.}}\fi
+\ifx \binstitute  \undefined \def \binstitute#1{#1}\fi
+\ifx \binstitutionaled  \undefined \def \binstitutionaled#1{#1}\fi
+\ifx \bctitle  \undefined \def \bctitle#1{#1}\fi
+\ifx \beditor  \undefined \def \beditor#1{#1}\fi
+\ifx \bpublisher  \undefined \def \bpublisher#1{#1}\fi
+\ifx \bbtitle  \undefined \def \bbtitle#1{#1}\fi
+\ifx \bedition  \undefined \def \bedition#1{#1}\fi
+\ifx \bseriesno  \undefined \def \bseriesno#1{#1}\fi
+\ifx \blocation  \undefined \def \blocation#1{#1}\fi
+\ifx \bsertitle  \undefined \def \bsertitle#1{#1}\fi
+\ifx \bsnm \undefined \def \bsnm#1{#1}\fi
+\ifx \bsuffix \undefined \def \bsuffix#1{#1}\fi
+\ifx \bparticle \undefined \def \bparticle#1{#1}\fi
+\ifx \barticle \undefined \def \barticle#1{#1}\fi
+\bibcommenthead
+\ifx \bconfdate \undefined \def \bconfdate #1{#1}\fi
+\ifx \botherref \undefined \def \botherref #1{#1}\fi
+\ifx \url \undefined \def \url#1{\textsf{#1}}\fi
+\ifx \bchapter \undefined \def \bchapter#1{#1}\fi
+\ifx \bbook \undefined \def \bbook#1{#1}\fi
+\ifx \bcomment \undefined \def \bcomment#1{#1}\fi
+\ifx \oauthor \undefined \def \oauthor#1{#1}\fi
+\ifx \citeauthoryear \undefined \def \citeauthoryear#1{#1}\fi
+\ifx \endbibitem  \undefined \def \endbibitem {}\fi
+\ifx \bconflocation  \undefined \def \bconflocation#1{#1}\fi
+\ifx \arxivurl  \undefined \def \arxivurl#1{\textsf{#1}}\fi
+\csname PreBibitemsHook\endcsname
+
+%%% 1
+\bibitem[\protect\citeauthoryear{Brassard et~al.}{2002}]{Brassard2002}
+\begin{bchapter}
+\bauthor{\bsnm{Brassard}, \binits{G.}},
+\bauthor{\bsnm{H{\o}yer}, \binits{P.}},
+\bauthor{\bsnm{Mosca}, \binits{M.}},
+\bauthor{\bsnm{Tapp}, \binits{A.}}:
+\bctitle{Quantum amplitude amplification and estimation}.
+In: \bbtitle{Quantum Computation and Quantum Information}.
+\bsertitle{Contemporary Mathematics},
+vol. \bseriesno{305},
+pp. \bfpage{53}--\blpage{74}.
+\bpublisher{American Mathematical Society},
+\blocation{Providence, RI}
+(\byear{2002}).
+\doiurl{10.1090/conm/305/05215}
+\end{bchapter}
+\endbibitem
+
+%%% 2
+\bibitem[\protect\citeauthoryear{Montanaro}{2015}]{Montanaro2015}
+\begin{barticle}
+\bauthor{\bsnm{Montanaro}, \binits{A.}}:
+\batitle{Quantum speedup of {Monte Carlo} methods}.
+\bjtitle{Proceedings of the Royal Society A}
+\bvolume{471}(\bissue{2181}),
+\bfpage{20150301}
+(\byear{2015})
+\doiurl{10.1098/rspa.2015.0301}
+{\href{https://arxiv.org/abs/1504.06987}{{1504.06987}}}
+\end{barticle}
+\endbibitem
+
+%%% 3
+\bibitem[\protect\citeauthoryear{Woerner and Egger}{2019}]{WoernerEgger2019}
+\begin{barticle}
+\bauthor{\bsnm{Woerner}, \binits{S.}},
+\bauthor{\bsnm{Egger}, \binits{D.J.}}:
+\batitle{Quantum risk analysis}.
+\bjtitle{npj Quantum Information}
+\bvolume{5},
+\bfpage{15}
+(\byear{2019})
+\doiurl{10.1038/s41534-019-0130-6}
+{\href{https://arxiv.org/abs/1806.06893}{{1806.06893}}}
+\end{barticle}
+\endbibitem
+
+%%% 4
+\bibitem[\protect\citeauthoryear{Gacon et~al.}{2020}]{Gacon2020}
+\begin{bchapter}
+\bauthor{\bsnm{Gacon}, \binits{J.}},
+\bauthor{\bsnm{Zoufal}, \binits{C.}},
+\bauthor{\bsnm{Woerner}, \binits{S.}}:
+\bctitle{Quantum-enhanced simulation-based optimization}.
+In: \bbtitle{2020 IEEE International Conference on Quantum Computing and
+  Engineering (QCE)},
+pp. \bfpage{47}--\blpage{55}
+(\byear{2020}).
+\doiurl{10.1109/QCE49297.2020.00017}
+\end{bchapter}
+\endbibitem
+
+%%% 5
+\bibitem[\protect\citeauthoryear{Wang and
+  Filipovska}{2026}]{WangFilipovska2026}
+\begin{botherref}
+\oauthor{\bsnm{Wang}, \binits{X.}},
+\oauthor{\bsnm{Filipovska}, \binits{M.}}:
+Quantum amplitude estimation for travel time estimation in stochastic vehicle
+  routing problems
+(2026)
+\end{botherref}
+\endbibitem
+
+%%% 6
+\bibitem[\protect\citeauthoryear{Babbush et~al.}{2021}]{Babbush2021}
+\begin{barticle}
+\bauthor{\bsnm{Babbush}, \binits{R.}},
+\bauthor{\bsnm{McClean}, \binits{J.R.}},
+\bauthor{\bsnm{Newman}, \binits{M.}},
+\bauthor{\bsnm{Gidney}, \binits{C.}},
+\bauthor{\bsnm{Boixo}, \binits{S.}},
+\bauthor{\bsnm{Neven}, \binits{H.}}:
+\batitle{Focus beyond quadratic speedups for error-corrected quantum
+  advantage}.
+\bjtitle{PRX Quantum}
+\bvolume{2},
+\bfpage{010103}
+(\byear{2021})
+\doiurl{10.1103/PRXQuantum.2.010103}
+{\href{https://arxiv.org/abs/2011.04149}{{2011.04149}}}
+\end{barticle}
+\endbibitem
+
+%%% 7
+\bibitem[\protect\citeauthoryear{Feld et~al.}{2019}]{Feld2019}
+\begin{barticle}
+\bauthor{\bsnm{Feld}, \binits{S.}},
+\bauthor{\bsnm{Roch}, \binits{C.}},
+\bauthor{\bsnm{Gabor}, \binits{T.}},
+\bauthor{\bsnm{Seidel}, \binits{C.}},
+\bauthor{\bsnm{Neukart}, \binits{F.}},
+\bauthor{\bsnm{Galter}, \binits{I.}},
+\bauthor{\bsnm{Mauerer}, \binits{W.}},
+\bauthor{\bsnm{Linnhoff-Popien}, \binits{C.}}:
+\batitle{A hybrid solution method for the capacitated vehicle routing problem
+  using a quantum annealer}.
+\bjtitle{Frontiers in ICT}
+\bvolume{6},
+\bfpage{13}
+(\byear{2019})
+\doiurl{10.3389/fict.2019.00013}
+{\href{https://arxiv.org/abs/1811.07403}{{1811.07403}}}
+\end{barticle}
+\endbibitem
+
+%%% 8
+\bibitem[\protect\citeauthoryear{Harwood et~al.}{2021}]{Harwood2021}
+\begin{barticle}
+\bauthor{\bsnm{Harwood}, \binits{S.}},
+\bauthor{\bsnm{Gambella}, \binits{C.}},
+\bauthor{\bsnm{Trenev}, \binits{D.}},
+\bauthor{\bsnm{Simonetto}, \binits{A.}},
+\bauthor{\bsnm{Bernal~Neira}, \binits{D.}},
+\bauthor{\bsnm{Greenberg}, \binits{D.}}:
+\batitle{Formulating and solving routing problems on quantum computers}.
+\bjtitle{IEEE Transactions on Quantum Engineering}
+\bvolume{2},
+\bfpage{1}--\blpage{17}
+(\byear{2021})
+\doiurl{10.1109/TQE.2021.3049230}
+\end{barticle}
+\endbibitem
+
+%%% 9
+\bibitem[\protect\citeauthoryear{Osaba et~al.}{2022}]{Osaba2022}
+\begin{barticle}
+\bauthor{\bsnm{Osaba}, \binits{E.}},
+\bauthor{\bsnm{Villar-Rodriguez}, \binits{E.}},
+\bauthor{\bsnm{Oregi}, \binits{I.}}:
+\batitle{A systematic literature review of quantum computing for routing
+  problems}.
+\bjtitle{IEEE Access}
+\bvolume{10},
+\bfpage{55805}--\blpage{55817}
+(\byear{2022})
+\doiurl{10.1109/ACCESS.2022.3177790}
+\end{barticle}
+\endbibitem
+
+%%% 10
+\bibitem[\protect\citeauthoryear{Azad et~al.}{2023}]{Azad2023}
+\begin{barticle}
+\bauthor{\bsnm{Azad}, \binits{U.}},
+\bauthor{\bsnm{Behera}, \binits{B.K.}},
+\bauthor{\bsnm{Ahmed}, \binits{E.A.}},
+\bauthor{\bsnm{Panigrahi}, \binits{P.K.}},
+\bauthor{\bsnm{Farouk}, \binits{A.}}:
+\batitle{Solving vehicle routing problem using quantum approximate optimization
+  algorithm}.
+\bjtitle{IEEE Transactions on Intelligent Transportation Systems}
+\bvolume{24}(\bissue{7}),
+\bfpage{7564}--\blpage{7573}
+(\byear{2023})
+\doiurl{10.1109/TITS.2022.3172241}
+{\href{https://arxiv.org/abs/2002.01351}{{2002.01351}}}
+\end{barticle}
+\endbibitem
+
+%%% 11
+\bibitem[\protect\citeauthoryear{Onah and
+  Michielsen}{2025}]{Onah2025RequirementsCVRP}
+\begin{botherref}
+\oauthor{\bsnm{Onah}, \binits{C.}},
+\oauthor{\bsnm{Michielsen}, \binits{K.}}:
+Requirements for Early Quantum Utility and Quantum Utility in the Capacitated
+  Vehicle Routing Problem
+(2025).
+\url{https://arxiv.org/abs/2509.11469}
+\end{botherref}
+\endbibitem
+
+%%% 12
+\bibitem[\protect\citeauthoryear{Xu et~al.}{2026}]{xu2026urban}
+\begin{botherref}
+\oauthor{\bsnm{Xu}, \binits{J.}},
+\oauthor{\bsnm{Niu}, \binits{C.}},
+\oauthor{\bsnm{Nair}, \binits{D.J.}},
+\oauthor{\bsnm{Dixit}, \binits{V.}}:
+Quantum Optimisation in Cities: Limitations and Prospects of Urban Transport
+  Systems
+(2026)
+\end{botherref}
+\endbibitem
+
+%%% 13
+\bibitem[\protect\citeauthoryear{Moosavi and Farooq}{2026}]{Moosavi2026RLQALNS}
+\begin{botherref}
+\oauthor{\bsnm{Moosavi}, \binits{F.}},
+\oauthor{\bsnm{Farooq}, \binits{B.}}:
+RL-Guided Quantum-{ALNS} for Constrained {VRP}
+(2026).
+\url{https://arxiv.org/abs/2607.07550}
+\end{botherref}
+\endbibitem
+
+%%% 14
+\bibitem[\protect\citeauthoryear{Suzuki et~al.}{2020}]{Suzuki2020}
+\begin{barticle}
+\bauthor{\bsnm{Suzuki}, \binits{Y.}},
+\bauthor{\bsnm{Uno}, \binits{S.}},
+\bauthor{\bsnm{Raymond}, \binits{R.}},
+\bauthor{\bsnm{Tanaka}, \binits{T.}},
+\bauthor{\bsnm{Onodera}, \binits{T.}},
+\bauthor{\bsnm{Yamamoto}, \binits{N.}}:
+\batitle{Amplitude estimation without phase estimation}.
+\bjtitle{Quantum Information Processing}
+\bvolume{19}(\bissue{2}),
+\bfpage{75}
+(\byear{2020})
+\doiurl{10.1007/s11128-019-2565-2}
+{\href{https://arxiv.org/abs/1904.10246}{{1904.10246}}}
+\end{barticle}
+\endbibitem
+
+%%% 15
+\bibitem[\protect\citeauthoryear{Grinko et~al.}{2021}]{Grinko2021}
+\begin{barticle}
+\bauthor{\bsnm{Grinko}, \binits{D.}},
+\bauthor{\bsnm{Gacon}, \binits{J.}},
+\bauthor{\bsnm{Zoufal}, \binits{C.}},
+\bauthor{\bsnm{Woerner}, \binits{S.}}:
+\batitle{Iterative quantum amplitude estimation}.
+\bjtitle{npj Quantum Information}
+\bvolume{7},
+\bfpage{52}
+(\byear{2021})
+\doiurl{10.1038/s41534-021-00379-1}
+{\href{https://arxiv.org/abs/1912.05559}{{1912.05559}}}
+\end{barticle}
+\endbibitem
+
+%%% 16
+\bibitem[\protect\citeauthoryear{Kothari and
+  O'Donnell}{2023}]{KothariODonnell2023}
+\begin{bchapter}
+\bauthor{\bsnm{Kothari}, \binits{R.}},
+\bauthor{\bsnm{O'Donnell}, \binits{R.}}:
+\bctitle{Mean estimation when you have the source code; or, quantum {Monte
+  Carlo} methods}.
+In: \bbtitle{Proceedings of the 2023 Annual ACM-SIAM Symposium on Discrete
+  Algorithms (SODA)},
+pp. \bfpage{1186}--\blpage{1215}
+(\byear{2023}).
+\doiurl{10.1137/1.9781611977554.ch44}
+\end{bchapter}
+\endbibitem
+
+%%% 17
+\bibitem[\protect\citeauthoryear{Huggins et~al.}{2022}]{Huggins2022}
+\begin{barticle}
+\bauthor{\bsnm{Huggins}, \binits{W.J.}},
+\bauthor{\bsnm{Wan}, \binits{K.}},
+\bauthor{\bsnm{McClean}, \binits{J.}},
+\bauthor{\bsnm{O'Brien}, \binits{T.E.}},
+\bauthor{\bsnm{Wiebe}, \binits{N.}},
+\bauthor{\bsnm{Babbush}, \binits{R.}}:
+\batitle{Nearly optimal quantum algorithm for estimating multiple expectation
+  values}.
+\bjtitle{Physical Review Letters}
+\bvolume{129}(\bissue{24}),
+\bfpage{240501}
+(\byear{2022})
+\doiurl{10.1103/PhysRevLett.129.240501}
+{\href{https://arxiv.org/abs/2111.09283}{{arXiv:2111.09283}}}
+\end{barticle}
+\endbibitem
+
+%%% 18
+\bibitem[\protect\citeauthoryear{van Apeldoorn}{2021}]{vanApeldoorn2021}
+\begin{bchapter}
+\bauthor{\bsnm{Apeldoorn}, \binits{J.}}:
+\bctitle{Quantum probability oracles \& multidimensional amplitude estimation}.
+In: \bbtitle{16th Conference on the Theory of Quantum Computation,
+  Communication and Cryptography (TQC 2021)}.
+\bsertitle{LIPIcs},
+vol. \bseriesno{197},
+pp. \bfpage{9}--\blpage{1911}
+(\byear{2021}).
+\doiurl{10.4230/LIPIcs.TQC.2021.9}
+\end{bchapter}
+\endbibitem
+
+%%% 19
+\bibitem[\protect\citeauthoryear{Cornelissen et~al.}{2022}]{Cornelissen2022}
+\begin{bchapter}
+\bauthor{\bsnm{Cornelissen}, \binits{A.}},
+\bauthor{\bsnm{Hamoudi}, \binits{Y.}},
+\bauthor{\bsnm{Jerbi}, \binits{S.}}:
+\bctitle{Near-optimal quantum algorithms for multivariate mean estimation}.
+In: \bbtitle{Proceedings of the 54th Annual ACM Symposium on Theory of
+  Computing (STOC)},
+pp. \bfpage{33}--\blpage{43}
+(\byear{2022}).
+\doiurl{10.1145/3519935.3520045}
+\end{bchapter}
+\endbibitem
+
+%%% 20
+\bibitem[\protect\citeauthoryear{Tang}{2025}]{Tang2025}
+\begin{botherref}
+\oauthor{\bsnm{Tang}, \binits{L.}}:
+More-efficient Quantum Multivariate Mean Value Estimator from Generalized
+  Grover Operator.
+Version 3; preprint, no journal version located
+(2025)
+\end{botherref}
+\endbibitem
+
+%%% 21
+\bibitem[\protect\citeauthoryear{Blanchet et~al.}{2025}]{Blanchet2025}
+\begin{bchapter}
+\bauthor{\bsnm{Blanchet}, \binits{J.}},
+\bauthor{\bsnm{Hamoudi}, \binits{Y.}},
+\bauthor{\bsnm{Szegedy}, \binits{M.}},
+\bauthor{\bsnm{Wang}, \binits{G.}}:
+\bctitle{Quantum speedup of non-linear {Monte Carlo} problems}.
+In: \bbtitle{Advances in Neural Information Processing Systems 38 (NeurIPS
+  2025)},
+pp. \bfpage{21289}--\blpage{21313}
+(\byear{2025}).
+\doiurl{10.52202/085713-0631}
+\end{bchapter}
+\endbibitem
+
+%%% 22
+\bibitem[\protect\citeauthoryear{Grover}{1996}]{grover1996fast}
+\begin{botherref}
+\oauthor{\bsnm{Grover}, \binits{L.K.}}:
+A fast quantum mechanical algorithm for database search.
+arXiv preprint quant-ph/9605043
+(1996)
+{\href{https://arxiv.org/abs/quant-ph/9605043}{{arXiv:quant-ph/9605043}}}
+\end{botherref}
+\endbibitem
+
+%%% 23
+\bibitem[\protect\citeauthoryear{Boyer et~al.}{1998}]{boyer1998tight}
+\begin{barticle}
+\bauthor{\bsnm{Boyer}, \binits{M.}},
+\bauthor{\bsnm{Brassard}, \binits{G.}},
+\bauthor{\bsnm{H{\o}yer}, \binits{P.}},
+\bauthor{\bsnm{Tapp}, \binits{A.}}:
+\batitle{Tight bounds on quantum searching}.
+\bjtitle{Fortschritte der Physik}
+\bvolume{46}(\bissue{4-5}),
+\bfpage{493}--\blpage{505}
+(\byear{1998})
+\doiurl{10.1002/(SICI)1521-3978(199806)46:4/5<493::AID-PROP493>3.0.CO;2-P}
+{\href{https://arxiv.org/abs/quant-ph/9605034}{{arXiv:quant-ph/9605034}}}
+\end{barticle}
+\endbibitem
+
+%%% 24
+\bibitem[\protect\citeauthoryear{D{\"u}rr and H{\o}yer}{1996}]{DurrHoyer1996}
+\begin{botherref}
+\oauthor{\bsnm{D{\"u}rr}, \binits{C.}},
+\oauthor{\bsnm{H{\o}yer}, \binits{P.}}:
+A quantum algorithm for finding the minimum.
+arXiv preprint; no journal version located
+(1996)
+\end{botherref}
+\endbibitem
+
+%%% 25
+\bibitem[\protect\citeauthoryear{H{\o}yer et~al.}{2003}]{hoyer2003bounded}
+\begin{bchapter}
+\bauthor{\bsnm{H{\o}yer}, \binits{P.}},
+\bauthor{\bsnm{Mosca}, \binits{M.}},
+\bauthor{\bsnm{Wolf}, \binits{R.}}:
+\bctitle{Quantum search on bounded-error inputs}.
+In: \bbtitle{Automata, Languages and Programming (ICALP 2003)}.
+\bsertitle{LNCS},
+vol. \bseriesno{2719},
+pp. \bfpage{291}--\blpage{299}
+(\byear{2003}).
+\doiurl{10.1007/3-540-45061-0_25}
+\end{bchapter}
+\endbibitem
+
+%%% 26
+\bibitem[\protect\citeauthoryear{Aaronson}{2006}]{Aaronson2006}
+\begin{barticle}
+\bauthor{\bsnm{Aaronson}, \binits{S.}}:
+\batitle{Lower bounds for local search by quantum arguments}.
+\bjtitle{SIAM Journal on Computing}
+\bvolume{35}(\bissue{4}),
+\bfpage{804}--\blpage{824}
+(\byear{2006})
+\doiurl{10.1137/S0097539704447237}
+{\href{https://arxiv.org/abs/quant-ph/0307149}{{quant-ph/0307149}}}
+\end{barticle}
+\endbibitem
+
+%%% 27
+\bibitem[\protect\citeauthoryear{de~Boer et~al.}{2005}]{deBoer2005}
+\begin{barticle}
+\bauthor{\bsnm{Boer}, \binits{P.-T.}},
+\bauthor{\bsnm{Kroese}, \binits{D.P.}},
+\bauthor{\bsnm{Mannor}, \binits{S.}},
+\bauthor{\bsnm{Rubinstein}, \binits{R.Y.}}:
+\batitle{A tutorial on the cross-entropy method}.
+\bjtitle{Annals of Operations Research}
+\bvolume{134}(\bissue{1}),
+\bfpage{19}--\blpage{67}
+(\byear{2005})
+\doiurl{10.1007/s10479-005-5724-z}
+\end{barticle}
+\endbibitem
+
+%%% 28
+\bibitem[\protect\citeauthoryear{Glasserman and Li}{2005}]{Glasserman2005}
+\begin{barticle}
+\bauthor{\bsnm{Glasserman}, \binits{P.}},
+\bauthor{\bsnm{Li}, \binits{J.}}:
+\batitle{Importance sampling for portfolio credit risk}.
+\bjtitle{Management Science}
+\bvolume{51}(\bissue{11}),
+\bfpage{1643}--\blpage{1656}
+(\byear{2005})
+\doiurl{10.1287/mnsc.1050.0415}
+\end{barticle}
+\endbibitem
+
+%%% 29
+\bibitem[\protect\citeauthoryear{Owen et~al.}{2019}]{Owen2019}
+\begin{barticle}
+\bauthor{\bsnm{Owen}, \binits{A.B.}},
+\bauthor{\bsnm{Maximov}, \binits{Y.}},
+\bauthor{\bsnm{Chertkov}, \binits{M.}}:
+\batitle{Importance sampling the union of rare events with an application to
+  power systems analysis}.
+\bjtitle{Electronic Journal of Statistics}
+\bvolume{13}(\bissue{1}),
+\bfpage{231}--\blpage{254}
+(\byear{2019})
+\doiurl{10.1214/18-EJS1527}
+\end{barticle}
+\endbibitem
+
+%%% 30
+\bibitem[\protect\citeauthoryear{Audibert et~al.}{2009}]{Audibert2009}
+\begin{barticle}
+\bauthor{\bsnm{Audibert}, \binits{J.-Y.}},
+\bauthor{\bsnm{Munos}, \binits{R.}},
+\bauthor{\bsnm{Szepesv{\'a}ri}, \binits{C.}}:
+\batitle{Exploration--exploitation tradeoff using variance estimates in
+  multi-armed bandits}.
+\bjtitle{Theoretical Computer Science}
+\bvolume{410}(\bissue{19}),
+\bfpage{1876}--\blpage{1902}
+(\byear{2009})
+\doiurl{10.1016/j.tcs.2009.01.016}
+\end{barticle}
+\endbibitem
+
+%%% 31
+\bibitem[\protect\citeauthoryear{Maurer and Pontil}{2009}]{Maurer2009}
+\begin{bchapter}
+\bauthor{\bsnm{Maurer}, \binits{A.}},
+\bauthor{\bsnm{Pontil}, \binits{M.}}:
+\bctitle{Empirical {Bernstein} bounds and sample variance penalization}.
+In: \bbtitle{Proceedings of the 22nd Annual Conference on Learning Theory
+  (COLT)}
+(\byear{2009})
+\end{bchapter}
+\endbibitem
+
+%%% 32
+\bibitem[\protect\citeauthoryear{Hoeffding}{1963}]{Hoeffding1963}
+\begin{barticle}
+\bauthor{\bsnm{Hoeffding}, \binits{W.}}:
+\batitle{Probability inequalities for sums of bounded random variables}.
+\bjtitle{Journal of the American Statistical Association}
+\bvolume{58}(\bissue{301}),
+\bfpage{13}--\blpage{30}
+(\byear{1963})
+\doiurl{10.1080/01621459.1963.10500830}
+\end{barticle}
+\endbibitem
+
+%%% 33
+\bibitem[\protect\citeauthoryear{Gidney and Eker{\aa}}{2021}]{gidney2021rsa}
+\begin{barticle}
+\bauthor{\bsnm{Gidney}, \binits{C.}},
+\bauthor{\bsnm{Eker{\aa}}, \binits{M.}}:
+\batitle{How to factor 2048 bit {RSA} integers in 8 hours using 20 million
+  noisy qubits}.
+\bjtitle{Quantum}
+\bvolume{5},
+\bfpage{433}
+(\byear{2021})
+\doiurl{10.22331/q-2021-04-15-433}
+{\href{https://arxiv.org/abs/1905.09749}{{arXiv:1905.09749}}}
+\end{barticle}
+\endbibitem
+
+%%% 34
+\bibitem[\protect\citeauthoryear{Barenco et~al.}{1995}]{Barenco1995}
+\begin{barticle}
+\bauthor{\bsnm{Barenco}, \binits{A.}},
+\bauthor{\bsnm{Bennett}, \binits{C.H.}},
+\bauthor{\bsnm{Cleve}, \binits{R.}},
+\bauthor{\bsnm{DiVincenzo}, \binits{D.P.}},
+\bauthor{\bsnm{Margolus}, \binits{N.}},
+\bauthor{\bsnm{Shor}, \binits{P.}},
+\bauthor{\bsnm{Sleator}, \binits{T.}},
+\bauthor{\bsnm{Smolin}, \binits{J.A.}},
+\bauthor{\bsnm{Weinfurter}, \binits{H.}}:
+\batitle{Elementary gates for quantum computation}.
+\bjtitle{Physical Review A}
+\bvolume{52}(\bissue{5}),
+\bfpage{3457}--\blpage{3467}
+(\byear{1995})
+\doiurl{10.1103/PhysRevA.52.3457}
+\end{barticle}
+\endbibitem
+
+%%% 35
+\bibitem[\protect\citeauthoryear{Cuccaro et~al.}{2004}]{Cuccaro2004}
+\begin{botherref}
+\oauthor{\bsnm{Cuccaro}, \binits{S.A.}},
+\oauthor{\bsnm{Draper}, \binits{T.G.}},
+\oauthor{\bsnm{Kutin}, \binits{S.A.}},
+\oauthor{\bsnm{Moulton}, \binits{D.P.}}:
+A new quantum ripple-carry addition circuit
+(2004)
+\end{botherref}
+\endbibitem
+
+%%% 36
+\bibitem[\protect\citeauthoryear{Kaufmann
+  et~al.}{2016}]{KaufmannCappeGarivier2016}
+\begin{barticle}
+\bauthor{\bsnm{Kaufmann}, \binits{E.}},
+\bauthor{\bsnm{Capp{\'e}}, \binits{O.}},
+\bauthor{\bsnm{Garivier}, \binits{A.}}:
+\batitle{On the complexity of best-arm identification in multi-armed bandit
+  models}.
+\bjtitle{Journal of Machine Learning Research}
+\bvolume{17}(\bissue{1}),
+\bfpage{1}--\blpage{42}
+(\byear{2016})
+{\href{https://arxiv.org/abs/1407.4443}{{arXiv:1407.4443}}}
+\end{barticle}
+\endbibitem
+
+%%% 37
+\bibitem[\protect\citeauthoryear{Bennett et~al.}{1997}]{Bennett1997BBBV}
+\begin{barticle}
+\bauthor{\bsnm{Bennett}, \binits{C.H.}},
+\bauthor{\bsnm{Bernstein}, \binits{E.}},
+\bauthor{\bsnm{Brassard}, \binits{G.}},
+\bauthor{\bsnm{Vazirani}, \binits{U.}}:
+\batitle{Strengths and weaknesses of quantum computing}.
+\bjtitle{SIAM Journal on Computing}
+\bvolume{26}(\bissue{5}),
+\bfpage{1510}--\blpage{1523}
+(\byear{1997})
+\doiurl{10.1137/S0097539796300933}
+{\href{https://arxiv.org/abs/quant-ph/9701001}{{arXiv:quant-ph/9701001}}}
+\end{barticle}
+\endbibitem
+
+\end{thebibliography}

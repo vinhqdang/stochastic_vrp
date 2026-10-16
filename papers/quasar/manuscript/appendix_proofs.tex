@@ -1,0 +1,162 @@
+% Appendix: proofs and derivations (fragment; no preamble).
+% Notation. A route r=(i_1,...,i_L) serves customers with delivery d_i>=0 and pickup u_i>=0.
+% Loads: L_0=\sum_k d_{i_k}, L_k=L_{k-1}-d_{i_k}+u_{i_k}; peak F_r=\max_{0\le k\le L}L_k;
+% risk p=\P(F_r>Q). Grover-iterate counts are written \mu (and i); M is the number of candidates.
+% Status of every statement is marked: proved here, cited, or conjecture.
+
+\section{Insertion and end-load lemmas}\label{app:lemmas}
+
+Throughout, demands are non-negative random variables on one probability space (a \emph{scenario} is a realisation of all demands), and all statements hold scenario by scenario unless a probability is written.
+
+\begin{lemma}[Insertion lemma]\label{lem:insertionA}
+Let $r'$ be obtained from $r=(i_1,\dots,i_L)$ by inserting a customer $j\notin r$ at position $s\in\{1,\dots,L+1\}$ (so $j$ is the $s$-th stop of $r'$). Then in every scenario
+\[
+F_r\;\le\;F_{r'}\;\le\;F_r+\max(d_j,u_j).
+\]
+Consequently $D:=\mathbf 1[F_{r'}>Q]-\mathbf 1[F_r>Q]\in\{0,1\}$, $\{D=1\}=\{F_r\le Q<F_{r'}\}\subseteq\{Q-\max(d_j,u_j)<F_r\le Q\}$, and $\P(D=1)=p'-p$ with $p'=\P(F_{r'}>Q)$.
+\end{lemma}
+\paragraph{Proof.} Let $L_0,\dots,L_L$ be the loads of $r$ and $L'_0,\dots,L'_{L+1}$ those of $r'$. Before $j$ is served, $r'$ still carries the delivery $d_j$, so $L'_t=L_t+d_j$ for $0\le t\le s-1$. At the stop of $j$ the load is $L'_s=L_{s-1}+d_j-d_j+u_j=L_{s-1}+u_j$. After $j$, the delivery has been dropped and the pickup $u_j$ is on board, so $L'_{t+1}=L_t+u_j$ for $s-1\le t\le L$. Hence the multiset of loads of $r'$ is $\{L_t+d_j:0\le t\le s-1\}\cup\{L_t+u_j:s-1\le t\le L\}$. Every index $t\in\{0,\dots,L\}$ occurs in at least one of the two sets, and every element is in $[L_t,\,L_t+\max(d_j,u_j)]$ because $d_j,u_j\ge 0$. Taking maxima gives $F_r\le F_{r'}\le F_r+\max(d_j,u_j)$. Monotonicity of $x\mapsto\mathbf 1[x>Q]$ gives $D\ge0$, and $D\le 1$ trivially. Then $\{D=1\}=\{F_r\le Q<F_{r'}\}$; on it $F_{r'}>Q$ and $F_r\ge F_{r'}-\max(d_j,u_j)>Q-\max(d_j,u_j)$. Finally $\{F_r>Q\}\subseteq\{F_{r'}>Q\}$, so $\P(D=1)=\P(F_{r'}>Q)-\P(F_r>Q)$. \hfill$\square$
+
+\begin{lemma}[End-load lemma]\label{lem:endloadA}
+Let $r'$ be any reordering of the customers of $r$ (relocation, swap, $2$-opt, or an alternative position of the same customer within one route). Put $E=\{\sum_i d_i\le Q,\ \sum_i u_i\le Q\}$ and $D=\mathbf 1[F_{r'}>Q]-\mathbf 1[F_r>Q]\in\{-1,0,1\}$. Then
+\begin{align*}
+\{D\neq0\}&\subseteq E\cap\{F_r>Q\ \text{or}\ F_{r'}>Q\},\\
+\P(D\neq0)&\le\P\big(E\ \text{and}\ (F_r>Q\ \text{or}\ F_{r'}>Q)\big).
+\end{align*}
+\end{lemma}
+\paragraph{Proof.} For every ordering of the same customer set, $L_0=\sum_i d_i$ and $L_L=L_0+\sum_k(-d_{i_k}+u_{i_k})=\sum_i u_i$, so both end loads are invariant under reordering, and both are among the stages entering the maximum. Hence $F_r,F_{r'}\ge\max(\sum d,\sum u)$. Outside $E$ this maximum exceeds $Q$, both indicators equal $1$ and $D=0$. On $E$, $D\ne0$ means exactly one indicator equals $1$, so $\max(F_r,F_{r'})>Q$. Taking probabilities gives the bound. \hfill$\square$
+
+\begin{remark}
+Lemma~\ref{lem:endloadA} is an identity-level argument; it does not bound $\P(D\neq0)$ by a quantity that is cheaper to compute than the two overflow probabilities, it explains which moves have $D\equiv0$ on the end-load event. The quantity $\P(E\text{ and }F_r>Q)$ alone is not a valid bound (it omits scenarios where only the moved route overflows).
+\end{remark}
+
+\section{Resource count of the peak-load oracle}\label{app:oracle}
+
+The oracle $A_r$ for a route with $L$ customers, $b$-bit demand levels ($V=2^b$) acts on a load register of $c=\lceil\log_2(L(V-1)+1)\rceil$ qubits, which suffices because every intermediate load lies in $[0,L(V-1)]$ (for $k\ge 1$, $L_{k-1}-d_{i_k}=\sum_{l>k}d_{i_l}+\sum_{l<k}u_{i_l}\ge0$). A counter register of $m=\lceil\log_2(L+2)\rceil$ qubits counts the stages with load above $Q$. The circuit is: (i) state preparation on all demand registers; (ii) $\text{load}\mathrel{+}=d_{i_k}$ for $k=1..L$; (iii) for $k=0,\dots,L$: compare $\text{load}\ge Q+1$ into a flag, increment the counter controlled on the flag, uncompute the flag, where between consecutive comparisons $\text{load}\mathrel{-}=d_{i_k}$ and $\text{load}\mathrel{+}=u_{i_k}$ are applied; (iv) the objective qubit is set to $[\text{count}\ne0]=[F_r>Q]$. Load and counter are left as garbage, which is permitted because amplitude estimation uses $A_r$ and $A_r^\dagger$ with the objective qubit as the marked subspace.
+
+\begin{proposition}[Toffoli count]\label{prop:toffoli}
+For $m\ge3$ the circuit above (state preparation excluded) uses exactly
+\[
+\begin{aligned}T(L,c,m)&=6cL+2(L+1)(2c-3)\\&\quad+(L+1)\big(1+2(m-1)(m-2)\big)+4(m-2)\end{aligned}
+\]
+Toffoli gates.
+\end{proposition}
+\paragraph{Derivation.} We count the four components.
+\emph{Adders.} A Cuccaro ripple-carry adder \citep{Cuccaro2004} on a $c$-bit load costs $2c$ Toffolis. There are $L$ additions of $d$ (step ii), $L$ subtractions of $d$ and $L$ additions of $u$ (step iii): $3L$ applications, $6cL$ Toffolis.
+\emph{Comparators.} A comparison with a classical constant on $c$ bits costs $2c-3$ Toffolis. There are $L+1$ comparisons, each computed and uncomputed: $2(L+1)(2c-3)$.
+\emph{Controlled increment.} Incrementing the $m$-bit counter controlled on the flag flips bit $i$ ($i=m-1$ down to $0$) when the flag and bits $0..i-1$ are all $1$. Bit $0$ is a CNOT, bit $1$ is one Toffoli, and bit $i\ge2$ is a multi-controlled X with $i+1\ge3$ controls. A multi-controlled X with $q\ge3$ controls is a Toffoli-only dirty-ancilla V-chain with $4(q-2)$ Toffolis \citep[Lemma 7.2]{Barenco1995}, borrowing ancillas from registers that are idle (comparator ancillas and load) so no qubit is added. One increment thus costs $1+\sum_{i=2}^{m-1}4(i-1)=1+2(m-1)(m-2)$, and there are $L+1$ of them.
+\emph{Objective.} $[\text{count}\neq 0]$ is $X$ on the counter, one $m$-controlled X into the objective, then $X$ on the objective and counter: $4(m-2)$ for $m\ge3$.
+Summing gives $T(L,c,m)$. \hfill$\square$
+
+The per-gate counts $2c$ and $2c-3$ are those of the Qiskit synthesis used in our implementation, not derived here. The total was checked against the transpiled circuit at $(L,V)=(5,2),(10,8),(20,8)$, which gives $c,m=3,3;\,7,4;\,8,5$ and $T=160,813,2043$ (the formula reproduces all three). For $m=2$ ($L\le2$) the formula is short by one Toffoli, and $c=1$ is a separate case; both are outside the proposition. For fixed $b$, $c,m=O(\log L)$ and $T=O(L\log^2L)$, a reading of the formula (the increment term dominates). We have no resource count for the oracle with a copula factor register, for the select oracle of Appendix~\ref{app:search}, or for the difference oracle, and make no claim about them.
+
+\section{Search inside the optimiser}\label{app:search}
+
+\paragraph{Setting.} Candidates $1,\dots,M$ are sorted by known cost; candidate $j$ has unknown risk $p_j=\P(F_{r_j}>Q)$, gate $p_j\le\alpha$.
+
+\begin{definition}[$\varepsilon$-cheapest feasible]\label{def:ecf}
+For $0<\varepsilon\le\alpha/2$ let $k^*=\min\{j:p_j\le\alpha-\varepsilon\}$ ($k^*=\infty$ if none). An output $j$ is \emph{correct} if $p_j\le\alpha+\varepsilon$ and $j\le k^*$; if $k^*=\infty$, the output ``none'' is also correct.
+\end{definition}
+
+\paragraph{Access model.} A select oracle $U$ maps $|j\rangle|0\rangle$ to $|j\rangle A_j|0\rangle$, where $A_j|0\rangle=\sqrt{1-p_j}\,|\psi_{j0}\rangle|0\rangle+\sqrt{p_j}\,|\psi_{j1}\rangle|1\rangle$; we also use $U^\dagger$; one application of $U$ or $U^\dagger$ is one unit. Classically, one unit is one sample of one overflow indicator. A known $\bar v$ satisfies $p_j(1-p_j)\le\bar v$ for every $j$ with $p_j\le2\alpha$ (uniform in $j$, since the tests run in superposition). Put $T(\varepsilon,\bar v)=\sqrt{\bar v}/\varepsilon+1/\sqrt\varepsilon+1/\sqrt\alpha$.
+
+\begin{lemma}[Threshold test]\label{lem:thr}
+For $\eta\in(0,1/2)$ there is a unitary $B_j$ using $O(T(\varepsilon,\bar v)\log(1/\eta))$ applications of $A_j,A_j^\dagger$ whose output qubit is $1$ with probability $q_j$, where $q_j\ge1-\eta$ if $p_j\le\alpha-\varepsilon$ and $q_j\le\eta$ if $p_j>\alpha+\varepsilon$ (no condition in the band).
+\end{lemma}
+\paragraph{Proof.} Canonical amplitude estimation with $\mu$ Grover iterates returns $\hat p$ with $|\hat p-p_j|\le2\pi\sqrt{p_j(1-p_j)}/\mu+\pi^2/\mu^2$ with probability $\ge8/\pi^2$ \citep{Brassard2002}. Take $\mu=\lceil c_0(\sqrt{\bar v}/\varepsilon+1/\sqrt\varepsilon+1/\sqrt\alpha)\rceil$ with $c_0=16$. If $p_j\le2\alpha$, the error is $<\varepsilon$. If $p_j>2\alpha$, then $p_j-\alpha>p_j/2$ while the error is at most $2\pi\sqrt{p_j}/\mu+\pi^2/\mu^2\le(4.5/c_0+5/c_0^2)\,p_j<p_j/2$ (using $\mu\ge c_0/\sqrt\alpha>c_0/\sqrt{p_j/2}$), so $\hat p>\alpha$. In both cases a correct estimate gives the right side of $\alpha$ outside the band. Run $r=O(\log1/\eta)$ copies in parallel registers, compute the median reversibly, and set the output to $[\text{median}\le\alpha]$. Since $8/\pi^2>1/2$, the median errs only if at least half of the runs err, with probability $\le\eta$ by Hoeffding. Garbage stays entangled with the output qubit, whose marginal is $q_j$; $B_j$ is used only as a state preparation with a flag qubit, as amplitude amplification allows. \hfill$\square$
+
+\paragraph{Prefix test.} For $m\ge1$ let $A'_m$ prepare $m^{-1/2}\sum_{j\le m}|j\rangle$ (exactly, by standard rotations) and apply the select version of $B_j$. The good subspace is ``output $=1$'', with weight $a_m=\frac1m\sum_{j\le m}q_j=\sin^2\theta$. Let $K_m=\lceil\sqrt{2m}\rceil$. One \emph{run} has two attempts: measure after $0$ amplification iterates, then after $i$ iterates with $i$ uniform in $\{0,\dots,K_m-1\}$. $\mathrm{TEST}(m)$ performs $R=\lceil\ln(1/\delta')/\ln(4/3)\rceil$ runs; if some attempt measures output $1$ it returns YES with the measured index as witness $w$, else NO. A run applies $B$ or $B^\dagger$ at most $2K_m$ times.
+
+\begin{lemma}[Prefix test]\label{lem:prefix}
+Let $\eta\le\delta'/(R(1+(2K_m-1)^2))$. (a) If $[1..m]$ contains an index with $p_j\le\alpha-\varepsilon$, $\mathrm{TEST}(m)$ returns YES with probability $\ge1-\delta'$. (b) The probability that $\mathrm{TEST}(m)$ returns YES with a witness satisfying $p_w>\alpha+\varepsilon$ is at most $\delta'$.
+\end{lemma}
+\paragraph{Proof.} (a) Such an index has $q_j\ge1-\eta\ge1/2$, so $a_m\ge1/(2m)$. If $a_m\ge3/4$ the first attempt succeeds with probability $\ge3/4$. Otherwise $\sin2\theta=2\sqrt{a_m(1-a_m)}\ge\sqrt{a_m}\ge1/\sqrt{2m}$, so $K_m\ge1/\sin2\theta$ and a uniformly random number of iterates below $K_m$ succeeds with probability $\ge1/4$ \citep[Lemma 2]{boyer1998tight}. A run fails with probability $\le3/4$, and all $R$ independent runs fail with probability $\le(3/4)^R\le\delta'$.
+(b) Let $|G\rangle,|B\rangle$ be the normalised projections of the initial state onto output $=1$ and $=0$. The Grover iterate preserves $\mathrm{span}\{|G\rangle,|B\rangle\}$, so after $i$ iterates the state is $\sin((2i+1)\theta)|G\rangle+\cos((2i+1)\theta)|B\rangle$, and only $|G\rangle$ has output $1$. The weight of indices with $p_j>\alpha+\varepsilon$ in $|G\rangle$ is $\beta/a_m$ with $\beta=\frac1m\sum_{\text{bad}}q_j\le\eta$. Hence the probability of output $1$ with a bad index after $i$ iterates is $\sin^2((2i+1)\theta)\,\beta/a_m\le(2i+1)^2\sin^2\theta\,\beta/a_m=(2i+1)^2\beta$, using $|\sin nx|\le n|\sin x|$. Over one run this is at most $(1+(2K_m-1)^2)\eta$, and over $R$ runs at most $\delta'$. \hfill$\square$
+
+\paragraph{Algorithm FIRST-FEASIBLE.} (1) For $m=1,2,4,\dots,2^{\lceil\log_2M\rceil-1}$ and then $m=M$, run $\mathrm{TEST}(m)$; let $\mathrm{hi}$ be the first $m$ with YES, $w$ its witness, and $\mathrm{lo}$ the previously tested size ($0$ if $\mathrm{hi}=1$); if none is YES, output ``none''. (2) While $\mathrm{hi}>\mathrm{lo}+1$: $\mathrm{mid}=\lfloor(\mathrm{lo}+\mathrm{hi})/2\rfloor$; if $\mathrm{TEST}(\mathrm{mid})$ is YES set $\mathrm{hi}=\mathrm{mid}$ and $w$ to its witness, else $\mathrm{lo}=\mathrm{mid}$. (3) Output $w$.
+
+\begin{theorem}[Search inside the optimiser]\label{thm:first}
+With $\delta'=\delta/(4\lceil\log_2M\rceil+4)$ and $\eta$ as in Lemma~\ref{lem:prefix}, FIRST-FEASIBLE outputs a correct $\varepsilon$-CF answer with probability $\ge1-\delta$. With $\Lambda=\log(\log M/\delta)$ it uses
+\[
+O\big(\sqrt{k^*}\,\log k^*\cdot\Lambda\cdot\log(k^*\Lambda/\delta)\cdot T(\varepsilon,\bar v)\big)
+\]
+applications of $U,U^\dagger$ if $k^*<\infty$, and $O(\sqrt M\,\Lambda\log(M\Lambda/\delta)\,T(\varepsilon,\bar v))$ if $k^*=\infty$.
+\end{theorem}
+\paragraph{Proof.} \emph{Correctness.} At most $2\lceil\log_2M\rceil+1$ tests are run ($\lceil\log_2M\rceil+1$ in phase~1, at most $\lceil\log_2M\rceil$ in phase~2). A test misbehaves if it returns NO although its prefix contains an index with $p_j\le\alpha-\varepsilon$, or returns YES with a bad witness; each has probability $\le\delta'$ given the history (Lemma~\ref{lem:prefix}), so by a union bound all tests behave except with probability $\le2(2\lceil\log_2M\rceil+1)\delta'\le\delta$. On the good event: (i) NO at $m$ implies $k^*>m$; (ii) every YES witness has $p_w\le\alpha+\varepsilon$ and $w\le m$; (iii) $\mathrm{TEST}(m)$ is YES for all $m\ge k^*$, so phase~1 stops at $\mathrm{hi}\le\min(2k^*,M)$. The invariant ``$\mathrm{lo}=0$ or $\mathrm{TEST}(\mathrm{lo})=$ NO, and $w$ is a YES witness of $[1..\mathrm{hi}]$'' holds throughout. At termination $\mathrm{hi}=\mathrm{lo}+1$, so $w\le\mathrm{lo}+1\le k^*$ and $p_w\le\alpha+\varepsilon$. If $k^*=\infty$, any witness is a band witness (correct) and ``none'' is correct.
+\emph{Cost.} A test of size $m$ costs $R\cdot2K_m\cdot O(T\log(1/\eta))=O(\sqrt m\,\Lambda\log(m\Lambda/\delta)\,T)$, since $R=O(\Lambda)$ and $\log(1/\eta)=O(\log(m\Lambda/\delta))$. Phase~1 sums $\sqrt m$ over a geometric sequence up to $\mathrm{hi}_0\le2k^*$, giving $O(\sqrt{k^*})$ times one test's log factors; phase~2 runs $\lceil\log_2\mathrm{hi}_0\rceil$ tests of size $\le\mathrm{hi}_0$, which gives the factor $\sqrt{k^*}\log k^*$. If $k^*=\infty$ only phase~1 runs. \hfill$\square$
+
+\begin{remark}
+(1) The $\log k^*$ factor comes from the bisection and is probably not necessary; the known $O(\sqrt p)$ first-marked-element result and bounded-error search without log factors for total Boolean predicates \citep{hoyer2003bounded} do not apply directly because our predicate is undefined inside the band, which is why the proof uses witnesses. (2) With common random numbers (a reference candidate $\rho$ and the signed difference oracle), Lemma~\ref{lem:thr} holds with $\bar v$ replaced by a bound $\bar v_D$ on $a_j^\pm(1-a_j^\pm)$, $a_j^\pm=\P(D_j=\pm1)$, after one stand-alone estimate of $p_\rho$ to $\pm\varepsilon/2$ with failure probability $\delta/4$; we only sketch this (error budget $\varepsilon/2+\varepsilon/4+\varepsilon/4$) and do not reprove it.
+\end{remark}
+
+\begin{proposition}[Classical sequential scan]\label{prop:scan}
+For $j=1,2,\dots$ draw
+$N=\big\lceil\max\{(2\bar v+2\varepsilon/3)\ln(2\bar k/\delta)/\varepsilon^2,\ 4\ln(\bar k/\delta)/\alpha\}\big\rceil$
+samples of candidate $j$, accept $j$ iff $\hat p_j\le\alpha$, and return the first accepted index (``none'' after $M$); $\bar k$ is a known bound on the number of tests ($\bar k=M$ in general). The scan is correct with probability $\ge1-\delta$ and costs at most $\min(k^*,M)\,N=O\big(k^*(\bar v/\varepsilon^2+1/\varepsilon)\log(M/\delta)\big)$ samples.
+\end{proposition}
+\paragraph{Proof.} Let $E_j$ be the event that, if $p_j\le2\alpha$, $|\hat p_j-p_j|<\varepsilon$, and if $p_j>2\alpha$, $\hat p_j>\alpha$. For $p_j\le2\alpha$ Bernstein's inequality with variance $\le\bar v$ gives failure probability $\le2\exp(-N\varepsilon^2/(2\bar v+2\varepsilon/3))\le\delta/\bar k$. For $p_j>2\alpha$, the multiplicative Chernoff bound gives $\P(\hat p_j\le p_j/2)\le e^{-Np_j/8}\le e^{-N\alpha/4}\le\delta/\bar k$, and $p_j/2>\alpha$. Under all $E_j$: an accepted $j$ has $p_j<\alpha+\varepsilon$; $k^*$ is accepted since $\hat p_{k^*}<\alpha$; hence only tests $j\le k^*$ run and every earlier rejection is allowed. A union bound over at most $\bar k$ tests concludes. \hfill$\square$
+
+\begin{remark}
+The second term in $N$ makes the case $p_j>2\alpha$ explicit; it is $O(1/\varepsilon)$ because $\varepsilon\le\alpha/2$, so the order of the bound is unchanged. The source derivation left this constant implicit.
+\end{remark}
+
+\begin{proposition}[Lower bounds]\label{prop:lower}
+Let $\varepsilon\le\alpha/2$ and $\alpha\le1/4$.
+\begin{enumerate}
+\item[(a)] \textbf{Classical (proved).} On the family $\{P_i:i\le k\}$ with $p_i=\alpha-\varepsilon$ and $p_j=\alpha+2\varepsilon$ for $j\ne i$, every algorithm correct with probability $\ge2/3$ on each $P_i$ has $\max_i\E_i[N]\ge c\,k\,\alpha(1-\alpha)/\varepsilon^2$ for $k\ge16$, with $c=1/1440$.
+\item[(b)] \textbf{Quantum (proved).} Every quantum algorithm correct with probability $\ge2/3$ uses $\Omega(\sqrt k+\sqrt\alpha/\varepsilon)$ applications of $U,U^\dagger$.
+\item[(c)] \textbf{Conjecture (not proved).} The product bound $\Omega\big(\sqrt k\,\sqrt{\alpha(1-\alpha)}/\varepsilon\big)$, which would make Theorem~\ref{thm:first} optimal up to logarithms.
+\end{enumerate}
+\end{proposition}
+\paragraph{Proof of (a).} On $P_i$ the only correct output is $i$ (other indices have $p_j>\alpha+\varepsilon$; ``none'' is wrong since $k^*=i$). Let $N^*=\max_i\E_i[N]$ and truncate at $T=6N^*$ samples; by Markov the truncated algorithm is correct with probability $\ge1/2$ on each $P_i$. Let $P_0$ have all arms at $\alpha+2\varepsilon$. Since $\sum_iP_0(\mathrm{out}=i)\le1$, fewer than $k/2$ indices have $P_0(\mathrm{out}=i)>2/k$; since $\sum_i\E_0[N_i]\le T$, fewer than $k/4$ have $\E_0[N_i]>4T/k$. Pick $i$ with neither. $P_0$ and $P_i$ differ only in arm $i$, so the transportation lemma \citep[Lemma 1]{KaufmannCappeGarivier2016} gives
+$\E_0[N_i]\,\mathrm{KL}(\alpha+2\varepsilon\,\|\,\alpha-\varepsilon)\ge\mathrm{kl}(P_0(\mathrm{out}=i),P_i(\mathrm{out}=i))\ge\mathrm{kl}(2/k,1/2)\ge0.3$ for $k\ge16$ (monotonicity of $\mathrm{kl}$ on each side of its second argument). With $q=\alpha-\varepsilon\in[\alpha/2,\alpha]$, $\mathrm{KL}\le(3\varepsilon)^2/(q(1-q))\le18\varepsilon^2/(\alpha(1-\alpha))$. Hence $4T/k\ge0.3\,\alpha(1-\alpha)/(18\varepsilon^2)$, i.e.\ $N^*=T/6\ge k\alpha(1-\alpha)/(1440\varepsilon^2)$. The arms can be placed among the first $k$ of a longer list, so the bound applies with $k=k^*$. \hfill$\square$
+
+\paragraph{Proof of (b).} \emph{$\Omega(\sqrt k)$.} Take $p_j\in\{0,1\}$ with at most one $j$ at $0$ (feasible; correct output $j$) and all others at $1$ (correct output ``none'' if none is at $0$). This is search for a unique marked element; one application of $U$ or $U^\dagger$ is simulated by one query to the marked-set oracle, so the BBBV bound \citep{Bennett1997BBBV} applies for every $\varepsilon$.
+\emph{$\Omega(\sqrt\alpha/\varepsilon)$.} Take $k=1$ and the two instances $p_1=\alpha-\varepsilon$ (only ``1'' correct) and $p_1=\alpha+2\varepsilon$ (only ``none'' correct). Realise $A_\theta=e^{-i\theta Y}$ with $\sin^2\theta=p$; then $\|A_\theta-A_{\theta'}\|\le|\theta-\theta'|$, also for $A^\dagger$, controlled versions and tensor products with the identity. After $T$ applications the two final states differ in norm by at most $T|\theta-\theta'|$ (hybrid argument), hence in trace distance by at most the same. Success $\ge2/3$ on both instances requires trace distance $\ge1/3$, so $T\ge1/(3|\theta-\theta'|)$. As $d\theta/dp=1/(2\sqrt{p(1-p)})$ and $p\in[\alpha/2,2\alpha]$ with $2\alpha\le1/2$, $p(1-p)\ge\alpha/4$ and $|\theta-\theta'|\le3\varepsilon/\sqrt\alpha$. Therefore $T\ge\sqrt\alpha/(9\varepsilon)$. The maximum of the two bounds is at least their half-sum. \hfill$\square$
+
+\paragraph{Status of (c).} A composition theorem for the adversary bound applied to $\mathrm{OR}_k$ composed with the promise problem ``$p\le\alpha-\varepsilon$ versus $p\ge\alpha+2\varepsilon$'' would give (c), but such composition theorems are stated for Boolean functions (Reichardt 2011; Lee, Mittal, Reichardt, \v{S}palek and Szegedy 2011), not for promise inner problems of this kind. We do not claim (c). Consequently we also do not claim that the quantum/classical query ratio of Theorem~\ref{thm:first} against Proposition~\ref{prop:lower}(a) establishes a quadratic advantage; it is only consistent with one.
+
+\section{Simultaneous certification of a plan}\label{app:cert}
+
+\paragraph{Setting.} A plan has $d$ routes with failure indicators $X_j=\mathbf 1[F_{r_j}>Q]$ and risks $p_j$. Given $\alpha$, $0<\varepsilon<\alpha$ and $\delta$, an \emph{$\varepsilon$-certification} outputs $A\subseteq\{1..d\}$ such that with probability $\ge1-\delta$, simultaneously for all $j$: $j\in A\Rightarrow p_j\le\alpha+\varepsilon/2$ (soundness) and $p_j\le\alpha-\varepsilon\Rightarrow j\in A$ (completeness). Write $\gamma_j=|p_j-\alpha|$ and $g_j=\max(\varepsilon,\gamma_j)$. Route $j$ is accessed through its own oracle $A_j$ (locality); in the local cost model one application of $A_j$ or $A_j^\dagger$ and one classical sample of $X_j$ each cost $L_j$ units.
+
+\paragraph{Canonical amplitude estimation (cited).} For integers $\mu,\kappa\ge1$, with $2\mu+1$ applications of $A_j,A_j^\dagger$, canonical amplitude estimation \citep[Thm.~12]{Brassard2002} outputs $\hat p$ with $|\hat p-p|\le h_{\mu,\kappa}(p):=2\pi\kappa\sqrt{p(1-p)}/\mu+\pi^2\kappa^2/\mu^2$ with probability $\ge s_\kappa$, where $s_1=8/\pi^2$ and $s_\kappa=1-1/(2(\kappa-1))$ for $\kappa\ge2$. The parameter $\kappa$ belongs to the analysis, not to the circuit. Since $s_2=1/2$ is not above $1/2$, $\kappa=2$ is unusable for medians; the admissible values are $\kappa\in\{1,3,4,\dots,20\}$ (the range searched in the experiments). We write $h_{\mu,\kappa}$ also as a function of $v=p(1-p)$; it is increasing in $v$.
+
+\begin{lemma}[Median]\label{lem:median}
+Let $\hat p$ be the median of $r$ independent runs each satisfying the bound with probability $\ge s_\kappa>1/2$. Then $|\hat p-p|\le h_{\mu,\kappa}(p)$ except with probability at most $\beta(r,\kappa)=\P(\mathrm{Bin}(r,1-s_\kappa)\ge\lceil r/2\rceil)$.
+\end{lemma}
+\paragraph{Proof.} If fewer than $\lceil r/2\rceil$ runs are bad, more than half of the runs lie in the interval $[p-h,p+h]$, so the median does too. \hfill$\square$
+
+\begin{lemma}[Consistent interval]\label{lem:interval}
+Given $\hat p$ let $I=\{q\in[0,1]:|\hat p-q|\le h_{\mu,\kappa}(q)\}$. (i) $I$ is a closed interval. (ii) If $|\hat p-p|\le h_{\mu,\kappa}(p)$ then $p\in I$. (iii) In that case, if $0<g\le\gamma$ and $2h_{\mu,\kappa}(\bar v_g)<g$, where $\bar v_g=\max\{q(1-q):q\in[0,1],|q-p|\le g\}$, then $I$ lies strictly on one side of $\alpha$, the side of $p$. (iv) If $2h_{\mu,\kappa}(\bar v_g)<g$ then $I\subseteq(p-g,p+g)$.
+\end{lemma}
+\paragraph{Proof.} (i) $f(q)=h(q)-|\hat p-q|$ is concave ($\sqrt{q(1-q)}$ and $-|\cdot|$ are concave), so $\{f\ge0\}$ is convex and closed. (ii) is the hypothesis. (iv) If $I$ contained a point at distance $\ge g$ from $p$, convexity and $p\in I$ give $q_0\in I$ with $|q_0-p|=g$; then $g\le|q_0-\hat p|+|\hat p-p|\le h(q_0)+h(p)\le2h(\bar v_g)<g$, a contradiction. (iii) If $I$ contained a point on the other side of $\alpha$ or at $\alpha$, it would contain a point at distance $\ge\gamma\ge g$ from $p$, contradicting (iv). \hfill$\square$
+
+\paragraph{Algorithm Q-CERT.} Fix $\kappa$ in advance (it must not depend on outcomes). For each route $j$ independently, for $t=0,1,2,\dots$: set $\mu_t=2^t$ and $\eta_t=6\delta/(\pi^2d(t+1)^2)$; let $r_t$ be the smallest odd $r$ with $\beta(r,\kappa)\le\eta_t$; let $\hat p$ be the median of $r_t$ canonical runs with $\mu_t$ Grover iterates; let $I$ be its consistent interval and $v_I=\max_{q\in I}q(1-q)$. If $\sup I\le\alpha$, certify $j$ and stop. If $\inf I>\alpha$, reject $j$ and stop. If $h_{\mu_t,\kappa}(v_I)\le\varepsilon/2$, certify $j$ iff $\hat p\le\alpha$ and stop (precision floor). (If $I=\emptyset$, continue; this occurs only on the failure event.) Round $t$ costs $r_t(2\mu_t+1)$ applications of $A_j$ or $A_j^\dagger$.
+
+\begin{theorem}[Q-CERT]\label{thm:qcert}
+Q-CERT is an $\varepsilon$-certification with probability $\ge1-\delta$. Route $j$ stops no later than the first round $t$ with $2h_{\mu_t,\kappa}(\bar v_{g'_j})<g'_j$, where $g'_j=\max(\gamma_j,\varepsilon/2)$ and $\bar v_{g}$ is taken at $p=p_j$, and its cost is $\sum_{s\le t}r_s(2\mu_s+1)$. Consequently, for fixed $\kappa$, the cost of route $j$ is
+\[
+O\Big(\log\big(d\log(1/g_j)/\delta\big)\Big(\sqrt{\bar v_j}/g_j+1/\sqrt{g_j}\Big)\Big),\qquad \bar v_j=\bar v_{g'_j},
+\]
+and in the local model the total cost is $\sum_jL_jC_j$, with $C_j$ the cost of route $j$.
+\end{theorem}
+\paragraph{Proof.} \emph{Good event.} By Lemma~\ref{lem:median}, the round-$t$ estimate of route $j$ is good except with probability $\eta_t$, and $\sum_j\sum_t\eta_t=(6\delta/\pi^2)\sum_{t\ge0}(t+1)^{-2}=\delta$. On the event $\mathcal G$ that all estimates of all routes are good, $p_j\in I$ at every round (Lemma~\ref{lem:interval}(ii)).
+\emph{Soundness and completeness on $\mathcal G$.} If $\sup I\le\alpha$ then $p_j\le\alpha$. If $\inf I>\alpha$ then $p_j>\alpha$, and the route is rejected, which is allowed. At the floor, $|\hat p-p_j|\le h(p_j(1-p_j))\le h(v_I)\le\varepsilon/2$: a certified route has $p_j\le\hat p+\varepsilon/2\le\alpha+\varepsilon/2$, and a route with $p_j\le\alpha-\varepsilon$ has $\hat p\le\alpha-\varepsilon/2<\alpha$ and is certified. A route with $p_j\le\alpha-\varepsilon$ is never rejected since $\inf I\le p_j\le\alpha$.
+\emph{Stopping.} Let $t$ be the first round with $2h(\bar v_{g'_j})<g'_j$. If $g'_j=\gamma_j\ge\varepsilon/2$, Lemma~\ref{lem:interval}(iii) with $g=\gamma_j$ puts $I$ strictly on one side of $\alpha$ and the route stops by the first two rules. If $g'_j=\varepsilon/2>\gamma_j$, Lemma~\ref{lem:interval}(iv) with $g=\varepsilon/2$ gives $I\subseteq(p_j-\varepsilon/2,p_j+\varepsilon/2)$, so $v_I\le\bar v_{\varepsilon/2}$ and $h(v_I)\le h(\bar v_{\varepsilon/2})<\varepsilon/4$, and the floor fires.
+\emph{Cost.} Since $h_{\mu,\kappa}\approx2\pi\kappa\sqrt v/\mu+\pi^2\kappa^2/\mu^2$, the stopping condition holds once $\mu_t\ge c_\kappa(\sqrt{\bar v_j}/g'_j+1/\sqrt{g'_j})$, so by doubling $\mu_t$ is at most twice that threshold, $t=O(\log(1/g_j))$ and $r_t=O(\log(1/\eta_t))=O(\log(d\log(1/g_j)/\delta))$; the geometric sum over rounds at most doubles the last round's cost. Constants depend on $\kappa$. \hfill$\square$
+
+\paragraph{Classical comparator (C-CERT).} The same doubling scheme with $n_t$ samples of route $j$ per round and the empirical-Bernstein interval of Audibert, Munos and Szepesv\'ari (2009), whose half-width has the form $\sqrt{2v\ln(3/\eta)/n}+3\ln(3/\eta)/n$ (here $\eta=\delta/d$). With the variance proxy $\bar v_j$ the stopping condition
+\[2\Big(\sqrt{2\bar v_j\ln(3/\eta)/n}+3\ln(3/\eta)/n\Big)<g'_j\]
+gives $O(\log(d/\delta)(\bar v_j/g_j^2+1/g_j))$ samples per route, each costing $L_j$ in the local model. This is the form in the code, which charges the smallest $n$ meeting the condition with no doubling loss and a deterministic variance proxy in place of the empirical variance; both choices favour the classical side. We take the bound as a cost model and do not re-derive the inequality; we state no guarantee for C-CERT beyond its use as a cost count.
+
+\begin{proposition}[Per-route lower bounds]\label{prop:routelower}
+Let $\varepsilon\le\alpha/2$, $\alpha\le1/4$ and $\delta\le1/3$. Any $\varepsilon$-certification procedure for a single route (with probability $\ge2/3$) needs (a) $\ge c'\alpha(1-\alpha)/\varepsilon^2$ expected classical samples at the worse of the two instances $p=\alpha-\varepsilon$, $p=\alpha+2\varepsilon$, with $c'=1/3900$, and (b) $\Omega(\sqrt\alpha/\varepsilon)$ applications of $A,A^\dagger$ (quantum).
+\end{proposition}
+\paragraph{Proof.} At $p=\alpha-\varepsilon$ the route must be certified (completeness); at $p=\alpha+2\varepsilon>\alpha+\varepsilon/2$ it must not be (soundness). So this is the two-instance problem of Proposition~\ref{prop:lower}(b) with $k=1$, and (b) is its quantum bound. (a) Suppose $N^*=\max\{\E_{\alpha-\varepsilon}[N],\E_{\alpha+2\varepsilon}[N]\}<\infty$; truncate at $T=12N^*$ samples. By Markov the truncated procedure is correct with probability $\ge2/3-1/12=7/12$ on both instances. Let $E=\{\text{certify}\}$: $P_{\alpha+2\varepsilon}(E)\le5/12$ and $P_{\alpha-\varepsilon}(E)\ge7/12$. The transportation lemma \citep[Lemma 1]{KaufmannCappeGarivier2016} gives $T\cdot\mathrm{KL}(\alpha+2\varepsilon\|\alpha-\varepsilon)\ge\mathrm{kl}(5/12,7/12)=\tfrac16\ln\tfrac75>0.056$, and $\mathrm{KL}\le18\varepsilon^2/(\alpha(1-\alpha))$ as in Proposition~\ref{prop:lower}(a). Hence $N^*=T/12\ge0.056\,\alpha(1-\alpha)/(216\varepsilon^2)\ge\alpha(1-\alpha)/(3900\varepsilon^2)$. \hfill$\square$
+
+\begin{remark}
+The two-point classical bound (a) is new relative to Proposition~\ref{prop:lower}(a), which is proved for $k\ge16$ only; the transportation argument for a single pair of instances does not need the pigeonhole step. For routes with $p_j\approx\alpha$ and gap $\approx\varepsilon$, the costs of Theorem~\ref{thm:qcert} and C-CERT match these lower bounds up to the logarithmic factor; we make no claim of instance-wise optimality for other gaps.
+\end{remark}
+
+\paragraph{Conjecture (not proved).} Certifying $d$ routes with separate oracles needs the \emph{sum} of the per-route lower bounds (a direct-sum statement for promise problems). Classically this follows from an independence argument when the routes are independent, but our routes are correlated through shared factors, and we do not prove it; for the quantum model a direct-sum theorem for the adversary bound of partial functions would be needed. We do not claim it.

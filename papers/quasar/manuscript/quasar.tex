@@ -1,0 +1,302 @@
+%% QUASAR -- manuscript for Quantum Information Processing (Springer), regular article.
+%% Build: pdflatex quasar && bibtex quasar && pdflatex quasar && pdflatex quasar
+
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+
+\theoremstyle{thmstyleone}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{thmstyletwo}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\R}{\mathbb{R}}
+\raggedbottom
+
+\begin{document}
+
+\title[Quantum amplitude estimation for stochastic routing]{Quantum amplitude estimation for stochastic vehicle routing: an audit with explicit constants on regional plans}
+
+\author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+
+\affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung Yen}, \country{Vietnam}}}
+
+\abstract{Quantum amplitude estimation (QAE) lowers the number of samples needed to estimate a probability from order $1/\varepsilon^2$ to order $1/\varepsilon$, which makes it a candidate for certifying the risk of stochastic vehicle-routing plans. We ask whether it helps once constants are counted. For routing with simultaneous pickup and delivery and random demands we build a reversible peak-load oracle in Qiskit, give its exact Toffoli count, verified against the transpiled circuit, and build a difference oracle that evaluates a base route and a modified route on one superposed scenario register. Two structural lemmas bound the variance of that difference. We then test five uses against the best classical method on 73 benchmark plans and on 148 regional plans from Northern Vietnam and Guangdong (10\,518 routes): coherent common random numbers, cheapest-feasible search inside a repair step ($36\,232$ steps), simultaneous certification of all routes of a plan, per-route certification against a gate, and rare-event certification against mixture importance sampling. Query counts favour quantum estimation only at absolute precision $10^{-3}$ or finer, or at relative precision of $3\%$ or finer under idealised accounting; with constants counted, the search and certification tests favour the classical method in nearly every case. We state which assumptions would reverse the verdict and which components are not built.}
+
+\keywords{quantum amplitude estimation, stochastic vehicle routing, chance constraints, resource estimation, importance sampling}
+
+\maketitle
+
+\section{Introduction}\label{sec:intro}
+
+A routing plan for a regional network is run on days whose demands are random. When a vehicle collects as well as delivers, its load rises and falls along the route and the plan fails if the peak load exceeds the capacity. Planners therefore want an estimate, with a confidence interval, of the probability that a route or a hub overflows, both to accept a plan and to repair it, and for safety-critical goods at levels down to $10^{-6}$.
+
+Classical Monte Carlo estimates such a probability to absolute error $\varepsilon$ with $O(1/\varepsilon^{2})$ samples. Quantum amplitude estimation (QAE) needs $O(1/\varepsilon)$ applications of a state-preparation circuit and its inverse~\cite{Brassard2002,Montanaro2015}, a quadratic gain that has motivated work on quantum Monte Carlo in finance~\cite{WoernerEgger2019,Gacon2020} and, more recently, on routing~\cite{WangFilipovska2026}. A gain in query count is not a gain in time: a query is a circuit with many gates, the quadratic law hides constants, and classical estimators for the same quantity exploit structure (shared samples, importance sampling) that the quantum bound ignores. Resource estimates for fault-tolerant applications of QAE are large~\cite{Babbush2021}. The question we ask is therefore a narrow one: \emph{on real routing plans, with the constants carried through, where does QAE use fewer resources than the best classical method?}
+
+\paragraph{What we do.} We build the quantum side concretely. A reversible circuit evaluates the peak load of a route on a register that holds all customer demands in superposition, and its Toffoli count is an exact closed form (Section~\ref{sec:oracle}). A second circuit evaluates a base route and a moved route on the same register, which gives coherent common random numbers (Section~\ref{sec:oracle}). We then run five tests on the plans of a regional benchmark (Section~\ref{sec:tests}), each against the classical method that a practitioner would use, with every constant of the quantum cost written out.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item A Qiskit peak-load oracle and a difference oracle, with an exact Toffoli formula checked against the transpiled circuit and correctness tests against an exact dynamic programme (Section~\ref{sec:oracle}).
+\item Two elementary lemmas that bound the variance of the difference of two routes: an insertion lemma and an end-load lemma. They explain when sharing the scenario register helps (Section~\ref{sec:oracle}, proofs in Appendices~\ref{app:lemmas} and~\ref{app:oracle}).
+\item An audit of five uses of QAE on $73$ benchmark plans and $148$ regional plans ($10\,518$ routes; $36\,232$ repair steps), with the quantum and classical costs in the same unit and the favourable and unfavourable assumptions listed for each test (Section~\ref{sec:tests}).
+\item A statement of what is not built or not proved: the copula-factor register, the oracle for selection among candidates, a fault-tolerant resource estimate, and the lower-bound conjectures (Section~\ref{sec:limits}).
+\end{enumerate}
+
+\paragraph{Scope.} In the demand model we use, the overflow probability of a route has an exact dynamic programme (with quadrature over two latent factors). Every test is therefore a measurement of query counts on a testbed, not a use case where the classical answer is unavailable; Section~\ref{sec:limits} says what changes for a black-box simulator. We make no claim of a practical quantum advantage, and no claim of a first quantum algorithm for stochastic routing~\cite{WangFilipovska2026}.
+
+\section{Related work}\label{sec:related}
+
+\emph{Quantum routing.} Quantum work on vehicle routing is dominated by annealing and variational formulations of deterministic problems~\cite{Feld2019,Harwood2021,Osaba2022,Azad2023}, with go/no-go assessments finding no stable advantage so far~\cite{Onah2025RequirementsCVRP,xu2026urban}. Quantum samplers inside the repair step of adaptive large neighbourhood search have been tried on hardware for a deterministic problem~\cite{Moosavi2026RLQALNS}. The only treatment of a stochastic routing quantity we found estimates path travel times by amplitude estimation in small Qiskit experiments~\cite{WangFilipovska2026}; it has no random demand, chance constraint, route comparison or resource count.
+
+\emph{Amplitude estimation.} Canonical QAE~\cite{Brassard2002}, variants without phase estimation~\cite{Suzuki2020,Grinko2021}, quantum mean estimation~\cite{Montanaro2015,KothariODonnell2023}, multivariate estimation of several expectations at once~\cite{Huggins2022,vanApeldoorn2021,Cornelissen2022,Tang2025} and quantum Monte Carlo for non-linear and heavy-tailed quantities~\cite{Blanchet2025} give the cost models we use. Search for a first marked element and its lower bounds~\cite{grover1996fast,boyer1998tight,DurrHoyer1996,hoyer2003bounded}, and the limits on speeding up local search~\cite{Aaronson2006}, give the model for the repair step.
+
+\emph{Classical competitors.} Importance sampling with cross-entropy-tuned shifts~\cite{deBoer2005} is the practitioner's default for rare events; mixtures of shifts handle unions of failure modes~\cite{Glasserman2005,Owen2019}. For stopping rules we use empirical-Bernstein bounds~\cite{Audibert2009,Maurer2009} and, in places, Hoeffding's inequality~\cite{Hoeffding1963}.
+
+\emph{Resources.} Resource estimates for fault-tolerant algorithms set the conversion from Toffoli counts to time~\cite{Babbush2021,gidney2021rsa}; we use them only for a reference value in Section~\ref{sec:rare}.
+
+\section{Model and oracles}\label{sec:oracle}
+
+\subsection{Peak load and demand model}
+A route visits customers $i_1,\dots,i_L$. It leaves the depot with all deliveries, $L_0=\sum_k d_{i_k}$, and at stop $k$ the load is $L_k=L_{k-1}-d_{i_k}+p_{i_k}$. The peak load is $F=\max_{0\le k\le L}L_k$ and the route fails if $F>Q$ for capacity $Q$; write $p=\P(F>Q)$. Demands follow the model of the benchmark: gamma marginals with coefficient of variation $0.3$ and, separately for deliveries and pickups, a one-factor Gaussian copula with correlation $0.6$. A chance gate asks that $p\le\alpha=0.1$ for every route of the plan.
+
+\subsection{The peak-load oracle}
+Each demand is discretised to $V=2^b$ levels and loaded on a $b$-qubit register by a state-preparation circuit $P$. A load register of $c=\lceil\log_2(L(V-1)+1)\rceil$ qubits starts at $L_0$; for each stop it subtracts $d_{i_k}$ and adds $p_{i_k}$ with ripple adders, compares the result with $Q$, and increments an $m$-qubit counter of stages above $Q$, where $m=\lceil\log_2(L+2)\rceil$. An objective qubit records whether the counter is non-zero. Write $\mathcal A=U_{\rm eval}P$ for the whole circuit; the amplitude of the objective qubit is the overflow probability of the discretised model. All intermediate loads are in $[0,L(V-1)]$ so the load register never overflows.
+
+\begin{proposition}[Resources]\label{prop:resources}
+For $m\ge3$ the circuit uses $N_{\rm q}=2bL+3c-b+m+2$ qubits and exactly
+\[
+T(L,c,m)=6cL+2(L+1)(2c-3)+(L+1)\bigl(1+2(m-1)(m-2)\bigr)+4(m-2)
+\]
+Toffoli gates, with multi-controlled gates compiled to Toffolis by the dirty-ancilla chain of Barenco et al.~\cite{Barenco1995}.
+\end{proposition}
+
+The count has four parts: $3L$ ripple adders~\cite{Cuccaro2004} of $2c$ Toffolis each, $2(L+1)$ comparisons with a constant of $2c-3$ each, the counter increments, and the final multi-controlled gate. We checked the formula component by component against the transpiled circuit at $(L,b)=(5,1)$, $(10,3)$ and $(20,3)$ (160, 813 and 2043 Toffolis; Table~\ref{tab:resources}). It grows like $O(L(b+\log^2L))$. Depth, CX count and T count are reported by the code but we do not use them.
+
+\begin{table}[t]
+\caption{Qubits and Toffoli gates of the peak-load oracle (Proposition~\ref{prop:resources}); the first three rows were checked against the transpiled circuit.}\label{tab:resources}
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+stops $L$ & bits $b$ & qubits & Toffolis \\
+\midrule
+5 & 1 & 23 & 160 \\
+10 & 3 & 84 & 813 \\
+20 & 3 & 148 & 2\,043 \\
+8 & 6 & 123 & 827 \\
+12 & 6 & 174 & 1\,339 \\
+20 & 6 & 274 & 2\,655 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Correctness.} Exhaustive basis-input tests of the reversible circuit pass for small $(L,b,Q)$; the objective amplitude equals the exact dynamic programme to $10^{-9}$ in seven parametrised statevector cases; enumeration through the classical permutation of $U_{\rm eval}$ agrees with the dynamic programme at 29 to 40 qubits; Qiskit's iterative and maximum-likelihood estimators recover the exact value within their intervals. The Grover rotation law $\sin^2((2k+1)\theta)$ matches the circuit to $6\times10^{-15}$ on four oracles of 19 to 22 qubits.
+
+\paragraph{Discretisation.} With $b=6$ levels the median relative bias of $P(F>Q)$ against the continuous model is $0.12\%$ (maximum $3.5\%$) on $105$ routes; $b=5$ gives $0.59\%$ and $8.4\%$. We use $b=6$ for query counts, which are computed on the continuous model; the bias matters only if the oracle is run.
+
+\subsection{The difference oracle and two lemmas}
+To compare a base route $r$ with a modified route $r'$, load the demands of all customers once, run steps ``subtract, add, compare, count'' for $r$ into one (load, counter, objective) triple and for $r'$ into a second, and output $D=\mathbf 1[F_{r'}>Q]-\mathbf 1[F_r>Q]$. One application of this circuit then replaces two independent evaluations and the two routes see the same scenario. Its amplitude statistics depend on how often $D\ne0$.
+
+\begin{lemma}[Insertion]\label{lem:insertion}
+If $r'$ is $r$ with customer $j$ inserted at any position, then scenario by scenario $F_r\le F_{r'}\le F_r+\max(d_j,p_j)$. Hence $D\in\{0,1\}$ and $\P(D=1)=p'-p$.
+\end{lemma}
+
+\begin{lemma}[End loads]\label{lem:endload}
+Let $r'$ be any reordering of the customers of $r$ and $E=\{\sum d\le Q,\ \sum p\le Q\}$. Then $D=0$ outside $E$, and on $E$, $D\ne0$ implies $\max(F_r,F_{r'})>Q$. So $\P(D\ne0)\le\P(E\cap\{F_r>Q\text{ or }F_{r'}>Q\})$.
+\end{lemma}
+
+Lemma~\ref{lem:insertion} says an insertion multiplies the risk, so the base route carries little of the risk of the new one and little is gained from sharing. Lemma~\ref{lem:endload} says that reorderings (relocations, swaps, 2-opt, alternative positions for a customer) share the loads at both ends of the route, which is where overflow comes from on short routes; when $E$ is rare, $D$ is zero for almost every scenario. Both are elementary; proofs are in Appendix~\ref{app:lemmas}.
+
+\section{How costs are counted}\label{sec:counting}
+
+\paragraph{Quantum.} The unit is one application of $\mathcal A$ or $\mathcal A^\dagger$. Canonical amplitude estimation with $M$ Grover iterates costs $2M+1$ applications and returns $\hat a$ with $|\hat a-a|\le 2\pi\sqrt{a(1-a)}/M+\pi^2/M^2$ with probability at least $8/\pi^2$~\cite{Brassard2002}. Confidence $1-\delta$ is obtained by the median of $R=\lceil\ln(1/\delta')/\ln(4/3)\rceil$ runs (five in the measurements at $\delta=0.05$), and $M$ is the smallest power of two meeting the target. A signed difference is two estimates, of $\P(D=1)$ and $\P(D=-1)$, each at $\varepsilon/2$. When $a$ is not known in advance the estimate is preceded by a doubling search, which we charge to the quantum side.
+
+\paragraph{Classical.} The unit is one scenario evaluation of the same quantity, at $z=1.96$. For the mean of a $\{0,1\}$ variable of variance $v$ the sample size is $\max(z^2v/\varepsilon^2,3/\varepsilon)$, where $3/\varepsilon$ is the rule-of-three floor for a certificate; empirical-Bernstein stopping sizes~\cite{Audibert2009,Maurer2009} are used for threshold tests.
+
+\paragraph{What the ratios mean.} We report ratios of quantum to classical counts. A ratio below $1$ means fewer queries, not a shorter run: one application of the difference oracle contains two route circuits, and a quantum Toffoli is not a classical draw. In each test we say which assumptions favour the quantum side (an oracle choice of a tuning constant, noise-free circuits, queries as the cost) and which favour the classical side. Costs of building the oracle, noise and error correction are not in the ratios.
+
+\paragraph{Data.} The $73$ benchmark plans come from the Dethloff, Salhi--Nagy and city instances; the $148$ regional plans cover Northern Vietnam (35.3 million people) and Guangdong (115.5 million), with $10\,518$ routes in the certification tests. Plans come in two kinds: ``Det'', built with a deterministic capacity gate, and ``SAA'', built with a sample-average chance gate at $\alpha=0.1$. Route risks are computed from $20\,000$ common scenarios (standard error up to $0.0016$ at $p=0.05$).
+
+\section{Five tests}\label{sec:tests}
+
+\subsection{Coherent common random numbers}\label{sec:crn}
+The setting is the evaluation of a candidate move in a repair or local-search step. Define $\rho_q=\sqrt{\mathrm{Var}\,D}/\sqrt{p'(1-p')}$, the ratio of the quantum cost of the difference to the cost of estimating the moved route alone. On $73$ plans we evaluate three classes of move on $200\,000$ scenarios per instance: inter-route insertions (a negative baseline by Lemma~\ref{lem:insertion}), intra-route moves (relocate, swap, 2-opt; all moves if $|r|\le12$, else $200$ random), and alternative positions of one inserted customer. Table~\ref{tab:crn} gives the medians and the summed query ratios against the classical direct estimator of the difference.
+
+\begin{table}[t]
+\caption{Test 1. Median $\rho_q$ (moves with $p'\in(0.02,0.5)$) and ratio of summed quantum to classical query counts at absolute precision $10^{-3}$ and $10^{-4}$ and at relative precision $0.1p'$. CON, SCA: Dethloff; CMT: Salhi--Nagy. A ratio below $1$ means fewer queries, not shorter runs. City cells at $10^{-3}$ are dominated by the floor $3/\varepsilon$.}\label{tab:crn}
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+class & family & median $\rho_q$ & $10^{-3}$ & $10^{-4}$ & relative \\
+\midrule
+insertion & CON & 0.917 & 0.069 & 0.0064 & 0.82 \\
+insertion & SCA & 0.920 & 0.069 & 0.0063 & 0.82 \\
+insertion & CMT & 0.394 & 0.108 & 0.011 & 2.14 \\
+insertion & city & 0.674 & 0.111 & 0.011 & 1.06 \\
+intra & CON & 0.133 & 0.709 & 0.064 & 4.24 \\
+intra & SCA & 0.136 & 0.716 & 0.064 & 4.20 \\
+intra & CMT & 0 & 0.421 & 0.035 & 7.23 \\
+intra & city & 0 & 1.71 & 0.306 & 3.44 \\
+alt.\ position & CON & 0.161 & 0.544 & 0.050 & 5.09 \\
+alt.\ position & SCA & 0.162 & 0.533 & 0.049 & 5.06 \\
+alt.\ position & CMT & 0 & 0.415 & 0.035 & 7.27 \\
+alt.\ position & city & 0 & 1.74 & 0.500 & 3.79 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reading.} Sharing the register cuts the quantum cost of a difference substantially for relocations and alternative positions on the Dethloff instances ($\rho_q\approx0.13$--$0.16$) and, by Lemma~\ref{lem:endload}, to almost nothing on the Salhi--Nagy and city instances, where $D$ is zero in sample for half of the moves (zero in sample is an upper bound of $3/N=1.5\times10^{-5}$ on $\P(D\neq0)$). The end-load lemma explains $95.9\%$ of the moves with $\mathrm{Var}\,D=0$. For insertions it gives $\rho_q$ near $0.9$ on the Dethloff instances, as Lemma~\ref{lem:insertion} predicts. Against classical sampling the quantum counts are lower at absolute precision $10^{-3}$ (ratios $0.069$--$0.72$) and $10^{-4}$ ($0.0063$--$0.5$), except the city cells at $10^{-3}$ ($1.7$) where the floor $3/\varepsilon=3000$ is below the quantum minimum $2R(2M+1)=5130$ applications. At relative precision the classical direct estimator is cheaper on signed moves (ratios $3.4$--$7.3$).
+
+\paragraph{Behaviour of the estimators.} On the exact Grover-rotation model, validated on four circuits, the $90\%$ quantile of the error of canonical QAE and of maximum-likelihood QAE with $S\ge64$ shots per round falls with slope $-1$ in the number of queries against $-0.5$ for classical sampling; the root-mean-square error of canonical QAE has slope $-0.49$, because its tails are heavy. Maximum-likelihood estimation with one shot per round does not converge.
+
+\paragraph{Limits.} Query counts are not Toffoli counts: a difference-oracle query costs about two route circuits and the copula-factor register, which we only designed, is not in any of these counts. The measurements use the continuous model; the discretisation bias of Section~\ref{sec:oracle} is separate.
+
+\subsection{Search for the cheapest feasible move inside the optimiser}\label{sec:search}
+In the repair step of adaptive large neighbourhood search, candidates for a removed customer are sorted by deterministic cost and the first one that passes the chance gate is taken. Let $k^\star$ be its rank. A quantum search over prefixes of the sorted list with a bounded-error feasibility test should need about $\sqrt{k^\star}$ tests instead of $k^\star$.
+
+We prove (Appendix~\ref{app:search}) that a variant, FIRST-FEASIBLE (exponential phase over prefixes, then bisection, with a median-of-runs threshold test per prefix), is correct with probability at least $1-\delta$ and uses $O\bigl(\sqrt{k^\star}\log k^\star\,\Lambda\,\log(k^\star\Lambda/\delta)\,T\bigr)$ applications of the select oracle, where $\Lambda=\log(\log M/\delta)$, $T=\sqrt{v}/\varepsilon+1/\sqrt{\varepsilon}+1/\sqrt{\alpha}$ is the cost of one threshold test and $M$ the number of candidates; the classical scan costs $O(k^\star(v/\varepsilon^2+1/\varepsilon)\log(M/\delta))$. Lower bounds are $\Omega(k\alpha(1-\alpha)/\varepsilon^2)$ classically for $k\ge16$ and $\Omega(\sqrt k+\sqrt\alpha/\varepsilon)$ quantumly; that the product $\sqrt k\,\sqrt{\alpha(1-\alpha)}/\varepsilon$ is also a quantum lower bound is a conjecture we do not use. The constants of the $O$ are not explicit in the theorem; the measurements use a cost model with explicit constants, including the worst-case variance proxy $v=0.25$ (``wc'') or the oracle's variance bound (``opt'', which favours quantum).
+
+\paragraph{Measurement.} We replay $4\,392$ ruin-and-recreate repair steps on $73$ plans and $31\,840$ on the regional plans ($36\,232$ in all), with $\alpha=0.1$, $\delta=0.05$ and $\varepsilon\in\{0.01,0.003,0.001\}$. Table~\ref{tab:search} gives medians of the per-step ratio $N_q/N_c$.
+
+\begin{table}[t]
+\caption{Test 2. Search for the cheapest feasible candidate: share of steps with $k^\star=1$, $90\%$ quantile of $k^\star$, and median per-step ratio quantum/classical for the core counts ($\sqrt{k^\star}(2M+1)$ against $k^\star\max(v/\varepsilon^2,3/\varepsilon)$), for the version with common random numbers (crn core), and with the explicit constants of the search (full, wc and opt). Rows: plan set, gate, $\varepsilon$.}\label{tab:search}
+\begin{tabular}{@{}llrrrrrrr@{}}
+\toprule
+set & gate / $\varepsilon$ & $k^\star{=}1$ & $k^\star_{90}$ & core & crn core & full wc & full opt \\
+\midrule
+73 plans & all, $10^{-2}$ & 0.43 & 23 & 0.36 & 0.57 & 294 & 413 \\
+73 plans & all, $10^{-3}$ & 0.45 & 22 & 0.037 & 0.073 & 23.8 & 35.4 \\
+73 plans & Det, $10^{-3}$ & 0.17 & 31 & 0.020 & 0.055 & 23.2 & 35.4 \\
+regional & all, $10^{-2}$ & 0.41 & 81 & 0.27 & 0.43 & 318 & 394 \\
+regional & all, $10^{-3}$ & 0.43 & 73 & 0.032 & 0.062 & 25.7 & 38.1 \\
+regional & Det, $10^{-3}$ & 0.11 & 123 & 0.011 & 0.028 & 20.0 & 31.8 \\
+regional & SAA, $10^{-3}$ & 0.76 & 5 & 0.046 & 0.11 & 27.3 & 38.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reading.} The core ratio is favourable, from $0.011$ to $0.63$ over all groups, and smallest where $k^\star$ is large (Det plans on the regional set, $90\%$ quantile $123$). But with the explicit constants of the bounded-error search (median of runs, capped Grover iterates, bisection) the quantum cost is $19.7$ to $501$ times the classical in the medians over all groups, and in none of the $36\,232$ steps is the quantum count below the classical, for either variance proxy. On SAA plans the cheapest position is already feasible in $73$--$83\%$ of the steps, so there is nothing to search. A search with smaller constants (find-first in $O(\sqrt{k^\star})$ expected queries without re-testing at each bisection) would change this and is not done. A quantum search also cannot reduce the number of steps of the local search itself~\cite{Aaronson2006}.
+
+\subsection{Certifying all routes of a plan}\label{sec:cert}
+Plan acceptance asks that every route has $p_j\le\alpha$, with a guarantee $1-\delta$ over the whole plan. We consider two access models. In the \emph{black-box} model only a whole-day simulator exists and one call, classical or quantum, costs one unit. In the \emph{local} model one application of the circuit of route $j$ costs its $L_j$ stages, a classical sample of the whole plan costs $\sum_jL_j$, and a classical sample yields all $d$ indicators.
+
+\paragraph{Black-box model.} Classical shared samples need $O(\log(d/\delta)/\varepsilon^2)$ calls for all $d$ routes at once. The best published quantum bound for estimating $d$ expectations is $O(\sqrt d\,\log(d/\delta)/\varepsilon)$~\cite{Huggins2022}, which is variance-agnostic. A variance-aware bound $O(\sqrt{\sum_jv_j}\log(d/\delta)/\varepsilon)$~\cite{Tang2025} is available only as a preprint with unstated constants. Table~\ref{tab:blackbox} compares the Huggins form with constant $2$ to the classical Bernstein bound with $v=\max_jv_j$.
+
+\begin{table}[t]
+\caption{Test 3, black-box model. Quantum (Huggins form, constant $2$) over classical (shared samples, Bernstein) at three precisions; $\delta=0.05$, route risks from $20\,000$ scenarios. $d$: routes of the plan.}\label{tab:blackbox}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+plan & $d$ & $10^{-2}$ & $10^{-3}$ & $10^{-4}$ \\
+\midrule
+Northern Vietnam Det & 257 & 0.585 & 0.059 & 0.0059 \\
+Northern Vietnam SAA & 375 & 3.7 & 0.395 & 0.040 \\
+Guangdong Det & 4\,019 & 2.36 & 0.239 & 0.024 \\
+Guangdong SAA & 5\,867 & 13.8 & 1.47 & 0.148 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A larger network hurts the quantum estimator, since its cost grows like $\sqrt d$ and the classical cost like $\log d$; and well-planned (SAA) plans, whose route risks are small, favour classical Bernstein bounds. Quantum wins only at $\varepsilon\le10^{-3}$ on Northern Vietnam and $\varepsilon\lesssim5\times10^{-4}$ on Guangdong (a reading of one table, not a theorem). Assuming constant $1$ for the variance-aware bound~\cite{Tang2025}, whose constant the preprint does not give, the ratio on the SAA plans is $0.26$ and $1.0$ at $\varepsilon=10^{-2}$ and $0.028$ and $0.11$ at $10^{-3}$; the ratio scales linearly with the unknown constant, so the crossover precision scales as its inverse.
+
+\paragraph{Local model.} Here each route is certified with its own oracle: rounds $t$ with $M_t=2^t$ iterates, a median of $r_t$ runs, and a consistent confidence interval, stopping when the interval is above or below $\alpha$ or the precision floor $\varepsilon/2$ is reached. The algorithm and its guarantee (soundness $p_j\le\alpha+\varepsilon/2$ if certified; completeness $p_j\le\alpha-\varepsilon$) are in Appendix~\ref{app:cert}. The classical comparator is the same doubling scheme with empirical-Bernstein bounds, charged the exact stopping size with no doubling loss, which favours it; the quantum side uses the best fixed $k$ chosen on the true risks, which favours it. Table~\ref{tab:local} gives plan-level costs.
+
+\begin{table}[t]
+\caption{Test 3, local model. Plan-level cost of Q-CERT over the classical certificate (Q/C), over one classical stream of whole-plan samples (Q/C$_{\rm shared}$), and the ideal quantum cost (stopping round only) over C. $\delta=0.05$, $\alpha=0.1$. Rows with several precisions are identical for $\varepsilon\in\{10^{-2},3\times10^{-3},10^{-3},10^{-4}\}$ unless listed.}\label{tab:local}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+region & gate ($\varepsilon$) & $d$ & Q/C & Q/C$_{\rm shared}$ & ideal/C \\
+\midrule
+N.\ Vietnam & Det & 257 & 7.38 & 0.961 & 3.81 \\
+N.\ Vietnam & SAA & 375 & 4.74 & 3.55 & 2.42 \\
+Guangdong & Det ($10^{-2}$) & 4\,019 & 3.63 & 0.133 & 1.86 \\
+Guangdong & Det ($3\times10^{-3}$) & 4\,019 & 1.74 & 0.038 & 0.889 \\
+Guangdong & Det ($\le10^{-3}$) & 4\,019 & 1.03 & 0.019 & 0.526 \\
+Guangdong & SAA & 5\,867 & 4.75 & 3.34 & 2.40 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reading.} Quantum certification costs $4.7$ to $7.4$ times the classical per-route certificates on the SAA plans and the Northern Vietnam Det plan; on the Guangdong Det plan the ratio falls from $3.6$ to $1.03$ as $\varepsilon$ goes from $10^{-2}$ to $10^{-3}$ or finer ($0.53$ ideal against ideal). Against a single classical stream that samples the whole plan, quantum is cheaper on the Det plans (Q/C$_{\rm shared}$ from $0.019$ to $0.96$) because that stream is sized by the hardest route. This comparison is not like for like, since a classical implementation could stop routes of different difficulty separately, and we draw no conclusion from it.
+
+\paragraph{Per route.} For a route at gap $g=|p-\alpha|$ from the gate the quantum cost is dominated by the constants of the median and the $1/\sqrt g$ term when $g$ is large. At $\varepsilon=10^{-3}$ the median route-level ratio is $0.09$ (1 route), $0.25$ (8), $0.84$ (21), $1.9$ (58), $5.0$ ($6\,852$) and $11.2$ ($3\,578$) for gaps in $\le10^{-3}$, $10^{-3}$--$3\times10^{-3}$, $3\times10^{-3}$--$10^{-2}$, $10^{-2}$--$3\times10^{-2}$, $3\times10^{-2}$--$0.1$ and $>0.1$. Quantum is cheaper for the nine routes within $3\times10^{-3}$ of the gate, which is at the resolution of the route risks themselves ($\approx0.002$), and the $99\%$ of routes with gap above $0.03$ are far from the decision, where the classical certificate needs a few hundred samples. The crossover near $5\times10^{-3}$ is an interpolation between sparsely populated bins.
+
+\subsection{Rare events against mixture importance sampling}\label{sec:rare}
+For medicine and cold chain, service levels $\gamma\in\{10^{-3},\dots,10^{-6}\}$ must be certified to relative error $\varepsilon_{\rm rel}$. Classical crude sampling needs $z^2(1-\gamma)/(\gamma\varepsilon_{\rm rel}^2)$ draws, QAE to relative error about $(1/\varepsilon_{\rm rel})\sqrt{1/\gamma}$ applications~\cite{Brassard2002}, and the practitioner's classical method is importance sampling. For the $120$ SAA-plan routes with at least four stops and each $\gamma$, with the simulator written in standard normal inputs, we use a mixture of mean shifts by stage load, one shift per candidate failure mode with a defensive component, tuned by cross-entropy~\cite{deBoer2005}, in the spirit of mixture proposals for unions of rare events~\cite{Owen2019} and of factor-shift sampling~\cite{Glasserman2005}. It agrees with the exact dynamic programme in $178$ of $178$ cases (maximum relative difference $0.74\%$); a single cross-entropy shift deviates by more than $10\%$ in $7$ of these cases (maximum $42\%$). The median relative variance of the mixture is $3.9$ to $5.9$ and its pilot costs about $10^5$ draws.
+
+\paragraph{Accounting.} Quantum cost is the canonical QAE cost for relative error with a doubling search for $M$ (``doubling'') or with $M$ known (``ideal''). With an importance-sampling oracle we take the crude QAE cost with $(1-\gamma)/\gamma$ replaced by the relative variance; this is optimistic for the quantum side, because it charges no pilot, no reversible likelihood-ratio arithmetic and no heavier tails. The classical cost is $z^2\mathrm{RV}/\varepsilon_{\rm rel}^2$ draws, with or without its pilot.
+
+\begin{table}[t]
+\caption{Test 5. Median ratios over $120$ routes: QAE with a crude oracle over crude Monte Carlo; the same over classical importance sampling including its pilot; QAE with an idealised importance-sampling oracle (ideal and with doubling search) over classical importance sampling without pilot.}\label{tab:rare}
+\begin{tabular}{@{}rrrrrr@{}}
+\toprule
+$\gamma$ & $\varepsilon_{\rm rel}$ & crude/crude & crude/IS$_{\rm pilot}$ & IS-QAE ideal & IS-QAE doubling \\
+\midrule
+$10^{-6}$ & 0.01 & 0.0033 & 380 & 0.136 & 0.962 \\
+$10^{-6}$ & 0.1 & 0.019 & 61 & 1.71 & 10.9 \\
+$10^{-4}$ & 0.01 & 0.019 & 29.5 & 0.176 & 1.24 \\
+$10^{-4}$ & 0.1 & 0.225 & 9.6 & 2.2 & 14.1 \\
+$10^{-3}$ & 0.01 & 0.095 & 17 & 0.212 & 1.5 \\
+$10^{-3}$ & 0.1 & 0.527 & 2.5 & 1.33 & 8.25 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reading.} QAE with a crude oracle needs $0.003$ to $0.5$ times the draws of crude Monte Carlo, but $2.5$ to $380$ times the cost of classical importance sampling with its pilot. With an idealised importance-sampling oracle it is cheaper than classical sampling only at $\varepsilon_{\rm rel}\le3\%$ ($0.14$ to $0.48$ in the ideal accounting), and not at $10\%$; with the doubling search the ratio is $0.96$ to $14$. A conversion to time: with the oracle of Table~\ref{tab:resources} at $b=6$ and the routes' own $L$, an ideal IS-equipped quantum computer ties the classical sampler at $\varepsilon_{\rm rel}=1\%$ only if one Toffoli takes about $0.6$ to $1.0\%$ of the time of one classical draw (medians over routes; $0.09$ to $0.14\%$ with the doubling search). With a classical draw of $10\,\mu$s this is about $60$ to $100$\,ns per Toffoli, below the order of a microsecond commonly assumed for surface-code operations~\cite{gidney2021rsa}; the microsecond is only a reference value, not a hardware claim. A companion manuscript on classical certification of the same plans, which covers the importance-sampling estimator itself, is submitted elsewhere; the quantum comparison here uses its proposal construction only as the classical competitor.
+
+\section{What would change the verdict, and what is missing}\label{sec:limits}
+
+\begin{table}[t]
+\caption{Summary of the five tests. ``Favours'' lists the assumption under which the quantum count is lower; the measured verdict is for the regional plans with constants counted.}\label{tab:summary}
+\begin{tabular}{@{}p{0.2\textwidth}p{0.36\textwidth}p{0.42\textwidth}@{}}
+\toprule
+test & quantum count lower when & measured verdict \\
+\midrule
+1 coherent CRN & absolute precision $\le10^{-3}$; relocations on long Dethloff-type routes; query count as the unit & ratios $0.069$--$0.72$ at $10^{-3}$ and $0.0063$--$0.5$ at $10^{-4}$, city cells $1.7$ at $10^{-3}$; classical cheaper at relative precision (3.4--7.3) \\
+2 search in repair & large $k^\star$ (Det plans); smaller constants than ours & core $0.011$--$0.63$; with constants $19.7$--$501$ times classical, $0$ of $36\,232$ steps in favour \\
+3 all routes of a plan & $\varepsilon\le10^{-3}$; black-box simulator with correlated outputs; variance-aware bound with a small constant & $0.006$ to $13.8$ black-box (by plan and $\varepsilon$); local model $4.7$--$7.4$, $1.03$ at best \\
+4 route versus gate & route within $3\times10^{-3}$ of the gate (nine routes of $10\,518$) & median $5.0$ to $11.2$ for $99\%$ of routes \\
+5 rare events & IS-equipped oracle, $\varepsilon_{\rm rel}\le3\%$, no pilot, $M$ known & $2.5$--$380$ times classical IS (crude oracle); idealised IS oracle $0.14$--$0.48$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Where quantum could win.} The data show three directions: tight absolute precision, where quantum counts are lower in every test that has one; relative precision of about $1\%$ with a mature importance-sampling oracle and a short Toffoli time; and simulators whose failure region defeats importance sampling (not tested here). In each, the quantum advantage rests on a cost we did not measure.
+
+\paragraph{What is not built.} (i) The copula-factor register: the oracle of Section~\ref{sec:oracle} has independent demands, and the factor register is designed (about $63$ rotations for a $6$-qubit factor register) but not built or counted. (ii) The select oracle over $M$ candidates for the search of Section~\ref{sec:search}, and a Toffoli count of the difference oracle. (iii) A fault-tolerant resource estimate in physical qubits and time: we give logical Toffoli counts and one conversion, and nothing about error-correction overhead or noise. (iv) Quantum amplitude estimation of the discretised model on hardware or noisy circuits: all query counts use the ideal estimator, and the rotation-law check stops at 22 qubits.
+
+\paragraph{What is not proved.} The product lower bound of Section~\ref{sec:search}, the variable-time version of the search, a direct-sum lower bound for $d$ routes, (a classical lower bound for a single route in the certification test is proved in the appendix by an argument we have not had independently checked), and the optimality and constants of the variance-aware multivariate estimator~\cite{Tang2025}. The crossover precisions of Section~\ref{sec:cert} are readings of tables.
+
+\paragraph{Other limitations.} Route risks used in the certification tests come from $20\,000$ common scenarios; gaps below about $3\times10^{-3}$ are not resolved. The conclusions rely on the demand model of the benchmark; with a black-box simulator whose failure probability has no exact programme, the classical rival would be sampling with importance sampling, which is how Test 5 is set up.
+
+\section{Conclusion}\label{sec:conclusion}
+On real regional routing plans, with the constants of both sides counted, quantum amplitude estimation uses fewer queries than the best classical method only at absolute precision of $10^{-3}$ or finer, on the few routes that sit at the decision threshold, and, in an idealised accounting, for rare events at relative precision of $3\%$ or finer. For search inside a repair step and for certification of whole plans the classical method is cheaper in the large majority of cases. What is needed next to change this is concrete: a search with smaller constants, the factor register and the select oracle with their Toffoli counts, and a fault-tolerant estimate. We release the oracle, the cost models and every measurement so the comparison can be rerun when any of these change.
+
+\backmatter
+
+\bmhead{Acknowledgements}
+\textbf{[TO COMPLETE BY THE AUTHOR]}
+
+\section*{Declarations}
+\textbf{Funding.} \textbf{[TO COMPLETE BY THE AUTHOR]}
+
+\textbf{Competing interests.} \textbf{[TO COMPLETE BY THE AUTHOR]}
+
+\textbf{Data and code availability.} All code, instances, plans, simulators and the scripts that produce every table are in the repository \url{https://github.com/vinhqdang/stochastic_vrp} (directories \texttt{svrpspd\_wdro/quantum} and \texttt{svrpspd\_wdro/results/quasar}); a copy will be deposited with a persistent identifier on acceptance.
+
+\textbf{Use of AI tools.} \textbf{[TO COMPLETE BY THE AUTHOR: the journal asks that the use of a large language model beyond copy editing be documented.]}
+
+\textbf{Author contributions.} \textbf{[TO COMPLETE BY THE AUTHOR]}
+
+\begin{appendices}
+\input{appendix_proofs}
+\end{appendices}
+
+\bibliography{references}
+
+\end{document}
