@@ -117,8 +117,12 @@ class CorrRouteSim(RouteSim):
         return super().demands(x)
 
 
+def _nonneg(v: int) -> int:
+    return v if v >= 0 else 10 ** 6 - v
+
+
 def _rng(*parts):
-    return np.random.default_rng([SEED] + [int(abs(hash(p)) % (2 ** 31)) if isinstance(p, str) else int(p)
+    return np.random.default_rng([SEED] + [int(abs(hash(p)) % (2 ** 31)) if isinstance(p, str) else _nonneg(int(p))
                                            for p in parts])
 
 
@@ -399,7 +403,7 @@ def task_r2crude(t):
 
 TASK_FN = {"passrate": task_passrate, "mhat": task_mhat, "unconf": task_unconf, "hubcrude": task_hubcrude,
            "rivals2": task_rivals2, "coverage2": task_coverage2, "long": task_long,
-           "r2crude": task_r2crude}
+           "r2crude": task_r2crude, "unconf2": task_unconf}
 
 
 def task_key(t):
@@ -484,6 +488,12 @@ def build_tasks(part):
     rids = [r["route_id"] for r in sens.quasar_order(sens.RARE_CSV)]
     vnn = [r for r in rids if r.startswith("VNN")]
     gd = [r for r in rids if r.startswith("GD")]
+    if part == "unconf2":
+        # the negative-correlation rows of "unconf" failed on a negative seed component (fixed in _rng)
+        for rid in vnn[:10] + gd[:10]:
+            tasks.append({"key": ["unconf2", rid, 1.0, -0.5, 1e-4], "route_id": rid, "s": 1.0, "r": -0.5,
+                          "gamma": 1e-4, "means": means, "n": N_UNCONF, "n_ref": N_UNCONF_REF})
+        return tasks
     if part == "unconf":
         for rid in vnn[:20]:
             for s in (0.5, 2.0):

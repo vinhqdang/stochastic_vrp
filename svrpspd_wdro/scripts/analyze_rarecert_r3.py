@@ -37,6 +37,12 @@ PARTS = ("passrate", "mhat", "unconf", "rivals2", "coverage2", "hubcrude", "long
 
 
 def merged(part: str) -> list[dict]:
+    if part == "unconf":
+        return _merged("unconf") + _merged("unconf2")
+    return _merged(part)
+
+
+def _merged(part: str) -> list[dict]:
     files = glob.glob(str(RES / "r3_local" / "*" / part / f"{part}_checkpoint.jsonl"))
     files += glob.glob(str(RES / "r3_colab" / "*" / "s*" / part / f"{part}_checkpoint.jsonl"))
     files += glob.glob(str(RES / "r3_colab" / "*" / "*" / "s*" / part / f"{part}_checkpoint.jsonl"))

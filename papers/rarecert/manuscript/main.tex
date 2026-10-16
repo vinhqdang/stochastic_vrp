@@ -287,44 +287,81 @@ of the missed mode.
 plans: all 5\,920 routes with two or more customers have $\varrho>1/4$
 (Guangdong median $0.36$, Northern Vietnam median $0.93$). The practical
 regime is narrower. On 120 routes (Table~\ref{tab:routes}) the single CE shift
-has median error $0.10$--$0.27\%$ when $\varrho\le0.75$, close to the mixture
-estimators, and $2.9$, $5.1$, $6.0$ and $6.1\%$ (90\% quantile $7.6$, $21.7$,
-$26.7$, $39.9\%$) when $\varrho>0.75$ at $\gamma=10^{-3},\dots,10^{-6}$. The
-error is an underestimate in $62\%$ of these rows at $10^{-3}$ and in
-$93$--$95\%$ at $\gamma\le10^{-4}$ (median signed error $-4.3$ to $-4.7\%$). It
-is visible at $10^{-3}$ and $10^{-4}$, where the single shift's relative
-variance is $512$ and $87$, and invisible at $10^{-5}$ and $10^{-6}$, where it
-is $5.2$ and $5.5$ (reported relative standard error $0.2\%$ at $10^6$ draws,
-against a $6\%$ bias). Figure~\ref{fig:bias} plots the measured bias against
-$\varrho$ and against the computed mass of the missed mode.
+has median error $0.14$--$0.23\%$ in the $\varrho$ bands with more than one
+route and $\varrho\le0.75$, close to the mixture estimators, and $2.9$, $5.1$,
+$6.0$ and $6.1\%$ (90\% quantile $7.6$, $21.7$, $26.7$, $39.9\%$) when
+$\varrho>0.75$ at $\gamma=10^{-3},\dots,10^{-6}$. On those routes the error is
+an underestimate in $62\%$ of the rows at $10^{-3}$ and in $93$--$95\%$ at
+$\gamma\le10^{-4}$ (median signed error $-4.3$ to $-4.7\%$ at
+$\gamma\le10^{-4}$). It is visible at $10^{-3}$ and $10^{-4}$, where the single
+shift's relative variance is $512$ and $87$, and invisible at $10^{-5}$ and
+$10^{-6}$, where it is $5.2$ and $5.5$ (reported relative standard error
+$0.2\%$ at $10^6$ draws, against a $6\%$ bias).
 
-Two cautions. First, in our instances $\varrho>0.75$ occurs only in Northern
-Vietnam, where the pickup rate was set equal to the delivery rate because no
-regional pickup statistic is published; region, $\varrho$ and that assumption
-are confounded. Section~\ref{sec:sensitivity} breaks the confounding by
-halving the pickup means of 30 Guangdong routes: 13 of them then have
-$\varrho>0.75$, and the single shift underestimates on them in the same way
-(up to $9.5\%$), so the failure follows the end-mode structure, not the
-region. Second, $\varrho$ is computed in closed form from the route data and
-is free, but the threshold $0.75$ is empirical. A sharper finite-level
-indicator is the mass of the missed end mode in computed energies,
-$\hat m=\exp(-(E_{\rm other}-E_{\min}))$: the single-shift error stays at
-the noise level when $\hat m<10^{-3}$ and is of the order of $\hat m$
-above it ($0.5$ to $1.6$ times $\hat m$ for $10^{-3}\le\hat m\le0.14$) (Figure~\ref{fig:bias}, right).
+\emph{The missed-mode mass predicts the error.} Let
+$\hat m=\exp(-(E_{\rm other}-E_{\min}))$ be the weight that the computed
+dominating-point energies give the weaker end mode relative to the dominant
+one. It is computed from the route data in about a second and needs no
+sampling. We computed it for all 480 route--level rows
+(Figure~\ref{fig:bias}, right). In the 320 rows with $\hat m<10^{-6}$, all
+Guangdong, the single-shift error is at the noise level (median absolute error
+$0.19\%$, maximum $1.0\%$, against two standard errors of $0.43\%$); two more
+rows lie in $[10^{-6},10^{-3})$.
+In the 158 rows with $\hat m\ge10^{-3}$, all from Northern Vietnam, the error
+is negative in $81$--$93\%$ of the rows and grows with $\hat m$: the median is
+$-0.4\%$ for $\hat m\in[10^{-3},10^{-2})$, $-2.2\%$ for $[10^{-2},0.1)$ and
+$-9.9\%$ for $\hat m\ge0.1$, and the median ratio of the absolute error to
+$\hat m$ is $0.98$, $0.81$ and $0.58$. By level it is $0.22$ at $10^{-3}$, where
+the single shift still reaches part of the missed mode, and $0.74$--$0.79$ at
+$10^{-4}$ to $10^{-6}$. So at practical levels the single shift misses
+about $0.8\,\hat m$ of the probability, and $\hat m$ is a usable
+a-priori diagnostic: it is large exactly on the routes with $\varrho>0.75$.
+
+\emph{Region, $\varrho$ and the assumed pickup rate.} In our instances all
+rows with $\hat m\ge10^{-3}$ are Vietnamese, where the pickup rate was set
+equal to the delivery rate because no regional pickup statistic is published,
+so the table above cannot separate the end-mode structure from region and
+assumption. We therefore changed the structure while keeping the routes. We
+rescaled the pickups of 20 Vietnamese routes by $0.5$ and by $2$
+(Figure~\ref{fig:unconf}): $\varrho$ falls from $0.93$ to $0.49$--$0.51$,
+the median $\hat m$ to below $10^{-10}$, and the single-shift error is at most
+$1.7\%$ in all 80 rows (median $0.1$--$0.2\%$), against medians of $5.1\%$ and
+$6.1\%$ at $10^{-4}$ and $10^{-6}$ over the 40 Vietnamese routes unscaled. In the other direction we halved the pickups of
+30 Guangdong routes at $10^{-5}$ and $10^{-6}$: $\varrho$ rises to a median of
+$0.73$, $42$ of the 60 rows have $\varrho>0.7$ and $13$ have
+$\hat m\ge10^{-3}$, four of those have an error beyond $2\%$ (two routes,
+$-41$ to $-43\%$ and $-6$ to $-8\%$), and the median ratio of error to
+$\hat m$ on the 13 rows is $0.84$. The failure follows the end-mode structure,
+not the region. \pending{correlated pickup and delivery factors, from unconf2.}
+$\varrho$ is computed in closed form and the threshold $0.75$ remains
+empirical; $\hat m$ is the sharper indicator.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/rarecert_bias_varrho.pdf}\hfill
-\includegraphics[width=0.48\textwidth]{figures/rarecert_bias_mhat.pdf}
+\includegraphics[width=0.48\textwidth]{figures/rarecert_mhat_all.pdf}
 \caption{Left: signed relative error of the single CE shift against
 $\varrho$ (grey dots: 120 routes at four levels; open markers: 30 Guangdong
 routes under the sensitivity settings at $\gamma=10^{-4}$); symmetric-log
 scale, grey band $\pm2$ median standard errors; dashed and dotted lines at
-$\varrho=1/4$ and $0.75$. Right: absolute error against the computed mass
-$\hat m=\exp(-(E_{\rm other}-E_{\min}))$ of the weaker end mode
-(sensitivity rows; $\hat m\le10^{-6}$ drawn at the left edge), with the
-line $|{\rm error}|=\hat m$ and the level of two standard errors.}
+$\varrho=1/4$ and $0.75$. Right: absolute error of the single shift against
+the computed mass $\hat m=\exp(-(E_{\rm other}-E_{\min}))$ of the weaker end
+mode, for all 480 route--level rows (circles: Northern Vietnam; squares:
+Guangdong, all at $\hat m\le10^{-8}$, drawn at the left edge), with the line
+$|{\rm error}|=\hat m$.}
 \label{fig:bias}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{figures/rarecert_unconf.pdf}
+\caption{Single-shift error against the end-mode ratio $\varrho$ of the
+rescaled route. Open circles: 20 Vietnamese routes with the pickups scaled by
+$0.5$ and by $2$, at $10^{-4}$ and $10^{-6}$ (80 rows; $\varrho\approx0.5$).
+Squares: 30 Guangdong routes with the pickups scaled by $0.5$, at $10^{-5}$ and
+$10^{-6}$ (60 rows). Reference: SMIS with $10^6$ draws; symmetric-log scale;
+dotted line at $\varrho=0.75$.}
+\label{fig:unconf}
 \end{figure}
 
 \section{Estimators}

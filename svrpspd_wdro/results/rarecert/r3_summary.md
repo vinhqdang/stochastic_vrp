@@ -59,7 +59,7 @@ By level (gamma) for rows with m_hat >= 1e-3:
 
 ## Budget-fair rivals and quadrature grids
 
-41 route-gamma rows (N = 1e6 simulator evaluations for every sampling method). Times are wall times on a loaded shared machine (indicative).
+42 route-gamma rows (N = 1e6 simulator evaluations for every sampling method). Times are wall times on a loaded shared machine (indicative).
 
 | gamma | group | rows | SMIS e med / max | two-end e med / max | GL shifted e med / max | CE small-pilot e med / max | SMIS RV | two-end RV | GL RV | CE small RV | CE small pilot | GL signed e median | SMIS signed e median |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -67,24 +67,24 @@ By level (gamma) for rows with m_hat >= 1e-3:
 | 0.0001 | other (GD) | 15 | 0.17% / 0.38% | 0.08% / 0.45% | 0.27% / 0.92% | 0.12% / 0.56% | 4.52 | 4.47 | 10.6 | 4.75 | 2.76e+05 | -0.02% | -0.05% |
 | 0.0001 | all | 21 | 0.16% / 0.57% | 0.09% / 0.45% | 0.34% / 28.04% | 0.09% / 0.56% | 4.53 | 4.48 | 11.2 | 4.78 | 2.54e+05 | -0.28% | -0.05% |
 | 1e-06 | balanced (VNN) | 6 | 0.16% / 0.57% | 0.19% / 0.39% | 2.02% / 18.72% | 0.12% / 0.51% | 5.86 | 5.82 | 14.7 | 6.35 | 1.66e+05 | -2.02% | 0.03% |
-| 1e-06 | other (GD) | 14 | 0.19% / 0.58% | 0.17% / 0.60% | 0.24% / 0.70% | 0.22% / 0.41% | 5.78 | 5.76 | 12.3 | 6.13 | 3.94e+05 | -0.09% | 0.02% |
-| 1e-06 | all | 20 | 0.19% / 0.58% | 0.17% / 0.60% | 0.34% / 18.72% | 0.18% / 0.51% | 5.79 | 5.76 | 12.7 | 6.17 | 3.11e+05 | -0.13% | 0.02% |
+| 1e-06 | other (GD) | 15 | 0.24% / 0.58% | 0.19% / 0.60% | 0.24% / 0.70% | 0.23% / 0.49% | 5.78 | 5.76 | 12.2 | 6.12 | 4.02e+05 | -0.10% | 0.03% |
+| 1e-06 | all | 21 | 0.24% / 0.58% | 0.19% / 0.60% | 0.35% / 18.72% | 0.19% / 0.51% | 5.79 | 5.76 | 12.4 | 6.16 | 3.62e+05 | -0.13% | 0.03% |
 
 Quadrature reference on coarser grids (error against the fine reference p_ref, wall time per evaluation):
 
 | grid (nodes, V pair) | rows | abs e median | q90 | max | wall s median | q90 |
 |---|---|---|---|---|---|---|
-| 41, (128,256) | 41 | 0.01% | 0.70% | 0.97% | 55.3 | 150 |
-| 21, (256,512) | 41 | 1.16% | 3.05% | 6.89% | 79 | 222 |
-| 21, (128,256) | 41 | 1.15% | 3.05% | 7.46% | 13.9 | 38.6 |
-| 11, (256,512) | 41 | 48.64% | 59.01% | 69.33% | 21.6 | 62.4 |
+| 41, (128,256) | 42 | 0.01% | 0.70% | 0.97% | 63.7 | 149 |
+| 21, (256,512) | 42 | 1.15% | 3.03% | 6.89% | 93.3 | 221 |
+| 21, (128,256) | 42 | 1.11% | 3.03% | 7.46% | 16 | 38.4 |
+| 11, (256,512) | 42 | 48.61% | 58.78% | 69.33% | 25.6 | 61.8 |
 
 Reference grid for comparison: 41 nodes, V = (256, 512); median wall time in baselines_summary.md.
 
 Wall time to reach relative precision 0.01 at 95% confidence (build + 1.96^2 RV / 0.01^2 draws at the measured per-draw time; medians over rows):
 
-- SMIS: median 3.68 s (q90 9.33 s)
-- CE small pilot: median 8.18 s (q90 17.4 s)
+- SMIS: median 3.72 s (q90 9.3 s)
+- CE small pilot: median 8.72 s (q90 17.6 s)
 
 ## Coverage at rare levels on balanced routes
 
@@ -112,7 +112,7 @@ Mean z -0.39 over 3 hubs (t = -0.90); mean relative difference -0.30%, median -0
 | gamma | rows | L range | crude draws | ref rse median | SMIS e median / max (abs) | single e median / max | CE e median / max | SMIS RV | single RV | CE RV |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 0.001 | 3 | 15-17 | 50,000,000 | 0.45% | 0.32% / 0.39% | 0.31% / 0.42% | 0.21% / 0.56% | 3.81 | 3.52 | 3.98 |
-| 0.0001 | 1 | 15-15 | 100,000,000 | 1.00% | 0.37% / 0.37% | 0.27% / 0.27% | 0.27% / 0.27% | 4.56 | 4.26 | 4.66 |
+| 0.0001 | 2 | 15-17 | 100,000,000 | 1.00% | 0.73% / 1.10% | 0.84% / 1.40% | 0.76% / 1.26% | 4.56 | 4.26 | 4.73 |
 
 ## Route-day simulator: crude Monte Carlo at gamma = 1e-4 and 1e-5
 
