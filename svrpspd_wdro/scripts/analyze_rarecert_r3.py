@@ -187,7 +187,7 @@ def sec_mhat(L, rows):
     ax.plot(g, g, color="0.4", lw=0.8, ls="--", label=r"$|{\rm error}|=\hat m$")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim(1e-8, 2.0)
+    ax.set_xlim(3e-9, 2.0)
     ax.set_ylim(1e-5, 1.0)
     ax.set_xlabel(r"missed-mode mass $\hat m$ (left edge: $\hat m\leq10^{-8}$)")
     ax.set_ylabel("|single-shift error|")
