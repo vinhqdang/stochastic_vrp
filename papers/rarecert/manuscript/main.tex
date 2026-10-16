@@ -649,9 +649,16 @@ and are dropped. Table~\ref{tab:routeday} gives the results. At
 $\gamma=10^{-3}$, against $10^7$-draw crude Monte Carlo (relative standard
 error about $1\%$), MDIS deviates by $0.76\%$ in median and $1.77\%$ at the 90\%
 quantile, CE by $0.89\%$ and $1.75\%$, and the single CE shift by $2.2\%$ and
-$22\%$. At $10^{-4}$ and $10^{-5}$ there is no crude reference; MDIS and the CE
-mixture, built independently from the same simulator, agree within $0.24\%$ in
-median and $0.59\%$ at the 90\% quantile. MDIS is built in $3$--$4$\,s against
+$22\%$. At $10^{-4}$ and $10^{-5}$ we also ran crude Monte Carlo, with $10^8$
+draws on 7 routes ($1.0$--$1.2\%$ relative standard error) and $2\times10^8$
+draws on 3 routes ($2.2\%$). MDIS deviates from it by $0.43\%$ in median
+($2.1\%$ at most) at $10^{-4}$ and by $2.6\%$ ($4.9\%$ at most) at $10^{-5}$,
+within about two standard errors of the reference in every case; the CE
+mixture is as close; the single CE shift is off by $0.4$ to $38\%$ at
+$10^{-4}$ and by $12$ to $45\%$ at $10^{-5}$, underestimating on every route
+but one. MDIS and the CE mixture, built independently from the same
+simulator, agree within $0.24\%$ in median and $0.59\%$ at the 90\%
+quantile over all 60 routes. MDIS is built in $3$--$4$\,s against
 $43$--$55$\,s for the CE pilot, and CE needs about $1\,800$ times more draws for
 $\varepsilon=0.1$ and $18$--$19$ times more for $\varepsilon=0.01$.
 
@@ -673,7 +680,42 @@ $10^{-5}$ & --- & --- & --- & 0.23 / 0.59\% & 9.25 / 97.6\% & 6.12 / 6.04 / 357 
 
 \subsection{Hubs}
 \label{sec:hubs}
-We certify 66 hubs: all 26 of Northern Vietnam and 40 of Guangdong,
+\paragraph{Do the plans pass?} The plans were built with the sample-average
+gate at a per-route failure target of $0.10$. We evaluated all 148 hubs and
+6\,242 routes at the planned capacity $Q$ (hub SMIS with $10^5$ draws, route
+SMIS with $2\times10^4$ draws per route). No hub meets any of the four levels
+(Table~\ref{tab:pass}): the overflow probability of a hub at $Q$ has a median
+of $7.9\%$ in Northern Vietnam and $10.8\%$ in Guangdong (10th to 90th
+percentile $6.2$--$9.9\%$ and $8.1$--$13.8\%$). The median route overflows
+with probability $2.4\%$ (90th percentile $3.8\%$), consistent with the
+target of $0.10$ being met comfortably per route, and the shares of routes that
+pass are $12.2\%$ at $10^{-3}$, $8.7\%$ at $10^{-4}$, $6.8\%$ at $10^{-5}$ and
+$6.0\%$ at $10^{-6}$. Most of the routes that pass are routes that cannot
+overflow at all: $4.7\%$ of the routes have a largest possible load below $Q$.
+So a plan built for a per-route risk of $0.10$ does not meet a service level of
+$10^{-3}$ or below anywhere; the certification step is what shows this, and
+the buffers below say how much capacity it takes to meet it.
+
+\begin{table}[t]
+\centering\small
+\caption{Plans at their planned capacity $Q$: share of routes with overflow
+probability at most $\gamma$ (route SMIS), and the overflow probability of a
+hub, by region (148 hubs, 6\,242 routes). No hub passes at any $\gamma$.}
+\label{tab:pass}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & hubs & routes & \multicolumn{4}{c}{share of routes with $P_{\rm route}(Q)\le\gamma$} \\
+\cmidrule(lr){4-7}
+region & median $P_{\rm hub}(Q)$ & median $P_{\rm route}(Q)$ & $10^{-3}$ & $10^{-4}$ & $10^{-5}$ & $10^{-6}$ \\
+\midrule
+Northern Vietnam (26 hubs, 375 routes) & 7.9\% & 2.2\% & 11.5\% & 9.9\% & 9.6\% & 9.1\% \\
+Guangdong (122 hubs, 5\,867 routes) & 10.8\% & 2.4\% & 12.2\% & 8.6\% & 6.7\% & 5.8\% \\
+all & 10.2\% & 2.4\% & 12.2\% & 8.7\% & 6.8\% & 6.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Capacity needed.} We certify 66 hubs: all 26 of Northern Vietnam and 40 of Guangdong,
 one drawn at random from each of 40 equal-size groups of the 122 hubs ordered
 by number of customers (25 to 597 customers, 5 to 100 routes). For each hub
 and $\gamma\in\{10^{-3},10^{-5}\}$ we search the common capacity $c$ at which
