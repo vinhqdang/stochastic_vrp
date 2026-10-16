@@ -106,9 +106,12 @@ Wall time to reach relative precision 0.01 at 95% confidence (build + 1.96^2 RV 
 | VNN-BACKAN | 25 | 5 | 0.000986 | 0.21% | 0.000988 | 0.71% | -0.37 | -0.27% | 0.000985 | 5.13% | 0.09% |
 | VNN-LAICHAU | 29 | 5 | 0.000852 | 0.21% | 0.00086 | 0.76% | -1.16 | -0.91% | 0.000853 | 4.01% | -0.07% |
 | VNN-CAOBANG | 50 | 7 | 0.000823 | 0.21% | 0.000821 | 0.78% | 0.35 | 0.28% | 0.000822 | 9.06% | 0.10% |
+| GD-RUYUANYAOZUZIZHIXIAN | 54 | 7 | 0.00102 | 0.21% | 0.000999 | 0.71% | 2.11 | 1.56% | 0.00102 | 2.79% | -0.05% |
+| VNN-LAOCAI | 54 | 9 | 0.000881 | 0.21% | 0.000881 | 0.75% | -0.06 | -0.05% | 0.000878 | 3.61% | 0.29% |
+| VNN-DIENBIEN | 55 | 8 | 0.000938 | 0.21% | 0.000938 | 0.73% | 0.05 | 0.03% | 0.000938 | 4.23% | 0.08% |
 | VNN-THAINGUYEN | 102 | 14 | 0.000939 | 0.22% | 0.000943 | 0.73% | -0.66 | -0.50% | n/a | n/a | n/a |
 
-Mean z -0.46 over 4 hubs (t = -1.46); mean relative difference -0.35%, median -0.39%.
+Mean z 0.04 over 7 hubs (t = 0.10); mean relative difference 0.02%, median -0.05%.
 
 ## Routes with 15 or more stops (crude Monte Carlo reference)
 

@@ -889,17 +889,30 @@ number of hubs.
 \emph{Checks.} The hub estimate lies between $\max_r p_r$ and $\sum_r p_r$,
 with tolerance four combined standard errors, at all 132 points; the hub
 probability is $3.4$--$3.7$ times the riskiest route's and $0.37$--$0.51$
-times the sum over routes (medians). Against $2\times10^6$-draw crude Monte
-Carlo on the 20 smallest hubs at $\gamma=10^{-3}$ (relative standard error
-$2.2$--$2.5\%$), 19 of 20 standardised differences are within $\pm2$ (one is
-$2.84$), but their mean is $+0.59$. The exact conditional program settles this on
-the six smallest hubs (25--55 customers, 5--9 routes): the hub estimate
-deviates from it by $-0.8$ to $+2.0\%$ (median $+0.6\%$, five of six
-positive) with a relative standard error of $0.67\%$, so a small upward bias
-of the order of the standard error cannot be excluded; it is conservative for
-certification. The exact hub program takes $13$--$31$ minutes per hub and
-level, against about $35$\,s for the hub estimate, and its cost grows
-linearly with the number of routes.
+times the sum over routes (medians). The hub estimates of Table~\ref{tab:hubs}
+use $10^5$ draws (relative standard error about $0.7\%$). Against
+$2\times10^6$-draw crude Monte Carlo on the 20 smallest hubs at
+$\gamma=10^{-3}$ (relative standard error $2.2$--$2.5\%$), 19 of 20
+standardised differences were within $\pm2$ (one was $2.84$), but their mean
+was $+0.59$, and against the quadrature reference five of six hub estimates
+were above it. To see whether this was a bias we re-estimated seven hubs at
+the same capacity with $10^6$ hub draws (relative standard error $0.21\%$) and
+compared them with crude Monte Carlo at $2\times10^7$ draws
+($0.71$--$0.78\%$; 12 to 42 minutes per hub) and, for the six smallest hubs,
+with the quadrature reference. The seven hubs have $25$ to $102$ customers and
+$5$ to $14$ routes; the largest, Thai Nguyen, has no quadrature value. The
+differences from crude Monte Carlo are $-0.9$ to $+1.6\%$ (mean $+0.02\%$,
+median $-0.05\%$; standardised differences $-1.16$ to $2.11$, mean $0.04$) and
+those from the quadrature reference $-0.07$ to $+0.29\%$. So the hub estimate
+shows no bias at $10^6$ draws; the earlier positive differences were within the
+sampling error of the $10^5$-draw estimates (and the reference's own error
+estimate of $2.8$--$9\%$ of $p$ is a conservative bound, since the two
+agree within $0.3\%$). The quadrature program takes $13$--$31$ minutes per hub
+and level, against $41$--$146$\,s for the $10^6$-draw hub estimate, and its
+cost grows linearly with the number of routes. We did not check hubs at
+$10^{-5}$ against an independent method: crude Monte Carlo at that level needs
+$10^9$ draws per hub, and the buffers at $10^{-5}$ rest on SMIS alone, which
+agrees with every independent reference we could afford at the other levels.
 
 \emph{Shared factors.} Treating the routes of a hub as independent
 overstates the hub probability by a factor $2.7$ in median ($4.6$ at the 90\%
