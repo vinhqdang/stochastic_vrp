@@ -1,0 +1,29 @@
+\documentclass[10.5pt]{article}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{url}
+\setlength{\parindent}{0pt}\setlength{\parskip}{0.6em}
+\begin{document}
+October 2026
+
+Editor-in-Chief, \emph{Quantum Information Processing}
+
+Dear Editor,
+
+Please consider the manuscript \textbf{``Quantum amplitude estimation for stochastic vehicle routing: an audit with explicit constants on regional plans''} as a regular article in \emph{Quantum Information Processing}.
+
+\textbf{Summary.} Quantum amplitude estimation lowers the number of samples needed to estimate a probability from order $1/\varepsilon^2$ to order $1/\varepsilon$, and has been proposed for risk estimation. We ask where, on real stochastic routing plans, it uses fewer resources than the best classical method once constants are counted. We build a reversible peak-load oracle for routes with simultaneous pickup and delivery in Qiskit, with an exact Toffoli count checked against the transpiled circuit, and a difference oracle that evaluates a base route and a modified route on one superposed scenario register. Two elementary lemmas explain when the shared register helps. We then test five uses against classical competitors on 73 benchmark plans and 148 regional plans (10,518 routes; 36,232 repair steps): coherent common random numbers, cheapest-feasible search inside a repair step, simultaneous certification of all routes of a plan, per-route certification against a gate, and rare-event certification against mixture importance sampling. The quantum query count is lower only at absolute precision $10^{-3}$ or finer, on the few routes at the decision threshold, and, in an idealised accounting, for rare events at relative precision of $3\%$ or finer; with constants counted the search and plan-certification tests favour the classical method. The paper states what is not built (the copula-factor register, the selection oracle, a fault-tolerant resource estimate) and what is not proved.
+
+\textbf{Why this journal.} The paper is an application-driven analysis of a quantum algorithm with explicit circuits, gate counts, query-complexity statements and negative as well as positive results, which fits the algorithms and fault-tolerance topics of \emph{Quantum Information Processing}. Its audience is readers who need to know when quadratic query speed-ups survive the constants of a concrete application.
+
+\textbf{Related manuscripts and overlap.} For transparency under the journal's policy on salami publishing and re-use:
+\begin{itemize}\setlength{\itemsep}{0pt}
+\item A separate manuscript on the \emph{classical} certification of rare overflow risk of the same regional plans (importance sampling with a mixture of computed dominating points) has been submitted to another journal. It uses the same instances and plan files. It contains a short note on quantum amplitude estimation that reports the headline ratios of Section~5.4 of the present manuscript (rare events); the present manuscript contains the full analysis, the oracle, the cost models and the four other tests, none of which appear there. No text is shared.
+\item Two further manuscripts by the author, on online recourse for the same routing problem and on e-process monitoring of routing plans, are under review elsewhere. They share the benchmark instances and the demand model and contain no quantum material.
+\end{itemize}
+This manuscript has not been published and is not under consideration elsewhere. All code, instances, plans and scripts are public at \url{https://github.com/vinhqdang/stochastic_vrp}. Funding, competing-interest, author-contribution and AI-use statements are given in the Declarations section of the manuscript and in the submission form.
+
+Sincerely,\\[0.3em]
+Quang-Vinh Dang\\
+British University Vietnam, Hung Yen, Vietnam\\
+vinh.dq4@buv.edu.vn, ORCID 0000-0002-3877-8024
+\end{document}
