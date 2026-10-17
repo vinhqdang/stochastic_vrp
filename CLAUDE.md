@@ -146,7 +146,7 @@ Resolved thread from paper 4: BATON's W-DRO gate in
 tighter threshold. Revision 1 of BATON states this explicitly (Section
 4.1) and presents the gate as a more conservative regime.
 
-### Paper 7 — QUASAR (papers/quasar/, ACTIVE — M4)
+### Paper 7 — QUASAR (papers/quasar/, UNDER REVIEW at Quantum Information Processing)
 
 *Quantum Amplitude estimation for Stochastic vehicle Routing.* Quantum
 algorithms for chance-constrained / CVaR SVRPSPD: a coherent reversible
@@ -162,7 +162,7 @@ Roles for this project: the master session plans and designs algorithms;
 execution is delegated in small specified modules with tests; review is a
 separate pass.
 
-### Paper 8 — RARECERT (papers/rarecert/, ACTIVE — planning)
+### Paper 8 — RARECERT (papers/rarecert/, UNDER REVIEW at INFORMS J. Computing)
 
 *Certifying rare overflow risk of regional pickup-and-delivery plans.*
 Spin-off of QUASAR direction A (2026-10-14): certify service levels
@@ -196,17 +196,21 @@ estimation beats the best classical method on this model; see
   documented negative result. Do not resume — see its PROJECT.md banner.
 - `papers/eclair/` — paper 5 (ECLAIR), **ACTIVE and open for edits**;
   self-contained (no `svrpspd_wdro/` imports — see its README.md).
-- `papers/quasar/` — paper 7 (QUASAR), **ACTIVE and open for edits**;
+- `papers/quasar/` — paper 7 (QUASAR), **under review at QIP, frozen** (submitted Oct 2026);
   quantum code in `svrpspd_wdro/quantum/` (Qiskit).
+- `papers/rarecert/` — paper 8 (RARECERT), **under review at INFORMS J.
+  Computing, frozen** (submitted Oct 2026; files in `submission_ijoc/`).
 - `papers/parcel/` — paper 6 (PARCEL), **ACTIVE and open for edits**;
   planning stage, self-contained (see its README.md).
 - **Parallel papers, independent review clocks** — always check each
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  paper 1 (BATON) is in revision 1, papers 2–3 are closed to edits,
-  paper 4 is abandoned, and papers 5
-  (ECLAIR) and 6 (PARCEL) are the **open papers**.
+  paper 1 (BATON) is in revision 1, papers 2–3, 7 (QUASAR, QIP) and 8
+  (RARECERT, JoC) are closed to edits while under review, paper 4 is
+  abandoned, and papers 5 (ECLAIR) and 6 (PARCEL) are the **open papers**.
+  Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
+  `eclair.tex`, `parcel.tex`), never `main.*`.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
   manuscript, a `STATUS.md` (venue, review state, freeze policy), a
   `README.md` with the file manifest and how each table/figure

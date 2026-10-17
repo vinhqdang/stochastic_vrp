@@ -5,9 +5,12 @@
 - **Origin:** spin-off of QUASAR (paper 7) direction A (2026-10-14): the
   classical rival built to test quantum amplitude estimation turned out to
   be the stronger, positive result.
-- **Venue candidates:** INFORMS Journal on Computing; Transportation
-  Science; EJOR. Decide after the novelty check (PROJECT.md §6).
-- **State:** ACTIVE — draft 3 of the manuscript complete (2026-10-16): both internal reviews addressed (plan-level pass rate at the planned capacity, missed-mode diagnostic on all rows, pickup rescaling and correlated factors, budget-fair rivals, idle-machine timing, hub and route-day checks against crude Monte Carlo, coverage at rare levels, longer routes); proofs remain sketches. Next: third internal review, then full proofs or a decision to submit with sketches labelled. Open for edits.
+- **Venue:** SUBMITTED to INFORMS Journal on Computing (October 2026), area
+  Simulation, Stochastic Models, & Stochastic Optimization; single-blind;
+  submission files in `submission_ijoc/` (INFORMS template, cover letter,
+  `rarecert_ijoc.pdf`, 28 pages = ~25 main incl. references + appendix as
+  supplement). Decision pending.
+- **State:** **UNDER REVIEW at INFORMS J. Computing — FROZEN.** Do not edit `manuscript/`, `submission_ijoc/` or the results it cites until the decision arrives (revisions only on the editor's request). Draft 3 content: both internal reviews addressed; proofs remain sketches (stated as such). Known weaknesses recorded at submission: proofs are sketches, 30-route GD sensitivity, 8 long routes, no independent hub check at 1e-5.
 - **Sharing:** uses the shared engine (instances, scenario generator, plan
   caches incl. the region set `data/Region`, `results/plans_Region`) and
   `svrpspd_wdro/quantum/rare.py` (classical parts) — to be moved to a

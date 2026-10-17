@@ -3,12 +3,14 @@
 - **Working title:** QUASAR: quantum amplitude estimation for stochastic
   vehicle routing — coherent feasibility oracles, common random numbers in
   superposition, and nested search for chance-constrained SVRPSPD.
-- **Venue:** not JoC (RARECERT, paper 8, is submitted there; a second JoC
-  submission would look like salami slicing). Proposed: IEEE Transactions on
-  Quantum Engineering; fallbacks ACM Transactions on Quantum Computing,
-  Quantum Science and Technology. To be confirmed by the author.
-- **State:** **PAUSED — negative results recorded (M4 search, simultaneous and per-route certification, rare events vs mixture IS); the positive classical result moved to paper 8 (papers/rarecert).** Open for
-  edits.
+- **Venue:** SUBMITTED to Quantum Information Processing (Springer), regular
+  article, October 2026 (not JoC: RARECERT is there; IEEE TQE avoided after
+  recent desk rejections). Single-blind. Files in `manuscript/` (`quasar.tex`
+  in Springer `sn-jnl` format, `cover_letter.pdf`, `appendix_proofs.tex`).
+  The cover letter deliberately does not discuss other manuscripts; Springer
+  asks for transparency on re-use, and the rare-event numbers of Section 5.4
+  also appear in the quantum note of RARECERT — be ready to answer.
+- **State:** **UNDER REVIEW at Quantum Information Processing — FROZEN.** Negative results: search inside the optimiser, simultaneous and per-route certification, rare events vs mixture IS (see manuscript Table 7). Items to check if a reviewer asks: the per-route classical lower bound (appendix, new argument not independently checked) and the classical-scan constant (extra term added), STATUS/REFRAME numbers superseded by `FACTS_FOR_PAPER.md` Section 7; Declarations (funding, competing interests, AI use, contributions) were left to the author.
 - **Sharing:** uses the shared engine's instances, scenario generators and
   route conventions (`svrpspd_wdro/core`); quantum code is separate in
   `svrpspd_wdro/quantum/`. The research question (quantum estimation and
