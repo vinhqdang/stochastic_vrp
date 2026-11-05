@@ -24,4 +24,4 @@
   Elsevier portal), `r1/main_diff.pdf` (changes marked against the
   submitted version).
 - Authors: Quang-Vinh Dang (BUV, corresponding), Hoang-Viet Vu (BUV),
-  Phuc-Son Nguyen (UEH).
+  Phuc-Son Nguyen (University of Economics Ho Chi Minh City).
