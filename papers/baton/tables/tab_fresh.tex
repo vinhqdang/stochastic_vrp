@@ -1,15 +1,24 @@
 \begin{table}[t]
-\caption{The fresh-start value and the post-return state. Bias columns:
-mean error of the estimated fresh-start value $\widehat F_k$ against the
-high-data reference $F_k$ of DP$^3_{50\mathrm{k}}$, in \% of the handoff price;
-in-sample is \textsc{Baton}'s own estimate, out-of-sample re-evaluates
-the same fitted downstream policy on $5\times10^4$ independent paths.
-Saving columns (\% vs.\ reactive, all \emph{without} deployment
-selection, so that the three-action fit is exposed): the three-action
-policy as fitted, with $\widehat F_k$ replaced by its out-of-sample
-value, with $F_k$ replaced by the high-data reference value, with the
-state-conditional fresh-start value (\textsc{Baton-cf}), and with the
-exact residual-capacity reset $x_k = -D_{\le k}$. Savings in this table
+\caption{The fresh-start value and the post-return state. Three quantities
+are compared at each stop: \textsc{Baton}'s in-sample estimate
+$\widehat F_k$; the population value $F^{\mathrm{pop}}_k$ of the same
+fitted downstream policy from the reset state, estimated on
+$5\times10^4$ independent paths; and an approximate reference
+$F^{\mathrm{ref}}_k$ for the optimal value, the fresh-start value of a
+\emph{constant-F} high-data plug-in program (DP$^{3,c}_{50\mathrm{k}}$,
+the unconditional counterpart of DP$^3_{50\mathrm{k}}$, fitted on
+$2.5\times10^4$ paths and valued on another $2.5\times10^4$). First two
+columns: $\widehat F_k - F^{\mathrm{pop}}_k$ (in-sample effect) and
+$F^{\mathrm{pop}}_k - F^{\mathrm{ref}}_k$ (downstream suboptimality plus
+reference error), mean over stops and routes in \% of the handoff price,
+with 95\% bootstrap intervals resampling instances. Saving columns (\%
+vs.\ reactive, all \emph{without} deployment selection, so that the
+three-action fit is exposed): the three-action policy as fitted, with
+$\widehat F_k$ replaced by $F^{\mathrm{pop}}_k$, with $F_k$ replaced by
+$F^{\mathrm{ref}}_k$, with the state-conditional fresh-start value
+(\textsc{Baton-cf}), with the physical reset $x_k = -\min(D_{\le k},
+L_0)$, and the state-conditional high-data program
+DP$^3_{50\mathrm{k}}$ of the main tables. Savings in this table
 pool the route costs of all plans of a benchmark (ratio of sums), whereas
 Tables~\ref{tab:grand} and~\ref{tab:large} average the plan-level
 savings over instances, so the two differ slightly.}
@@ -20,12 +29,12 @@ savings over instances, so the two differ slightly.}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{l cc c ccccc c}
 \toprule
-& \multicolumn{2}{c}{bias of $\widehat F_k$ (\% of $H$)} & & \multicolumn{5}{c}{three-action \textsc{Baton}, saving \%} & \\ \cmidrule(lr){2-3}\cmidrule(lr){5-9}
-Benchmark & in-sample & out-of-sample & \textsc{Baton-ho} & as fitted & $F$ out-of-s. & $F$ reference & \textsc{cf} & exact reset & DP$^3_{50\mathrm{k}}$ \\
+& \multicolumn{2}{c}{error of $F$ (\% of $H$) [95\% CI]} & & \multicolumn{5}{c}{three-action \textsc{Baton}, saving \%} & \\ \cmidrule(lr){2-3}\cmidrule(lr){5-9}
+Benchmark & $\widehat F - F^{\mathrm{pop}}$ & $F^{\mathrm{pop}} - F^{\mathrm{ref}}$ & \textsc{Baton-ho} & as fitted & $F^{\mathrm{pop}}$ & $F^{\mathrm{ref}}$ & \textsc{cf} & physical reset & DP$^3_{50\mathrm{k}}$ \\
 \midrule
-Salhi--Nagy (Det) & +0.50 & +0.09 & 41.3 & 52.2 & 52.2 & 51.9 & 53.1 & 57.9 & 53.5 \\
-Dethloff (SAA) & +0.00 & +0.01 & 18.9 & 51.4 & 51.4 & 51.4 & 52.2 & 54.6 & 54.6 \\
-City, real shops (Det) & -1.18 & -1.05 & 9.2 & 5.6 & 5.6 & 5.9 & 9.4 & 9.9 & 10.7 \\
+Salhi--Nagy (Det) & +0.40 [+0.2, +0.6] & +0.09 [-0.5, +0.6] & 41.6 & 52.6 & 52.6 & 52.2 & 53.5 & 58.2 & 53.9 \\
+Dethloff (SAA) & -0.01 [-0.05, +0.04] & +0.01 [+0.00, +0.02] & 18.9 & 51.4 & 51.4 & 51.4 & 52.2 & 54.6 & 54.6 \\
+City, real shops (Det) & -0.13 [-0.5, +0.2] & -1.09 [-1.7, -0.5] & 9.0 & 5.5 & 5.4 & 5.7 & 9.2 & 9.7 & 10.5 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

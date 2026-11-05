@@ -47,7 +47,7 @@ sys.path.insert(0, str(_WDRO))
 sys.path.insert(0, str(_SCRIPTS))
 
 from core.otr_endpoint import fit_otr
-from core.otr2 import calibrate_B_empirical_peak, fit_otr_peak
+from core.otr2 import fit_otr_peak
 from core.dp_exec import fit_dp
 from core.published_policies import pi_thresholds, simulate_pi, tune_pi
 from core.costs import (
@@ -186,8 +186,10 @@ def _eval_route_realistic(route, dbar, Q, D, scale, costs,
 
     L0 = float(dbar[r].sum())
     B  = float(Q - L0)
-    if B <= 0.0:
-        B = calibrate_B_empirical_peak(g_train, alpha=1.0 - ALPHA)
+    # physical slack: a route that departs fully loaded has B = 0 (it
+    # breaches as soon as the running load rises); plans never exceed Q
+    if B < 0.0:
+        raise ValueError(f"route departs over capacity: B = {B}")
 
     H, E = route_cost_schedules(route, D, scale, costs)
 

@@ -10,7 +10,7 @@ shared engine (`svrpspd_wdro/`) plus one directory per paper under
 in a subpackage of `svrpspd_wdro/` (e.g. `core/`, `ev/`) so everything
 shares the same instances, simulator, cost model, and test suite.
 
-### Paper 1 — BATON (papers/baton/, REVISION 1 at Computers & OR)
+### Paper 1 — BATON (papers/baton/, REVISION 2 at Computers & OR)
 
 SVRPSPD with two coupled layers:
 
@@ -31,9 +31,11 @@ vehicles) with per-stop price schedules built from real route geometry —
 see `svrpspd_wdro/core/costs.py`.
 
 Reviews (3 reviewers, CAOR-D-26-01885) arrived September 2026; revision
-1 is prepared in `papers/baton/` with `r1/` holding the response letter,
-portal replies and marked-up diff. Once resubmitted the directory is
-frozen again until the next decision (see its STATUS.md).
+1 was submitted 27 September 2026 (`r1/`, git tag `baton-r1`). Second-
+round reviews arrived Oct–Nov 2026; revision 2 is prepared in `r2/`
+(response letter, portal replies, diff against `baton-r1`, flat ZIP).
+Once resubmitted the directory is frozen again until the next decision
+(see its STATUS.md).
 
 ### Paper 2 — TEMPO (papers/tempo/, UNDER REVIEW at Transportation Science)
 
@@ -186,7 +188,7 @@ estimation beats the best classical method on this model; see
   BATON-era machinery reused everywhere; `ev/` is paper 2. Paper 3
   (`papers/csonet2026/`) does NOT use this engine at all — its code is
   self-contained inside its own directory.
-- `papers/baton/` — C&OR manuscript (revision 1; tables ONLY via its
+- `papers/baton/` — C&OR manuscript (revision 2; tables ONLY via its
   `make_tables.py`, never hand-edit `tables/*`).
 - `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
 - `papers/csonet2026/` — paper 3, under **major revision** at JOCO
@@ -206,7 +208,7 @@ estimation beats the best classical method on this model; see
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  paper 1 (BATON) is in revision 1, papers 2–3, 7 (QUASAR, QIP) and 8
+  paper 1 (BATON) is in revision 2, papers 2–3, 7 (QUASAR, QIP) and 8
   (RARECERT, JoC) are closed to edits while under review, paper 4 is
   abandoned, and papers 5 (ECLAIR) and 6 (PARCEL) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,

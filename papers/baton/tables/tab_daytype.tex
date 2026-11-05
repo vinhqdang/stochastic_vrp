@@ -1,5 +1,5 @@
 \begin{table}[t]
-\caption{Non-exchangeable days (40 Dethloff instances, \textsc{Det} and
+\caption{Known day types (40 Dethloff instances, \textsc{Det} and
 \textsc{SAA} plans; saving \% vs.\ reactive on the same days, pooled
 over plans as a ratio of sums, with the ``all'' column weighting normal
 and promotion days 0.8/0.2). One day
@@ -11,8 +11,12 @@ in the same pooled history (about 800 normal and 200 promotion days), so
 that the comparison isolates the day-type information from the sample
 size; stale: fitted on the normal days of that history only and applied
 unchanged on promotion days. The difference between day-type-specific
-and pooled \textsc{Baton} over all days is reported in the text with a
-paired bootstrap interval over the 80 plans.}
+and pooled \textsc{Baton} over all days is reported in the text, for each
+gate and pooled over both, with 95\% bootstrap intervals that resample
+instances (keeping the two plans of an instance together). Days are
+drawn independently from a fixed mixture of the two types, so they
+remain exchangeable: the experiment concerns known day types, not
+temporal drift or serial dependence.}
 \label{tab:daytype}
 \centering
 \footnotesize

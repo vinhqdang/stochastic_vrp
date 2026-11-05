@@ -98,6 +98,18 @@ def _ci(lo, hi):
     return f"[{lo:+{f}}, {hi:+{f}}]"
 
 
+def _cluster_ci(d, stat, n=4000):
+    """95% bootstrap interval of stat(frame) resampling instances, with all
+    routes (and plans) of an instance kept together."""
+    groups = [g for _, g in d.groupby("Instance")]
+    rng = np.random.default_rng(20260926)
+    vals = []
+    for _ in range(n):
+        pick = rng.integers(0, len(groups), len(groups))
+        vals.append(stat(pd.concat([groups[i] for i in pick])))
+    return tuple(np.quantile(vals, [0.025, 0.975]))
+
+
 def _sel_ci(frame, comps, ours="v2_act", n=10_000):
     """Difference between `ours` and the strongest competitor, with the
     competitor chosen by mean saving INSIDE every bootstrap resample, so
@@ -196,9 +208,10 @@ The last four columns are reference points, not competitors:
 DP$_{50\mathrm{k}}$ and DP$^3_{50\mathrm{k}}$ are high-data plug-in
 programs in the $(k, W_k)$ state for the handoff-only and the
 three-action problem (fifty times the training data); oracle-ho is the
-clairvoyant restricted to the handoff lever, which \textsc{Baton} may
-therefore exceed; oracle$^3$ is the clairvoyant with all three actions,
-a lower bound on the cost of every policy.}
+clairvoyant restricted to the handoff lever, a bound for the handoff-only
+policies but only a reference point for the three-action ones, which may
+therefore exceed it; oracle$^3$ is the clairvoyant with all three
+actions, a bound for every policy.}
 \label{tab:grand}
 \centering
 \footnotesize
@@ -235,6 +248,9 @@ Gate & """ + " & ".join(h for _, h in cols) + r""" \\
         macros[f"sv{g}Two"] = _pct(s_.thr2_saving.mean())
         macros[f"sv{g}DpThreeN"] = _pct(s_.dp3_n_saving.mean())
         macros[f"sv{g}OrcThree"] = _pct(s_.oracle3_saving.mean())
+        macros[f"react{g}"] = f"{s_.none_rec.mean():.1f}"
+        macros[f"pem{g}"] = _pct(100 * s_.none_pem.mean())
+        macros[f"cost{g}Baton"] = f"{s_.v2_act_rec.mean():.1f}"
     ratio = [grand[grand.Plan == g].v2_act_saving.mean() /
              grand[grand.Plan == g].dp_xl3_saving.mean() for g in GATES]
     macros["ratioDpThreeLo"] = f"{100 * min(ratio):.0f}\\%"
@@ -582,7 +598,8 @@ if cs_files and grand is not None:
                     f"{d.fb_tau_saving.mean():.1f} & {two} & "
                     f"{ho} & "
                     rf"\textbf{{{d.v2_act_saving.mean():.1f}}} & "
-                    f"{d.oracle_saving.mean():.1f} \\\\")
+                    f"{d.oracle_saving.mean():.1f} & "
+                    f"{d.none_rec.mean():.1f} & {d.v2_act_rec.mean():.1f} \\\\")
     tab = r"""\begin{table}[t]
 \caption{Sensitivity of the recourse saving (\%, \emph{higher is
 better}; best non-clairvoyant value per row in bold) to the fleet-economics
@@ -593,16 +610,24 @@ plus tuned repeatable depot-return trigger. In the
 $F_{\mathrm{sb}} = 60$ row the standby rate exceeds the emergency price
 at late stops, so Inequality~\eqref{eq:prices} fails there. The last
 rows add a fixed fee (dwell, loading-dock time) to every depot return on
-top of its detour, transfer and lateness costs.}
+top of its detour, transfer and lateness costs. The savings are relative
+to the reactive cost of the same configuration, which itself changes with
+the emergency prices; the last two columns therefore give the expected
+daily recourse cost per plan of the reactive policy and of
+\textsc{Baton} in currency units (\emph{lower is better}). Savings
+are averages of per-plan percentages and costs averages of per-plan
+costs, so a saving is not one minus the ratio of the two cost columns.}
 \label{tab:costsens}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{l cccccc}
+\begin{tabular}{l cccccc cc}
 \toprule
+& \multicolumn{6}{c}{saving vs.\ reactive (\%)} & \multicolumn{2}{c}{daily cost} \\
+\cmidrule(lr){2-7}\cmidrule(lr){8-9}
 Configuration & restock & threshold & two-lever & \textsc{Baton-ho} &
-\textsc{Baton} & oracle-ho \\
+\textsc{Baton} & oracle-ho & reactive & \textsc{Baton} \\
 \midrule
 """ + "\n".join(body) + r"""
 \bottomrule
@@ -611,6 +636,15 @@ Configuration & restock & threshold & two-lever & \textsc{Baton-ho} &
 \end{table}
 """
     _write("tab_costsens.tex", tab)
+    for tag, nm in (("F_emg_25", "EmgLow"), ("F_emg_60", "EmgHigh"),
+                    ("F_standby_10", "SbLow"), ("F_standby_35", "SbHigh")):
+        if tag in cs_files:
+            d = cs_files[tag]
+            macros[f"cs{nm}React"] = f"{d.none_rec.mean():.1f}"
+            macros[f"cs{nm}Baton"] = f"{d.v2_act_rec.mean():.1f}"
+            macros[f"cs{nm}Sv"] = _pct(d.v2_act_saving.mean())
+    macros["csBaseReact"] = f"{base.none_rec.mean():.1f}"
+    macros["csBaseBaton"] = f"{base.v2_act_rec.mean():.1f}"
     if "F_standby_35" in cs_files:
         d = cs_files["F_standby_35"]
         macros["dearSbThresh"] = _pct(d.fb_tau_saving.mean())
@@ -936,6 +970,44 @@ injected into the middle bin.""",
         r"Demand law & gate & react. & " + hdr + r" & $\Delta$ [95\% CI] & viol. & pow.$_{10}$ & pow.$_{25}$ \\",
         body, size=r"\footnotesize", sep="3pt", env="sidewaystable"))
 
+# ── revision 2 checks: exact-DP grid, conditional-F shape, stock-outs ──────
+eg = _read("r1/exact_grid.csv")
+if eg is not None:
+    e = eg[eg.G6000_none > 1e-6]
+    for tag, nm in (("G1500", "Coarse"), ("G3000", "Mid"), ("G3000_wide", "Wide")):
+        for k in ("ho", "3"):
+            rel = (e[f"{tag}_{k}"] - e[f"G6000_{k}"]).abs() / e[f"G6000_{k}"].clip(lower=1e-9)
+            macros[f"grid{nm}{'Ho' if k == 'ho' else 'Three'}Max"] = _pct(100 * rel.max(), 2)
+    # effect on the pooled exact savings reported in Table 8
+    for pln in ("Det", "SAA"):
+        d = e[e.Plan == pln]
+        for tag, nm in (("G1500", "Coarse"), ("G6000", "Fine"), ("G3000_wide", "Wide")):
+            for k in ("ho", "3"):
+                sv_ = 100 * (d[f"{tag}_none"].sum() - d[f"{tag}_{k}"].sum()) / d[f"{tag}_none"].sum()
+                macros[f"grid{pln.capitalize()}{nm}{'Ho' if k == 'ho' else 'Three'}"] = _pct(sv_)
+    macros["gridRoutes"] = str(len(e))
+    diffs = []
+    for pln in ("Det", "SAA"):
+        d = e[e.Plan == pln]
+        for k in ("ho", "3"):
+            sv = {tag: 100 * (d[f"{tag}_none"].sum() - d[f"{tag}_{k}"].sum()) / d[f"{tag}_none"].sum()
+                  for tag in ("G1500", "G3000", "G6000", "G3000_wide")}
+            diffs += [abs(v - sv["G1500"]) for v in sv.values()]
+    macros["gridPooledMaxDiff"] = f"{max(diffs):.2f}"
+    rel = (e["G1500_3"] - e["G6000_3"]).abs() / e["G6000_3"]
+    macros["gridCoarseThreeMedian"] = _pct(100 * rel.median(), 1)
+shf = _read("r1/shape_f.csv")
+if shf is not None:
+    shf = shf.assign(rho=shf.rho.astype(str))
+    for rho, nm in (("0.0", "Zero"), ("0.6", "Six"), ("0.9", "Nine")):
+        d = shf[shf.rho == rho]
+        macros[f"shapeF{nm}"] = _pct(100 * d.viol.sum() / max(d.pairs.sum(), 1))
+so = _read("r1/stockout.csv")
+if so is not None:
+    macros["stockoutAll"] = _pct(100 * so.p_stockout.mean(), 0)
+    macros["stockoutExcess"] = _pct(100 * so.excess_share.mean(), 0)
+
+
 # ── exact DP under independent demands ───────────────────────────────────
 ex = _read("r1/exact.csv")
 if ex is not None:
@@ -982,7 +1054,9 @@ convolution of the Gamma demand densities on a grid of 1{,}500 load
 cells, for the handoff-only menu and for the three-action menu with the
 conservative reset. Policies are fitted on $10^3$ days and evaluated on
 $2\times10^4$ test days; MC err.: relative difference between the
-simulated and the exact reactive cost, a check of the grid. Savings are
+simulated and the exact reactive cost. Re-solving on grids of 3{,}000
+and 6{,}000 cells, or with a wider truncation, changes the pooled exact
+savings by at most """ + macros.get("gridPooledMaxDiff", "--") + r""" points. Savings are
 \% of the reactive cost, pooled over routes; the last three columns give
 \textsc{Baton-ho}'s share of the exact handoff-only saving and
 \textsc{Baton}'s and DP$^3_{50\mathrm{k}}$'s share of the exact
@@ -1033,10 +1107,18 @@ if dty is not None:
     aw = _unit_mix([(("normal", "normal"), .8), (("promo", "promo"), .2)], "v2_act")
     po = _unit_mix([(("mix", "normal"), .8), (("mix", "promo"), .2)], "v2_act")
     st_ = _unit_mix([(("normal", "normal"), .8), (("normal", "promo"), .2)], "v2_act")
-    for nm, x in (("AwarePooled", (aw - po).to_numpy()), ("StalePooled", (st_ - po).to_numpy())):
-        lo, hi = _boot_ci(x)
+    for nm, x in (("AwarePooled", aw - po), ("StalePooled", st_ - po)):
+        # pooled over gates: resample instances, both plans kept together;
+        # per gate: resample instances (one plan each)
+        xd = x.rename("v").reset_index()
+        lo, hi = _cluster_ci(xd, lambda f: f.v.mean())
         macros[f"dt{nm}Delta"] = f"{x.mean():+.1f}"
         macros[f"dt{nm}CI"] = _ci(lo, hi)
+        for pln in ("Det", "SAA"):
+            xg = xd[xd.Plan == pln].v.to_numpy()
+            lo, hi = _boot_ci(xg)
+            macros[f"dt{nm}{pln.capitalize()}Delta"] = f"{xg.mean():+.1f}"
+            macros[f"dt{nm}{pln.capitalize()}CI"] = _ci(lo, hi)
     if "n_train" in dty:
         macros["dtNPromo"] = f"{dty[dty.train == 'promo'].n_train.mean():.0f}"
         macros["dtNNormal"] = f"{dty[dty.train == 'normal'].n_train.mean():.0f}"
@@ -1047,7 +1129,7 @@ if dty is not None:
     macros["dtAllPooled"] = _pct(_mixsv([(("mix", "normal"), .8), (("mix", "promo"), .2)], "v2_act"))
     _write("tab_daytype.tex", _tex_table(
         "tab:daytype",
-        r"""Non-exchangeable days (40 Dethloff instances, \textsc{Det} and
+        r"""Known day types (40 Dethloff instances, \textsc{Det} and
 \textsc{SAA} plans; saving \% vs.\ reactive on the same days, pooled
 over plans as a ratio of sums, with the ``all'' column weighting normal
 and promotion days 0.8/0.2). One day
@@ -1059,8 +1141,12 @@ in the same pooled history (about 800 normal and 200 promotion days), so
 that the comparison isolates the day-type information from the sample
 size; stale: fitted on the normal days of that history only and applied
 unchanged on promotion days. The difference between day-type-specific
-and pooled \textsc{Baton} over all days is reported in the text with a
-paired bootstrap interval over the 80 plans.""",
+and pooled \textsc{Baton} over all days is reported in the text, for each
+gate and pooled over both, with 95\% bootstrap intervals that resample
+instances (keeping the two plans of an instance together). Days are
+drawn independently from a fixed mixture of the two types, so they
+remain exchangeable: the experiment concerns known day types, not
+temporal drift or serial dependence.""",
         "l ccc ccc",
         r"& \multicolumn{3}{c}{tuned threshold} & \multicolumn{3}{c}{\textsc{Baton}} \\ \cmidrule(lr){2-4}\cmidrule(lr){5-7}" + "\n" +
         r"Fitting strategy & normal & promotion & all & normal & promotion & all \\",
@@ -1078,18 +1164,38 @@ if fr is not None:
             continue
         re_ = d.reactive.sum()
 
-        def sv(c):
-            return 100 * (re_ - d[c].sum()) / re_
-        b_in = 100 * (d.bias_in / d.H_mean).mean()
-        b_out = 100 * (d.bias_out / d.H_mean).mean()
-        body.append(f"{disp} & {b_in:+.2f} & {b_out:+.2f} & {sv('cost_ho'):.1f} & "
-                    f"{sv('cost_baton3'):.1f} & {sv('cost_baton3_Fout'):.1f} & "
+        def sv(c, d=d):
+            return 100 * (d.reactive.sum() - d[c].sum()) / d.reactive.sum()
+        # estimands (all in % of the handoff price, averaged over routes):
+        #   in-sample effect      F_hat  - F_pop   (= bias_in - bias_out)
+        #   downstream + ref.     F_pop  - F_ref   (= bias_out)
+        # F_pop: population value of the fitted downstream policy from the
+        # reset state, estimated on 5e4 independent paths; F_ref: constant-F
+        # high-data plug-in reference (approximate optimum)
+        def ins(x):
+            return 100 * ((x.bias_in - x.bias_out) / x.H_mean).mean()
+
+        def dsr(x):
+            return 100 * (x.bias_out / x.H_mean).mean()
+        e_in, e_ds = ins(d), dsr(d)
+        ci_in, ci_ds = _cluster_ci(d, ins), _cluster_ci(d, dsr)
+        dF = sv("cost_baton3_Fstar") - sv("cost_baton3")
+        ci_dF = _cluster_ci(d, lambda x: sv("cost_baton3_Fstar", x) - sv("cost_baton3", x))
+        body.append(f"{disp} & {e_in:+.2f} {_ci(*ci_in)} & {e_ds:+.2f} {_ci(*ci_ds)} & "
+                    f"{sv('cost_ho'):.1f} & {sv('cost_baton3'):.1f} & {sv('cost_baton3_Fout'):.1f} & "
                     f"{sv('cost_baton3_Fstar'):.1f} & {sv('cost_cf'):.1f} & "
                     f"{sv('cost_exact_reset'):.1f} & {sv('cost_dp3cf'):.1f} \\\\")
         key = {"SalhiNagy": "Salhi", "Dethloff": "Deth", "City": "City"}[fam]
-        macros[f"fr{key}BiasIn"] = f"{b_in:+.2f}\\%"
-        macros[f"fr{key}BiasOut"] = f"{b_out:+.2f}\\%"
+        macros[f"fr{key}BiasIn"] = f"{100 * (d.bias_in / d.H_mean).mean():+.2f}\\%"
+        macros[f"fr{key}BiasOut"] = f"{e_ds:+.2f}\\%"
+        macros[f"fr{key}InEff"] = f"{e_in:+.2f}\\%"
+        macros[f"fr{key}InEffCI"] = _ci(*ci_in)
+        macros[f"fr{key}DsEff"] = f"{e_ds:+.2f}\\%"
+        macros[f"fr{key}DsEffCI"] = _ci(*ci_ds)
+        macros[f"fr{key}DeltaF"] = f"{dF:+.1f}"
+        macros[f"fr{key}DeltaFCI"] = _ci(*ci_dF)
         macros[f"fr{key}Three"] = _pct(sv("cost_baton3"))
+        macros[f"fr{key}Fout"] = _pct(sv("cost_baton3_Fout"))
         macros[f"fr{key}Cf"] = _pct(sv("cost_cf"))
         macros[f"fr{key}Exact"] = _pct(sv("cost_exact_reset"))
         macros[f"fr{key}Fstar"] = _pct(sv("cost_baton3_Fstar"))
@@ -1097,25 +1203,34 @@ if fr is not None:
         macros[f"fr{key}DpThree"] = _pct(sv("cost_dp3cf"))
         macros[f"fr{key}RsBaton"] = _pct(100 * d.rs_baton3.mean())
         macros[f"fr{key}RsExact"] = _pct(100 * d.rs_exact_reset.mean())
-    _write("tab_fresh.tex", _tex_table(
+_write("tab_fresh.tex", _tex_table(
         "tab:fresh",
-        r"""The fresh-start value and the post-return state. Bias columns:
-mean error of the estimated fresh-start value $\widehat F_k$ against the
-high-data reference $F_k$ of DP$^3_{50\mathrm{k}}$, in \% of the handoff price;
-in-sample is \textsc{Baton}'s own estimate, out-of-sample re-evaluates
-the same fitted downstream policy on $5\times10^4$ independent paths.
-Saving columns (\% vs.\ reactive, all \emph{without} deployment
-selection, so that the three-action fit is exposed): the three-action
-policy as fitted, with $\widehat F_k$ replaced by its out-of-sample
-value, with $F_k$ replaced by the high-data reference value, with the
-state-conditional fresh-start value (\textsc{Baton-cf}), and with the
-exact residual-capacity reset $x_k = -D_{\le k}$. Savings in this table
+        r"""The fresh-start value and the post-return state. Three quantities
+are compared at each stop: \textsc{Baton}'s in-sample estimate
+$\widehat F_k$; the population value $F^{\mathrm{pop}}_k$ of the same
+fitted downstream policy from the reset state, estimated on
+$5\times10^4$ independent paths; and an approximate reference
+$F^{\mathrm{ref}}_k$ for the optimal value, the fresh-start value of a
+\emph{constant-F} high-data plug-in program (DP$^{3,c}_{50\mathrm{k}}$,
+the unconditional counterpart of DP$^3_{50\mathrm{k}}$, fitted on
+$2.5\times10^4$ paths and valued on another $2.5\times10^4$). First two
+columns: $\widehat F_k - F^{\mathrm{pop}}_k$ (in-sample effect) and
+$F^{\mathrm{pop}}_k - F^{\mathrm{ref}}_k$ (downstream suboptimality plus
+reference error), mean over stops and routes in \% of the handoff price,
+with 95\% bootstrap intervals resampling instances. Saving columns (\%
+vs.\ reactive, all \emph{without} deployment selection, so that the
+three-action fit is exposed): the three-action policy as fitted, with
+$\widehat F_k$ replaced by $F^{\mathrm{pop}}_k$, with $F_k$ replaced by
+$F^{\mathrm{ref}}_k$, with the state-conditional fresh-start value
+(\textsc{Baton-cf}), with the physical reset $x_k = -\min(D_{\le k},
+L_0)$, and the state-conditional high-data program
+DP$^3_{50\mathrm{k}}$ of the main tables. Savings in this table
 pool the route costs of all plans of a benchmark (ratio of sums), whereas
 Tables~\ref{tab:grand} and~\ref{tab:large} average the plan-level
 savings over instances, so the two differ slightly.""",
         "l cc c ccccc c",
-        r"& \multicolumn{2}{c}{bias of $\widehat F_k$ (\% of $H$)} & & \multicolumn{5}{c}{three-action \textsc{Baton}, saving \%} & \\ \cmidrule(lr){2-3}\cmidrule(lr){5-9}" + "\n" +
-        r"Benchmark & in-sample & out-of-sample & \textsc{Baton-ho} & as fitted & $F$ out-of-s. & $F$ reference & \textsc{cf} & exact reset & DP$^3_{50\mathrm{k}}$ \\",
+        r"& \multicolumn{2}{c}{error of $F$ (\% of $H$) [95\% CI]} & & \multicolumn{5}{c}{three-action \textsc{Baton}, saving \%} & \\ \cmidrule(lr){2-3}\cmidrule(lr){5-9}" + "\n" +
+        r"Benchmark & $\widehat F - F^{\mathrm{pop}}$ & $F^{\mathrm{pop}} - F^{\mathrm{ref}}$ & \textsc{Baton-ho} & as fitted & $F^{\mathrm{pop}}$ & $F^{\mathrm{ref}}$ & \textsc{cf} & physical reset & DP$^3_{50\mathrm{k}}$ \\",
         body, size=r"\scriptsize", sep="2.6pt"))
 
 # ── capped standby pool ────────────────────────────────────────────────────
@@ -1356,7 +1471,8 @@ if rg is not None:
 per route, on 2{,}000 test days. The myopic rule and the optimal rule
 are both estimated on $5\times10^4$ paths (the myopic cost-to-go by the
 rollout regression, the optimal one by backward induction), so that the
-comparison reflects the functional form rather than estimation noise.
+comparison reflects the functional form rather than estimation noise;
+the optimal rule is therefore an estimate from those paths.
 Regret: excess expected cost of the myopic rule; bound: right-hand side
 of~\eqref{eq:regret}; clean-day term: $\mathbb E[H_{\sigma^0}
 \mathbf 1\{\sigma^0 < \sigma^\star, T = \infty\}]$; all in \% of the

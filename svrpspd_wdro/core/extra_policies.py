@@ -304,15 +304,24 @@ def fresh_value_curve(k, m, g, dcum, B, H, E, R, models, n_grid=9):
     return _Curve(xs, ys)
 
 
+def _delivered(d, L0):
+    """Cumulative delivered volume, capped at the departure load L0 when it
+    is given: a vehicle cannot hand over more cargo than it carries, so
+    after a return the undelivered cargo L0 - D_<=k is never negative."""
+    dcum = np.cumsum(d, axis=1)
+    return dcum if L0 is None else np.minimum(dcum, float(L0))
+
+
 def fit_lsm_actions_exact(g_hist: np.ndarray, d_hist: np.ndarray, B: float,
                           H: np.ndarray, E: np.ndarray, R: np.ndarray,
-                          n_grid: int = 9) -> dict:
-    """Three-action BATON with the exact reset x_k = -D_<=k. d_hist holds
-    the realised deliveries (N, m) of the same paths. Returns
+                          n_grid: int = 9, L0: float | None = None) -> dict:
+    """Three-action BATON with the exact reset x_k = -D_<=k (capped at
+    -L0 when the departure load L0 is given). d_hist holds the realised
+    deliveries (N, m) of the same paths. Returns
     {k: (iso_model, F_curve)}."""
     N, m = g_hist.shape
     cum = np.cumsum(g_hist, axis=1)
-    dcum = np.cumsum(d_hist, axis=1)
+    dcum = _delivered(d_hist, L0)
     ostep = _overflow_step(cum, B)
     future = np.zeros(N)
     br = ostep <= m
@@ -344,13 +353,15 @@ def fit_lsm_actions_exact(g_hist: np.ndarray, d_hist: np.ndarray, B: float,
 
 
 def simulate_actions_exact(g_test, d_test, B, H, E, R, models,
-                           return_actions=False, H_bill=None):
+                           return_actions=False, H_bill=None,
+                           L0: float | None = None):
     """Execute the exact-reset three-action policy (codes as in
-    core.costs.simulate_actions; restocks accumulate into cost)."""
+    core.costs.simulate_actions; restocks accumulate into cost). With L0
+    given, the post-return state is -min(D_<=k, L0)."""
     if H_bill is None:
         H_bill = H
     N, m = g_test.shape
-    dcum = np.cumsum(d_test, axis=1)
+    dcum = _delivered(d_test, L0)
     costs = np.zeros(N)
     action = np.zeros(N, dtype=np.int8)
     W = np.zeros(N)

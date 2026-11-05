@@ -1,0 +1,71 @@
+%% Cover letter for revision 2 of CAOR-D-26-01885.
+%% Build (after compiling ../main.tex): pdflatex cover_letter_r2
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.6cm]{geometry}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
+\usepackage{parskip}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{flushright}
+Quang-Vinh Dang\\
+British University Vietnam\\
+Hung Yen, Vietnam\\
+\href{mailto:vinh.dq4@buv.edu.vn}{vinh.dq4@buv.edu.vn}\\[4pt]
+\today
+\end{flushright}
+
+\vspace{6pt}
+\noindent
+The Editor\\
+\emph{Computers \& Operations Research}
+
+\vspace{14pt}
+\noindent Dear Editor,
+
+Please find enclosed the second revision of our manuscript
+CAOR-D-26-01885, \emph{``Optimal-stopping recourse for vehicle routing
+with simultaneous pickup, delivery, and stochastic demands.''} We thank
+you and the reviewers for the second round of reports. Reviewer~1
+considers the principal concerns resolved; Reviewer~2 asked us to align
+several methodological claims and implementation descriptions with the
+evidence, and Reviewer~3 asked four clarifying questions. Every comment
+is answered in the enclosed response letter, and a version of the
+manuscript with the changes marked against revision~1 is provided.
+
+The main changes are the following.
+
+\begin{itemize}
+\item The state-conditional variant of the policy is now described as an
+  approximation, with the information it retains and a condition for the
+  monotonicity of its fresh-start value, checked empirically.
+\item The discussion of the fresh-start bias defines its estimands,
+  reports bootstrap intervals and limits its conclusions to what the
+  evidence supports; the reference programs are labelled separately.
+\item Two conventions in the evaluation code were corrected (fully loaded
+  departures keep zero slack; the physical post-return state is capped at
+  an empty vehicle) and the affected experiments were re-run. No
+  conclusion changed.
+\item The day-type experiment, the statistical wording, the
+  over-triggering bound and the exact benchmark (now with a
+  grid-refinement check) are stated more precisely, and the answers to
+  Reviewer~3's questions are reflected in the text and in one table.
+\item The repository states of the submitted versions are tagged, so the
+  code can be checked against each version under review.
+\end{itemize}
+
+The revised manuscript has not been published previously and is not
+under consideration elsewhere. The authors have no conflicts of interest
+to declare.
+
+Thank you for your consideration.
+
+\vspace{14pt}
+\noindent Sincerely, on behalf of all authors,
+
+\vspace{6pt}
+\noindent Quang-Vinh Dang (corresponding author)\\
+British University Vietnam
+\end{document}

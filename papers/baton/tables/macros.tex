@@ -3,14 +3,14 @@
 \newcommand{\budCityDp}{12.2\%}
 \newcommand{\budCityDpNLarge}{11.9\%}
 \newcommand{\budCityDpNMid}{7.0\%}
-\newcommand{\budCityDpNSmall}{-0.3\%}
-\newcommand{\budCityDpThree}{12.3\%}
+\newcommand{\budCityDpNSmall}{-0.1\%}
+\newcommand{\budCityDpThree}{12.4\%}
 \newcommand{\budCityLarge}{12.9\%}
-\newcommand{\budCityMid}{10.5\%}
-\newcommand{\budCitySmall}{3.8\%}
+\newcommand{\budCityMid}{10.4\%}
+\newcommand{\budCitySmall}{3.9\%}
 \newcommand{\budCityThrLarge}{12.0\%}
-\newcommand{\budCityThrMid}{10.0\%}
-\newcommand{\budCityThrSmall}{0.4\%}
+\newcommand{\budCityThrMid}{9.9\%}
+\newcommand{\budCityThrSmall}{0.5\%}
 \newcommand{\budDethDetDp}{26.4\%}
 \newcommand{\budDethDetDpNLarge}{26.3\%}
 \newcommand{\budDethDetDpNMid}{25.7\%}
@@ -42,10 +42,30 @@
 \newcommand{\cfGapLo}{0.1}
 \newcommand{\cityActShare}{37\%}
 \newcommand{\cityDetK}{8.5}
-\newcommand{\cityDetReact}{36.8}
+\newcommand{\cityDetReact}{37.2}
 \newcommand{\citySaaK}{12.1}
 \newcommand{\citySaaPem}{0.05\%}
 \newcommand{\citySaaReact}{0.04}
+\newcommand{\costCuiBaton}{11.5}
+\newcommand{\costDetBaton}{135.0}
+\newcommand{\costGounarisBaton}{10.2}
+\newcommand{\costMDROBaton}{2.2}
+\newcommand{\costSAABaton}{8.3}
+\newcommand{\costWDROBaton}{1.9}
+\newcommand{\csBaseBaton}{52.7}
+\newcommand{\csBaseReact}{78.4}
+\newcommand{\csEmgHighBaton}{57.7}
+\newcommand{\csEmgHighReact}{97.3}
+\newcommand{\csEmgHighSv}{55.2\%}
+\newcommand{\csEmgLowBaton}{48.3}
+\newcommand{\csEmgLowReact}{64.2}
+\newcommand{\csEmgLowSv}{40.1\%}
+\newcommand{\csSbHighBaton}{60.9}
+\newcommand{\csSbHighReact}{78.4}
+\newcommand{\csSbHighSv}{42.6\%}
+\newcommand{\csSbLowBaton}{45.8}
+\newcommand{\csSbLowReact}{78.4}
+\newcommand{\csSbLowSv}{52.7\%}
 \newcommand{\ctdBaton}{51.9\%}
 \newcommand{\ctdBatonFull}{69.1\%}
 \newcommand{\ctdVOne}{0.0\%}
@@ -182,15 +202,23 @@
 \newcommand{\detActGain}{1.8}
 \newcommand{\dtAllAware}{27.6\%}
 \newcommand{\dtAllPooled}{27.6\%}
-\newcommand{\dtAwarePooledCI}{[-0.8, -0.3]}
+\newcommand{\dtAwarePooledCI}{[-0.7, -0.3]}
 \newcommand{\dtAwarePooledDelta}{-0.5}
+\newcommand{\dtAwarePooledDetCI}{[-0.1, +0.3]}
+\newcommand{\dtAwarePooledDetDelta}{+0.1}
+\newcommand{\dtAwarePooledSaaCI}{[-1.5, -0.8]}
+\newcommand{\dtAwarePooledSaaDelta}{-1.1}
 \newcommand{\dtNNormal}{803}
 \newcommand{\dtNPromo}{197}
 \newcommand{\dtPromoAware}{29.7\%}
 \newcommand{\dtPromoPooled}{29.4\%}
 \newcommand{\dtPromoStale}{28.3\%}
-\newcommand{\dtStalePooledCI}{[-1.7, -0.9]}
+\newcommand{\dtStalePooledCI}{[-1.7, -1.0]}
 \newcommand{\dtStalePooledDelta}{-1.3}
+\newcommand{\dtStalePooledDetCI}{[-0.6, -0.2]}
+\newcommand{\dtStalePooledDetDelta}{-0.4}
+\newcommand{\dtStalePooledSaaCI}{[-2.9, -1.6]}
+\newcommand{\dtStalePooledSaaDelta}{-2.2}
 \newcommand{\exDetBaton}{12.6\%}
 \newcommand{\exDetBatonHo}{9.0\%}
 \newcommand{\exDetDpThree}{12.6\%}
@@ -215,70 +243,112 @@
 \newcommand{\feeGapZero}{19.1}
 \newcommand{\feeHoMax}{29.0\%}
 \newcommand{\feeMax}{30}
-\newcommand{\frCityBiasIn}{-1.18\%}
-\newcommand{\frCityBiasOut}{-1.05\%}
-\newcommand{\frCityCf}{9.4\%}
-\newcommand{\frCityDpThree}{10.7\%}
-\newcommand{\frCityExact}{9.9\%}
-\newcommand{\frCityFstar}{5.9\%}
-\newcommand{\frCityHo}{9.2\%}
+\newcommand{\frCityBiasIn}{-1.23\%}
+\newcommand{\frCityBiasOut}{-1.09\%}
+\newcommand{\frCityCf}{9.2\%}
+\newcommand{\frCityDeltaF}{+0.2}
+\newcommand{\frCityDeltaFCI}{[+0.1, +0.5]}
+\newcommand{\frCityDpThree}{10.5\%}
+\newcommand{\frCityDsEff}{-1.09\%}
+\newcommand{\frCityDsEffCI}{[-1.7, -0.5]}
+\newcommand{\frCityExact}{9.7\%}
+\newcommand{\frCityFout}{5.4\%}
+\newcommand{\frCityFstar}{5.7\%}
+\newcommand{\frCityHo}{9.0\%}
+\newcommand{\frCityInEff}{-0.13\%}
+\newcommand{\frCityInEffCI}{[-0.5, +0.2]}
 \newcommand{\frCityRsBaton}{0.8\%}
-\newcommand{\frCityRsExact}{2.1\%}
-\newcommand{\frCityThree}{5.6\%}
+\newcommand{\frCityRsExact}{2.0\%}
+\newcommand{\frCityThree}{5.5\%}
 \newcommand{\frDethBiasIn}{+0.00\%}
 \newcommand{\frDethBiasOut}{+0.01\%}
 \newcommand{\frDethCf}{52.2\%}
+\newcommand{\frDethDeltaF}{+0.0}
+\newcommand{\frDethDeltaFCI}{[-0.04, +0.09]}
 \newcommand{\frDethDpThree}{54.6\%}
+\newcommand{\frDethDsEff}{+0.01\%}
+\newcommand{\frDethDsEffCI}{[+0.00, +0.02]}
 \newcommand{\frDethExact}{54.6\%}
+\newcommand{\frDethFout}{51.4\%}
 \newcommand{\frDethFstar}{51.4\%}
 \newcommand{\frDethHo}{18.9\%}
+\newcommand{\frDethInEff}{-0.01\%}
+\newcommand{\frDethInEffCI}{[-0.05, +0.04]}
 \newcommand{\frDethRsBaton}{4.1\%}
 \newcommand{\frDethRsExact}{4.1\%}
 \newcommand{\frDethThree}{51.4\%}
-\newcommand{\frSalhiBiasIn}{+0.50\%}
+\newcommand{\frSalhiBiasIn}{+0.49\%}
 \newcommand{\frSalhiBiasOut}{+0.09\%}
-\newcommand{\frSalhiCf}{53.1\%}
-\newcommand{\frSalhiDpThree}{53.5\%}
-\newcommand{\frSalhiExact}{57.9\%}
-\newcommand{\frSalhiFstar}{51.9\%}
-\newcommand{\frSalhiHo}{41.3\%}
+\newcommand{\frSalhiCf}{53.5\%}
+\newcommand{\frSalhiDeltaF}{-0.3}
+\newcommand{\frSalhiDeltaFCI}{[-0.77, -0.02]}
+\newcommand{\frSalhiDpThree}{53.9\%}
+\newcommand{\frSalhiDsEff}{+0.09\%}
+\newcommand{\frSalhiDsEffCI}{[-0.5, +0.6]}
+\newcommand{\frSalhiExact}{58.2\%}
+\newcommand{\frSalhiFout}{52.6\%}
+\newcommand{\frSalhiFstar}{52.2\%}
+\newcommand{\frSalhiHo}{41.6\%}
+\newcommand{\frSalhiInEff}{+0.40\%}
+\newcommand{\frSalhiInEffCI}{[+0.2, +0.6]}
 \newcommand{\frSalhiRsBaton}{20.1\%}
 \newcommand{\frSalhiRsExact}{28.3\%}
-\newcommand{\frSalhiThree}{52.2\%}
-\newcommand{\lgCityBaton}{10.6\%}
+\newcommand{\frSalhiThree}{52.6\%}
+\newcommand{\gridCoarseHoMax}{2.93\%}
+\newcommand{\gridCoarseThreeMax}{2.91\%}
+\newcommand{\gridCoarseThreeMedian}{0.4\%}
+\newcommand{\gridDetCoarseHo}{9.6\%}
+\newcommand{\gridDetCoarseThree}{13.4\%}
+\newcommand{\gridDetFineHo}{9.6\%}
+\newcommand{\gridDetFineThree}{13.4\%}
+\newcommand{\gridDetWideHo}{9.6\%}
+\newcommand{\gridDetWideThree}{13.4\%}
+\newcommand{\gridMidHoMax}{1.23\%}
+\newcommand{\gridMidThreeMax}{1.20\%}
+\newcommand{\gridPooledMaxDiff}{0.01}
+\newcommand{\gridRoutes}{627}
+\newcommand{\gridSaaCoarseHo}{0.4\%}
+\newcommand{\gridSaaCoarseThree}{10.0\%}
+\newcommand{\gridSaaFineHo}{0.4\%}
+\newcommand{\gridSaaFineThree}{10.0\%}
+\newcommand{\gridSaaWideHo}{0.4\%}
+\newcommand{\gridSaaWideThree}{10.0\%}
+\newcommand{\gridWideHoMax}{1.95\%}
+\newcommand{\gridWideThreeMax}{1.95\%}
+\newcommand{\lgCityBaton}{10.7\%}
 \newcommand{\lgCityComp}{thr.-$k$}
-\newcommand{\lgCityCompSv}{10.1\%}
+\newcommand{\lgCityCompSv}{10.2\%}
 \newcommand{\lgCityDelta}{+0.5}
-\newcommand{\lgCityDeltaCI}{[+0.05, +0.68]}
+\newcommand{\lgCityDeltaCI}{[+0.1, +0.7]}
 \newcommand{\lgCityRatio}{86\%}
 \newcommand{\lgCityRatioOrcThree}{28\%}
-\newcommand{\lgCityUBaton}{11.8\%}
+\newcommand{\lgCityUBaton}{11.2\%}
 \newcommand{\lgCityUComp}{roll.-$\theta$}
-\newcommand{\lgCityUCompSv}{11.7\%}
-\newcommand{\lgCityUDelta}{+0.1}
+\newcommand{\lgCityUCompSv}{11.1\%}
+\newcommand{\lgCityUDelta}{+0.0}
 \newcommand{\lgCityUDeltaCI}{[-0.8, +0.6]}
-\newcommand{\lgCityURatio}{90\%}
+\newcommand{\lgCityURatio}{89\%}
 \newcommand{\lgCityURatioOrcThree}{32\%}
-\newcommand{\lgSalhiBaton}{53.0\%}
+\newcommand{\lgSalhiBaton}{53.3\%}
 \newcommand{\lgSalhiComp}{DP$^3_N$}
-\newcommand{\lgSalhiCompSv}{52.3\%}
+\newcommand{\lgSalhiCompSv}{52.6\%}
 \newcommand{\lgSalhiDelta}{+0.7}
 \newcommand{\lgSalhiDeltaCI}{[+0.2, +1.2]}
 \newcommand{\lgSalhiRatio}{98\%}
 \newcommand{\lgSalhiRatioOrcThree}{85\%}
-\newcommand{\lgZpFiftyBaton}{3.1\%}
+\newcommand{\lgZpFiftyBaton}{3.5\%}
 \newcommand{\lgZpFiftyComp}{DP$_N$}
-\newcommand{\lgZpFiftyCompSv}{3.1\%}
-\newcommand{\lgZpFiftyDelta}{+0.0}
-\newcommand{\lgZpFiftyDeltaCI}{[-6.9, +2.4]}
-\newcommand{\lgZpFiftyRatio}{47\%}
-\newcommand{\lgZpFiftyRatioOrcThree}{8\%}
-\newcommand{\lgZpTwentyFiveBaton}{4.9\%}
+\newcommand{\lgZpFiftyCompSv}{3.6\%}
+\newcommand{\lgZpFiftyDelta}{-0.1}
+\newcommand{\lgZpFiftyDeltaCI}{[-7.1, +2.4]}
+\newcommand{\lgZpFiftyRatio}{50\%}
+\newcommand{\lgZpFiftyRatioOrcThree}{9\%}
+\newcommand{\lgZpTwentyFiveBaton}{5.0\%}
 \newcommand{\lgZpTwentyFiveComp}{thr.-$k$}
 \newcommand{\lgZpTwentyFiveCompSv}{4.5\%}
 \newcommand{\lgZpTwentyFiveDelta}{+0.4}
-\newcommand{\lgZpTwentyFiveDeltaCI}{[+0.03, +0.61]}
-\newcommand{\lgZpTwentyFiveRatio}{76\%}
+\newcommand{\lgZpTwentyFiveDeltaCI}{[+0.05, +0.62]}
+\newcommand{\lgZpTwentyFiveRatio}{75\%}
 \newcommand{\lgZpTwentyFiveRatioOrcThree}{15\%}
 \newcommand{\nBatonTop}{six}
 \newcommand{\nCfAbove}{all}
@@ -287,22 +357,28 @@
 \newcommand{\nRL}{49}
 \newcommand{\nRegretRoutes}{735}
 \newcommand{\nTimingRoutes}{102}
+\newcommand{\pemCui}{11.6\%}
+\newcommand{\pemDet}{61.7\%}
+\newcommand{\pemGounaris}{11.3\%}
+\newcommand{\pemMDRO}{2.7\%}
+\newcommand{\pemSAA}{10.0\%}
+\newcommand{\pemWDRO}{2.3\%}
 \newcommand{\poolBatonMax}{7}
 \newcommand{\poolBatonMed}{0}
 \newcommand{\poolCityBeatLow}{0/19}
 \newcommand{\poolCityBreakEven}{2.6}
-\newcommand{\poolCityGainOne}{5.4\%}
-\newcommand{\poolCityGainZero}{10.7\%}
+\newcommand{\poolCityGainOne}{5.1\%}
+\newcommand{\poolCityGainZero}{10.6\%}
 \newcommand{\poolCityK}{8}
-\newcommand{\poolCityNaiveOne}{36.0}
-\newcommand{\poolCityNaiveZero}{41.1}
-\newcommand{\poolCityPpu}{33.4}
-\newcommand{\poolCityShadowOne}{34.1}
-\newcommand{\poolCityShadowZero}{36.7}
+\newcommand{\poolCityNaiveOne}{36.4}
+\newcommand{\poolCityNaiveZero}{41.5}
+\newcommand{\poolCityPpu}{33.8}
+\newcommand{\poolCityShadowOne}{34.5}
+\newcommand{\poolCityShadowZero}{37.1}
 \newcommand{\poolCitySstar}{0.0}
 \newcommand{\poolCitySstarLow}{0.1}
-\newcommand{\poolCityTotHigh}{36.7}
-\newcommand{\poolCityTotLow}{36.6}
+\newcommand{\poolCityTotHigh}{37.1}
+\newcommand{\poolCityTotLow}{37.0}
 \newcommand{\poolCuiMax}{1}
 \newcommand{\poolCuiMed}{0}
 \newcommand{\poolDetMax}{7}
@@ -365,29 +441,35 @@
 \newcommand{\poolWDROMax}{0}
 \newcommand{\poolWDROMed}{0}
 \newcommand{\ratioAllHi}{100\%}
-\newcommand{\ratioAllLo}{47\%}
+\newcommand{\ratioAllLo}{50\%}
 \newcommand{\ratioDpThreeHi}{96\%}
 \newcommand{\ratioDpThreeLo}{86\%}
 \newcommand{\ratioOrcThreeHi}{68\%}
 \newcommand{\ratioOrcThreeLo}{52\%}
+\newcommand{\reactCui}{21.5}
+\newcommand{\reactDet}{179.2}
+\newcommand{\reactGounaris}{19.6}
+\newcommand{\reactMDRO}{3.6}
+\newcommand{\reactSAA}{16.5}
+\newcommand{\reactWDRO}{2.9}
 \newcommand{\regretAll}{3.8\%}
 \newcommand{\regretBoundAll}{7.7\%}
 \newcommand{\regretBoundFail}{1}
 \newcommand{\regretBoundHolds}{734/735}
-\newcommand{\regretCity}{2.0\%}
+\newcommand{\regretCity}{1.9\%}
 \newcommand{\regretCleanShare}{90\%}
 \newcommand{\regretContained}{100.0\%}
 \newcommand{\regretDet}{3.8\%}
 \newcommand{\regretFailMax}{0.06\%}
-\newcommand{\regretLong}{4.5\%}
+\newcommand{\regretLong}{4.6\%}
 \newcommand{\regretMid}{6.8\%}
-\newcommand{\regretMin}{2.0\%}
+\newcommand{\regretMin}{1.9\%}
 \newcommand{\regretMinRow}{City \textsc{Det}}
 \newcommand{\regretRouteMean}{5.1\%}
 \newcommand{\regretSaa}{6.8\%}
 \newcommand{\regretShort}{2.7\%}
 \newcommand{\rlBaton}{33.7\%}
-\newcommand{\rlBatonFitS}{1.5}
+\newcommand{\rlBatonFitS}{1.8}
 \newcommand{\rlBatonHo}{32.9\%}
 \newcommand{\rlBest}{27.4\%}
 \newcommand{\rlInstCI}{[4.4, 7.7]}
@@ -402,6 +484,9 @@
 \newcommand{\sbSixtyBaton}{36.8\%}
 \newcommand{\sbSixtyHo}{2.1\%}
 \newcommand{\sbSixtyThresh}{1.4\%}
+\newcommand{\shapeFNine}{0.2\%}
+\newcommand{\shapeFSix}{0.2\%}
+\newcommand{\shapeFZero}{2.2\%}
 \newcommand{\shapePowTenAll}{64\%}
 \newcommand{\shapePowTenDayfac}{47\%}
 \newcommand{\shapePowTenNine}{88\%}
@@ -467,9 +552,11 @@
 \newcommand{\statWDRODpDelta}{-6.6}
 \newcommand{\statWDROP}{0.00}
 \newcommand{\statWDROWin}{31}
-\newcommand{\svCityBaton}{10.6\%}
-\newcommand{\svCityCf}{10.8\%}
-\newcommand{\svCityDp}{12.1\%}
+\newcommand{\stockoutAll}{47\%}
+\newcommand{\stockoutExcess}{10\%}
+\newcommand{\svCityBaton}{10.7\%}
+\newcommand{\svCityCf}{10.9\%}
+\newcommand{\svCityDp}{12.2\%}
 \newcommand{\svCityHo}{10.6\%}
 \newcommand{\svCityOrc}{36.8\%}
 \newcommand{\svCuiBaton}{52.5\%}
@@ -532,10 +619,10 @@
 \newcommand{\svSAAThrK}{19.8\%}
 \newcommand{\svSAAThresh}{16.3\%}
 \newcommand{\svSAATwo}{43.9\%}
-\newcommand{\svSalhiBaton}{53.0\%}
-\newcommand{\svSalhiDpThree}{54.0\%}
-\newcommand{\svSalhiHo}{42.3\%}
-\newcommand{\svSalhiOrc}{48.8\%}
+\newcommand{\svSalhiBaton}{53.3\%}
+\newcommand{\svSalhiDpThree}{54.3\%}
+\newcommand{\svSalhiHo}{42.6\%}
+\newcommand{\svSalhiOrc}{49.2\%}
 \newcommand{\svWDROBaton}{41.2\%}
 \newcommand{\svWDROCf}{41.7\%}
 \newcommand{\svWDRODpN}{0.0\%}
@@ -548,9 +635,9 @@
 \newcommand{\svWDROThrK}{7.2\%}
 \newcommand{\svWDROThresh}{-1.3\%}
 \newcommand{\svWDROTwo}{32.4\%}
-\newcommand{\svZpFiftyBaton}{3.1\%}
-\newcommand{\svZpFiftyThr}{-1.5\%}
-\newcommand{\svZpTwentyFiveBaton}{4.9\%}
+\newcommand{\svZpFiftyBaton}{3.5\%}
+\newcommand{\svZpFiftyThr}{-1.3\%}
+\newcommand{\svZpTwentyFiveBaton}{5.0\%}
 \newcommand{\tailBatonHi}{54.3\%}
 \newcommand{\tailBatonLo}{22.3\%}
 \newcommand{\tailDetBaton}{22.3\%}

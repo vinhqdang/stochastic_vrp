@@ -26,7 +26,6 @@ sys.path.insert(0, str(_SCRIPTS))
 
 from dethloff_runner import parse_dethloff, sample_demands, CV, DIST, SEED
 from core.costs import LastMileCosts, route_cost_schedules, restock_schedule
-from core.otr2 import calibrate_B_empirical_peak
 
 PLANS_DIR = _WDRO / "results" / "plans"
 
@@ -61,8 +60,8 @@ def collect(instances, n_train=1000, n_test=2000):
             r = np.array(route)
             B = float(Q - dbar[r].sum())
             g_tr = (psc_tr[:, r] - dsc_tr[:, r]).astype(np.float32)
-            if B <= 0:
-                B = calibrate_B_empirical_peak(g_tr, alpha=0.10)
+            if B < 0:
+                raise ValueError(f"{inst}: route departs over capacity")
             H, E = route_cost_schedules(route, D, scale, costs)
             R = restock_schedule(route, D, scale, costs)
             routes.append(dict(

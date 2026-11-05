@@ -145,3 +145,20 @@ def test_threshold_k_warm_start_not_worse_than_start():
     c_start = _costs_threshold_k(g, B, H, E, start)[0].mean()
     thr = fit_threshold_k(g, B, H, E, starts=[start])
     assert _costs_threshold_k(g, B, H, E, thr)[0].mean() <= c_start + 1e-12
+
+
+def test_physical_reset_is_capped_at_the_departure_load():
+    """With L0 given, the post-return state never falls below -L0 (the
+    vehicle cannot hold less than nothing), and a large L0 reproduces the
+    uncapped reset."""
+    from core.extra_policies import _delivered
+    g, d = _paths(N=500, m=8, seed=6)
+    L0 = float(d.mean(axis=0).sum())
+    capped = _delivered(d, L0)
+    assert np.all(capped <= L0 + 1e-12)
+    assert np.allclose(_delivered(d, 1e12), np.cumsum(d, axis=1))
+    H, E, R = _prices(g.shape[1])
+    B = 2.0
+    m_cap = fit_lsm_actions_exact(g, d, B, H, E, R, L0=L0)
+    st = simulate_actions_exact(g, d, B, H, E, R, m_cap, L0=L0)
+    assert np.isfinite(st["mean_cost"])

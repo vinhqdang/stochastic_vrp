@@ -14,6 +14,8 @@ Computers & Operations Research, manuscript CAOR-D-26-01885 (see
 | `references.bib`, `VERIFY_CITATIONS.md` | bibliography and its verification log |
 | `title_page`, `cover_letter`, `declaration_of_interests`, `credit_author_statement`, `highlights.txt` | submission set |
 | `r1/cover_letter_r1.tex` / `.pdf` | cover letter for revision 1 |
+| `r2/response_letter.tex` / `.pdf`, `r2/portal_replies.md`, `r2/main_diff.pdf`, `r2/cover_letter_r2.*` | revision 2: response to the second-round reviews, portal replies, changes marked against revision 1 (git tag `baton-r1`), cover letter |
+| `r2/submission/` | revision 2 upload set: flat LaTeX ZIP (`r2/make_flat.py`), manuscript and response-letter PDFs |
 | `r1/response_letter.tex` / `.pdf` | point-by-point response to the reviews (revision 1) (cross-references and numbers come from `../main.aux` and `../tables/macros.tex`) |
 | `r1/portal_replies.md` | one reply per reviewer, to paste into the Elsevier portal |
 | `r1/main_diff.pdf` | revision 1 with changes marked against the submitted version |
@@ -40,7 +42,7 @@ for x in 5 10 20 30; do
 done
 
 # revision experiments (Sections 4.4-4.7 and the appendix): results/r1/*.csv
-for m in synthetic regret fresh shape dependence exact daytype budget pool; do
+for m in synthetic regret fresh shape dependence exact exact_grid shape_f stockout daytype budget pool; do
   python scripts/run_baton_r1.py $m
 done
 python scripts/run_baton_r1.py timing workers=1

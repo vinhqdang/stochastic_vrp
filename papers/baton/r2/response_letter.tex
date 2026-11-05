@@ -1,0 +1,465 @@
+%% Response to the reviewers, revision 2 of CAOR-D-26-01885.
+%% Build (after compiling ../main.tex, whose .aux supplies the cross
+%% references): pdflatex response_letter (twice)
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{xr}
+\usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
+\externaldocument[m-]{../main}
+\input{../tables/macros}
+
+\setlength{\emergencystretch}{2em}
+\definecolor{rev}{RGB}{70,70,70}
+\newenvironment{comment}{\par\medskip\noindent\color{rev}\itshape
+  \begin{list}{}{\leftmargin=1.2em\rightmargin=1.2em}\item[]}%
+  {\end{list}\par}
+\newcommand{\resp}{\par\noindent\textbf{Response.}\ }
+\newcommand{\chg}{\par\noindent\textbf{Changes.}\ }
+\newcommand{\sref}[1]{Section~\ref{m-#1}}
+\newcommand{\tref}[1]{Table~\ref{m-#1}}
+\newcommand{\fref}[1]{Figure~\ref{m-#1}}
+\newcommand{\pref}[1]{Proposition~\ref{m-#1}}
+\newcommand{\BATON}{\textsc{Baton}}
+
+\title{Response to the reviewers, second round\\[4pt]
+\large Manuscript CAOR-D-26-01885R1, ``Optimal-stopping recourse for
+vehicle routing with simultaneous pickup, delivery, and stochastic
+demands''}
+\author{Quang-Vinh Dang, Hoang-Viet Vu, Phuc-Son Nguyen}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent Dear Editor, dear Reviewers,
+
+We thank the reviewers for their second reading. Reviewer~1 considers
+the main concerns resolved. Reviewer~2 asks us to align the
+interpretation of \textsc{Baton-cf} and of the fresh-start bias evidence,
+and the statistical and implementation descriptions, with what the
+evidence shows, and points to two features of the code; Reviewer~3 asks
+four questions about the tables and the cost model. We have checked
+every implementation point against the code, corrected two conventions
+in the evaluation and re-run the affected experiments, and revised the
+text where the reviewers found our claims stronger than the evidence.
+Section, table and proposition numbers refer to the revised manuscript;
+a version with the changes marked against revision~1 is provided
+separately.
+
+\section*{Summary of the changes}
+
+\begin{enumerate}[leftmargin=1.4em]
+\item \textbf{\textsc{Baton-cf} as an approximation}
+  (\sref{sec:actions}). The text now distinguishes the cumulative
+  increment $S_k$ from the physical load $X_k$, explains what information
+  is retained after unloading, describes \textsc{Baton-cf} as an
+  approximation that reduces rather than removes the dependence bias,
+  gives a sufficient condition for the monotonicity of $F_k(\cdot)$ and
+  checks it empirically.
+\item \textbf{Fresh-start bias} (\sref{sec:actions}, \tref{tab:fresh}).
+  The three estimands are defined, the two measured differences carry
+  instance-level bootstrap intervals, the claim that two biases ``nearly
+  cancel'' is withdrawn, and the two reference programs are labelled
+  separately.
+\item \textbf{Two corrections in the evaluation code}, with the affected
+  experiments re-run: routes that depart fully loaded now keep the
+  physical slack $B = 0$, and the physical post-return state is capped at
+  an empty vehicle. Neither changes a conclusion.
+\item \textbf{Scope and statistics}: the day-type experiment is described
+  as concerning known day types under exchangeable days, its intervals
+  resample instances, ties are reported as the absence of a
+  statistically detectable difference, the over-triggering bound is
+  stated as a sufficient condition, and the exact dynamic program carries
+  a grid-refinement check.
+\item \textbf{Reviewer~3's questions}: the meaning of ``bound'' and
+  ``reference point'', the contrast between the \textsc{SAA} and
+  \textsc{WDRO} gates, relative versus absolute costs in the sensitivity
+  analysis (with absolute costs added to \tref{tab:costsens}), and the
+  dispatch fee $F_{\mathrm{ho}}$.
+\item \textbf{Reproducibility}: the repository state of each submitted
+  version is tagged (\texttt{baton-r1}, \texttt{baton-r2}).
+\end{enumerate}
+
+% ════════════════════════════════════════════════════════════════════════
+\section*{Reviewer 1}
+
+\begin{comment}
+I have examined the revised version and consider that the authors have
+satisfactorily addressed the main concerns raised in my initial review.
+[\ldots] Overall, I consider that the revised manuscript represents a
+substantial improvement over the original submission and that my
+principal concerns have been adequately resolved.
+\end{comment}
+\resp We thank the reviewer for the careful second reading and for the
+encouraging assessment. The changes made in this round, in response to
+Reviewers~2 and~3, narrow several claims further and correct two
+conventions in the evaluation code; none of them changes a conclusion
+that the reviewer's comments concerned.
+
+% ════════════════════════════════════════════════════════════════════════
+\section*{Reviewer 2}
+
+\begin{comment}
+1. The remaining information-state approximation in \textsc{Baton-cf}.
+[\ldots] Let $S_k$ denote cumulative observed increments without resets
+and $X_k$ the physical load after returns; following a return at $r$,
+$X_k = S_k - S_r$. Under factor dependence, identical $(k, X_k)$ can
+conceal different $S_r$ and different predictions of remaining demand.
+[\ldots] The public implementation previously inspected trains
+conditional models on unreset cumulative sums but supplies reset $W$
+online; if this also applies to the submitted version, \textsc{Baton-cf}
+should remain explicitly described as an approximation [\ldots]. The
+monotonicity of $F_k$ also needs a condition or separate justification
+[\ldots]. Constancy under independence is a population property, not a
+guarantee for finite-sample fits or exact policy agreement with
+\textsc{Baton}.
+\end{comment}
+\resp The reviewer's reading of the code is correct, and it applies to
+the submitted version: the continuation and fresh-start models of
+\textsc{Baton-cf} are fitted on paths indexed by the unreset cumulative
+increment, and after a return they are evaluated at the reset (physical)
+load. We have rewritten the description in \sref{sec:actions} along the
+lines the reviewer suggests. The text now introduces $S_k$ and $X_k$
+explicitly and notes that unloading destroys no information: the
+operator still observes $S_k$. It explains that under independence the
+future depends on $X_k$ alone, whereas under factor dependence the
+factor posterior depends on $S_k$, so equal $(k, X_k)$ can hide different
+predictions. \textsc{Baton-cf} conditions the price of a \emph{first}
+return on its pre-return state ($S_k$), but applies its continuation
+models after a return to $X_k$, as \textsc{Baton} does; it is therefore
+described as an approximation that reduces bias~(iii) for the first
+return without conditioning later decisions on the full history, and an
+exact treatment is identified as one on the two-dimensional state
+$(k, X_k, S_k)$. All statements that \textsc{Baton-cf} ``removes'' the
+dependence bias, or removes it ``at its source'', have been replaced by
+``reduces''.
+
+On monotonicity, the reviewer is right that \pref{prop:monotone} does not
+cover the conditional estimator. The text now gives a sufficient
+condition (the posterior law of the remaining increments stochastically
+increasing in $S_k$, and the cost of the remainder of the day under the
+downstream policy non-decreasing in those increments, path by path),
+notes that the second part need not hold for a fitted policy, and
+describes the isotonic form of $\widehat F_k$ as a modelling choice. We
+then test it with the binned shape test used for $C_k$, applied to the
+realised post-return cost under \textsc{Baton-cf}'s fitted downstream
+policy on $5\times10^4$ paths per route: significant decreases occur in
+\shapeFZero{} of adjacent-bin pairs under independence, where
+$F_k(\cdot)$ is constant in population and the rate is the
+false-positive level of the test, and in \shapeFSix{} and \shapeFNine{}
+of pairs at $\rho = 0.6$ and $0.9$. Finally, the text now states that
+constancy under independence is a population property: in finite
+samples the two fits differ, and \textsc{Baton-cf} and \textsc{Baton}
+need not take the same decisions.
+\chg \sref{sec:actions}, paragraphs on the fresh-start value and on
+deployment selection, and after Eq.~\eqref{m-eq:bellman3}; new paragraph
+on the monotonicity of the conditional fresh-start value in
+\sref{sec:robust}; wording in \sref{sec:setup} and \sref{sec:robust}.
+
+\begin{comment}
+2. What Table A.3 establishes about fresh-start bias. [\ldots] the claim
+that the first two biases ``nearly cancel'' is not established. For the
+same fitted downstream policy, the in-sample and out-of-sample errors are
+$+0.50\%$ and $+0.09\%$ of the handoff price, respectively; their
+$+0.41\%$ difference does not identify the proposed downward in-sample
+effect. I suggest defining the three estimands and reporting uncertainty
+for paired differences, or limiting the conclusion [\ldots]. The
+population cost of a fixed feasible downstream policy bounds the
+optimum, whereas a finite-sample estimate need not; the high-data program
+should also be identified as an approximate reference. Finally,
+reconcile the references with DP$^3_{50k}$ in Section 3.6: the public
+code previously inspected uses constant-F \texttt{fit\_dp\_actions} for
+the bias and replacement-F columns, but \texttt{fit\_dp\_actions\_cf} for
+the final performance column.
+\end{comment}
+\resp We agree on every point. The difference of $+0.41\%$ indeed has the
+opposite sign to the in-sample optimism we had invoked, so ``nearly
+cancel'' was not supported, and we have withdrawn it. Following the
+reviewer's suggestion, \sref{sec:actions} now defines three quantities:
+the optimal $F_k$; the population value $F^{\mathrm{pop}}_k$ of the reset
+state under the fitted downstream policy; and the in-sample estimate
+$\widehat F_k$. The text states that $F^{\mathrm{pop}}_k \ge F_k$ is a
+population statement that a finite-sample estimate need not respect, and
+that the sign of the in-sample error $\widehat F_k - F^{\mathrm{pop}}_k$
+is not determined a priori. \tref{tab:fresh} now reports the two
+measurable differences with 95\% bootstrap intervals that resample
+instances: the in-sample effect $\widehat F_k - F^{\mathrm{pop}}_k$ is
+\frSalhiInEff{} of the handoff price on Salhi--Nagy (\frSalhiInEffCI) and
+\frDethInEff{} on Dethloff (\frDethInEffCI); the difference
+$F^{\mathrm{pop}}_k - F^{\mathrm{ref}}_k$ is \frSalhiDsEff{}
+(\frSalhiDsEffCI) and \frDethDsEff{} (\frDethDsEffCI). Because
+$F^{\mathrm{ref}}_k$ is itself an estimate, the second difference
+combines downstream suboptimality with reference error and identifies
+neither, which the text now says. On the city routes this difference
+is negative, \frCityDsEff{} (\frCityDsEffCI): the fitted policy does
+better than the reference there, which confirms that the reference is
+only approximate; the text reports this as well. The conclusion we draw is limited, as
+the reviewer proposes, to the small change in policy savings when
+$\widehat F_k$ is replaced: on Salhi--Nagy the saving moves from
+\frSalhiThree{} to \frSalhiFout{} with $F^{\mathrm{pop}}_k$ and to
+\frSalhiFstar{} with $F^{\mathrm{ref}}_k$ (\frSalhiDeltaF{} points,
+\frSalhiDeltaFCI).
+
+The reviewer's reading of the code is again correct. The bias and
+replacement columns use the \emph{constant-F} high-data program
+(\texttt{fit\_dp\_actions}), while the last column, like the main tables,
+uses the state-conditional program (\texttt{fit\_dp\_actions\_cf}). The
+two are now labelled separately: the reference for the bias columns is
+called $F^{\mathrm{ref}}_k$ and is described as the fresh-start value of
+DP$^{3,c}_{50\mathrm{k}}$, the unconditional counterpart of
+DP$^3_{50\mathrm{k}}$, and both are described as approximate references.
+\chg \sref{sec:actions} (paragraph on the estimate of the fresh-start
+value); \tref{tab:fresh} (new first two columns, intervals, caption);
+paragraph on the fresh-start value in \sref{sec:robust}.
+
+\begin{comment}
+3. Scope and uncertainty of the new promotion-day experiment. [\ldots] a
+fixed ordinary/promotional mixture can remain exchangeable across days.
+I suggest narrowing the abstract and section claims accordingly; this
+experiment does not establish robustness to temporal drift or serial
+dependence [\ldots]. The interval pooling 80 Det/SAA plans from 40
+instances should analyse each gate separately or resample by instance
+with both plans retained together. For the deliver-only comparison, the
+Table 5 interval $[-6.9, +2.4]$ percentage points supports ``no
+statistically detectable difference,'' rather than an established
+performance tie.
+\end{comment}
+\resp We agree. The abstract, the introduction and \sref{sec:robust} now
+speak of \emph{known day types} rather than non-exchangeable days, and
+the section states that the days are drawn independently from a fixed
+mixture, so they remain exchangeable, and that the experiment does not
+establish robustness to temporal drift or serial dependence; the
+conclusion says the same. The interval now resamples instances with both
+plans kept together, and we also report each gate separately: the
+day-type-specific fits differ from the pooled fit by
+\dtAwarePooledDelta{} points overall (\dtAwarePooledCI),
+\dtAwarePooledDetDelta{} on \textsc{Det} plans (\dtAwarePooledDetCI) and
+\dtAwarePooledSaaDelta{} on \textsc{SAA} plans (\dtAwarePooledSaaCI).
+Finally, wherever an interval contains zero we now write that the
+difference is not statistically detectable rather than that the
+policies are tied, including the deliver-only comparison, the
+deterministic gate and the dependence rows.
+\chg Abstract; introduction; \sref{sec:robust} (``Known day types'');
+conclusion; caption of \tref{tab:daytype}; wording throughout
+\sref{sec:study}.
+
+\begin{comment}
+4. Physical-reset conventions and evaluation code. [\ldots] I suggest
+explaining what a known departure load reveals about future deliveries
+when actual quantities are loaded, or how deliveries exceeding loaded
+cargo are handled when nominal quantities are used, so that
+$L_0 - D_{\le k}$ has a consistent physical meaning. The public
+\texttt{run\_realistic\_eval.py} and \texttt{route\_setup} in
+\texttt{run\_baton\_r1.py} previously inspected replace $B = Q - L_0$
+with an empirical peak quantile when $B \le 0$, although zero slack is a
+valid fully loaded departure. State whether this branch is activated in
+the reported experiments and how many routes it affects. [\ldots] A
+fixed R1 repository commit or archive would allow verification against
+the submitted implementation.
+\end{comment}
+\resp Thank you; both points led to corrections. On the loading
+convention, our simulator uses \emph{nominal} loading: the vehicle
+departs with the planned delivery volume $L_0 = \sum_k \bar d_k$ and the
+realised deliveries are revealed on service. \sref{sec:setting} now
+states this, reports how often the day's deliveries exceed the cargo
+loaded (on \stockoutAll{} of route-days, by \stockoutExcess{} of $L_0$ on
+average), and explains that such shortfalls are outside the model:
+they are not priced and no policy affects them, so they do not change
+the comparison of policies. It also explains that loading the realised
+volume would make $L_0$ random but known at departure and reveal the
+day's delivery total before the first stop, a different information
+structure that we do not study. For the physical reset this means that
+the undelivered cargo is $\max\{L_0 - D_{\le k}, 0\}$; the submitted
+implementation did not cap it, so the physical post-return state could
+fall below $-L_0$. The state is now $x_k = -\min\{D_{\le k}, L_0\}$, and
+the physical-reset column of \tref{tab:fresh} was re-computed with it
+(\frSalhiExact{} on Salhi--Nagy and \frDethExact{} on Dethloff). The
+conclusion that the conservative reset understates the value of the
+return is unchanged.
+
+On the slack, the branch was activated. No route of any reported
+experiment departs over capacity, but 16 routes depart exactly full
+($B = 0$): one Salhi--Nagy route and fifteen routes of the city
+instances and their twins (none of the Dethloff routes, none of the
+routes of the RL comparison, and none of the city \textsc{SAA} plans).
+For these routes the code replaced $B = 0$ by an empirical peak
+quantile. We now keep the physical slack $B = 0$ in all evaluation
+code, so that such a route breaches as soon as its running load rises,
+and we re-ran every affected experiment: the Salhi--Nagy and city
+benchmarks of \tref{tab:large}, the fresh-start, over-triggering,
+data-budget and standby-pool experiments. The mean savings of the
+implementable policies moved by at most 0.7 percentage points (on the
+uniform city twins) and those of the reference points by at most 1.7
+points (the three-action clairvoyant on the 50\% deliver-only twins); no
+ranking or conclusion changed, and the manuscript reports the re-run
+numbers. Last,
+the repository now carries the tag \texttt{baton-r1} for the state that
+produced revision~1, and \texttt{baton-r2} for this revision, so that the
+code can be checked against each submitted version; the Data
+availability statement says so.
+\chg \sref{sec:setting} (loading convention, fully loaded departures);
+\sref{sec:actions} (physical reset); \tref{tab:large}, \tref{tab:fresh},
+\tref{tab:regret}, \tref{tab:pool} and \tref{tab:budget} re-computed;
+Data availability.
+
+\begin{comment}
+(a) Proposition 3 and Table 6 address over-triggering. I suggest
+replacing ``good enough exactly when'' with a sufficient-condition
+statement: a small upper bound guarantees a small loss but is not
+necessary. Interpret the numerical verification with the qualification
+that the policy labelled optimal is estimated from 50,000 paths.
+\end{comment}
+\resp Done. The text after \pref{prop:regret} now presents the bound as a
+sufficient condition for the myopic threshold to be good enough, and
+says that it is not necessary because the bound need not be tight. The
+discussion of \tref{tab:regret} and its caption now state that the rule
+labelled optimal is itself an estimate from $5\times10^4$ paths, so that
+the table verifies the proposition up to that estimation error.
+\chg Paragraph after \pref{prop:regret}; \sref{sec:learning};
+caption of \tref{tab:regret}.
+
+\begin{comment}
+(b) Table 8 is welcome. Since exact-optimum percentages now appear in
+the abstract, I suggest adding a small grid-refinement or truncation
+check for the optimal values. Agreement between simulated and grid-based
+reactive costs alone does not establish the error in the optimal policy
+value.
+\end{comment}
+\resp We agree, and we have added the check. For all \gridRoutes{}
+routes of \tref{tab:exact} we solved the handoff-only and the
+three-action programs on grids of 1{,}500, 3{,}000 and 6{,}000 load cells,
+and with the lower truncation and the support of the demand
+distributions widened (from 6 to 10 standard deviations and from 12 to
+20 coefficients of variation). Values of single routes move by up to \gridCoarseThreeMax{} between
+1{,}500 and 6{,}000 cells (median \gridCoarseThreeMedian; \gridMidThreeMax{}
+between 3{,}000 and 6{,}000 cells), but the discretisation affects the
+reactive, handoff-only and three-action values alike, so the pooled
+exact savings of \tref{tab:exact}, and with them the percentages in the
+abstract, change by at most \gridPooledMaxDiff{} percentage points across
+all grids and truncations. The text and the caption of \tref{tab:exact}
+now report this check.
+\chg Paragraph on the exact benchmark in \sref{sec:robust}; caption of
+\tref{tab:exact}.
+
+\begin{comment}
+(c) I suggest stating Algorithm 1's action-specific updates explicitly,
+distinguishing realised continuation-path costs from the estimated
+$R_k + F_k$ inserted upon return. Also acknowledge that the equal-data
+three-action DP splits its training sample while Baton reuses it, so the
+comparisons reflect sample allocation as well as estimator differences.
+\end{comment}
+\resp Done. Algorithm~\ref{m-alg:offline} now spells out the three
+updates: a path whose estimated continuation cost exceeds the handoff
+price is assigned that price; a path for which the return is cheapest is
+assigned the estimated $R_k + F_k$; and a path that continues keeps its
+realised cost along the path. The protocol paragraph in \sref{sec:setup}
+now notes that DP$^3_N$ splits its $10^3$ training days between its two
+estimation steps whereas \textsc{Baton} uses all of them for both, so
+that the comparison reflects the allocation of the sample as well as the
+estimators.
+\chg Algorithm~\ref{m-alg:offline}; ``Protocol'' paragraph in
+\sref{sec:setup}.
+
+% ════════════════════════════════════════════════════════════════════════
+\section*{Reviewer 3}
+
+\begin{comment}
+1. In Table 1, both oracle-ho and oracle3 are labeled as `bounds',
+however, in subsequent simulation studies, as shown in Table 2, Table 11,
+Fig. 5, and Fig. 8, only oracle3 appears as a bound, oracle-ho becomes a
+reference point, is the reference point equivalent to bound?
+\end{comment}
+\resp Thank you for pointing out the inconsistency. The two words are
+not equivalent, and we now use them consistently. A clairvoyant policy
+is a \emph{bound} for a class of policies when no policy in that class
+can do better on any day. The handoff-only clairvoyant (oracle-ho) knows
+the day's demands but may only hand off; it is therefore a bound for the
+handoff-only policies (the thresholds, the rule-based triggers, the
+rollouts, \textsc{Baton-ho}), but not for policies that may also return
+to the depot, which can prevent a breach more cheaply than any handoff
+and can therefore exceed it, as \textsc{Baton} does on four of the six
+gates. For those policies oracle-ho is only a \emph{reference point}.
+The three-action clairvoyant (oracle$^3$) is a bound for every policy in
+the paper. \tref{tab:competitors} now says for which policies each
+clairvoyant is a bound, \sref{sec:algorithms} defines the two terms, and
+the captions of the results tables use them in this sense; the
+reference-point columns of the tables group the clairvoyant policies
+with the high-data programs, which are neither bounds nor competitors.
+\chg \tref{tab:competitors}; \sref{sec:algorithms}; caption of
+\tref{tab:grand}.
+
+\begin{comment}
+2. In Sec 4.1 planning regimes, it claims that `the WDRO gate is the SAA
+gate at a tighter threshold', in Table 2, it can be seen that in SAA
+gate, the value of BATON (53.7) is much higher than that of oracle-ho
+(43.5), while in WDRO gate, the value of BATON (41.2) is almost the same
+as that of oracle-ho (42.0). Meanwhile, the value of BATON in SAA gate
+(53.7) is much higher than that of WDRO gate (41.2). What are the
+explanation for these?
+\end{comment}
+\resp The values in Table~2 are savings in per cent of each gate's own
+reactive cost, and that cost differs by a factor of about five between
+the two gates. The tighter threshold of the \textsc{WDRO} gate produces
+much safer plans: the reactive policy costs \reactWDRO{} per plan-day on
+\textsc{WDRO} plans against \reactSAA{} on \textsc{SAA} plans, and at
+least one route of a plan breaches on \pemWDRO{} of days against
+\pemSAA. In absolute terms \BATON{} is far cheaper on \textsc{WDRO} plans
+(\costWDROBaton{} against \costSAABaton{} per plan-day), but there are
+fewer breaches to prevent, and a thousand training days contain few of
+them; this is the rare-breach regime in which \BATON{} falls furthest
+short of what more data would allow (\svWDROBaton{} against
+\svWDRODpThree{} for the high-data three-action program, compared with
+\svSAABaton{} against \svSAADpThree{} on \textsc{SAA}). The handoff-only
+clairvoyant knows the day's demands and saves a similar share on both
+gates (\svWDROOrc{} and \svSAAOrc), so \BATON{} exceeds it by a wide
+margin on \textsc{SAA} plans but not on \textsc{WDRO} plans. We have
+added this explanation to \sref{sec:headline}.
+\chg New paragraph in \sref{sec:headline}.
+
+\begin{comment}
+3. In Table 11, it shows that the value of BATON with a cheap standby
+(Fsb=10, BATON=52.7) is much higher than that with a dear standby
+(Fsb=35, BATON=42.6), while the value of BATON with a cheap emergencies
+(Femg=25, BATON=40.1) is much low than that with a dear emergencies
+(Femg=60, BATON=55.2). Does this mean that cheap standby is better, and
+cheap emergencies are not better?
+\end{comment}
+\resp No: in absolute terms both are better. The values in
+\tref{tab:costsens} are savings relative to the reactive cost of the
+same configuration, and the reactive cost itself depends on the
+emergency price. \BATON's expected daily cost per plan is \csBaseBaton{}
+at the default prices, \csSbLowBaton{} with cheap standby and
+\csEmgLowBaton{} with cheap emergencies, against \csSbHighBaton{} with
+dear standby and \csEmgHighBaton{} with dear emergencies. The savings
+move in opposite directions for a different reason. Cheap standby makes
+the interventions cheaper while the reactive cost stays at
+\csBaseReact{}, so the saving rises. Cheap emergencies lower the
+reactive cost itself, to \csEmgLowReact, so there is less to save, and
+dear emergencies raise it, to \csEmgHighReact, so intervention recovers
+a larger share of a larger bill. We have added the reactive and
+\BATON{} daily costs as two columns of \tref{tab:costsens} and this
+explanation to \sref{sec:sensitivity}.
+\chg \tref{tab:costsens} (two new columns, caption);
+\sref{sec:sensitivity}.
+
+\begin{comment}
+4. In Eq. (4), does the Fho represent dispatch fee?
+\end{comment}
+\resp Yes. $F_{\mathrm{ho}}$ is the dispatch fee, the fixed charge for
+calling out a standby vehicle. The symbol was not named in the text,
+which now says so where Eq.~\eqref{m-eq:handoffprice} is introduced.
+\chg \sref{sec:setting}.
+
+\bigskip
+We thank the reviewers again for their time and for comments that have
+made the paper more precise.
+
+\medskip
+\noindent Sincerely,\\
+Quang-Vinh Dang (corresponding author), on behalf of all authors
+
+\end{document}

@@ -22,6 +22,9 @@ regret      over-triggering of the myopic rule vs near-exact optimum
 synthetic   synthetic scenarios with a flat-priced depot return added
 exact       exact grid-convolution DP under independent demands (rho = 0)
             against BATON and the plug-in references
+exact_grid  grid refinement and truncation check of the exact values
+shape_f     monotonicity check of the state-conditional fresh-start value
+stockout    how often realised deliveries exceed the departure load
 
 Usage (from svrpspd_wdro/):
     python scripts/run_baton_r1.py <mode> [workers=4] [max=N]
@@ -39,6 +42,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.signal import fftconvolve
 
 _SCRIPTS = Path(__file__).resolve().parent
 _WDRO = _SCRIPTS.parent
@@ -105,8 +109,10 @@ def scen(dbar, pbar, N, seed, rho=0.6, dfac=0.0, dscale=1.0, pscale=1.0):
 def route_setup(route, dbar, Q, D, scale, g_train):
     r = np.array(route)
     B = float(Q - dbar[r].sum())
-    if B <= 0:
-        B = calibrate_B_empirical_peak(g_train, alpha=1 - ALPHA)
+    # physical slack, B = 0 for a fully loaded departure (as in
+    # run_realistic_eval); plans never exceed Q
+    if B < 0:
+        raise ValueError(f"route departs over capacity: B = {B}")
     H, E = route_cost_schedules(route, D, scale, COSTS)
     R = restock_schedule(route, D, scale, COSTS)
     return B, H, E, R
@@ -365,8 +371,9 @@ def _fresh_job(path, gate, fam):
         cf = fit_lsm_actions_cf(gtr, B, H, E, R)
         c_cf = simulate_actions_cf(gte, B, H, E, R, cf)["mean_cost"]
         # exact reset
-        amx = fit_lsm_actions_exact(gtr, tr[0][:, r], B, H, E, R)
-        stx = simulate_actions_exact(gte, te[0][:, r], B, H, E, R, amx)
+        L0 = float(dbar[r].sum())
+        amx = fit_lsm_actions_exact(gtr, tr[0][:, r], B, H, E, R, L0=L0)
+        stx = simulate_actions_exact(gte, te[0][:, r], B, H, E, R, amx, L0=L0)
         # restock usage (number of days with >= 1 return)
         rs = {}
         for nm, mm in (("baton3", am), ("baton3_Fstar", am_st), ("dp3", dp3)):
@@ -871,31 +878,35 @@ def _gamma_pmf(mu, h, jmax):
     return np.diff(c)
 
 
-def exact_values(dbar_r, pbar_r, B, H, E, R, G=1500):
+def exact_values(dbar_r, pbar_r, B, H, E, R, G=1500, lower_sd=6.0,
+                 tail_cv=12.0):
     """Exact optimal expected recourse of one route under independent Gamma
     demands, on a W-grid of G cells over [L, B]: no action, handoff only,
     and the three-action menu with the conservative reset W <- 0.
+    lower_sd sets the lower truncation L (in standard deviations of the
+    total increment below the lowest mean path); tail_cv the support of
+    each demand pmf (in coefficients of variation above its mean).
     Returns (none, handoff-only, three-action)."""
     m = len(dbar_r)
     sd = CV * np.sqrt((dbar_r ** 2 + pbar_r ** 2).sum())
-    L = min(0.0, -float(np.cumsum(dbar_r - pbar_r).max()) - 6 * sd)
+    L = min(0.0, -float(np.cumsum(dbar_r - pbar_r).max()) - lower_sd * sd)
     h = (B - L) / (G - 1)
     x = L + h * np.arange(G)
     i0 = int(round(-L / h))                        # grid index of W = 0
     pmfs = []
     for i in range(m):
-        jd = int(np.ceil(dbar_r[i] * (1 + 12 * CV) / h)) + 1
-        jp = int(np.ceil(pbar_r[i] * (1 + 12 * CV) / h)) + 1
+        jd = int(np.ceil(dbar_r[i] * (1 + tail_cv * CV) / h)) + 1
+        jp = int(np.ceil(pbar_r[i] * (1 + tail_cv * CV) / h)) + 1
         pd_ = _gamma_pmf(dbar_r[i], h, jd)
         pp_ = _gamma_pmf(pbar_r[i], h, jp)
-        pmfs.append((np.convolve(pp_, pd_[::-1]), jd))   # offsets -jd..jp
+        pmfs.append((np.clip(fftconvolve(pp_, pd_[::-1]), 0.0, None), jd))  # offsets -jd..jp
 
     def cont(V, k):
         """C(x_i) = E[cost | W_k = x_i, continue]; stop k+1 increment."""
         pmf, jd = pmfs[k]
         jp = len(pmf) - 1 - jd
         ext = np.concatenate([np.full(jd, V[0]), V, np.full(jp, E[k])])
-        return np.convolve(ext, pmf[::-1], mode="valid")
+        return fftconvolve(ext, pmf[::-1], mode="valid")
 
     out = []
     for menu in ("none", "ho", "ho+rs"):
@@ -949,7 +960,121 @@ def mode_exact(workers, max_n):
     pd.DataFrame(rows).to_csv(OUT / "exact.csv", index=False)
 
 
-MODES = {"exact": mode_exact, "dependence": mode_dependence, "shape": mode_shape,
+# grid refinement and truncation check of the exact values (Table 8)
+GRID_CFG = [("G1500", dict(G=1500)), ("G3000", dict(G=3000)),
+            ("G6000", dict(G=6000)), ("G3000_wide", dict(G=3000, lower_sd=10.0,
+                                                         tail_cv=20.0))]
+
+
+def _exact_grid_job(path, gates):
+    D, Q, n, scale, dbar, pbar, res = load(path)
+    seed = rre.stable_seed(path.stem)
+    tr = scen(dbar, pbar, 200, seed, rho=0.0)
+    rows = []
+    for g in gates:
+        for ri, route in enumerate(res[g]["plan"]):
+            if not route:
+                continue
+            r = np.array(route)
+            B, H, E, R = route_setup(route, dbar, Q, D, scale,
+                                     tr[1][:, r] - tr[0][:, r])
+            row = {"Instance": path.stem, "Plan": g, "route": ri, "m": len(route)}
+            for tag, kw in GRID_CFG:
+                v = exact_values(dbar[r], pbar[r], B, H, E, R, **kw)
+                row.update({f"{tag}_none": v[0], f"{tag}_ho": v[1], f"{tag}_3": v[2]})
+            rows.append(row)
+    return rows
+
+
+def mode_exact_grid(workers, max_n):
+    files = instances("Dethloff")[:max_n]
+    rows = run_pool(_exact_grid_job, [(f, ["Det", "SAA"]) for f in files], workers)
+    pd.DataFrame(rows).to_csv(OUT / "exact_grid.csv", index=False)
+
+
+# monotonicity of the state-conditional fresh-start value F_k(W_k)
+def _shape_f_job(path, gates):
+    from core.extra_policies import _suffix_costs_cf
+    D, Q, n, scale, dbar, pbar, res = load(path)
+    seed = rre.stable_seed(path.stem)
+    rows = []
+    for tag, kw in (("0.0", dict(rho=0.0)), ("0.6", dict(rho=0.6)),
+                    ("0.9", dict(rho=0.9))):
+        tr = scen(dbar, pbar, 1000, seed, **kw)
+        xl = scen(dbar, pbar, 50_000, seed + 7, **kw)
+        for g in gates:
+            for route in res[g]["plan"]:
+                if len(route) < 3:
+                    continue
+                r = np.array(route)
+                gtr = tr[1][:, r] - tr[0][:, r]
+                gx = xl[1][:, r] - xl[0][:, r]
+                B, H, E, R = route_setup(route, dbar, Q, D, scale, gtr)
+                cf = fit_lsm_actions_cf(gtr, B, H, E, R)
+                m = len(route)
+                cum = np.cumsum(gx, axis=1)
+                ost = _overflow_step(cum, B)
+                n_pairs = n_viol = 0
+                for k in range(1, m):
+                    al = ost > k
+                    if al.sum() < 500:
+                        continue
+                    # realised post-return cost under the fitted downstream
+                    # policy, as a function of the pre-return state W_k
+                    y = _suffix_costs_cf(k, m, gx, B, H, E, R, cf)[al]
+                    W = cum[al, k - 1]
+                    edges = np.unique(np.quantile(W, np.linspace(0, 1, 26)[1:-1]))
+                    idx = np.searchsorted(edges, W, side="right")
+                    nb = len(edges) + 1
+                    cnt = np.bincount(idx, minlength=nb)
+                    mu = np.bincount(idx, weights=y, minlength=nb) / np.maximum(cnt, 1)
+                    m2 = np.bincount(idx, weights=y * y, minlength=nb) / np.maximum(cnt, 1)
+                    se = np.sqrt(np.maximum(m2 - mu ** 2, 0) / np.maximum(cnt, 1))
+                    dif = mu[1:] - mu[:-1]
+                    sd = np.sqrt(se[1:] ** 2 + se[:-1] ** 2)
+                    ok = (cnt[1:] > 0) & (cnt[:-1] > 0) & (sd > 0)
+                    n_pairs += int(ok.sum())
+                    n_viol += int((ok & (dif < -1.96 * sd)).sum())
+                rows.append({"Instance": path.stem, "Plan": g, "rho": tag,
+                             "m": m, "pairs": n_pairs, "viol": n_viol})
+    return rows
+
+
+def mode_shape_f(workers, max_n):
+    files = instances("Dethloff")[:max_n]
+    rows = run_pool(_shape_f_job, [(f, ["Det", "SAA"]) for f in files], workers)
+    pd.DataFrame(rows).to_csv(OUT / "shape_f.csv", index=False)
+
+
+# convention check: how often realised deliveries exceed the departure load
+def _stockout_job(path, gates, fam, sub):
+    D, Q, n, scale, dbar, pbar, res = load(path, sub)
+    seed = rre.stable_seed(path.stem)
+    d, _ = scen(dbar, pbar, 2000, seed + 99_991)
+    rows = []
+    for g in gates:
+        for route in res[g]["plan"]:
+            if not route:
+                continue
+            r = np.array(route)
+            L0 = float(dbar[r].sum())
+            tot = d[:, r].sum(axis=1)
+            rows.append({"fam": fam, "Instance": path.stem, "Plan": g,
+                         "m": len(route), "p_stockout": float((tot > L0).mean()),
+                         "excess_share": float(np.maximum(tot - L0, 0).mean() / max(L0, 1e-9))})
+    return rows
+
+
+def mode_stockout(workers, max_n):
+    jobs = [(f, ["Det", "SAA"], "Dethloff", "plans") for f in instances("Dethloff")[:max_n]]
+    jobs += [(f, ["Det"], "SalhiNagy", "plans") for f in instances("SalhiNagy")[:max_n]]
+    jobs += [(f, ["Det"], "City", "plans") for f in instances("City")[:max_n]]
+    rows = run_pool(_stockout_job, jobs, workers)
+    pd.DataFrame(rows).to_csv(OUT / "stockout.csv", index=False)
+
+
+MODES = {"exact_grid": mode_exact_grid, "shape_f": mode_shape_f,
+         "stockout": mode_stockout, "exact": mode_exact, "dependence": mode_dependence, "shape": mode_shape,
          "daytype": mode_daytype, "fresh": mode_fresh, "budget": mode_budget,
          "timing": mode_timing, "pool": mode_pool, "regret": mode_regret,
          "synthetic": mode_synthetic}
