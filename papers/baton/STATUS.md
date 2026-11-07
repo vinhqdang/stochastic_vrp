@@ -3,12 +3,13 @@
 - **Title:** Optimal-stopping recourse for vehicle routing with
   simultaneous pickup, delivery, and stochastic demands
 - **Venue:** Computers & Operations Research (Elsevier), manuscript
-  CAOR-D-26-01885 — **REVISION 2 IN PREPARATION**. Submitted July 2026
+  CAOR-D-26-01885 — **REVISION 2 SUBMITTED (7 November 2026), FROZEN
+  until the next decision**. Submitted July 2026
   (after an Omega desk rejection for fit); first-round reviews September
   2026 from three reviewers; revision 1 submitted 27 September 2026
   (git tag `baton-r1`); second-round reviews October–November 2026
   (Reviewer 1 satisfied, Reviewer 2 major revision, Reviewer 3 four
-  questions).
+  questions). Revision 2 files are in `r2/` (git tag `baton-r2`).
 - **Policy:** the manuscript is open for revision work that answers the
   reviews; once a revision is submitted it is frozen again until the next
   decision. Tables regenerate only via `make_tables.py`; figures only
