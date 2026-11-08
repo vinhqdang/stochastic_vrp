@@ -10,7 +10,7 @@ shared engine (`svrpspd_wdro/`) plus one directory per paper under
 in a subpackage of `svrpspd_wdro/` (e.g. `core/`, `ev/`) so everything
 shares the same instances, simulator, cost model, and test suite.
 
-### Paper 1 — BATON (papers/baton/, REVISION 2 SUBMITTED 2026-11-07 at Computers & OR)
+### Paper 1 — BATON (papers/baton/, REVISION 2 AWAITING RESPONSES at Computers & OR)
 
 SVRPSPD with two coupled layers:
 
@@ -32,9 +32,10 @@ see `svrpspd_wdro/core/costs.py`.
 
 Reviews (3 reviewers, CAOR-D-26-01885) arrived September 2026; revision
 1 was submitted 27 September 2026 (`r1/`, git tag `baton-r1`). Second-
-round reviews arrived Oct–Nov 2026; revision 2 was submitted 7 November 2026 (`r2/`, git tag `baton-r2`:
-response letter, portal replies, diff against `baton-r1`, flat ZIP).
-The directory is frozen until the next decision (see its STATUS.md).
+round reviews arrived Oct–Nov 2026; revision 2 files are in `r2/` (response letter, portal replies, diff
+against `baton-r1`, flat ZIP). The manuscript was uploaded 6 November
+without responses and the editor re-invited it on 8 November; once the
+responses are posted the directory is frozen again (see its STATUS.md).
 
 ### Paper 2 — TEMPO (papers/tempo/, UNDER REVIEW at Transportation Science)
 
@@ -207,7 +208,7 @@ estimation beats the best classical method on this model; see
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP) and 8
+  papers 2–3, 7 (QUASAR, QIP) and 8
   (RARECERT, JoC) are closed to edits while under review, paper 4 is
   abandoned, and papers 5 (ECLAIR) and 6 (PARCEL) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
