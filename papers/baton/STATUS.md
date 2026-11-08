@@ -3,14 +3,12 @@
 - **Title:** Optimal-stopping recourse for vehicle routing with
   simultaneous pickup, delivery, and stochastic demands
 - **Venue:** Computers & Operations Research (Elsevier), manuscript
-  CAOR-D-26-01885 — **REVISION 2 RE-INVITED (8 November 2026)**: the
-  manuscript uploaded on 6 November carried no cover letter, responses or
-  marked changes, so the editor asked for the responses to the previous
-  round before resubmission. The portal entries "Revision 2 / Please see
-  the previous comments" are placeholders, not new comments. To do: post
-  `r2/portal_replies.md` (R2, R1, R3), then upload `r2/submission/` files,
-  `r2/cover_letter_r2.pdf`, `r2/main_diff.pdf` (marked changes) and
-  `highlights.txt`. Submitted July 2026
+  CAOR-D-26-01885 — **REVISION 2 SUBMITTED (8 November 2026), FROZEN
+  until the next decision**. A first upload on 6 November lacked the
+  cover letter, responses and marked changes; the editor re-invited it,
+  and the complete package (portal replies, response letter, cover
+  letter, marked-changes PDF, flat LaTeX ZIP, highlights) was submitted
+  on 8 November. Submitted July 2026
   (after an Omega desk rejection for fit); first-round reviews September
   2026 from three reviewers; revision 1 submitted 27 September 2026
   (git tag `baton-r1`); second-round reviews October–November 2026
