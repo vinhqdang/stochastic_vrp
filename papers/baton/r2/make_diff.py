@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 make_diff.py — build r2/main_diff.pdf: revision 2 with the new text marked
-(blue, wavy underline) against revision 1; deleted text is not shown as submitted (git revision SUBMITTED below).
+(magenta, wavy underline) against revision 1; deleted text is not shown as submitted (git revision SUBMITTED below).
 
 Both versions are flattened (\\input files inlined) and their generated
 number macros expanded to literal values, so latexdiff compares text and
@@ -67,7 +67,9 @@ def main():
     # show additions only: deleted text is dropped, new text stays marked
     assert diff.count(r"\begin{document}") == 1
     diff = diff.replace(r"\begin{document}",
-                        r"\renewcommand{\DIFdel}[1]{}" + "\n" + r"\begin{document}")
+                        r"\renewcommand{\DIFdel}[1]{}" + "\n"
+                        + r"\renewcommand{\DIFadd}[1]{{\protect\color{magenta}\uwave{#1}}}" + "\n"
+                        + r"\begin{document}")
     (work / "main_diff.tex").write_text(diff)
     for cmd in (["pdflatex", "-interaction=nonstopmode", "main_diff"],
                 ["bibtex", "main_diff"],
