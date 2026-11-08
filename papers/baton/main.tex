@@ -114,7 +114,7 @@ road networks and retail locations of five cities it leads the strongest
 competitor or shows no statistically detectable difference from it; on the city instances the depot return rarely pays
 and the policy reduces to its handoff-only form. Because the depot return
 enlarges the action set, the policy can exceed the clairvoyant bound of
-the handoff-only class. The conclusions largely survive dependent
+the handoff-only class. The conclusions hold, with few exceptions, under dependent
 demand, known day types and a capacitated standby pool shared
 across routes. The policy has no continuous tuning parameter and fits in
 milliseconds per route.
@@ -2047,12 +2047,12 @@ value prices that load whatever the day type. At this sample size the
 practical rule is therefore to pool the history rather than to split it,
 and to fit per day type only when each type has a history of its own
 that is long enough. The tuned threshold behaves the same way at a lower
-level. The scope of this experiment is narrow. Each day is drawn
+level. This experiment focuses on known day types. Each day is drawn
 independently from a fixed mixture of the two types, so the days remain
 exchangeable: the experiment shows how the policy uses, or does without,
-day-type information and what splitting a limited history costs. It
-does not establish robustness to temporal drift or to serial dependence
-between days, which we have not studied.
+day-type information and what splitting a limited history costs.
+Temporal drift and serial dependence between days are a separate
+question, which we leave for future work.
 
 \input{tables/tab_daytype}
 
@@ -2414,10 +2414,10 @@ geometries with central depots---classical benchmark geometries flatter
 them---and little on packed plans; on our delivery-dominated city
 instances, planned without slack, they were nearly worthless. A deployed
 policy must discover this per route, and on our city instances
-\textsc{Baton} does so and reduces to its handoff-only form. With the
-instances available we cannot separate the role of the road network
-from that of plan slack and demand profile, so we do not claim that
-urban geography as such makes the return worthless. Fifth, \emph{buy standby capacity by the use unless it can be held
+\textsc{Baton} does so and reduces to its handoff-only form. In our city
+instances the road network, plan slack and demand profile act together;
+isolating the effect of urban geography as such calls for instances
+that vary these factors independently. Fifth, \emph{buy standby capacity by the use unless it can be held
 cheaply}. A reserved standby vehicle serves at most one route a day, so
 at a holding cost equal to the standby day rate a reserved pool cannot
 beat pay-per-use; below that rate it pays where handoffs are frequent,
@@ -2431,9 +2431,10 @@ hand-checked algebra alone: Propositions~\ref{prop:bias}--\ref{prop:monotone}
 are verified in Lean~4, within the modelling abstractions listed at the
 start of \S\ref{sec:method}.
 
-\paragraph{Scope of the conclusions} Our managerial conclusions hold
-for the model we studied, and several features of real operations lie
-outside it. The model has no time windows: lateness is priced per
+\paragraph{Scope of the conclusions} Our managerial conclusions refer
+to the model studied here, which focuses on the trade-off between
+continuing, handing off and returning to the depot; several features of
+real operations are natural extensions. The model has no time windows: lateness is priced per
 downstream customer, uniformly, and customers with heterogeneous delay
 penalties or hard windows would make the handoff and return prices
 depend on which customers remain, not only on how many. The routes are
@@ -2451,7 +2452,7 @@ operational logs, and the fleet costs are calibrated to orders of
 magnitude rather than to one operator's rate card. The comparisons
 between execution policies are, we believe, robust to these choices,
 since every policy faces the same model and our sensitivity analyses
-move each of them; the absolute savings are not, and should be read as
+move each of them; the absolute savings depend on them and are best read as
 indicative.
 
 \paragraph{Limitations and next steps} The policy conditions on a
@@ -2481,8 +2482,8 @@ while a policy fitted on a history that contains both day types does no
 worse than separate fits per type, which see fewer days each. The remedy
 for known day types is therefore to keep them in the training history;
 separate fits pay only when each type has a long history of its own.
-Temporal drift and serial dependence between days lie outside our
-experiments; where the mix may drift, the policy should be re-fitted on
+Our experiments focus on known day types; where the mix may drift over
+time, the policy should be re-fitted on
 a rolling window and monitored. Finally, our deepest structural finding cuts toward planning:
 on deterministically packed routes most breach risk sits at the first
 stop, where no execution policy can act, so the larger prize is a
