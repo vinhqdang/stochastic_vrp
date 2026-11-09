@@ -158,12 +158,48 @@ def e6():
     emit("E6 - sensitivity to arc noise v", t, "e6_sensitivity")
 
 
+E7_METHODS = ["saa", "sortie0", "sortie1"]
+
+
+def _convergence(df):
+    """Per run: in-model best value at half the time limit vs at the limit (from plan histories)."""
+    import json
+    rows = []
+    for _, r in df.iterrows():
+        pf = r.get("plan_file")
+        if not isinstance(pf, str) or not os.path.exists(pf):
+            alt = os.path.join(RES, "plans", "e7", os.path.basename(str(pf)))
+            if not os.path.exists(alt):
+                continue
+            pf = alt
+        h = json.load(open(pf)).get("history") or []
+        if not h:
+            continue
+        half = float(r["time_limit"]) / 2.0
+        v_half = min([v for t, v in h if t <= half], default=h[0][1])
+        v_end = min(v for _, v in h)
+        rows.append(dict(n=r["n"], method=r["method"], measure=r["measure"],
+                         gain_pct=100 * (v_half - v_end) / abs(v_half) if v_half else 0.0))
+    return pd.DataFrame(rows)
+
+
 def e7():
     df = load("e7_scale")
     if df is None:
         return
-    t = paired_table(df, "det", ["saa", "sortie0"], "oos_obj", ["n", "measure"])
-    emit("E7 - scalability (n = 50-100)", t, "e7_scale")
+    fair = df[df.method != "cost"]
+    others = [o for o in E7_METHODS if o in set(fair.method)]
+    t = paired_table(fair, "det", others, "oos_obj", ["n", "measure"])
+    emit("E7 - scalability (n = 50-100) by size and measure", t, "e7_scale")
+    t = paired_table(fair.assign(inst_meas=fair.instance + "|" + fair.measure).drop(columns="instance")
+                     .rename(columns={"inst_meas": "instance"}), "det", others, "oos_obj", ["n"])
+    emit("E7 - scalability pooled over measures", t, "e7_pooled")
+    cv = _convergence(fair)
+    if len(cv):
+        g = cv.groupby(["n", "method"])["gain_pct"].agg(
+            mean="mean", max="max", share_gt_half_pct=lambda x: (x > 0.5).mean()).reset_index()
+        emit("E7 - convergence: in-model improvement in the second half of the run (%)", g,
+             "e7_convergence", "%.3f")
 
 
 def e8():
@@ -318,7 +354,7 @@ def paper_tables():
             ill = 100 * ((g.exante - g.oos_obj_X) / g.oos_obj_X).mean()
             body += f"{v:.1f} & {MNAME[meas]} & {ill:+.1f} & {cells[0]} \\\\\n"
         _write("tab_e6", "\\begin{tabular}{llrr}\\toprule\n$v$ & Measure & Det belief err (\\%) & SORTIE-0 vs Det \\\\\n", body)
-    for name, csvn, others in [("tab_e7", "e7_scale", ["saa", "sortie0"]), ("tab_e8", "e8_congestion", ["saa", "sortie0", "sortie1"])]:
+    for name, csvn, others in [("tab_e7", "e7_scale", ["saa", "sortie0", "sortie1"]), ("tab_e8", "e8_congestion", ["saa", "sortie0", "sortie1"])]:
         df = load(csvn)
         if df is None or len(df) == 0:
             continue
@@ -331,6 +367,13 @@ def paper_tables():
         cols = "l" * len(grp) + "r" * len(others)
         head = " & ".join("$n$" if c == "n" else "Measure" for c in grp) + " & " + " & ".join(MLAB[o] for o in others)
         _write(name, f"\\begin{{tabular}}{{{cols}}}\\toprule\n{head} \\\\\n", body)
+        if name == "tab_e7":
+            pooled = fair.assign(instance=fair.instance + "|" + fair.measure)
+            body = ""
+            for keys, cells in _improve_rows(pooled, ["n"], others):
+                body += f"{keys[0]} & " + " & ".join(cells) + " \\\\\n"
+            _write("tab_e7_pooled", "\\begin{tabular}{lrrr}\\toprule\n$n$ & "
+                   + " & ".join(MLAB[o] for o in others) + " \\\\\n", body)
 
 
 if __name__ == "__main__":

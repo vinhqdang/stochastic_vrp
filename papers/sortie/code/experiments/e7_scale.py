@@ -1,5 +1,7 @@
-"""E7: scale. n in {50, 75, 100} x 3 blocks, measures {range, gmd}, B = 1.10, methods det,
-saa, sortie0, time limit 60 s, out-of-sample S = 10000 for every size.
+"""E7: scale. n in {50, 75, 100} x 6 blocks, measures {range, gmd, max}, B = 1.10, methods
+det, saa, sortie0, sortie1, time limit 120 s, out-of-sample S = 10000 for every size.
+The plan files keep the search history, so convergence (value at 60 s vs 120 s) is
+read from them by analyze.py.
 """
 
 import common as cm
@@ -10,10 +12,10 @@ from common import (  # noqa: E402
 
 EXP = "e7"
 CSV = "e7_scale.csv"
-MEASURES = ("range", "gmd")
-METHODS = ("det", "saa", "sortie0")
+MEASURES = ("range", "gmd", "max")
+METHODS = ("det", "saa", "sortie0", "sortie1")
 B = 1.10
-TIME_LIMIT = 60.0
+TIME_LIMIT = 120.0
 
 
 def jobs_for(args):

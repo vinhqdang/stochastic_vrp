@@ -24,6 +24,7 @@ SCEN_S = 200
 SCEN_SEED = 4242
 FREE_PASSES = 4
 REPAIR_STEPS = 200
+RUIN_MAX = 12
 ORDERED_MEASURES = ("max", "range", "gmd", "mad")
 MEASURES = ORDERED_MEASURES + ("var",)
 MODES = ("cost", "det", "pboi", "saa")
@@ -220,6 +221,7 @@ class _Ctx:
         self.screen = screen
         self.deadline = deadline
         self.n_exact = 0
+        self.n_confirm = 0
         self.t_screen = 0.0
         self.t_exact = 0.0
         self.t_perturb = 0.0
@@ -447,8 +449,12 @@ def _free_descent(seqs, L, W, idxs, adapter, budget, ctx):
     return seqs, L, W
 
 
-def _exact_move(plan, mv, adapter, budget, ctx, free):
-    """Apply a move, re-solve the two changed routes, return (plan, value) or None."""
+def _exact_move(plan, mv, adapter, budget, ctx, free, fast=False):
+    """Apply a move, re-solve the two changed routes, return (plan, value) or None.
+
+    fast=True re-solves with the screening lower level (solve_fast); the result
+    must then be confirmed with _confirm before it is applied.
+    """
     kind, a, b, i, j = mv
     sa = plan.seqs[a]
     sb = plan.seqs[b]
@@ -458,8 +464,9 @@ def _exact_move(plan, mv, adapter, budget, ctx, free):
     else:
         new_a = [j if x == i else x for x in sa]
         new_b = [i if x == j else x for x in sb]
-    ta, La, Wa = ctx.solver.solve(new_a)
-    tb, Lb, Wb = ctx.solver.solve(new_b)
+    solve = ctx.solver.solve_fast if fast else ctx.solver.solve
+    ta, La, Wa = solve(new_a, hint=sa)
+    tb, Lb, Wb = solve(new_b, hint=sb)
     seqs = list(plan.seqs)
     seqs[a] = list(ta)
     seqs[b] = list(tb)
@@ -480,24 +487,72 @@ def _exact_move(plan, mv, adapter, budget, ctx, free):
     return child, adapter.value(L, W, seqs)
 
 
+def _confirm(plan, routes, adapter, budget, ctx):
+    """Re-solve the given routes of a screened child with the exact lower level.
+
+    Returns (child, value), or None when the confirmed plan exceeds the budget.
+    """
+    ctx.n_confirm += 1
+    seqs = list(plan.seqs)
+    L = plan.L.copy()
+    W = plan.W.copy()
+    for r in routes:
+        t, Lr, Wr = ctx.solver.solve(seqs[r], hint=seqs[r])
+        seqs[r] = list(t)
+        L[r] = Lr
+        W[r] = Wr
+    if L.sum() > budget + FEAS_TOL:
+        return None
+    pre = list(plan.pre)
+    for r in routes:
+        pre[r] = None
+    child = _Plan(seqs, L, W, pre, ctx)
+    return child, adapter.value(L, W, seqs)
+
+
 def _improve_step(plan, adapter, budget, cur_val, ctx, varpi, psi):
-    """Screen all moves, evaluate the top K exactly, return the best improving (plan, value)."""
+    """Screen all moves, evaluate the top K exactly, return the best improving (plan, value).
+
+    Outside free mode the K moves are evaluated with the fast lower level; every
+    candidate that improves on cur_val is confirmed exactly, in order of its fast
+    value, and the first one that still improves is returned.
+    """
     t0 = time.perf_counter()
     moves = _screen(plan, varpi, psi, budget, ctx)
     t1 = time.perf_counter()
     ctx.t_screen += t1 - t0
-    free = ctx.free and adapter.mode != "cost"
-    best = None
-    best_val = cur_val
+    tol = MOVE_TOL * max(1.0, abs(cur_val))
+    if ctx.free:
+        free = adapter.mode != "cost"
+        best = None
+        best_val = cur_val
+        for mv in moves:
+            ctx.n_exact += 1
+            res = _exact_move(plan, mv, adapter, budget, ctx, free)
+            if res is None:
+                continue
+            child, val = res
+            if val < best_val - MOVE_TOL * max(1.0, abs(best_val)):
+                best = (child, val)
+                best_val = val
+        ctx.t_exact += time.perf_counter() - t1
+        return best
+    cands = []
     for mv in moves:
         ctx.n_exact += 1
-        res = _exact_move(plan, mv, adapter, budget, ctx, free)
+        res = _exact_move(plan, mv, adapter, budget, ctx, False, fast=True)
         if res is None:
             continue
         child, val = res
-        if val < best_val - MOVE_TOL * max(1.0, abs(best_val)):
-            best = (child, val)
-            best_val = val
+        if val < cur_val - tol:
+            cands.append((val, mv, child))
+    cands.sort(key=lambda c: c[0])
+    best = None
+    for _, mv, child in cands:
+        res = _confirm(child, (mv[1], mv[2]), adapter, budget, ctx)
+        if res is not None and res[1] < cur_val - tol:
+            best = res
+            break
     ctx.t_exact += time.perf_counter() - t1
     return best
 
@@ -637,7 +692,7 @@ def _perturb(plan, varpi, psi, adapter, budget, ctx):
     route_of = np.empty(N, dtype=np.int64)
     for r, s in enumerate(seqs):
         route_of[np.asarray(s, dtype=np.int64)] = r
-    qmax = max(3, int(math.ceil(0.25 * n)))
+    qmax = max(3, min(RUIN_MAX, int(math.ceil(0.25 * n))))
     q = int(rng.integers(2, qmax + 1))
     price_branch = rng.random() < 0.5
     related = rng.random() < 0.5
@@ -680,7 +735,10 @@ def _perturb(plan, varpi, psi, adapter, budget, ctx):
     L = plan.L.copy()
     W = plan.W.copy()
     for r in changed:
-        t, Lr, Wr = ctx.solver.solve(seqs[r])
+        if ctx.free:
+            t, Lr, Wr = ctx.solver.solve(seqs[r])
+        else:
+            t, Lr, Wr = ctx.solver.solve_fast(seqs[r], hint=plan.seqs[r])
         seqs[r] = list(t)
         L[r] = Lr
         W[r] = Wr
@@ -696,6 +754,12 @@ def _perturb(plan, varpi, psi, adapter, budget, ctx):
         for k in changed:
             pre2[k] = None
         child = _Plan(seqs2, L2, W2, pre2, ctx)
+    else:
+        diff = [k for k in range(m) if tuple(child.seqs[k]) != tuple(plan.seqs[k])]
+        res = _confirm(child, diff, adapter, budget, ctx)
+        if res is None:
+            return None
+        child = res[0]
     return child
 
 
@@ -738,7 +802,8 @@ def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, 
     D = noise_matrix(inst)
     if solver is None:
         solver = TourSolver(C, kappa, v, D=D)
-    snap = (solver.n_calls, solver.n_hk, solver.n_cache_hits, solver.n_ls)
+    snap = (solver.n_calls, solver.n_hk, solver.n_cache_hits, solver.n_ls,
+            solver.n_fast, solver.n_fast_hits)
     adapter = make_objective(mode, measure, v, scen=scen, C=C, H=H)
     rng = np.random.default_rng(seed)
     deadline = t_start + float(time_limit)
@@ -831,6 +896,7 @@ def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, 
         "history": history,
         "iters": it,
         "n_exact_evals": ctx.n_exact,
+        "n_confirm": ctx.n_confirm,
         "n_improve": n_improve,
         "n_perturb": n_pert,
         "n_accept": n_acc,
@@ -839,6 +905,8 @@ def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, 
             "n_hk": solver.n_hk - snap[1],
             "n_cache_hits": solver.n_cache_hits - snap[2],
             "n_ls": solver.n_ls - snap[3],
+            "n_fast": solver.n_fast - snap[4],
+            "n_fast_hits": solver.n_fast_hits - snap[5],
         },
         "time": total,
         "time_screen": ctx.t_screen,

@@ -74,7 +74,7 @@ MAIN_M = 5
 MAIN_CAP = 4.0
 
 MAIN_GRID = [(n, b) for n in (15, 20, 25, 30, 35) for b in range(5)]
-LARGE_GRID = [(n, b) for n in (50, 75, 100) for b in range(3)]
+LARGE_GRID = [(n, b) for n in (50, 75, 100) for b in range(6)]
 E3_NS = (15, 20, 25, 30, 35)
 QUICK_INST = (15, 0)
 
