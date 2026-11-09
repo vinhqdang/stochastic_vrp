@@ -564,6 +564,66 @@ when one instance dominates (Var, $B=1.10$, SORTIE-1).}\label{tab:e3}
 \caption{E3, $B=1.10$: per-instance improvement of the ex-post value over Det.}\label{fig:e3}
 \end{figure}
 
+\paragraph{An illustrative instance.} Figure~\ref{fig:routes} shows the
+cost-optimal plan and the range-optimised Det and SORTIE-0 plans of
+X641-n30-b0 at $B=1.10$, the instance whose SORTIE-0 gain is closest to the
+median of the 25 instances ($+0.5\%$). The cost plan leaves one driver with a
+route of length 148 and another with 2610. Both fair plans balance the
+lengths to a deterministic range of about 940, and they differ only in how
+two route pairs are split. Figure~\ref{fig:workloads} shows what the drivers
+experience. The realised workloads are wide and right-skewed, and the
+expected realised range is about 1225 for both fair plans: 30\% above the
+deterministic range the Det planner reports. Figure~\ref{fig:rangedist} gives
+the distribution of the realised range of the two plans; in one day out of
+ten it exceeds 1750. The worst instance for SORTIE-0 in this cell is
+X641-n35-b0, where Det is $7.5\%$ better (Figure~\ref{fig:heatmap} in
+Appendix~\ref{app:tables}); this is consistent with the search noise
+documented in E7b rather than a systematic effect, since on the same instance
+SORTIE-0 is better or tied in eight of the other nine cells.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_routes.pdf}
+\caption{X641-n30-b0, $B=1.10$: cost-optimal plan and the range-optimised Det
+and SORTIE-0 plans. $L_k$: tour lengths.}\label{fig:routes}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_workloads.pdf}
+\caption{Simulated realised workloads $\Phi_k=YX_k$ of the three plans of
+Figure~\ref{fig:routes} ($20\,000$ days); diamonds mark the tour lengths
+$L_k$ that a deterministic model sees.}\label{fig:workloads}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{figures/fig_rangedist.pdf}
+\caption{Distribution of the realised range of the Det and SORTIE-0 plans of
+Figure~\ref{fig:routes}; dashed: deterministic range of the tour lengths,
+solid: expected realised range.}\label{fig:rangedist}
+\end{figure}
+
+\paragraph{How tight is the illusion bound?} Figure~\ref{fig:bound} plots the
+gap between the true ex-post value and the ex-ante value of every Det plan
+against the bound of Proposition~\ref{prop:gap}. No plan violates the bound.
+The bound is conservative: the realised gap is on average $33\%$ of the
+bound for the maximum, $18\%$ for the range and $11$--$12\%$ for the GMD and
+MAD, because it charges every route its full standard deviation while only
+the routes near the extreme ranks matter. Its value is that it is computable
+from the quadratic lengths alone and grows like $v\sqrt{\sum_kW_k}$, which is
+the scaling observed in E6.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{figures/fig_illusion_bound.pdf}
+\caption{Fairness illusion of the Det plans of E3 (true ex-post minus
+ex-ante value) against the bound $\|\lambda\|_1v(\sum_kW_k)^{1/2}$ of
+Proposition~\ref{prop:gap}.}\label{fig:bound}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{figures/fig_cost_fairness.pdf}
+\caption{E3, range-optimised plans: total length relative to $C^\ast$ against
+the expected realised range relative to that of the cost-optimal plan.}\label{fig:costfair}
+\end{figure}
+
 \subsection{Route consistency (E4)}
 E4 removes the lower level: the planner may sequence each route freely
 (\emph{free}) instead of using the TSP-optimal tour (\emph{lower}). For the
@@ -669,6 +729,21 @@ seeds, averaged over instances.}\label{tab:e7b}
 \input{results/tables/paper/tab_e7b.tex}
 \end{table}
 
+Figure~\ref{fig:convergence} shows the anytime behaviour behind these
+numbers, and Figure~\ref{fig:seeds} the seed-to-seed spread at $n=100$.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_convergence.pdf}
+\caption{E7: best in-model value relative to the final value over the run
+(median and interquartile range over the 18 runs per method and size).}\label{fig:convergence}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e7b_seeds.pdf}
+\caption{E7b, $n=100$: ex-post value of each solver seed, relative to the mean
+Det value of the instance; larger markers: seed means.}\label{fig:seeds}
+\end{figure}
+
 \subsection{Heterogeneous noise: congestion (E8)}
 E3 suggests that the stochastic refinement matters little when a route's
 variance is proportional to its length. E8 breaks that proportionality: arcs
@@ -703,6 +778,24 @@ improvement of the ex-post value over Det (format as Table~\ref{tab:e3}).}\label
 \input{results/tables/paper/tab_e8.tex}
 \end{table}
 
+
+%==========================================================================
+Figure~\ref{fig:congestion} shows the congestion multiplier on the
+illustrative instance, and Figure~\ref{fig:e8e3} pairs every instance and
+measure with and without congestion: the points scatter around the diagonal,
+with the GMD above it and the range on both sides.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_congestion.pdf}
+\caption{X641-n30-b0 with congestion: customers coloured by the mean noise
+multiplier $H$ of their arcs, with the range-optimised Det and SORTIE-0 plans of E8.}\label{fig:congestion}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{figures/fig_e8_vs_e3.pdf}
+\caption{Improvement of SORTIE-0 over Det per instance and measure, without
+(E3) and with (E8) congestion, $B=1.10$.}\label{fig:e8e3}
+\end{figure}
 
 %==========================================================================
 \section{Conclusions}\label{sec:concl}
@@ -761,6 +854,17 @@ slices of one benchmark file with five vehicles.
 (branch-and-cut with PBOI-based bounds), correlated route durations, multi-day
 fairness, in which unfairness can be compensated across days, and
 time-dependent travel times.
+
+\appendix
+\section{Per-instance results}\label{app:tables}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_heatmap_e3.pdf}
+\caption{E3: improvement of the ex-post value of SORTIE-0 over Det (\%) for
+every instance, measure and budget.}\label{fig:heatmap}
+\end{figure}
+
+%APPENDIX_TABLES
 
 \bibliographystyle{plainnat}
 \bibliography{lit/references}
