@@ -139,8 +139,36 @@ def _pb_pmf(P):
     return pmf
 
 
-def pboi(L, sigma, lam, G=257, family="gamma"):
-    """E l_lambda(X) for independent X_k with means L and sds sigma (Theorem 2)."""
+_QB = np.array([1e-12, 1e-7, 1e-4, 0.005, 0.05, 0.2, 0.5, 0.8, 0.95, 0.995,
+                1 - 1e-4, 1 - 1e-7, 1 - 1e-12])
+_GL_X, _GL_W = np.polynomial.legendre.leggauss(6)
+
+
+def _nodes(marg, a, b):
+    """Quadrature nodes/weights on [a, b]: panels between the quantile
+    breakpoints of every marginal (so a narrow marginal is resolved no matter
+    how wide the others are), 6-point Gauss-Legendre on each panel."""
+    if b <= a:
+        return np.zeros(0), np.zeros(0)
+    br = marg.ppf(_QB).ravel()
+    br = np.concatenate([[a, b], br[(br > a) & (br < b)]])
+    br = np.unique(br)
+    br = br[np.concatenate([[True], np.diff(br) > 1e-12 * max(1.0, abs(b))])]
+    if br[-1] < b:
+        br = np.append(br, b)
+    left, right = br[:-1], br[1:]
+    half = 0.5 * (right - left)
+    mid = 0.5 * (right + left)
+    t = (mid[:, None] + half[:, None] * _GL_X[None, :]).ravel()
+    w = (half[:, None] * _GL_W[None, :]).ravel()
+    return t, w
+
+
+def pboi(L, sigma, lam, G=None, family="gamma"):
+    """E l_lambda(X) for independent X_k with means L and sds sigma (Theorem 2).
+
+    G is accepted for backward compatibility and ignored: the quadrature uses
+    distribution-adapted Gauss-Legendre panels (see _nodes)."""
     L = np.asarray(L, dtype=np.float64)
     m = L.shape[0]
     lam = _resolve_lam(lam, m)
@@ -149,45 +177,40 @@ def pboi(L, sigma, lam, G=257, family="gamma"):
     Lam[:m] = np.cumsum(lam[::-1])[::-1]
     lam_tot = Lam[0]
     lo, hi = _bounds(marg)
-    w = _simpson_weights(G)
 
     def g_of(t):
         return _pb_pmf(marg.cdf(t)) @ Lam
 
     total = lam_tot * max(lo, 0.0)
     tpos = max(lo, 0.0)
-    if hi > tpos:
-        t = np.linspace(tpos, hi, G)
-        h = (hi - tpos) / (G - 1)
-        total += h / 3.0 * float(np.dot(w, g_of(t)))
+    t, w = _nodes(marg, tpos, hi)
+    if t.size:
+        total += float(np.dot(w, g_of(t)))
     if lo < 0.0:
-        t = np.linspace(lo, 0.0, G)
-        h = (0.0 - lo) / (G - 1)
-        total += h / 3.0 * float(np.dot(w, g_of(t) - lam_tot))
+        t, w = _nodes(marg, lo, 0.0)
+        total += float(np.dot(w, g_of(t) - lam_tot))
     return float(total)
 
 
-def rank_prices(L, sigma, lam, G=257, family="gamma"):
+def rank_prices(L, sigma, lam, G=None, family="gamma"):
     """varpi_k = sum_j lam_j P(R_k = j) (Proposition 3)."""
     L = np.asarray(L, dtype=np.float64)
     m = L.shape[0]
     lam = _resolve_lam(lam, m)
     marg = Marginals(L, sigma, family)
     lo, hi = _bounds(marg)
-    t = np.linspace(lo, hi, G)
-    h = (hi - lo) / (G - 1)
-    w = _simpson_weights(G)
+    t, w = _nodes(marg, lo, hi)
     P = marg.cdf(t)
     f = marg.pdf(t)
     out = np.zeros(m)
     for k in range(m):
         pmf = _pb_pmf(np.delete(P, k, axis=0))
-        Pr = (h / 3.0) * (w[:, None] * f[k][:, None] * pmf).sum(axis=0)
+        Pr = (w[:, None] * f[k][:, None] * pmf).sum(axis=0)
         out[k] = float(np.dot(lam, Pr))
     return out
 
 
-def sigma_prices(L, sigma, lam, h=0.05, G=257, family="gamma"):
+def sigma_prices(L, sigma, lam, h=0.05, G=None, family="gamma"):
     """psi_k = d E l_lambda / d sigma_k by forward difference with step h*sigma_k.
 
     For lam == "var" the exact derivative 2(m-1)/m^2 * sigma_k is returned.

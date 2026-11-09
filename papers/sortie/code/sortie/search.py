@@ -126,7 +126,7 @@ class SAAAdapter:
         key = tuple(seq)
         x = self._xc.get(key)
         if x is None:
-            if len(self._xc) > 300000:
+            if len(self._xc) > 50000:
                 self._xc.clear()
             full = np.array([0] + list(seq) + [0], dtype=np.int64)
             src = full[:-1]
@@ -750,7 +750,14 @@ def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, 
     best = cur
     best_val = cur_val
     history = [(0.0, best_val)]
-    T0 = 0.02 * abs(best_val) + 1e-9
+    # Common temperature scale for every mode: 2% of the model-based ex-post
+    # value of the start plan (cost mode: of its total length), so det, saa and
+    # pboi runs accept uphill moves of the same absolute size.
+    if mode == "cost":
+        scale = abs(cur_val)
+    else:
+        scale = abs(make_objective("pboi", measure, v, C=C).value(cur.L, cur.W, cur.seqs))
+    T0 = 0.02 * scale + 1e-9
     Tend = T0 * 1e-3
     it = 0
     n_improve = 0

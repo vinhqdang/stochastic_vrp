@@ -167,3 +167,16 @@ def test_marginals_gamma_moments():
     q = marg.ppf(0.5)
     cdf = marg.cdf(q)
     assert np.allclose(np.diag(cdf), 0.5, atol=1e-8)
+
+
+def test_narrow_route_resolved():
+    """A near-trivial short route next to long noisy routes (review finding):
+    quadrature must resolve it; its range price is -1 and prices sum to 0."""
+    import numpy as np
+    from sortie.pboi import pboi, rank_prices
+    L = np.array([2.0, 900, 950, 880, 920])
+    W = np.r_[2.0, L[1:] ** 2 / 10]
+    s = 0.3 * np.sqrt(W)
+    assert abs(pboi(L, s, "range") - 1006.6818547) < 1e-5
+    rp = rank_prices(L, s, "range")
+    assert abs(rp[0] + 1.0) < 1e-6 and abs(rp.sum()) < 1e-8
