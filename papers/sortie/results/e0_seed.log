@@ -1,4 +1,57 @@
-== e0 quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-09 06:45:17
-[e0] jobs total=44 already_done=44 todo=0
-[e0] finished ok=0 failed=0 elapsed=0s
-[e0] instances=44 failures=0
+== e0 quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-09 10:36:45
+[e0] jobs total=53 already_done=0 todo=53
+[e0] 1/53 e0|X641-n10-b0 t=5s
+[e0] 2/53 e0|X641-n10-b1 t=5s
+[e0] 3/53 e0|X641-n10-b3 t=5s
+[e0] 4/53 e0|X641-n10-b2 t=5s
+[e0] 5/53 e0|X641-n10-b5 t=10s
+[e0] 6/53 e0|X641-n10-b4 t=10s
+[e0] 7/53 e0|X641-n10-b6 t=10s
+[e0] 8/53 e0|X641-n10-b7 t=10s
+[e0] 9/53 e0|X641-n10-b8 t=15s
+[e0] 10/53 e0|X641-n10-b9 t=15s
+[e0] 11/53 e0|X641-n15-b0 t=30s
+[e0] 12/53 e0|X641-n15-b1 t=30s
+[e0] 13/53 e0|X641-n15-b3 t=35s
+[e0] 14/53 e0|X641-n15-b2 t=35s
+[e0] 15/53 e0|X641-n15-b4 t=50s
+[e0] 16/53 e0|X641-n20-b0 t=51s
+[e0] 17/53 e0|X641-n20-b2 t=56s
+[e0] 18/53 e0|X641-n20-b1 t=56s
+[e0] 19/53 e0|X641-n20-b3 t=71s
+[e0] 20/53 e0|X641-n20-b4 t=71s
+[e0] 21/53 e0|X641-n25-b1 t=76s
+[e0] 22/53 e0|X641-n25-b0 t=76s
+[e0] 23/53 e0|X641-n25-b2 t=91s
+[e0] 24/53 e0|X641-n25-b3 t=91s
+[e0] 25/53 e0|X641-n25-b4 t=96s
+[e0] 26/53 e0|X641-n30-b0 t=116s
+[e0] 27/53 e0|X641-n30-b1 t=132s
+[e0] 28/53 e0|X641-n30-b2 t=132s
+[e0] 29/53 e0|X641-n30-b3 t=137s
+[e0] 30/53 e0|X641-n30-b4 t=157s
+[e0] 31/53 e0|X641-n35-b0 t=172s
+[e0] 32/53 e0|X641-n35-b1 t=172s
+[e0] 33/53 e0|X641-n35-b2 t=177s
+[e0] 34/53 e0|X641-n35-b3 t=198s
+[e0] 35/53 e0|X641-n35-b4 t=213s
+[e0] 36/53 e0|X641-n50-b0 t=234s
+[e0] 37/53 e0|X641-n50-b1 t=239s
+[e0] 38/53 e0|X641-n50-b2 t=259s
+[e0] 39/53 e0|X641-n50-b3 t=274s
+[e0] 40/53 e0|X641-n50-b4 t=295s
+[e0] 41/53 e0|X641-n50-b5 t=300s
+[e0] 42/53 e0|X641-n75-b0 t=380s
+[e0] 43/53 e0|X641-n75-b1 t=395s
+[e0] 44/53 e0|X641-n75-b2 t=416s
+[e0] 45/53 e0|X641-n75-b3 t=422s
+[e0] 46/53 e0|X641-n75-b4 t=502s
+[e0] 47/53 e0|X641-n75-b5 t=517s
+[e0] 48/53 e0|X641-n100-b0 t=539s
+[e0] 49/53 e0|X641-n100-b1 t=544s
+[e0] 50/53 e0|X641-n100-b2 t=624s
+[e0] 51/53 e0|X641-n100-b3 t=639s
+[e0] 52/53 e0|X641-n100-b4 t=661s
+[e0] 53/53 e0|X641-n100-b5 t=667s
+[e0] finished ok=53 failed=0 elapsed=667s
+[e0] instances=53 failures=0
