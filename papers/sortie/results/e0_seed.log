@@ -1,0 +1,4 @@
+== e0 quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-09 06:45:17
+[e0] jobs total=44 already_done=44 todo=0
+[e0] finished ok=0 failed=0 elapsed=0s
+[e0] instances=44 failures=0

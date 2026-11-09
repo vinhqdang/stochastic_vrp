@@ -1,0 +1,7 @@
+[run_all] e0_seed -> /home/user/stochastic_vrp/papers/sortie/results/e0_seed.log
+[run_all] e0_seed ok
+[run_all] e1_accuracy -> /home/user/stochastic_vrp/papers/sortie/results/e1_accuracy.log
+[run_all] e1_accuracy ok
+[run_all] e2_exact -> /home/user/stochastic_vrp/papers/sortie/results/e2_exact.log
+[run_all] e2_exact ok
+[run_all] e3_main -> /home/user/stochastic_vrp/papers/sortie/results/e3_main.log
