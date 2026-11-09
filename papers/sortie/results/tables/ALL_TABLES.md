@@ -266,6 +266,42 @@
 | 100 | sortie0  | 1.3     |  6.78  |              0.333  |
 | 100 | sortie1  | 2.41    | 16.3   |              0.556  |
 
+### E7b - search noise: CV over three seeds (%)
+
+| measure   |   det |   saa |   sortie0 |
+|:----------|------:|------:|----------:|
+| gmd       |  6.38 | 2.67  |      4.53 |
+| max       |  1.35 | 0.776 |      1.37 |
+| range     | 11.3  | 4.73  |      3.02 |
+
+### E7b - n = 100, mean over 3 seeds: improvement over det by measure
+
+| measure   |   inst |   saa_impr_pct |   saa_wins |   saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |
+|:----------|-------:|---------------:|-----------:|--------:|-------------------:|---------------:|------------:|
+| gmd       |      6 |          2.49  |          3 |   0.438 |              3.18  |              4 |      0.562  |
+| max       |      6 |          0.776 |          4 |   0.438 |              0.857 |              4 |      0.312  |
+| range     |      6 |          6.45  |          4 |   0.312 |              8.68  |              5 |      0.0625 |
+
+### E7b - n = 100, mean over 3 seeds: pooled
+
+| all   |   inst |   saa_impr_pct |   saa_wins |   saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |
+|:------|-------:|---------------:|-----------:|--------:|-------------------:|---------------:|------------:|
+| all   |     18 |           3.24 |         11 |  0.0987 |               4.24 |             13 |      0.0208 |
+
+### E7b - n = 100, mean over 3 seeds: SORTIE-0 vs SAA
+
+| all   |   inst |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |
+|:------|-------:|-------------------:|---------------:|------------:|
+| all   |     18 |               1.09 |             12 |       0.246 |
+
+### E7b - convergence: in-model improvement in the second half (120-240 s, %)
+
+| method   |   mean |   max |   share_gt_half_pct |
+|:---------|-------:|------:|--------------------:|
+| det      |  1.19  |  36.6 |               0.111 |
+| saa      |  0.692 |  12.9 |               0.222 |
+| sortie0  |  1.93  |  31.8 |               0.185 |
+
 ### E8 - heterogeneous (congested) arc noise: improvement over det (%)
 
 | measure   |   inst |   saa_impr_pct |   saa_wins |    saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |   sortie1_impr_pct |   sortie1_wins |   sortie1_p |

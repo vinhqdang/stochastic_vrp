@@ -25,14 +25,14 @@ Review state and freeze policy: `STATUS.md`. Experiment report: `REPORT.md`.
 | `lit/references.bib` | Bibliography; bibliographic data checked against Crossref or the publisher. |
 | `lit/LIT_NOTES.md` | Literature review notes (six clusters, gaps G1–G3, unverified items). |
 | `data/X-n641-k35.vrp` | CVRPLIB instance (Uchoa et al. 2017); the source of every test instance. |
-| `code/SPEC.md` | Module and experiment specifications (modules A–F, experiments E0–E8). |
+| `code/SPEC.md` | Module and experiment specifications (modules A–F, experiments E0–E8 and E7b). |
 | `code/sortie/instances.py` | Instance slicing from X-n641-k35, congestion multiplier H. |
 | `code/sortie/tsp.py` | Held–Karp, local search, risk-consistent tours (dichotomic parametric search). |
 | `code/sortie/pboi.py` | Ordered measures, the Poisson-binomial ordered integral (PBOI), rank and σ prices. |
 | `code/sortie/sim.py` | Arc-level Monte Carlo with common random numbers (out-of-sample evaluation). |
 | `code/sortie/search.py` | Cost seed, the SORTIE search, the det/SAA baselines and the ablations. |
-| `code/tests/` | 57 unit tests (`python -m pytest tests -q` from `code/`). |
-| `code/experiments/` | E0–E8 drivers, `run_all.sh`, `analyze.py`. |
+| `code/tests/` | 67 unit tests (`python -m pytest tests -q` from `code/`). |
+| `code/experiments/` | E0–E8 and E7b drivers, `run_all.sh`, `analyze.py`. |
 | `results/*.csv`, `results/*.log` | Raw results, one row per run; logs of each experiment. |
 | `results/plans/` | Every solved plan (JSON), so the evaluation can be rerun without the search. |
 | `results/tables/` | Generated LaTeX tables and `ALL_TABLES.md`. |
@@ -45,7 +45,7 @@ Python 3.11 with numpy, scipy, numba, pandas, matplotlib and tabulate.
 ```bash
 cd papers/sortie/code
 python -m pytest tests -q
-bash experiments/run_all.sh          # E0..E8, about 3 h on 4 cores; add --quick for a smoke run
+bash experiments/run_all.sh          # E0..E8 + E7b, about 9 h on 4 cores; add --quick for a smoke run
 python experiments/analyze.py        # tables and figures
 ```
 
@@ -68,7 +68,8 @@ All tables are written by `code/experiments/analyze.py` to
 | `e4_inconsistency.tex` | `e4_inconsistency.csv` | E4: free tours against lower-level tours |
 | `e5_ablation.tex`, `e5_effort.tex` | `e5_ablation.csv` | E5: rank-price screening against random moves |
 | `e6_sensitivity.tex` | `e6_sensitivity.csv` | E6: arc noise v |
-| `e7_scale.tex` | `e7_scale.csv` | E7: n = 50–100 |
+| `e7_scale.tex`, `e7_pooled.tex`, `e7_convergence.tex`, `paper/tab_e7_pooled.tex` | `e7_scale.csv` + plan histories | E7: n = 50–100, 120 s |
+| `e7b_*.tex`, `paper/tab_e7b.tex` | `e7b_seeds.csv` + plan histories | E7b: n = 100, three seeds, 240 s |
 | `e8_congestion.tex`, `e8_by_n.tex` | `e8_congestion.csv` | E8: heterogeneous (congested) arc noise |
 | `figures/e3_improvement.*` | `e3_main.csv` | Improvement over the deterministic fair plan |
 | `figures/illusion_range.*` | `e3_main.csv` | Believed against true expected range |

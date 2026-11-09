@@ -207,8 +207,16 @@ Parallelise over instances with `multiprocessing` (4 workers).
 - `e5_ablation.py`: screen price vs random, same time, range & gmd, B=1.10.
 - `e6_sensitivity.py`: v ∈ {0.1, 0.3, 0.5}, n=25, 5 blocks, range & gmd,
   B=1.10, det vs sortie0.
-- `e7_scale.py`: n ∈ {50,75,100} × 3 blocks, range & gmd, B=1.10,
-  det/saa/sortie0, 60 s.
+- `e7_scale.py`: n ∈ {50,75,100} × 6 blocks, range, gmd & max, B=1.10,
+  det/saa/sortie0/sortie1, 120 s.
+- `e7b_seeds.py`: n=100 × 6 blocks, range, gmd & max, B=1.10,
+  det/saa/sortie0, solver seeds {11, 13, 17}, 240 s; compared on the
+  seed-averaged ex-post value.
+- Search (module E, revised): candidate moves are evaluated with
+  `TourSolver.solve_fast` (one warm-started 2-opt/Or-opt descent, no
+  Held–Karp) and confirmed with the exact `solve` before they are applied
+  (`_confirm`); perturbed plans are confirmed route by route; ruin size is
+  capped at 12 customers. Free-consistency runs keep the original exact path.
 - `e8_congestion.py`: heterogeneous arc noise. Instances of the e3 grid with
   the congestion multiplier H of `instances.with_congestion` (seed 0; arc cv
   v·H_ij, H ∈ [1/3, 2], largest near a random centre); range, gmd, max;

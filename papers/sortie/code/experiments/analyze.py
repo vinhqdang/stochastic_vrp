@@ -167,11 +167,12 @@ def _convergence(df):
     rows = []
     for _, r in df.iterrows():
         pf = r.get("plan_file")
-        if not isinstance(pf, str) or not os.path.exists(pf):
-            alt = os.path.join(RES, "plans", "e7", os.path.basename(str(pf)))
-            if not os.path.exists(alt):
-                continue
-            pf = alt
+        if not isinstance(pf, str):
+            continue
+        if not os.path.isabs(pf):
+            pf = os.path.join(RES, pf)
+        if not os.path.exists(pf):
+            continue
         h = json.load(open(pf)).get("history") or []
         if not h:
             continue
@@ -232,6 +233,12 @@ def e7b():
     emit("E7b - n = 100, mean over 3 seeds: pooled", t, "e7b_pooled")
     t = paired_table(mean, "saa", ["sortie0"], "oos_obj", ["all"])
     emit("E7b - n = 100, mean over 3 seeds: SORTIE-0 vs SAA", t, "e7b_vs_saa")
+    cv = _convergence(f)
+    if len(cv):
+        g = cv.groupby("method")["gain_pct"].agg(
+            mean="mean", max="max", share_gt_half_pct=lambda x: (x > 0.5).mean()).reset_index()
+        emit("E7b - convergence: in-model improvement in the second half (120-240 s, %)", g,
+             "e7b_convergence", "%.3f")
 
 
 def figures():
@@ -388,6 +395,23 @@ def paper_tables():
         cols = "l" * len(grp) + "r" * len(others)
         head = " & ".join("$n$" if c == "n" else "Measure" for c in grp) + " & " + " & ".join(MLAB[o] for o in others)
         _write(name, f"\\begin{{tabular}}{{{cols}}}\\toprule\n{head} \\\\\n", body)
+        if name == "tab_e7" and load("e7b_seeds") is not None:
+            e7b = load("e7b_seeds")
+            f7b = e7b[e7b.method != "cost"]
+            mean = f7b.groupby(["instance", "measure", "method"])["oos_obj"].mean().reset_index()
+            cvs = f7b.groupby(["instance", "measure", "method"])["oos_obj"].agg(
+                lambda x: 100 * x.std() / x.mean()).unstack()
+            body = ""
+            for meas in ["range", "gmd", "max"]:
+                cells = [c for _, c in _improve_rows(mean[mean.measure == meas], ["measure"], ["saa", "sortie0"])][0]
+                noise = " & ".join(f"{cvs.xs(meas, level='measure')[mm].mean():.1f}" for mm in ["det", "saa", "sortie0"])
+                body += f"{MNAME[meas]} & " + " & ".join(cells) + f" & {noise} \\\\\n"
+            pooled = mean.assign(instance=mean.instance + "|" + mean.measure)
+            cells = [c for _, c in _improve_rows(pooled.assign(all="all"), ["all"], ["saa", "sortie0"])][0]
+            vs = [c for _, c in _improve_rows(pooled.assign(all="all"), ["all"], ["sortie0"], base="saa")][0][0]
+            body += "\\midrule\nAll & " + " & ".join(cells) + " & \\multicolumn{3}{l}{SORTIE-0 vs SAA: " + vs + "} \\\\\n"
+            _write("tab_e7b", "\\begin{tabular}{lrrrrr}\\toprule\n & \\multicolumn{2}{c}{vs Det, mean of 3 seeds} & \\multicolumn{3}{c}{Seed CV (\\%)} \\\\\n"
+                   "Measure & SAA & SORTIE-0 & Det & SAA & SORTIE-0 \\\\\n", body)
         if name == "tab_e7":
             pooled = fair.assign(instance=fair.instance + "|" + fair.measure)
             body = ""

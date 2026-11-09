@@ -619,25 +619,53 @@ the true expected range, E3. Right: share of the true ex-post unfairness that
 a deterministic plan does not see, against $v$ (E6).}\label{fig:illusion}
 \end{figure}
 
-\subsection{Larger instances (E7)}
-Table~\ref{tab:e7} reports $n\in\{50,75,100\}$ with a 60\,s limit. Here the
-routes have 10 to 20 customers on average, so most lower-level calls fall back to local
-search, and the number of iterations drops from about 1500--2000 at $n=50$ to
-100--400 at $n\ge 75$. The deterministic belief error stays at about $-22\%$
-for all three methods, and PBOI remains accurate (mean absolute error $0.2\%$, at most $1\%$). The comparison of the
-methods, however, is dominated by search noise: individual differences from Det range
-from $-65\%$ to $+40\%$. SORTIE-0 is better than Det on 5 of 6 runs at $n=50$
-and at $n=100$ but on only 1 of 6 at $n=75$, where on one instance it ends at
-an ex-post range $65\%$ worse than Det; SAA is just as erratic. We read E7 as showing that the
-evaluator scales but the bilevel search does not yet: the bottleneck at
-$n\ge75$ is the lower level, not the fairness evaluation, and a faster
-lower level (or longer runs) is needed before conclusions can be drawn about
-the objective at this size.
+\subsection{Larger instances (E7, E7b)}
+E7 runs $n\in\{50,75,100\}$ on six blocks each, with a 120\,s limit, for the
+range, GMD and maximum (18 instance--measure pairs per size). With the
+screening lower level the search runs about 9000 iterations per run at
+$n=50$ and 3500 at $n=100$ for SORTIE-0 (Det: 15\,000 and 4400). PBOI remains
+accurate (mean absolute error $0.14\%$, at most $0.9\%$) and the deterministic
+belief error is $-17\%$ on average, as on the small instances.
+
+Table~\ref{tab:e7} pools the 18 pairs per size. SORTIE-0 improves on Det by
+about $2\%$ at every size and is better on 12--13 of 18 pairs; the improvement
+is significant at $n=50$ ($p=0.035$) but not at $n=75$ or $n=100$
+($p=0.17$). SORTIE-1 is significant at $n=50$ but not beyond: its lower level
+runs a dichotomic search per route and completes only about 850 iterations at
+$n=100$, and more than half of its runs were still improving in the second
+half of the time limit. Single runs at $n\ge75$ are thus dominated by search
+noise, especially for the range and the GMD, whose value depends on a few
+routes.
+
+E7b separates the method from the search noise at $n=100$: the six instances
+and three measures are solved by Det, SAA and SORTIE-0 with three solver seeds
+each and a 240\,s limit, and each method is represented by the mean ex-post
+value over its seeds (Table~\ref{tab:e7b}). Averaged over seeds, SORTIE-0
+improves on Det by $4.2\%$ (median $2.5\%$, better on 13 of 18 pairs,
+$p=0.021$); SAA improves by $3.2\%$ ($p=0.10$). The difference between
+SORTIE-0 and SAA ($1.1\%$, 12 of 18) is not significant ($p=0.25$), and no
+single measure is significant on six instances. The seed-to-seed variation is
+itself informative: for the range, the ex-post value of the Det plan varies by
+$11\%$ across seeds, that of SORTIE-0 by $3\%$. The deterministic range is flat
+over many plans whose realised fairness differs, and the search picks among
+them arbitrarily; the ex-post objective distinguishes them. Even at 240\,s,
+19\% of the SORTIE-0 runs improved their in-model value by more than
+$0.5\%$ in the second half of the run, so the absolute values at $n=100$ are
+not fully converged.
 
 \begin{table}[t]\centering\small
-\caption{E7: improvement of the ex-post value over Det, $B=1.10$, 60\,s, three
-instances per row (format as Table~\ref{tab:e3}).}\label{tab:e7}
-\input{results/tables/paper/tab_e7.tex}
+\caption{E7: improvement of the ex-post value over Det, $B=1.10$, 120\,s,
+pooled over six instances and three measures (range, GMD, max); format as
+Table~\ref{tab:e3}.}\label{tab:e7}
+\input{results/tables/paper/tab_e7_pooled.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{E7b, $n=100$, $B=1.10$, 240\,s, three solver seeds: improvement of
+the seed-averaged ex-post value over Det (six instances per measure; format as
+Table~\ref{tab:e3}) and coefficient of variation of the ex-post value across
+seeds, averaged over instances.}\label{tab:e7b}
+\input{results/tables/paper/tab_e7b.tex}
 \end{table}
 
 \subsection{Heterogeneous noise: congestion (E8)}
@@ -705,15 +733,23 @@ The main practical value of the stochastic model in our experiments is
 therefore that it tells the planner, accurately, how unfair a plan will be,
 and that it guarantees consistent tours; the improvement of the plan itself
 is real and significant but small.
-%E7CONCL
+On instances with 100 customers the faster search makes the comparison
+with the deterministic plan conclusive when search noise is averaged over
+seeds (a $4\%$ improvement, $p=0.02$), but it does not separate SORTIE from a
+200-scenario SAA at that size.
 
 \paragraph{Limitations.} The lower level is exact only for routes of up to 15
-customers; beyond that it relies on local search, and the bilevel constraint is
-then satisfied only approximately. PBOI assumes conditionally independent route
-durations; dependence beyond a common multiplicative factor (for example
-shared congested arcs) would need the copula or simulation layer we did not
-develop. The time limits are per run and are slightly exceeded by the final
-iteration. All instances are slices of one benchmark file with five vehicles.
+customers; beyond that it relies on multi-start local search (warm-started
+from the screening tour), and the bilevel constraint is then satisfied only
+approximately. PBOI assumes conditionally independent route durations;
+dependence beyond a common multiplicative factor (for example spatially
+correlated congestion affecting several routes) would need the copula or
+simulation layer we did not develop. At $n=100$ single runs are still noisy
+and some are not converged after 240\,s; the risk-consistent variant
+($\kappa=1$) is too slow to converge at $n\ge75$; and at that size SORTIE could
+not be separated statistically from a 200-scenario SAA. The time limits are
+per run and are slightly exceeded by the final iteration. All instances are
+slices of one benchmark file with five vehicles.
 
 \paragraph{Future work.} Exact methods for the stochastic bilevel problem
 (branch-and-cut with PBOI-based bounds), correlated route durations, multi-day

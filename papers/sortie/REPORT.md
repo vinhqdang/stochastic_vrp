@@ -1,7 +1,7 @@
 # SORTIE — experiment report
 
 *Stochastic Ordered Route fairness with Tour-consistency via Integral Evaluation.*
-Experiments run 9 November 2026 on 4 cores. Every number below comes from
+Experiments run 9–10 November 2026 on 4 cores (full rerun with the faster search). Every number below comes from
 `results/*.csv` through `code/experiments/analyze.py`; full tables are in
 `results/tables/ALL_TABLES.md`, and the paper tables are in `results/tables/paper/`.
 
@@ -37,33 +37,53 @@ when travel times are random, and what do the drivers actually experience?
 7. **Risk-consistent tours (Thm. 6).** The lower-level criterion is
    L + κ v √W. Its minimisers are supported Pareto tours, so dichotomic
    parametric Held–Karp with arc weights c + θc² finds them.
+**Algorithm.** SORTIE is a bilevel local search.
+- **Move screening.** It screens every relocate and swap move by first-order
+  rank and σ prices.
+- **Candidate evaluation.** The 8 best moves are evaluated with fast
+  screening tours (one warm-started 2-opt/Or-opt descent) and PBOI.
+- **Confirmation.** The improving candidates are then confirmed with the
+  exact lower level before one is applied, so every accepted plan satisfies
+  the bilevel constraint.
+- **Diversification.** Otherwise it applies price-guided ruin (at most 12
+  customers) and recreate, then cost repair. Changed routes are confirmed,
+  and the result is accepted by simulated annealing.
 
-**Algorithm.** SORTIE is a bilevel local search. It screens every relocate
-and swap move by first-order rank and σ prices, and evaluates the 8 best
-moves exactly (lower-level tours plus PBOI). It falls back to price-guided
-ruin and recreate under simulated annealing.
+Confirmation plus the ruin cap raise the iteration rate at n = 100 about 7×,
+from about 250 to 1700 per minute for SORTIE-0. The old local search could
+also loop forever on floating-point round-off at n = 100 with κ = 1; this is
+now capped.
 
 ## 3. Set-up
 
-- **Instances.**
-  - Main grid: blocks of n + 1 consecutive nodes of CVRPLIB X-n641-k35 (the
-    slicing rule of the deterministic literature), with m = 5,
-    Q = ⌊Σq/4⌋ and ceiled Euclidean distances. n ∈ {15, 20, 25, 30, 35} × 5
-    blocks.
-  - Scale grid: n ∈ {50, 75, 100} × 3 blocks.
-  - Exact grid: n = 10 and m = 3 on 10 blocks.
-- **Uncertainty.** Gamma arc noise with cv v = 0.3 and a lognormal day factor
-  with s_Y = 0.15. In E8 the arc cv is v·H_ij with H ∈ [1/3, 2], largest near
-  a congestion centre.
-- **Budget.** Σ L ≤ B·C*, with B ∈ {1.05, 1.10}. C* is the best of three
+- **Instances.** All instances are blocks of n + 1 consecutive nodes of
+  CVRPLIB X-n641-k35 (the slicing rule of the deterministic literature), with
+  m = 5, Q = ⌊Σq/4⌋ and ceiled Euclidean distances.
+
+  | Grid | n | Blocks | Other |
+  |---|---|---|---|
+  | Main | 15, 20, 25, 30, 35 | 5 | |
+  | Scale | 50, 75, 100 | 6 | |
+  | Exact | 10 | 10 | m = 3 |
+
+- **Uncertainty.** Gamma arc noise with coefficient of variation v = 0.3 and a
+  lognormal day factor with s_Y = 0.15. In E8 the arc coefficient of
+  variation is v·H_ij with H ∈ [1/3, 2], largest near a congestion centre.
+- **Budget.** Σ L ≤ B·C* with B ∈ {1.05, 1.10}, where C* is the best of three
   cost-search restarts.
 - **Methods.** All methods share the search, the start plan, the time limit
-  (15 s for n ≤ 25, 25 s for n ≥ 30, 60 s for n ≥ 50) and the seed.
-  - Det: deterministic ℓ(L), the Ljubić et al. model.
-  - SAA: 200 fixed scenarios.
-  - SORTIE-0: PBOI with κ = 0.
-  - SORTIE-1: PBOI with κ = 1.
-- **Evaluation.** Arc-level Monte Carlo, out of sample, with 20 000 scenarios
+  and the seed.
+
+  | Method | Objective |
+  |---|---|
+  | Det | Deterministic ℓ(L), the Ljubić et al. model |
+  | SAA | 200 fixed scenarios |
+  | SORTIE-0 | PBOI, κ = 0 |
+  | SORTIE-1 | PBOI, κ = 1 |
+
+  Time limits: 15 s for n ≤ 25, 25 s for n ≥ 30, 120 s for n ≥ 50, and 240 s
+  in E7b.
+- **Evaluation.** Arc-level Monte Carlo out of sample, with 20 000 scenarios
   (10 000 for n ≥ 50) and common random numbers. Paired comparisons use the
   Wilcoxon signed-rank test.
 
@@ -74,166 +94,188 @@ ruin and recreate under simulated annealing.
 | Measure | Mean abs. err. % | Max abs. err. % | Share abs(z) < 3 |
 |---|---|---|---|
 | Max | 0.041 | 0.137 | 0.994 |
-| Range | 0.063 | 0.249 | 1.000 |
-| GMD | 0.058 | 0.241 | 1.000 |
-| MAD | 0.065 | 0.272 | 0.994 |
-| Var | 0.109 | 0.440 | 1.000 |
+| Range | 0.062 | 0.249 | 1.000 |
+| GMD | 0.057 | 0.241 | 1.000 |
+| MAD | 0.064 | 0.272 | 0.988 |
+| Var | 0.108 | 0.440 | 0.994 |
 
-PBOI has a small systematic bias of a few hundredths of a percent, which
-comes from moment-matching each route by a gamma distribution. Timing per
-plan:
+The bias is a few hundredths of a percent. It comes from the moment-matched
+gamma marginals (mean z up to 0.34 for MAD).
 
-| Evaluator | Time per plan | Notes |
-|---|---|---|
-| PBOI | 0.46 ms | exact, no sampling noise |
-| SAA (200 scenarios) | 0.07 ms | noisy |
-| Monte Carlo (20 000 scenarios) | 0.28 s | |
+| Evaluator | Time per plan |
+|---|---|
+| PBOI | 0.44 ms |
+| SAA, 200 scenarios (noisy) | 0.06 ms |
+| Monte Carlo, 20 000 scenarios | 0.28 s |
 
 ### E2 — exactness (n = 10, full enumeration)
 
+The results are identical to the first run:
 - The cost search found C* on 10 of 10 instances.
 - SORTIE-0 found the plan with the smallest exact ex-post value on 9 of 10
-  instances. The mean gap is 0.39% and the maximum 3.9%. Range and GMD give
-  identical results, because the GMD is (4/9)·range for m = 3.
-- Det missed the deterministic optimum on one instance, ending at twice the
-  optimal range. That instance has only 20 budget-feasible partitions.
+  instances (mean gap 0.39%, max 3.9%).
+- Det missed its own deterministic optimum on 1 of 10 instances (twice the
+  optimal range).
 
 ### E3 — main grid (25 instances × 5 measures × 2 budgets)
 
-**Fairness illusion.** Each cell is believed minus true unfairness, as a
-mean signed %.
+**Fairness illusion.** Believed minus true unfairness, mean signed %.
 
 | Measure | Det | SAA (in-sample) | SORTIE (PBOI) |
 |---|---|---|---|
 | Max | −8.0 | −0.7 | −0.01 |
-| Range | −17.0 | −0.8 | +0.02 |
-| GMD | −14.6 | −0.8 | +0.04 |
-| MAD | −16.3 | −1.0 | +0.05 |
-| Var | −26.5 | −1.6 | +0.00 |
+| Range | −17.6 | −1.0 | +0.03 |
+| GMD | −14.7 | −0.9 | +0.04 |
+| MAD | −16.2 | −0.9 | +0.05 |
+| Var | −27.2 | −1.3 | +0.00 |
 
-**Out-of-sample ex-post value relative to Det** (`tab_e3`), pooled over 250
-runs:
+**Out-of-sample ex-post value relative to Det** (pooled over 250 runs; full
+table in `tab_e3`):
 
-| Method | Mean improvement | Better | Tied | p |
-|---|---|---|---|---|
-| SORTIE-1 | +0.92% | 155 | 69 | 1e-17 |
-| SORTIE-0 | +0.77% | 133 | 102 | 2e-17 |
-| SAA | +0.60% | — | — | median 0 |
+| Method | Mean | Median | Better | Tied | Worse | p |
+|---|---|---|---|---|---|---|
+| SORTIE-0 | +0.89% | +0.23% | 141 | 96 | 13 | 3e-19 |
+| SORTIE-1 | +0.77% | | 154 | | 31 | |
+| SAA | +0.14% | 0 | 115 | | 74 | |
 
-- SORTIE-0 and SORTIE-1 each beat SAA head to head (138/250 and 150/250 runs,
-  p < 1e-14).
-- The largest cell is Max at B = 1.10: +2.1%, with SORTIE better on 24 of
-  25 instances.
-- For the variance measure only the SORTIE variants improve on Det.
+- **Head to head.** SORTIE-0 beats SAA in 145 runs and loses in 15; SORTIE-1
+  wins 147 and loses 27 (p < 1e-17).
+- **Significance by cell.** SORTIE-0 and SORTIE-1 are each significant in 9 of
+  10 cells, SAA in 3.
+- **Largest cell.** Max at B = 1.10: +2.1% (24/25).
+- **CVaR90 of the range** (range-optimised plans):
 
-**Interpretation.**
-- Fairness optimisation itself matters: the cost-optimal plan has an ex-post
-  range of 2075, against about 1340 for any fair plan, at +6.6% cost.
-- The stochastic refinement adds about 1% on top. Under homogeneous noise a
-  route's variance grows with its length, so balancing lengths roughly
-  balances risk.
-- The deterministic plan's *assessment* of its fairness is badly wrong
-  (−8% to −27%), even though its *choice* is close to the best.
-- CVaR90 of the range (range-optimised plans): Det 2054, SAA 2046,
-  SORTIE-0 2047, SORTIE-1 2034. Only SORTIE-1 improves it at both budgets.
+  | Det | SAA | SORTIE-0 | SORTIE-1 |
+  |---|---|---|---|
+  | 2054 | 2059 | 2037 | 2032 |
 
-### E4 — route consistency (free sequencing vs lower-level tours, B = 1.10)
+- **Fairness itself.** The cost plan has an ex-post range of 2087, against
+  about 1340 for the fair plans, at +6.5% cost.
 
-- Without the lower level, 23 of 25 Det plans and 25 of 25 SORTIE plans for
-  the range contain a route that is not a shortest tour. The excess is 92–115
-  distance units on average.
-- These detours lower the measured ex-post range by about 2%. That is
-  fairness bought by making drivers drive detours, which the bilevel
-  constraint excludes.
-- For the max, free sequencing barely changes anything.
+### E4 — route consistency (B = 1.10)
+
+- **Detours appear without the lower level.** For the range, 23 of 25 Det
+  plans and 24 of 25 SORTIE plans contain a route that is not a shortest tour,
+  by 88–108 distance units on average.
+- **Effect on the ex-post value.** Detours lower it by 1–3%, except SORTIE on
+  the GMD, which ends 0.9% worse because of the larger search space.
+- **Max.** Free sequencing barely changes anything.
+- **Beliefs.** Det's belief error persists with free tours (−24% for the
+  range), while PBOI's stays exact.
 
 ### E5 — rank-price screening vs random moves
 
-Price screening gives better plans than random screening, at the same number
-of iterations:
+| Measure | Mean | Median | Better / worse (of 25) | p |
+|---|---|---|---|---|
+| Range | 5.6% | 0% | 12 / 3 | 0.005 |
+| GMD | 8.5% | 5.4% | 17 / 2 | 4e-4 |
 
-| Measure | Mean | Median | Better | Worse | p |
+### E6 — noise level v (n = 25, 5 instances)
+
+| v | Det belief error, range | SORTIE-0 vs Det, range | SORTIE-0 vs Det, GMD |
+|---|---|---|---|
+| 0.1 | −8.7% | −0.5% (search noise) | +1.1% |
+| 0.3 | −28.7% | +1.0% | +0.7% |
+| 0.5 | −42.7% | +2.1% (5/5) | +1.8% |
+
+### E7 — n = 50, 75, 100 (120 s, 6 instances × {range, GMD, max})
+
+- **Iterations per run.** SORTIE-0 runs about 9000 at n = 50 and about 3500
+  at n = 100. With the old code, at 60 s, it was about 1500 and 250.
+- **Accuracy.** PBOI's mean absolute error is 0.14% (at most 0.9%). Det's
+  belief error is −17%.
+- **Pooled improvement over Det** (18 pairs per n):
+
+  | n | SAA | SORTIE-0 | SORTIE-1 |
+  |---|---|---|---|
+  | 50 | +1.6% (12/18) | +2.0% (13/18, p = 0.035) | +1.2% (15/18, p = 0.021) |
+  | 75 | +2.0% (11/18) | +2.0% (13/18, p = 0.17) | −0.3% |
+  | 100 | +1.5% (10/18) | +2.2% (12/18, p = 0.17) | −0.0% |
+
+- **Max** is consistent at every size (SORTIE-0 better on 5–6 of 6).
+  **Range and GMD** single runs swing ±5–10%.
+- **SORTIE-1** is too slow at n ≥ 75: about 850 iterations, and more than half
+  of its runs are still improving at the end.
+
+### E7b — n = 100, three solver seeds, 240 s (Det, SAA, SORTIE-0)
+
+Each method is represented by its mean ex-post value over seeds.
+
+| Measure | SAA vs Det | SORTIE-0 vs Det | Seed CV Det | Seed CV SAA | Seed CV SORTIE-0 |
 |---|---|---|---|---|---|
-| Range | 6.6% | 1.7% | 14/25 | 1 | < 1e-3 |
-| GMD | 7.2% | 2.5% | 15/25 | 0 | < 1e-3 |
+| Range | +6.5% (4/6) | +8.7% (5/6) | 11.3% | 4.7% | 3.0% |
+| GMD | +2.5% (3/6) | +3.2% (4/6) | 6.4% | 2.7% | 4.5% |
+| Max | +0.8% (4/6) | +0.9% (4/6) | 1.4% | 0.8% | 1.4% |
+| **All 18** | +3.2% (11/18, p = 0.10) | **+4.2% (13/18, p = 0.021)**, median 2.5% | | | |
 
-### E6 — noise level v (n = 25)
+- **SORTIE-0 vs SAA:** +1.1% (12/18), p = 0.25, not significant.
+- **Det is the noisiest method for the range** (CV 11%). The deterministic
+  range is flat over many plans whose realised fairness differs.
+- **Convergence.** 19% of SORTIE-0 runs still improved by more than 0.5% in
+  the second half (120–240 s).
 
-| v | Det belief error, range | SORTIE-0 vs Det, range |
-|---|---|---|
-| 0.1 | −8.7% | +0.25% (2/5) |
-| 0.3 | −28.7% | +0.96% (3/5) |
-| 0.5 | −42.5% | +1.75% (5/5) |
-
-The illusion and the gain both grow with v.
-
-### E7 — n = 50, 75, 100 (60 s)
-
-- PBOI stays accurate: mean absolute error 0.2%, at most 1%. The belief error
-  of Det is about −22%.
-- The search does not scale yet. Routes have 10–20 customers, so the lower
-  level falls back to local search, and only 100–400 iterations run at
-  n ≥ 75.
-- The method differences are dominated by search noise: −65% to +40% per
-  run. SORTIE-0 beats Det on 5/6 runs at n = 50 and at n = 100, but on 1/6
-  at n = 75.
-- No conclusion about the objective can be drawn at this size.
+**Verdict for n = 100.**
+- SORTIE vs the deterministic fair plan is conclusive once search noise is
+  averaged over seeds.
+- SORTIE vs SAA is not separable at this size.
+- No single measure is significant on six instances.
 
 ### E8 — congested (heterogeneous) noise, B = 1.10, 25 instances × {range, GMD, max}
 
-- **Illusion.** Det understates its unfairness by more than under
-  homogeneous noise: range −24.7%, GMD −21.2%, max −10.1%. PBOI stays
-  within 0.2% on average.
-- **Gain of ex-post optimisation over Det** (pooled over 75 runs):
+- **The illusion grows.** Det's belief error is −25.7% for the range (against
+  −17.6% under homogeneous noise), −21.7% for the GMD and −10.1% for the max.
+  PBOI stays within 0.2%.
+- **The gain grows only slightly.**
 
-  | Method | Mean | Median | Better | Worse | p |
-  |---|---|---|---|---|---|
-  | SORTIE-0 | 1.88% | 1.14% | 52 | 3 | 3e-10 |
-  | SORTIE-1 | 1.85% | 1.51% | 56 | 11 | 3e-9 |
-  | SAA | 1.27% | — | — | — | — |
+  | Method vs Det | Mean | Median | Better / worse (of 75) | p |
+  |---|---|---|---|---|
+  | SORTIE-0 | +1.51% | +1.24% | 53 / 3 | 2e-9 |
+  | SORTIE-1 | +1.66% | | 57 / 10 | |
+  | SAA | +1.28% | +0.47% | | |
 
-- **Comparison with the same cells without congestion (E3).** For SORTIE-0,
-  pooled 1.4% → 1.9%:
+- **Same cells without congestion** (SORTIE-0): +1.36% overall.
 
-  | Measure | E3 | E8 |
+  | Measure | Without congestion | With congestion |
   |---|---|---|
-  | GMD | 0.74% | 1.36% |
-  | Range | 1.34% | 2.23% |
-  | Max | 2.11% | 2.03% |
+  | GMD | 0.94% | 1.40% |
+  | Max | 2.08% | 2.15% |
+  | Range | 1.07% | 0.96% |
 
-- SORTIE-0 beats SAA head to head in 50 of 75 runs (worse in 4).
-- CVaR90 of the range: Det 1932, SAA 1912, SORTIE-0 1907, SORTIE-1 1904.
+- **Head to head**, SORTIE-0 beats SAA in 49 of 75 runs (worse in 6,
+  p = 5e-7).
+- **Correction.** The first run's claim that the gain doubles under
+  congestion did not survive the rerun.
 
-When a route's risk is not a function of its length, balancing lengths no
-longer balances realised workloads. That is the regime in which the
-stochastic model pays.
+## 5. Summary
 
-## 4b. Summary
+1. **The fairness illusion is large and certain.** Deterministic fair plans
+   understate realised unfairness by 8–27% at v = 0.3, 43% at v = 0.5 and 26%
+   for the range under congestion. PBOI removes the illusion at 0.4 ms per
+   plan.
+2. **Optimising ex-post fairness helps, but modestly.** The gain is about 1%
+   at n ≤ 35, about 1.5% under congestion and about 2% at n = 50–100. It is
+   significant against Det everywhere, and at n = 100 once seeds are
+   averaged. It clearly beats SAA at n ≤ 35 and under congestion, but not at
+   n = 100.
+3. **Rank prices help the search.** Plans are 6–9% better than with random
+   screening.
+4. **The bilevel constraint matters.** Without it, fairness is bought with
+   detours.
+5. **The deterministic objective makes the search erratic.** At n = 100 its
+   flat range objective gives an 11% seed-to-seed spread in realised fairness.
 
-- **The illusion is large and certain.** Deterministic fair plans understate
-  realised unfairness by 8–27% (up to 43% at v = 0.5). PBOI removes the
-  illusion at 0.46 ms per plan.
-- **The gain is real but modest.** It is about 1% under homogeneous noise
-  and about 2% under congestion, statistically significant in both cases.
-- **Rank prices matter for the search.** They give 7% better plans than
-  random screening (2% at the median).
-- **The bilevel constraint matters.** Without it, fairness is bought with
-  detours.
-- **Scaling.** The search does not yet scale beyond n ≈ 50 within 60 s.
-  The lower level is the bottleneck.
+## 6. Limitations
 
-## 5. Limitations
-
-- The lower level is exact only for routes with at most 15 customers.
-  Beyond that it is local search, so the bilevel constraint holds only
-  approximately.
+- The lower level is exact only for routes with at most 15 customers. Beyond
+  that it uses multi-start local search warm-started from the screening tour,
+  so the bilevel constraint holds approximately.
 - PBOI assumes route durations that are independent given the day factor.
-  Shared congested arcs would induce dependence that it ignores.
+  Spatially correlated congestion would break this.
+- At n = 100 single runs are noisy, and 19% are not converged after 240 s.
+- SORTIE-1 (κ = 1) does not converge at n ≥ 75.
 - The time limits are soft: the final iteration may overrun.
-- Instances are slices of a single CVRPLIB file with m = 5.
-- PBOI's advantage over SAA is exactness, not speed. A 200-scenario SAA is
-  faster per call but noisy, and optimistic in-sample by about 1%.
+- All instances come from a single benchmark file with m = 5.
 
-## 6. Reproduce
+## 7. Reproduce
 
 See `README.md`. In short: `cd code && bash experiments/run_all.sh && python experiments/analyze.py`.
