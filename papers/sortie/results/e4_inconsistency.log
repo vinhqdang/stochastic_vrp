@@ -1,0 +1,6 @@
+== e4 quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-09 12:10:50
+[e4] jobs total=300 already_done=0 todo=300
+[e4] 1/300 e4|X641-n15-b0|range|B1.10|det_lower|v0.3|t15|S20000 t=15s
+[e4] 2/300 e4|X641-n15-b0|range|B1.10|det_free|v0.3|t15|S20000 t=15s
+[e4] 3/300 e4|X641-n15-b0|range|B1.10|pboi_lower|v0.3|t15|S20000 t=15s
+[e4] 4/300 e4|X641-n15-b0|range|B1.10|pboi_free|v0.3|t15|S20000 t=15s

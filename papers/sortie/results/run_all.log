@@ -5,3 +5,5 @@
 [run_all] e2_exact -> /home/user/stochastic_vrp/papers/sortie/results/e2_exact.log
 [run_all] e2_exact ok
 [run_all] e3_main -> /home/user/stochastic_vrp/papers/sortie/results/e3_main.log
+[run_all] e3_main ok
+[run_all] e4_inconsistency -> /home/user/stochastic_vrp/papers/sortie/results/e4_inconsistency.log
