@@ -15,6 +15,7 @@ import re
 import sys
 import time
 import traceback
+from dataclasses import replace
 from functools import lru_cache
 from multiprocessing import Pool
 
@@ -29,8 +30,8 @@ if CODE_DIR not in sys.path:
     sys.path.insert(0, CODE_DIR)
 
 from sortie.instances import (  # noqa: E402
-    CONG_SUFFIX, DATA_PATH, base_name, effective_H, load_x641, make_instance, noise_matrix,
-    with_congestion,
+    CONG_SUFFIX, DATA_PATH, base_name, effective_H, load_vrp, load_x641, make_head_instance,
+    make_instance, noise_matrix, with_congestion,
 )
 from sortie.pboi import exante, expost_var, lam_vector, pboi  # noqa: E402
 from sortie.search import SCEN_SEED, solve_fair  # noqa: E402
@@ -40,6 +41,11 @@ from sortie.tsp import is_tsp_optimal, tour_stats  # noqa: E402
 RESULTS = os.path.abspath(os.environ.get("SORTIE_RESULTS") or DEFAULT_RESULTS)
 PLANS = os.path.join(RESULTS, "plans")
 DEFAULT_PLANS = os.path.abspath(os.environ.get("SORTIE_PLANS") or os.path.join(DEFAULT_RESULTS, "plans"))
+# Where evaluation-only drivers read existing E3/E8 CSVs and plans from (the real results,
+# even when RESULTS points at a scratch directory). Override with SORTIE_SOURCE_RESULTS.
+SOURCE_RESULTS = os.path.abspath(os.environ.get("SORTIE_SOURCE_RESULTS") or DEFAULT_RESULTS)
+# Directory of the CVRPLIB X set (the second benchmark family, E17).
+XDIR = os.path.join(os.path.dirname(DATA_PATH), "X")
 
 V_DEF = 0.3
 SY = 0.15
@@ -63,6 +69,8 @@ METHODS = {
     "pboi_lower": dict(mode="pboi", kappa=0.0, screen="price", consistency="lower"),
     "pboi_free": dict(mode="pboi", kappa=0.0, screen="price", consistency="free"),
     "sortie0_random": dict(mode="pboi", kappa=0.0, screen="random", consistency="lower"),
+    "detsig": dict(mode="detsig", kappa=0.0, screen="price", consistency="lower", z=1.0),
+    "pboi_normal": dict(mode="pboi_normal", kappa=0.0, screen="price", consistency="lower"),
 }
 
 SEED_TIME = {15: 20.0, 20: 20.0, 25: 20.0, 30: 40.0, 35: 40.0, 50: 60.0, 75: 120.0, 100: 120.0}
@@ -89,6 +97,12 @@ ROW_FIELDS = [
     "nontsp_routes", "excess_len", "iters", "n_exact_evals", "runtime",
     "n_improve", "n_perturb", "n_accept", "solver_calls", "solver_hk", "solver_cache_hits",
     "screen", "consistency", "plan_file",
+]
+
+# Identifying columns added by the extension drivers E9-E17 (ROW_FIELDS + EXT_FIELDS).
+EXT_FIELDS = [
+    "solve_seed", "K", "saa_S", "z", "dist", "family", "cap_div",
+    "src_method", "src_measure", "src_instance", "src_plan_file", "src_time_limit", "src_seed",
 ]
 
 
@@ -119,6 +133,45 @@ def load_instance(n, b, tiny=False, cong=False):
 
 def instance_name(n, b, cong=False):
     return f"X641-n{n}-b{b}" + (CONG_SUFFIX if cong else "")
+
+
+def load_job_instance(job):
+    """Instance of a job: an X641 block (default), a fleet-size variant of a block, or an
+    X-set head instance when job["stem"] is given (E17).
+
+    Block variants with m != 5 or cap_div != 4 are named X641-n{n}-b{b}-m{m}, so their seed
+    plans are seed_X641-n{n}-b{b}-m{m}.json. The default block is exactly load_instance.
+    """
+    n, b = int(job["n"]), int(job["b"])
+    m = int(job.get("m", MAIN_M))
+    cap = float(job.get("cap_div", MAIN_CAP))
+    if job.get("stem"):
+        _, coords, demand, _ = load_vrp(os.path.join(XDIR, job["stem"] + ".vrp"))
+        return make_head_instance(coords, demand, job["stem"], n, m=m, cap_div=cap)
+    if m == MAIN_M and cap == MAIN_CAP:
+        return load_instance(n, b, tiny=job.get("tiny", False), cong=job.get("cong", False))
+    if job.get("tiny") or job.get("cong"):
+        raise ValueError("fleet-size variants are defined only for the main blocks")
+    coords, demand = _raw()
+    inst = make_instance(coords, demand, n, b, m=m, cap_div=cap)
+    return replace(inst, name=f"X641-n{n}-b{b}-m{m}")
+
+
+def source_rows(csv_name):
+    """Rows of an existing results CSV, read from SOURCE_RESULTS (the real results)."""
+    with open(os.path.join(SOURCE_RESULTS, csv_name), "r", newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def source_routes(plan_file):
+    """Routes of a saved plan; plan_file is relative to SOURCE_RESULTS."""
+    with open(os.path.join(SOURCE_RESULTS, plan_file), "r", encoding="utf-8") as fh:
+        rec = json.load(fh)
+    return [[int(x) for x in r] for r in rec["routes"]]
+
+
+def seed_file_path(name):
+    return os.path.join(PLANS, f"seed_{name}.json")
 
 
 def ensure_dirs():
@@ -279,33 +332,68 @@ def build_row(exp, key, inst, routes, measure, B, method, v, kappa, time_limit, 
 
 
 def evaluate_plan_row(exp, key, inst, routes, measure, B, method, v, kappa, time_limit, seed,
-                      eval_seed, S, Cstar, res, screen, consistency, plan_file, b, sY=SY):
-    ev = evaluate_plans(inst, [routes], v, sY, S=S, seed=eval_seed)[0]
+                      eval_seed, S, Cstar, res, screen, consistency, plan_file, b, sY=SY,
+                      dist="gamma", dist_params=None):
+    ev = evaluate_plans(inst, [routes], v, sY, S=S, seed=eval_seed, dist=dist,
+                        dist_params=dist_params)[0]
     row = build_row(exp, key, inst, routes, measure, B, method, v, kappa, time_limit, seed,
                     eval_seed, S, Cstar, res, ev, screen, consistency, plan_file, sY=sY)
     row["b"] = int(b)
+    row["dist"] = dist
     return row
+
+
+def job_ident(job, spec, solve_seed, K, saa_S):
+    """Identifying columns of an extension-experiment row (EXT_FIELDS)."""
+    mode = spec["mode"]
+    return {
+        "solve_seed": solve_seed,
+        "K": K,
+        "saa_S": (SCEN_S if saa_S is None else saa_S) if mode == "saa" else None,
+        "z": spec.get("z") if mode == "detsig" else None,
+        "dist": "gamma",
+        "family": job.get("family", "X641"),
+        "cap_div": float(job.get("cap_div", MAIN_CAP)),
+    }
+
+
+def evaluate_routes_row(exp, key, inst, routes, measure, B, method, v, kappa, time_limit, seed,
+                        eval_seed, S, sY, Cstar, plan_file, b, dist="gamma", dist_params=None):
+    """Out-of-sample row of a fixed plan (no solve): used by the evaluation-only drivers."""
+    return evaluate_plan_row(exp, key, inst, routes, measure, B, method, v, kappa, time_limit,
+                             seed, eval_seed, S, Cstar, None, "", "lower", plan_file, b, sY=sY,
+                             dist=dist, dist_params=dist_params)
 
 
 def run_unit(job):
     """One fair run: solve_fair from the seed cost plan, then out-of-sample evaluation.
 
     job keys: exp, n, b, tiny, cong, measure, B, method, v, time_limit, S, eval_seed, key.
+    Optional keys (extension experiments, defaults reproduce the main runs): solve_seed,
+    kappa (overrides the method's kappa), z (detsig), K (screen width), saa_S (SAA sample
+    size), m and cap_div (fleet size), stem (X-set head instance), family.
     """
     exp = job["exp"]
     n, b = job["n"], job["b"]
-    inst = load_instance(n, b, tiny=job.get("tiny", False), cong=job.get("cong", False))
+    inst = load_job_instance(job)
     seed_rec = load_seed(base_name(inst.name))
     Cstar = float(seed_rec["Cstar"])
-    spec = METHODS[job["method"]]
+    spec = dict(METHODS[job["method"]])
+    if job.get("kappa") is not None:
+        spec["kappa"] = float(job["kappa"])
     v = float(job["v"])
+    solve_seed = int(job.get("solve_seed", SOLVE_SEED))
+    K = int(job.get("K", 8))
+    saa_S = None if job.get("saa_S") is None else int(job["saa_S"])
     scen = None
     if spec["mode"] == "saa":
-        scen = scen_tensor(inst.C.shape[0], v, H=effective_H(inst))
+        scen = scen_tensor(inst.C.shape[0], v, S=SCEN_S if saa_S is None else saa_S,
+                           H=effective_H(inst))
     budget = float(job["B"]) * Cstar
     res = solve_fair(inst, seed_rec["routes"], spec["mode"], job["measure"], v, spec["kappa"],
-                     budget, float(job["time_limit"]), int(job.get("solve_seed", SOLVE_SEED)), screen=spec["screen"],
-                     consistency=spec["consistency"], scen=scen)
+                     budget, float(job["time_limit"]), solve_seed, screen=spec["screen"],
+                     consistency=spec["consistency"], scen=scen, K=K,
+                     z=spec.get("z", 1.0), saa_S=saa_S)
     routes = res["routes"]
     S = int(job["S"])
     pf = plan_file_for(exp, job["key"])
@@ -316,9 +404,10 @@ def run_unit(job):
         "history": res["history"],
     })
     row = evaluate_plan_row(exp, job["key"], inst, routes, job["measure"], job["B"],
-                            job["method"], v, spec["kappa"], job["time_limit"], int(job.get("solve_seed", SOLVE_SEED)),
+                            job["method"], v, spec["kappa"], job["time_limit"], solve_seed,
                             job["eval_seed"], S, Cstar, res, spec["screen"],
                             spec["consistency"], os.path.relpath(pf, RESULTS), b)
+    row.update(job_ident(job, spec, solve_seed, K, saa_S))
     return [row]
 
 
@@ -357,6 +446,22 @@ def make_cost_job(exp, n, b, S, tiny=False, cong=False):
     return dict(exp=exp, n=n, b=b, tiny=tiny, cong=cong, measure="cost", B=float("nan"),
                 method="cost", v=V_DEF, time_limit=0.0, S=S, eval_seed=inst_seed(n, b),
                 key=f"{exp}|{instance_name(n, b, cong)}|cost|S{S}")
+
+
+def xkey(exp, label, measure, B, method, v, tl, S, **extra):
+    """Job key of the extension experiments: the make_job key plus the extra fields, sorted."""
+    key = f"{exp}|{label}|{measure}|B{B:.2f}|{method}|v{v:g}|t{tl:g}|S{S}"
+    for name in sorted(extra):
+        key += f"|{name}{extra[name]}"
+    return key
+
+
+def make_xjob(exp, label, n, b, measure, B, method, v, tl, S, **extra):
+    """Job with extension fields (see run_unit); label is the instance name."""
+    job = dict(exp=exp, n=n, b=b, measure=measure, B=B, method=method, v=v, time_limit=tl,
+               S=S, eval_seed=inst_seed(n, b), label=label, **extra)
+    job["key"] = xkey(exp, label, measure, B, method, v, tl, S, **extra)
+    return job
 
 
 def _guard(args):
