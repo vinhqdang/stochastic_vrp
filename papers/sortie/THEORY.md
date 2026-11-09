@@ -128,7 +128,7 @@ If `λ` is nondecreasing then `ℓ_λ` is convex and
 
 For the variance, `E Var_emp(X) = Var_emp(L) + ((m−1)/m²) Σ_k σ_k²`
 (exact, independence only). For the Gini mean difference with Gaussian
-marginals, `E GMD(X) = m^{-2} Σ_{i,j} [ s_ij √(2/π) e^{−d_ij²/(2 s_ij²)}
+marginals, `E GMD(X) = m^{-2} Σ_{i≠j} [ s_ij √(2/π) e^{−d_ij²/(2 s_ij²)}
 + d_ij (1 − 2Φ(−d_ij/s_ij)) ]` with `d_ij = L_i − L_j`,
 `s_ij² = σ_i² + σ_j²`.
 
