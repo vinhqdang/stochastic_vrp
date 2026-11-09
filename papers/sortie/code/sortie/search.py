@@ -465,8 +465,10 @@ def _exact_move(plan, mv, adapter, budget, ctx, free, fast=False):
         new_a = [j if x == i else x for x in sa]
         new_b = [i if x == j else x for x in sb]
     solve = ctx.solver.solve_fast if fast else ctx.solver.solve
-    ta, La, Wa = solve(new_a, hint=sa)
-    tb, Lb, Wb = solve(new_b, hint=sb)
+    # Free mode keeps the original hint-free lower level: its parent sequences are
+    # free-descent sequences, not solver tours.
+    ta, La, Wa = solve(new_a, hint=None if free else sa)
+    tb, Lb, Wb = solve(new_b, hint=None if free else sb)
     seqs = list(plan.seqs)
     seqs[a] = list(ta)
     seqs[b] = list(tb)
