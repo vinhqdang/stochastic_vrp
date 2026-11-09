@@ -7,3 +7,5 @@
 [run_all] e3_main -> /home/user/stochastic_vrp/papers/sortie/results/e3_main.log
 [run_all] e3_main ok
 [run_all] e4_inconsistency -> /home/user/stochastic_vrp/papers/sortie/results/e4_inconsistency.log
+[run_all] e4_inconsistency ok
+[run_all] e5_ablation -> /home/user/stochastic_vrp/papers/sortie/results/e5_ablation.log
