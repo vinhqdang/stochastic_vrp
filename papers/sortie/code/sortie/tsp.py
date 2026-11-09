@@ -220,8 +220,9 @@ class TourSolver:
     """Risk-consistent tour minimiser of L + kappa * v * sqrt(W) for a customer set.
 
     kappa == 0 returns the TSP-optimal tour (ties broken by smaller W).
-    kappa > 0 runs the dichotomic search of Theorem 6 over arc weights
-    c + theta*c^2 and returns the enumerated tour with the smallest objective.
+    kappa > 0 runs the dichotomic search of Theorem 6 (THEORY.md; "risk-consistent tours
+    are supported" in sortie.tex) over arc weights c + theta*D^2 and returns the
+    enumerated tour with the smallest objective.
     Results are memoised on frozenset(S). W and the dichotomic weights use
     D (the arc noise weights C o H); D defaults to C.
     """

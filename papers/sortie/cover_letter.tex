@@ -1,0 +1,52 @@
+\documentclass[11pt]{letter}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\signature{Quang-Vinh Dang\\British University Vietnam, Hung Yen, Vietnam\\vinh.dq4@buv.edu.vn\\ORCID 0000-0002-3877-8024}
+\address{Quang-Vinh Dang\\British University Vietnam\\Hung Yen, Vietnam}
+\begin{document}
+\begin{letter}{The Editor-in-Chief\\Transportation Science}
+\opening{Dear Editor,}
+
+I submit the manuscript \emph{SORTIE: Fair Vehicle Routing When Route
+Durations Are Random} for consideration as an article in
+\emph{Transportation Science}.
+
+Recent exact work on fair vehicle routing combines ordered fairness measures
+(range, Gini mean difference, mean absolute deviation) with a bilevel
+requirement that every route be a shortest tour of its customers. That work
+assumes deterministic travel times. Drivers experience realised durations,
+and the fairness they perceive is the fairness of the realised day. The
+manuscript studies this setting and makes four contributions.
+
+\begin{enumerate}
+\item It separates ex-ante from ex-post fairness and bounds the gap between
+  them, the \emph{fairness illusion}, in terms of the routes' quadratic
+  lengths. It also proves that multiplicative common shocks, such as weather
+  or a fleet-wide congestion factor, leave expected ordered fairness
+  unchanged.
+\item It gives an exact, sampling-free formula for the expected value of any
+  ordered measure of independent route durations, including the negative
+  weights of dispersion measures. The formula is a Poisson--binomial
+  order-statistic integral. Its derivatives, the \emph{rank prices}, show
+  which routes a fairness objective would like to lengthen.
+\item It shows that, under uncertainty, even the min--max objective can
+  prefer a tour that is not the shortest. Route consistency must therefore be
+  imposed explicitly. It is defined through each driver's own
+  mean--standard-deviation criterion. Such tours are supported Pareto tours
+  and can be computed by parametric Held--Karp.
+\item It proposes SORTIE, a bilevel heuristic that screens moves with the
+  rank prices. SORTIE is evaluated on instances derived from the CVRPLIB
+  benchmark used by the deterministic literature, against deterministic and
+  sample-average baselines, under both homogeneous and congestion-driven
+  heterogeneous noise.
+\end{enumerate}
+
+Code, instances, solved plans and raw results will be made publicly
+available.
+
+The manuscript is original, has not been published, and is not under
+consideration elsewhere. I have no conflicts of interest to declare.
+
+\closing{Yours sincerely,}
+\end{letter}
+\end{document}

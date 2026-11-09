@@ -53,7 +53,9 @@ def e1():
     emit("E1 - PBOI (gamma marginals) vs arc-level Monte Carlo", pd.DataFrame(rows), "e1_accuracy", "%.3f")
     t = load("e1_timing")
     if t is not None:
-        emit("E1 - evaluation time per plan", t, "e1_timing", "%.4g")
+        tt = t.groupby("method")[["time_per_eval_s", "ratio_to_pboi"]].agg(["mean", "max"])
+        tt.columns = ["_".join(c) for c in tt.columns]
+        emit("E1 - evaluation time per plan (mean/max over plans)", tt.reset_index(), "e1_timing", "%.4g")
 
 
 def e2():
@@ -164,6 +166,17 @@ def e7():
     emit("E7 - scalability (n = 50-100)", t, "e7_scale")
 
 
+def e8():
+    df = load("e8_congestion")
+    if df is None:
+        return
+    fair = df[df.method != "cost"]
+    t = paired_table(fair, "det", ["saa", "sortie0", "sortie1"], "oos_obj", ["measure"])
+    emit("E8 - heterogeneous (congested) arc noise: improvement over det (%)", t, "e8_congestion")
+    t2 = paired_table(fair, "det", ["saa", "sortie0", "sortie1"], "oos_obj", ["n"])
+    emit("E8 - improvement over det by size (measures pooled)", t2, "e8_by_n")
+
+
 def figures():
     import matplotlib
     matplotlib.use("Agg")
@@ -215,13 +228,119 @@ def figures():
         plt.close(fig)
 
 
+# ---------------------------------------------------------------- paper tables
+PT = os.path.join(TAB, "paper")
+os.makedirs(PT, exist_ok=True)
+MLAB = {"det": "Det", "saa": "SAA", "sortie0": "SORTIE-0", "sortie1": "SORTIE-1"}
+
+
+def _rank_direction(diff):
+    """Signed-rank sum of the paired differences (zeros dropped, as in the Wilcoxon test)."""
+    from scipy.stats import rankdata
+    d = np.asarray(diff, float)
+    d = d[np.abs(d) > 1e-9]
+    if len(d) == 0:
+        return 0.0
+    r = rankdata(np.abs(d))
+    return float(r[d > 0].sum() - r[d < 0].sum())
+
+
+def _cell(imp, wins, n, p, med=0.0):
+    """Mean improvement %; star: Wilcoxon p<0.05 with the signed-rank sum
+    favouring the method, dagger: p<0.05 favouring the baseline."""
+    star = ""
+    if p == p and p < 0.05:
+        star = "$^\\ast$" if med > 0 else "$^\\dagger$"
+    return f"{imp:+.2f}{star} ({wins}/{n})"
+
+
+def _improve_rows(df, group, others, base="det"):
+    rows = []
+    for keys, g in df.groupby(group):
+        piv = g.pivot_table(index="instance", columns="method", values="oos_obj")
+        keys = keys if isinstance(keys, tuple) else (keys,)
+        cells = []
+        for o in others:
+            ok = piv[[base, o]].dropna()
+            imp = (100 * (ok[base] - ok[o]) / ok[base].abs()).mean()
+            cells.append(_cell(imp, int((ok[o] < ok[base] - 1e-9).sum()), len(ok), wpval(ok[base], ok[o]),
+                               _rank_direction(ok[base] - ok[o])))
+        rows.append((keys, cells))
+    return rows
+
+
+def _write(name, header, body):
+    with open(os.path.join(PT, name + ".tex"), "w") as f:
+        f.write(header + "\\midrule\n" + body + "\\bottomrule\n\\end{tabular}\n")
+
+
+def paper_tables():
+    df = load("e1_accuracy")
+    if df is not None:
+        body = ""
+        for meas in MEAS:
+            g = df[df.measure == meas]
+            body += f"{MNAME[meas]} & {len(g)} & {100*g.rel_err.abs().mean():.3f} & {100*g.rel_err.abs().max():.3f} & {(g.z_score.abs()<3).mean():.3f} \\\\\n"
+        _write("tab_e1", "\\begin{tabular}{lrrrr}\\toprule\nMeasure & Plans & Mean $|$err$|$ (\\%) & Max $|$err$|$ (\\%) & Share $|z|<3$ \\\\\n", body)
+    df = load("e3_main")
+    if df is not None:
+        fair = df[df.method != "cost"]
+        others = ["saa", "sortie0", "sortie1"]
+        body = ""
+        for (meas, B), cells in _improve_rows(fair, ["measure", "B"], others):
+            body += f"{MNAME[meas]} & {B:.2f} & " + " & ".join(cells) + " \\\\\n"
+        _write("tab_e3", "\\begin{tabular}{llrrr}\\toprule\nMeasure & $B$ & SAA & SORTIE-0 & SORTIE-1 \\\\\n", body)
+        body = ""
+        for meas in MEAS:
+            cells = []
+            for meth in ["det", "saa", "sortie0", "sortie1"]:
+                g = fair[(fair.method == meth) & (fair.measure == meas)]
+                cells.append(f"{100*((g.obj_insample-g.oos_obj_X)/g.oos_obj_X).mean():+.2f}")
+            g = fair[fair.measure == meas]
+            cells.append(f"{100*((g.pboi_pred-g.oos_obj_X)/g.oos_obj_X).abs().max():.2f}")
+            body += f"{MNAME[meas]} & " + " & ".join(cells) + " \\\\\n"
+        _write("tab_illusion", "\\begin{tabular}{lrrrrr}\\toprule\n & \\multicolumn{4}{c}{Believed vs true (mean signed \\%)} & PBOI \\\\\nMeasure & Det & SAA & SORTIE-0 & SORTIE-1 & max $|$err$|$ \\% \\\\\n", body)
+    df = load("e4_inconsistency")
+    if df is not None:
+        body = ""
+        for meas in ["max", "range", "gmd"]:
+            for meth in ["det_lower", "det_free", "pboi_lower", "pboi_free"]:
+                g = df[(df.method == meth) & (df.measure == meas)]
+                body += (f"{MNAME[meas]} & {meth.replace('_', '-')} & {int((g.nontsp_routes>0).sum())}/{len(g)} & "
+                         f"{g.nontsp_routes.mean():.2f} & {g.excess_len.mean():.1f} & "
+                         f"{100*((g.obj_insample-g.oos_obj_X)/g.oos_obj_X).mean():+.2f} & {g.oos_obj.mean():.1f} \\\\\n")
+        _write("tab_e4", "\\begin{tabular}{llrrrrr}\\toprule\nMeasure & Method & Runs$^a$ & Routes$^b$ & Excess & Belief err (\\%) & Ex-post \\\\\n", body)
+    df = load("e6_sensitivity")
+    if df is not None:
+        body = ""
+        for (v, meas), cells in _improve_rows(df, ["v", "measure"], ["sortie0"]):
+            g = df[(df.method == "det") & (df.v == v) & (df.measure == meas)]
+            ill = 100 * ((g.exante - g.oos_obj_X) / g.oos_obj_X).mean()
+            body += f"{v:.1f} & {MNAME[meas]} & {ill:+.1f} & {cells[0]} \\\\\n"
+        _write("tab_e6", "\\begin{tabular}{llrr}\\toprule\n$v$ & Measure & Det belief err (\\%) & SORTIE-0 vs Det \\\\\n", body)
+    for name, csvn, others in [("tab_e7", "e7_scale", ["saa", "sortie0"]), ("tab_e8", "e8_congestion", ["saa", "sortie0", "sortie1"])]:
+        df = load(csvn)
+        if df is None or len(df) == 0:
+            continue
+        fair = df[df.method != "cost"]
+        grp = ["n", "measure"] if name == "tab_e7" else ["measure"]
+        body = ""
+        for keys, cells in _improve_rows(fair, grp, others):
+            lab = " & ".join(str(k) if not isinstance(k, str) else MNAME[k] for k in keys)
+            body += f"{lab} & " + " & ".join(cells) + " \\\\\n"
+        cols = "l" * len(grp) + "r" * len(others)
+        head = " & ".join("$n$" if c == "n" else "Measure" for c in grp) + " & " + " & ".join(MLAB[o] for o in others)
+        _write(name, f"\\begin{{tabular}}{{{cols}}}\\toprule\n{head} \\\\\n", body)
+
+
 if __name__ == "__main__":
-    for fn in (e1, e2, e3, e4, e5, e6, e7):
+    for fn in (e1, e2, e3, e4, e5, e6, e7, e8):
         try:
             fn()
         except Exception as exc:  # keep going; report at the end
             print(f"{fn.__name__} failed: {exc!r}", file=sys.stderr)
     figures()
+    paper_tables()
     with open(os.path.join(TAB, "ALL_TABLES.md"), "w") as f:
         f.write("# SORTIE result tables (generated by experiments/analyze.py)\n" + "".join(out_md))
     print("".join(out_md))
