@@ -27,7 +27,7 @@ REPAIR_STEPS = 200
 RUIN_MAX = 12
 ORDERED_MEASURES = ("max", "range", "gmd", "mad")
 MEASURES = ORDERED_MEASURES + ("var",)
-MODES = ("cost", "det", "pboi", "saa")
+MODES = ("cost", "det", "pboi", "saa", "detsig", "pboi_normal")
 
 
 # ---------------------------------------------------------------------------
@@ -81,14 +81,46 @@ class DetAdapter:
         return _rank_prices_det(L, lam_vector(self.measure, m)), zeros
 
 
+class DetSigAdapter:
+    """Deterministic ordered measure of the risk-adjusted lengths L + z sigma.
+
+    sigma_k = v sqrt(W_k). The measure is applied to y = L + z sigma (or its
+    empirical variance). Prices are the deterministic prices of y, and
+    psi = z varpi, the first-order response to sigma.
+    """
+
+    mode = "detsig"
+
+    def __init__(self, measure, v, z=1.0):
+        self.measure = measure
+        self.v = float(v)
+        self.z = float(z)
+        self._det = DetAdapter(measure, v)
+
+    def _risk(self, L, W):
+        return L + self.z * self.v * np.sqrt(np.maximum(W, 0.0))
+
+    def value(self, L, W, seqs):
+        return self._det.value(self._risk(L, W), W, seqs)
+
+    def prices(self, L, W, seqs):
+        varpi, _ = self._det.prices(self._risk(L, W), W, seqs)
+        return varpi, self.z * varpi
+
+
 class PboiAdapter:
-    """Ex-post fairness E l_lambda(X) (Theorem 2) or expost_var."""
+    """Ex-post fairness E l_lambda(X) (Theorem 2) or expost_var.
+
+    family selects the marginal law of the driver lengths: "gamma" (the
+    default, mode pboi) or "normal" (mode pboi_normal, the ablation).
+    """
 
     mode = "pboi"
 
-    def __init__(self, measure, v):
+    def __init__(self, measure, v, family="gamma"):
         self.measure = measure
         self.v = float(v)
+        self.family = family
 
     def _sigma(self, W):
         return self.v * np.sqrt(np.maximum(W, 0.0))
@@ -97,7 +129,7 @@ class PboiAdapter:
         sigma = self._sigma(W)
         if self.measure == "var":
             return float(expost_var(L, sigma))
-        return float(pboi(L, sigma, lam_vector(self.measure, len(L))))
+        return float(pboi(L, sigma, lam_vector(self.measure, len(L)), family=self.family))
 
     def prices(self, L, W, seqs):
         sigma = self._sigma(W)
@@ -107,8 +139,8 @@ class PboiAdapter:
             psi = sigma_prices(L, sigma, "var")
         else:
             lam = lam_vector(self.measure, m)
-            varpi = rank_prices(L, sigma, lam)
-            psi = sigma_prices(L, sigma, lam)
+            varpi = rank_prices(L, sigma, lam, family=self.family)
+            psi = sigma_prices(L, sigma, lam, family=self.family)
         return varpi, psi
 
 
@@ -160,13 +192,15 @@ class SAAAdapter:
         return varpi, np.zeros(m)
 
 
-def make_objective(mode, measure, v, scen=None, C=None, S=SCEN_S, seed=SCEN_SEED, H=None):
+def make_objective(mode, measure, v, scen=None, C=None, S=SCEN_S, seed=SCEN_SEED, H=None,
+                   z=1.0):
     """Objective adapter with value(L, W, routes) and prices(L, W, routes).
 
-    `mode` is one of cost, det, pboi, saa. For saa the arc scenario tensor
-    eps (S, N, N) is `scen` or, if absent, drawn from Gamma(1/v^2, v^2) with
-    `seed` (requires C for the node count and the arc costs). With a
-    multiplier H the arc (i, j) is drawn with cv v * H_ij instead.
+    `mode` is one of cost, det, pboi, saa, detsig, pboi_normal. For saa the arc
+    scenario tensor eps (S, N, N) is `scen` or, if absent, drawn from
+    Gamma(1/v^2, v^2) with `seed` (requires C for the node count and the arc
+    costs). With a multiplier H the arc (i, j) is drawn with cv v * H_ij instead.
+    z is the risk weight of detsig (ordered measure of L + z sigma).
     """
     if mode == "cost":
         return CostAdapter()
@@ -176,10 +210,16 @@ def make_objective(mode, measure, v, scen=None, C=None, S=SCEN_S, seed=SCEN_SEED
         raise ValueError(f"unknown measure {measure!r}")
     if mode == "det":
         return DetAdapter(measure, v)
+    if mode == "detsig":
+        return DetSigAdapter(measure, v, z)
     if mode == "pboi":
         if v <= 0:
             raise ValueError("pboi needs v > 0 (use mode 'det' for v = 0)")
         return PboiAdapter(measure, v)
+    if mode == "pboi_normal":
+        if v <= 0:
+            raise ValueError("pboi_normal needs v > 0 (use mode 'det' for v = 0)")
+        return PboiAdapter(measure, v, family="normal")
     if C is None:
         raise ValueError("saa needs the distance matrix C")
     C = np.ascontiguousarray(C, dtype=np.float64)
@@ -321,8 +361,14 @@ def _pred_terms(varpi, psi, a, b, Wa, Wb, dLa, dLb, dWa, dWb, v):
 # First-order screening and exact evaluation
 # ---------------------------------------------------------------------------
 
-def _screen(plan, varpi, psi, budget, ctx):
-    """Predicted-best K moves (relocate and swap) from the first-order model."""
+def _move_blocks(plan, varpi, psi, budget, ctx):
+    """First-order prediction of every relocate and swap move, in blocks.
+
+    A block is (kind, a, b, pred, ca, cb) with one entry per move of that route
+    pair (relocate: pred has one entry per customer of a; swap: a grid over the
+    customers of a and b). pred is +inf where the move is infeasible for the
+    screen (capacity, or sum L above budget * (1 + BUDGET_SLACK)).
+    """
     m = ctx.m
     pre = [_get_pre(plan, k, ctx) for k in range(m)]
     thr = budget * (1.0 + BUDGET_SLACK) if np.isfinite(budget) else np.inf
@@ -367,11 +413,45 @@ def _screen(plan, varpi, psi, budget, ctx):
                   & (load[b] - qb[None, :] + qa[:, None] <= Q)
                   & (sumL + dLa + dLb <= thr))
             blocks.append((1, a, b, np.where(ok, pred, np.inf), ca, cb))
-    if not blocks:
-        return []
+    return blocks
+
+
+def _flatten_blocks(blocks):
+    """Concatenated predictions (allp) and the start offset of every block."""
     sizes = np.array([blk[3].size for blk in blocks], dtype=np.int64)
     starts = np.concatenate(([0], np.cumsum(sizes)[:-1])).astype(np.int64)
     allp = np.concatenate([blk[3].ravel() for blk in blocks])
+    return allp, starts
+
+
+def _decode_move(blocks, starts, g):
+    """Move tuple (kind, a, b, i, j) of flat index g; relocate has j = -1."""
+    g = int(g)
+    bi = int(np.searchsorted(starts, g, side="right")) - 1
+    kind, a, b, _, ca, cb = blocks[bi]
+    loc = g - int(starts[bi])
+    if kind == 0:
+        return (0, a, b, int(ca[loc]), -1)
+    p, q = divmod(loc, len(cb))
+    return (1, a, b, int(ca[p]), int(cb[q]))
+
+
+def _feasible_moves(plan, varpi, psi, budget, ctx):
+    """Every move the screen accepts (finite prediction) and its predicted change."""
+    blocks = _move_blocks(plan, varpi, psi, budget, ctx)
+    if not blocks:
+        return [], np.empty(0)
+    allp, starts = _flatten_blocks(blocks)
+    fin = np.flatnonzero(np.isfinite(allp))
+    return [_decode_move(blocks, starts, g) for g in fin], allp[fin]
+
+
+def _screen(plan, varpi, psi, budget, ctx):
+    """Predicted-best K moves (relocate and swap) from the first-order model."""
+    blocks = _move_blocks(plan, varpi, psi, budget, ctx)
+    if not blocks:
+        return []
+    allp, starts = _flatten_blocks(blocks)
     K = ctx.K
     if ctx.screen == "random":
         fin = np.flatnonzero(np.isfinite(allp))
@@ -381,18 +461,7 @@ def _screen(plan, varpi, psi, budget, ctx):
     else:
         order = np.argsort(allp, kind="stable")[:K]
         pick = order[np.isfinite(allp[order])]
-    moves = []
-    for g in pick:
-        g = int(g)
-        bi = int(np.searchsorted(starts, g, side="right")) - 1
-        kind, a, b, _, ca, cb = blocks[bi]
-        loc = g - int(starts[bi])
-        if kind == 0:
-            moves.append((0, a, b, int(ca[loc]), -1))
-        else:
-            p, q = divmod(loc, len(cb))
-            moves.append((1, a, b, int(ca[p]), int(cb[q])))
-    return moves
+    return [_decode_move(blocks, starts, g) for g in pick]
 
 
 def _intra_neighbours(seq):
@@ -449,11 +518,10 @@ def _free_descent(seqs, L, W, idxs, adapter, budget, ctx):
     return seqs, L, W
 
 
-def _exact_move(plan, mv, adapter, budget, ctx, free, fast=False):
-    """Apply a move, re-solve the two changed routes, return (plan, value) or None.
+def _resolve_move(plan, mv, ctx, free, fast=False):
+    """Apply a move and re-solve its two routes; returns (seqs, L, W) with no budget test.
 
-    fast=True re-solves with the screening lower level (solve_fast); the result
-    must then be confirmed with _confirm before it is applied.
+    fast=True re-solves with the screening lower level (solve_fast).
     """
     kind, a, b, i, j = mv
     sa = plan.seqs[a]
@@ -478,6 +546,17 @@ def _exact_move(plan, mv, adapter, budget, ctx, free, fast=False):
     W[a] = Wa
     L[b] = Lb
     W[b] = Wb
+    return seqs, L, W
+
+
+def _exact_move(plan, mv, adapter, budget, ctx, free, fast=False):
+    """Apply a move, re-solve the two changed routes, return (plan, value) or None.
+
+    fast=True re-solves with the screening lower level (solve_fast); the result
+    must then be confirmed with _confirm before it is applied.
+    """
+    a, b = mv[1], mv[2]
+    seqs, L, W = _resolve_move(plan, mv, ctx, free, fast)
     if free:
         seqs, L, W = _free_descent(seqs, L, W, (a, b), adapter, budget, ctx)
     if L.sum() > budget + FEAS_TOL:
@@ -771,7 +850,7 @@ def _perturb(plan, varpi, psi, adapter, budget, ctx):
 
 def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, seed,
                screen="price", consistency="lower", scen=None, max_iters=None, K=8,
-               solver=None):
+               solver=None, z=1.0, saa_S=None):
     """Upper-level search for the SORTIE problem.
 
     budget is an absolute bound on sum L (use np.inf for none). kappa is the
@@ -779,6 +858,8 @@ def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, 
     tours with the lower level; "free" additionally re-sequences changed routes
     by intra-route 2-opt/Or-opt on the global objective. screen "price" takes
     the K best first-order predictions, "random" takes K random feasible moves.
+    z is the risk weight of mode detsig; saa_S the SAA sample size when mode is
+    saa and no scen tensor is given (default SCEN_S).
     Returns a dict with routes, value, history [(elapsed, best value)], iters,
     n_exact_evals, solver counters and phase timings.
     """
@@ -806,7 +887,8 @@ def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, 
         solver = TourSolver(C, kappa, v, D=D)
     snap = (solver.n_calls, solver.n_hk, solver.n_cache_hits, solver.n_ls,
             solver.n_fast, solver.n_fast_hits)
-    adapter = make_objective(mode, measure, v, scen=scen, C=C, H=H)
+    S_saa = SCEN_S if saa_S is None else int(saa_S)
+    adapter = make_objective(mode, measure, v, scen=scen, C=C, H=H, S=S_saa, z=z)
     rng = np.random.default_rng(seed)
     deadline = t_start + float(time_limit)
     ctx = _Ctx(inst, solver, consistency, v, rng, K, screen, deadline)
@@ -942,3 +1024,78 @@ def solve_cost(inst, time_limit, seed, restarts=3):
             best_c = res["sumL"]
             best_routes = res["routes"]
     return best_routes, float(best_c)
+
+
+# ---------------------------------------------------------------------------
+# Move diagnostics (predicted versus exact change of every feasible move)
+# ---------------------------------------------------------------------------
+
+def move_diagnostics(inst, routes, mode, measure, v, kappa, budget, max_moves=None,
+                     seed=0, z=1.0):
+    """Predicted and exact change of the feasible relocate and swap moves of one plan.
+
+    Consistency is "lower". The routes are first solved with the exact lower
+    level and the prices of that plan are computed. Every move the screen accepts
+    (capacity, and sum L within the screen's budget threshold) gets its
+    first-order prediction (the one _screen ranks by). For all such moves, or a
+    uniform random subset of max_moves of them drawn with rng(seed), the exact
+    change of the objective is computed by re-solving the two changed routes with
+    the exact lower level. A move whose re-solved plan exceeds the budget has
+    exact = NaN.
+
+    Returns a pandas DataFrame with columns kind ("relocate" or "swap"), a, b
+    (route indices), i, j (customers; j = -1 for a relocate), predicted and exact
+    (changes of the objective), pred_rank and exact_rank (0 = most decreasing
+    change; exact_rank is NaN where exact is).
+    """
+    import pandas as pd
+
+    if mode not in MODES:
+        raise ValueError(f"unknown mode {mode!r}")
+    if measure not in MEASURES:
+        raise ValueError(f"unknown measure {measure!r}")
+    C = np.ascontiguousarray(inst.C, dtype=np.float64)
+    N = C.shape[0]
+    m = int(inst.m)
+    if m < 2:
+        raise ValueError("the diagnostics need m >= 2")
+    if mode != "cost" and measure == "mad" and m % 2 == 0:
+        raise ValueError("mad needs odd m")
+    cover = sorted(int(x) for r in routes for x in r)
+    if len(routes) != m or any(len(r) == 0 for r in routes) or cover != list(range(1, N)):
+        raise ValueError("routes must be m nonempty tours covering every customer once")
+    budget = float(budget)
+    H = effective_H(inst)
+    D = noise_matrix(inst)
+    solver = TourSolver(C, kappa, v, D=D)
+    adapter = make_objective(mode, measure, v, C=C, H=H, z=z)
+    ctx = _Ctx(inst, solver, "lower", v, np.random.default_rng(seed), 1, "price", np.inf)
+
+    seqs = [list(solver.solve(r)[0]) for r in routes]
+    plan = _build_plan(seqs, ctx)
+    if plan.L.sum() > budget + FEAS_TOL:
+        raise ValueError("the solved routes exceed the budget")
+    cur_val = adapter.value(plan.L, plan.W, plan.seqs)
+    varpi, psi = adapter.prices(plan.L, plan.W, plan.seqs)
+    moves, preds = _feasible_moves(plan, varpi, psi, budget, ctx)
+
+    total = len(moves)
+    if max_moves is not None and int(max_moves) < total:
+        pick = np.sort(np.random.default_rng(seed).choice(total, size=int(max_moves),
+                                                          replace=False))
+    else:
+        pick = np.arange(total)
+    rows = []
+    for g in pick:
+        mv = moves[int(g)]
+        seqs_n, L_n, W_n = _resolve_move(plan, mv, ctx, free=False)
+        if L_n.sum() > budget + FEAS_TOL:
+            exact = math.nan
+        else:
+            exact = adapter.value(L_n, W_n, seqs_n) - cur_val
+        kind = "relocate" if mv[0] == 0 else "swap"
+        rows.append((kind, mv[1], mv[2], mv[3], mv[4], float(preds[int(g)]), float(exact)))
+    df = pd.DataFrame(rows, columns=["kind", "a", "b", "i", "j", "predicted", "exact"])
+    df["pred_rank"] = (df["predicted"].rank(method="first") - 1).astype("int64")
+    df["exact_rank"] = df["exact"].rank(method="first") - 1
+    return df
