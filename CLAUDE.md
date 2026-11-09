@@ -182,6 +182,20 @@ rare events against mixture IS) found no regime where quantum amplitude
 estimation beats the best classical method on this model; see
 `papers/quasar/REFRAME_M4.md` and `DESIGN_RARE.md`.
 
+### Paper 9 — SORTIE (papers/sortie/, ACTIVE)
+
+*Stochastic Ordered Route fairness with Tour-consistency via Integral
+Evaluation.* Fair CVRP (ordered measures: max, range, GMD, MAD, variance;
+every route a shortest tour of its customers, after Ljubić–Puerto–Torrejón
+2026) when travel times are random. Ex-ante vs ex-post fairness, the
+Poisson–binomial order-statistic integral (PBOI) for expected ordered
+measures, rank prices, the fairness-illusion bound, and risk-consistent
+tours (L + κv√W, supported Pareto, parametric Held–Karp). Instances are
+slices of CVRPLIB X-n641-k35. Self-contained: shares no code, instances or
+results with the papers under review; all code in `papers/sortie/code/`
+(57 tests). Candidate venues: Transportation Science / EJOR (not C&OR while
+BATON is there). Report: `papers/sortie/REPORT.md`.
+
 ## Layout
 
 - `svrpspd_wdro/` — the shared engine + all experiment scripts (see its
@@ -211,7 +225,7 @@ estimation beats the best classical method on this model; see
   frozen mid-session the moment the author submits it. As of now
   papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP) and 8
   (RARECERT, JoC) are closed to edits while under review, paper 4 is
-  abandoned, and papers 5 (ECLAIR) and 6 (PARCEL) are the **open papers**.
+  abandoned, and papers 5 (ECLAIR), 6 (PARCEL) and 9 (SORTIE) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
   `eclair.tex`, `parcel.tex`), never `main.*`.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
