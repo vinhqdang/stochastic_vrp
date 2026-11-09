@@ -213,6 +213,27 @@ def e8():
     emit("E8 - improvement over det by size (measures pooled)", t2, "e8_by_n")
 
 
+def e7b():
+    df = load("e7b_seeds")
+    if df is None or len(df) == 0:
+        return
+    f = df[df.method != "cost"]
+    # search noise: coefficient of variation over seeds of the same (instance, measure, method)
+    sd = f.groupby(["instance", "measure", "method"])["oos_obj"].agg(lambda x: 100 * x.std() / x.mean())
+    emit("E7b - search noise: CV over three seeds (%)",
+         sd.groupby(level=["measure", "method"]).mean().unstack().reset_index(), "e7b_noise")
+    mean = f.groupby(["instance", "measure", "method"])["oos_obj"].mean().reset_index()
+    mean["instance"] = mean["instance"] + "|" + mean["measure"]
+    others = ["saa", "sortie0"]
+    t = paired_table(mean, "det", others, "oos_obj", ["measure"])
+    emit("E7b - n = 100, mean over 3 seeds: improvement over det by measure", t, "e7b_by_measure")
+    mean["all"] = "all"
+    t = paired_table(mean, "det", others, "oos_obj", ["all"])
+    emit("E7b - n = 100, mean over 3 seeds: pooled", t, "e7b_pooled")
+    t = paired_table(mean, "saa", ["sortie0"], "oos_obj", ["all"])
+    emit("E7b - n = 100, mean over 3 seeds: SORTIE-0 vs SAA", t, "e7b_vs_saa")
+
+
 def figures():
     import matplotlib
     matplotlib.use("Agg")
@@ -377,7 +398,7 @@ def paper_tables():
 
 
 if __name__ == "__main__":
-    for fn in (e1, e2, e3, e4, e5, e6, e7, e8):
+    for fn in (e1, e2, e3, e4, e5, e6, e7, e7b, e8):
         try:
             fn()
         except Exception as exc:  # keep going; report at the end

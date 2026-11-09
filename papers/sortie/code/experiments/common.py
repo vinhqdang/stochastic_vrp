@@ -304,7 +304,7 @@ def run_unit(job):
         scen = scen_tensor(inst.C.shape[0], v, H=effective_H(inst))
     budget = float(job["B"]) * Cstar
     res = solve_fair(inst, seed_rec["routes"], spec["mode"], job["measure"], v, spec["kappa"],
-                     budget, float(job["time_limit"]), SOLVE_SEED, screen=spec["screen"],
+                     budget, float(job["time_limit"]), int(job.get("solve_seed", SOLVE_SEED)), screen=spec["screen"],
                      consistency=spec["consistency"], scen=scen)
     routes = res["routes"]
     S = int(job["S"])
@@ -316,7 +316,7 @@ def run_unit(job):
         "history": res["history"],
     })
     row = evaluate_plan_row(exp, job["key"], inst, routes, job["measure"], job["B"],
-                            job["method"], v, spec["kappa"], job["time_limit"], SOLVE_SEED,
+                            job["method"], v, spec["kappa"], job["time_limit"], int(job.get("solve_seed", SOLVE_SEED)),
                             job["eval_seed"], S, Cstar, res, spec["screen"],
                             spec["consistency"], os.path.relpath(pf, RESULTS), b)
     return [row]

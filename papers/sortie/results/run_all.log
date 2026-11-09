@@ -13,3 +13,5 @@
 [run_all] e6_sensitivity -> /home/user/stochastic_vrp/papers/sortie/results/e6_sensitivity.log
 [run_all] e6_sensitivity ok
 [run_all] e7_scale -> /home/user/stochastic_vrp/papers/sortie/results/e7_scale.log
+[run_all] e7_scale ok
+[run_all] e8_congestion -> /home/user/stochastic_vrp/papers/sortie/results/e8_congestion.log
