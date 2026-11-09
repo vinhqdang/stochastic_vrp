@@ -25,7 +25,7 @@ when travel times are random, and what do the drivers actually experience?
 3. **PBOI (Thm. 2).** For independent route durations,
    E ℓ_λ(X) = ∫ Σ_r Λ_r π_r(t) dt. Here π is the Poisson-binomial pmf of
    #{k : X_k ≤ t} and Λ_r = Σ_{j>r} λ_j. The formula is exact for any
-   weights, negative weights included, and takes 0.46 ms for m = 5.
+   weights, negative weights included, and takes 0.44 ms for m = 5.
 4. **Rank prices (Prop. 3).** ϖ_k = Σ_j λ_j P(rank of k = j) is the
    derivative of expected unfairness under a shift of route k. A negative
    price means the objective wants that route longer.
@@ -156,7 +156,7 @@ table in `tab_e3`):
 
 - **Detours appear without the lower level.** For the range, 23 of 25 Det
   plans and 24 of 25 SORTIE plans contain a route that is not a shortest tour,
-  by 88–108 distance units on average.
+  by 95 (Det) and 113 (SORTIE) distance units on average over runs with a detour.
 - **Effect on the ex-post value.** Detours lower it by 1–3%, except SORTIE on
   the GMD, which ends 0.9% worse because of the larger search space.
 - **Max.** Free sequencing barely changes anything.
@@ -168,7 +168,7 @@ table in `tab_e3`):
 | Measure | Mean | Median | Better / worse (of 25) | p |
 |---|---|---|---|---|
 | Range | 5.6% | 0% | 12 / 3 | 0.005 |
-| GMD | 8.5% | 5.4% | 17 / 2 | 4e-4 |
+| GMD | 8.5% | 5.4% | 17 / 2 | 5e-4 |
 
 ### E6 — noise level v (n = 25, 5 instances)
 
@@ -194,8 +194,9 @@ table in `tab_e3`):
 
 - **Max** is consistent at every size (SORTIE-0 better on 5–6 of 6).
   **Range and GMD** single runs swing ±5–10%.
-- **SORTIE-1** is too slow at n ≥ 75: about 850 iterations, and more than half
-  of its runs are still improving at the end.
+- **SORTIE-1** is too slow at n ≥ 75: about 1150 iterations at n = 75 and
+  840 at n = 100; 39% and 56% of its runs still improved by more than 0.5% in
+  the second half.
 
 ### E7b — n = 100, three solver seeds, 240 s (Det, SAA, SORTIE-0)
 
@@ -222,9 +223,10 @@ Each method is represented by its mean ex-post value over seeds.
 
 ### E8 — congested (heterogeneous) noise, B = 1.10, 25 instances × {range, GMD, max}
 
-- **The illusion grows.** Det's belief error is −25.7% for the range (against
-  −17.6% under homogeneous noise), −21.7% for the GMD and −10.1% for the max.
-  PBOI stays within 0.2%.
+- **The illusion grows somewhat.** Det's belief error is −25.7% for the range,
+  −21.7% for the GMD and −10.1% for the max, against −23.1%, −19.3% and −8.9%
+  on the same cells (B = 1.10) under homogeneous noise. PBOI's mean signed
+  error stays below 0.2%.
 - **The gain grows only slightly.**
 
   | Method vs Det | Mean | Median | Better / worse (of 75) | p |
@@ -252,11 +254,15 @@ Each method is represented by its mean ex-post value over seeds.
    understate realised unfairness by 8–27% at v = 0.3, 43% at v = 0.5 and 26%
    for the range under congestion. PBOI removes the illusion at 0.4 ms per
    plan.
-2. **Optimising ex-post fairness helps, but modestly.** The gain is about 1%
-   at n ≤ 35, about 1.5% under congestion and about 2% at n = 50–100. It is
-   significant against Det everywhere, and at n = 100 once seeds are
-   averaged. It clearly beats SAA at n ≤ 35 and under congestion, but not at
-   n = 100.
+2. **Optimising ex-post fairness helps, but modestly.** The gain over Det is
+   about 1% at n ≤ 35, about 1.5% under congestion and about 2% at
+   n = 50–100.
+   - It is significant in the pooled E3 and E8 comparisons and at n = 50.
+   - At n = 75 and n = 100 single runs are not significant (p = 0.17).
+   - At n = 100 it becomes significant once seeds are averaged (pooled
+     p = 0.021), but no single measure is significant on six instances.
+   - It clearly beats SAA at n ≤ 35 and under congestion, but not at
+     n = 100.
 3. **Rank prices help the search.** Plans are 6–9% better than with random
    screening.
 4. **The bilevel constraint matters.** Without it, fairness is bought with

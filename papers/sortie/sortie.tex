@@ -483,7 +483,7 @@ the raw results by the released scripts.
 Table~\ref{tab:e1} compares PBOI with $50\,000$-sample arc-level Monte Carlo
 on 168 plans: the cost-efficient plans and random feasible plans whose
 routes are sequenced by the lower level, for $n\in\{15,25,35,50\}$. The mean absolute
-relative error is below $0.11\%$ for all five measures and below $0.44\%$ in
+relative error is below $0.11\%$ for all five measures and at most $0.44\%$ in
 the worst case, and 99--100\% of the differences lie within three Monte Carlo
 standard errors. The mean $z$-scores are not exactly zero (up to $0.34$ for the
 MAD): PBOI carries a systematic bias of a few hundredths of a percent, which
@@ -510,9 +510,9 @@ deterministic range.
 
 \subsection{The fairness illusion and the value of ex-post optimisation (E3)}
 Table~\ref{tab:illusion} quantifies Proposition~\ref{prop:gap}. A
-deterministic fair plan believes its unfairness is the ex-ante value; the truth
-is $8\%$ larger for the maximum, $15$--$18\%$ larger for the range, GMD and MAD,
-and $27\%$ larger for the variance. The in-sample SAA value is optimistic by
+deterministic fair plan believes its unfairness is the ex-ante value, which
+understates the true ex-post value by $8\%$ for the maximum, $15$--$18\%$ for
+the range, GMD and MAD, and $27\%$ for the variance. The in-sample SAA value is optimistic by
 about $1\%$, which is the optimiser's curse on 200 scenarios. The PBOI value
 believed by SORTIE has a mean signed error below $0.1\%$, a mean absolute
 error of $0.07$--$0.23\%$ and a worst case of $1\%$.
@@ -570,8 +570,9 @@ E4 removes the lower level: the planner may sequence each route freely
 maximum, free sequencing changes almost nothing, as monotonicity predicts in
 the deterministic case. For the range and the GMD the free planner lengthens
 the short routes: 23 of 25 Det plans and 24 of 25 SORTIE plans for the range
-contain a route that is not a shortest tour of its customers, by 88--108
-distance units on average. This lowers the ex-post value by $1$--$3\%$ for Det
+contain a route that is not a shortest tour of its customers; the excess
+length is 95 (Det) and 113 (SORTIE) distance units on average over the runs
+that have one. This lowers the ex-post value by $1$--$3\%$ for Det
 on both measures and for SORTIE on the range (Table~\ref{tab:e4}); for SORTIE
 on the GMD it is $0.9\%$ worse, because the larger space slows the search. Wherever it helps, the reduction
 comes from making some drivers drive detours. This is exactly the behaviour signalled by negative rank prices
@@ -589,7 +590,7 @@ ex-post value. Ex-post: out-of-sample ex-post value.}\label{tab:e4}
 
 \subsection{Rank-price screening (E5)}
 Replacing the price screen by $K=8$ random feasible moves, with everything else
-unchanged, gives a similar number of iterations but worse plans: price
+unchanged, gives slightly more iterations (3200 against 2700) but worse plans: price
 screening lowers the ex-post value by $5.6\%$ for the range and $8.5\%$ for the
 GMD on average (medians $0\%$ and $5.4\%$; better on 12 and 17 of 25
 instances, worse on 3 and 2, ties otherwise; $p=0.005$ and $p<10^{-3}$). For
@@ -624,7 +625,7 @@ E7 runs $n\in\{50,75,100\}$ on six blocks each, with a 120\,s limit, for the
 range, GMD and maximum (18 instance--measure pairs per size). With the
 screening lower level the search runs about 9000 iterations per run at
 $n=50$ and 3500 at $n=100$ for SORTIE-0 (Det: 15\,000 and 4400). PBOI remains
-accurate (mean absolute error $0.14\%$, at most $0.9\%$) and the deterministic
+accurate (mean absolute error $0.15\%$, at most $0.9\%$) and the deterministic
 belief error is $-17\%$ on average, as on the small instances.
 
 Table~\ref{tab:e7} pools the 18 pairs per size. SORTIE-0 improves on Det by
@@ -632,8 +633,8 @@ about $2\%$ at every size and is better on 12--13 of 18 pairs; the improvement
 is significant at $n=50$ ($p=0.035$) but not at $n=75$ or $n=100$
 ($p=0.17$). SORTIE-1 is significant at $n=50$ but not beyond: its lower level
 runs a dichotomic search per route and completes only about 850 iterations at
-$n=100$, and more than half of its runs were still improving in the second
-half of the time limit. Single runs at $n\ge75$ are thus dominated by search
+$n=100$, and $56\%$ of its runs there ($39\%$ at $n=75$) still improved by
+more than $0.5\%$ in the second half of the time limit. Single runs at $n\ge75$ are thus dominated by search
 noise, especially for the range and the GMD, whose value depends on a few
 routes.
 
@@ -676,9 +677,11 @@ and arcs far from it a third. We rerun the main grid ($B=1.10$; range, GMD
 and max) on the congested versions of the same 25 instances, starting from
 the same cost plans.
 
-The illusion becomes larger: a deterministic plan understates its range by
-$26\%$ (against $18\%$ under homogeneous noise), its GMD by $22\%$ and its
-maximum by $10\%$, while the PBOI belief remains within $0.2\%$ on average.
+The illusion becomes somewhat larger: a deterministic plan understates its
+range by $26\%$, its GMD by $22\%$ and its maximum by $10\%$, against $23\%$,
+$19\%$ and $9\%$ on the same cells under homogeneous noise. The PBOI belief
+has a mean signed error below $0.2\%$ (mean absolute error at most
+$0.26\%$).
 The gain of optimising ex-post fairness, however, grows only slightly
 (Table~\ref{tab:e8}). Pooled over 75 runs, SORTIE-0 improves on Det by
 $1.51\%$ (median $1.24\%$; better in 53, worse in 3; $p<10^{-8}$) and
@@ -728,15 +731,18 @@ for the maximum), consistently but modestly, because balancing route lengths alr
 route risks when variance grows with length.
 When noise is heterogeneous, as with
 congestion concentrated in part of the network, the illusion grows to
-$26\%$ for the range, but the gain of SORTIE grows only to about $1.5\%$.
+$26\%$ for the range ($23\%$ on the same cells without congestion), and the
+gain of SORTIE grows only to about $1.5\%$.
 The main practical value of the stochastic model in our experiments is
 therefore that it tells the planner, accurately, how unfair a plan will be,
 and that it guarantees consistent tours; the improvement of the plan itself
-is real and significant but small.
-On instances with 100 customers the faster search makes the comparison
-with the deterministic plan conclusive when search noise is averaged over
-seeds (a $4\%$ improvement, $p=0.02$), but it does not separate SORTIE from a
-200-scenario SAA at that size.
+is significant in the pooled comparisons but small.
+On instances with 100 customers the faster search makes the improvement
+over the deterministic plan statistically significant when search noise is
+averaged over three seeds and the 18 instance--measure pairs are pooled
+($4\%$, $p=0.02$), although no single measure is significant on six
+instances, and it does not separate SORTIE from a 200-scenario SAA at that
+size.
 
 \paragraph{Limitations.} The lower level is exact only for routes of up to 15
 customers; beyond that it relies on multi-start local search (warm-started
