@@ -1,0 +1,3 @@
+== e3 quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-09 10:50:03
+[e3] jobs total=1025 already_done=0 todo=1025
+[e3] 1/1025 e3|X641-n15-b0|cost|S20000 t=0s
