@@ -1,1 +1,11 @@
 key,experiment,instance,n,b,m,cap_div,Cstar,seed_time,restarts,solver_seed,plan_file
+e10seed|X641-n35-b0-m3,e10,X641-n35-b0-m3,35,0,3,2.0,6340.0,40.0,3,2026350,plans/seed_X641-n35-b0-m3.json
+e10seed|X641-n35-b0-m7,e10,X641-n35-b0-m7,35,0,7,6.0,12426.0,40.0,3,2026350,plans/seed_X641-n35-b0-m7.json
+e10seed|X641-n35-b1-m7,e10,X641-n35-b1-m7,35,1,7,6.0,9431.0,40.0,3,2026351,plans/seed_X641-n35-b1-m7.json
+e10seed|X641-n35-b1-m3,e10,X641-n35-b1-m3,35,1,3,2.0,5693.0,40.0,3,2026351,plans/seed_X641-n35-b1-m3.json
+e10seed|X641-n35-b2-m3,e10,X641-n35-b2-m3,35,2,3,2.0,5511.0,40.0,3,2026352,plans/seed_X641-n35-b2-m3.json
+e10seed|X641-n35-b2-m7,e10,X641-n35-b2-m7,35,2,7,6.0,8068.0,40.0,3,2026352,plans/seed_X641-n35-b2-m7.json
+e10seed|X641-n35-b3-m3,e10,X641-n35-b3-m3,35,3,3,2.0,5996.0,40.0,3,2026353,plans/seed_X641-n35-b3-m3.json
+e10seed|X641-n35-b3-m7,e10,X641-n35-b3-m7,35,3,7,6.0,10381.0,40.0,3,2026353,plans/seed_X641-n35-b3-m7.json
+e10seed|X641-n35-b4-m3,e10,X641-n35-b4-m3,35,4,3,2.0,6155.0,40.0,3,2026354,plans/seed_X641-n35-b4-m3.json
+e10seed|X641-n35-b4-m7,e10,X641-n35-b4-m7,35,4,7,6.0,10120.0,40.0,3,2026354,plans/seed_X641-n35-b4-m7.json
