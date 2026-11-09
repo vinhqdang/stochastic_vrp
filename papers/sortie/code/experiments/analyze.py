@@ -306,7 +306,7 @@ def paper_tables():
         for meas in ["max", "range", "gmd"]:
             for meth in ["det_lower", "det_free", "pboi_lower", "pboi_free"]:
                 g = df[(df.method == meth) & (df.measure == meas)]
-                body += (f"{MNAME[meas]} & {meth.replace('_', '-')} & {int((g.nontsp_routes>0).sum())}/{len(g)} & "
+                body += (f"{MNAME[meas]} & {meth.replace('pboi', 'SORTIE').replace('det', 'Det').replace('_', '-')} & {int((g.nontsp_routes>0).sum())}/{len(g)} & "
                          f"{g.nontsp_routes.mean():.2f} & {g.excess_len.mean():.1f} & "
                          f"{100*((g.obj_insample-g.oos_obj_X)/g.oos_obj_X).mean():+.2f} & {g.oos_obj.mean():.1f} \\\\\n")
         _write("tab_e4", "\\begin{tabular}{llrrrrr}\\toprule\nMeasure & Method & Runs$^a$ & Routes$^b$ & Excess & Belief err (\\%) & Ex-post \\\\\n", body)

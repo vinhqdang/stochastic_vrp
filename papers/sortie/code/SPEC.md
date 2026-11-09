@@ -209,3 +209,9 @@ Parallelise over instances with `multiprocessing` (4 workers).
   B=1.10, det vs sortie0.
 - `e7_scale.py`: n ∈ {50,75,100} × 3 blocks, range & gmd, B=1.10,
   det/saa/sortie0, 60 s.
+- `e8_congestion.py`: heterogeneous arc noise. Instances of the e3 grid with
+  the congestion multiplier H of `instances.with_congestion` (seed 0; arc cv
+  v·H_ij, H ∈ [1/3, 2], largest near a random centre); range, gmd, max;
+  B=1.10; det/saa/sortie0/sortie1 plus the cost plan; e3 time limits.
+  `tsp.TourSolver` and `pboi` use W = Σ (H c)² and lower-level arc weights
+  c + θ (H c)².

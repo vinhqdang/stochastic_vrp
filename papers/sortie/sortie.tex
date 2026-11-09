@@ -44,7 +44,14 @@ be imposed explicitly; we define it through each driver's own mean--standard
 deviation and prove that such tours are supported Pareto tours, computable by
 parametric Held--Karp. The resulting bilevel heuristic, SORTIE, screens all
 relocate and swap moves with the rank prices. On instances derived from the
-CVRPLIB benchmark used by the deterministic literature, [RESULTS SUMMARY].
+CVRPLIB benchmark used by the deterministic literature, deterministic fair
+plans understate their realised unfairness by 8--27\%, while the integral agrees with Monte Carlo
+to about $0.1\%$ at under a millisecond per plan.
+Optimising ex-post fairness improves realised fairness by about $1\%$ when
+noise is proportional to length and by about $2\%$ under congestion-driven
+heterogeneous noise; screening with rank prices gives plans $7\%$ better than
+random screening; and without the lower level, nearly all range-optimised
+plans buy fairness with detours.
 \end{abstract}
 
 \noindent\textbf{Keywords:} vehicle routing; fairness; stochastic travel times;
@@ -620,7 +627,36 @@ instances per row (format as Table~\ref{tab:e3}).}\label{tab:e7}
 \input{results/tables/paper/tab_e7.tex}
 \end{table}
 
-%E8SECTION
+\subsection{Heterogeneous noise: congestion (E8)}
+E3 suggests that the stochastic refinement matters little when a route's
+variance is proportional to its length. E8 breaks that proportionality: arcs
+near a congestion centre have up to twice the base coefficient of variation
+and arcs far from it a third. We rerun the main grid ($B=1.10$; range, GMD
+and max) on the congested versions of the same 25 instances, starting from
+the same cost plans.
+
+The illusion becomes larger: a deterministic plan understates its range by
+$25\%$ (against $17\%$ under homogeneous noise), its GMD by $21\%$ and its
+maximum by $10\%$, while the PBOI belief remains within $0.2\%$ on average.
+The gain of optimising ex-post fairness grows as well (Table~\ref{tab:e8}).
+Pooled over 75 runs, SORTIE-0 improves on Det by $1.88\%$ (median $1.14\%$;
+better in 52, worse in 3; $p<10^{-9}$) and SORTIE-1 by $1.85\%$, against $1.4\%$
+for SORTIE-0 on the same cells without congestion. The gain is concentrated
+on the dispersion measures: the improvement roughly doubles for the GMD
+($0.74\%\to1.36\%$) and increases for the range ($1.34\%\to2.23\%$), while
+the maximum is unchanged ($2.1\%\to2.0\%$). SAA, with 200 scenarios, gains
+less ($1.27\%$) and is beaten by SORTIE-0 head to head in 50 of 75 runs
+(worse in 4). The CVaR$_{0.9}$ of the range drops from 1932 (Det) to 1907
+(SORTIE-0) and 1904 (SORTIE-1). This is where the stochastic model pays: when
+the risk of a route is not a function of its length, balancing lengths no
+longer balances realised workloads, and a fairness model has to see the
+variances.
+
+\begin{table}[t]\centering\small
+\caption{E8: congested arc noise, $B=1.10$, 25 instances per row;
+improvement of the ex-post value over Det (format as Table~\ref{tab:e3}).}\label{tab:e8}
+\input{results/tables/paper/tab_e8.tex}
+\end{table}
 
 
 %==========================================================================
@@ -648,7 +684,11 @@ Optimising ex-post fairness improved the realised fairness by about one
 percent over a deterministic fair plan under homogeneous noise (up to $2\%$
 for the maximum), consistently but modestly, because balancing route lengths already roughly balances
 route risks when variance grows with length.
-%E8CONCL
+When noise is heterogeneous, as with
+congestion concentrated in part of the network, the illusion grows to
+$25\%$ for the range and the gain of SORTIE roughly doubles for the dispersion
+measures, to about $2\%$; this is the regime in which the stochastic model is
+worth its cost.
 
 \paragraph{Limitations.} The lower level is exact only for routes of up to 15
 customers; beyond that it relies on local search, and the bilevel constraint is

@@ -240,14 +240,18 @@
 
 ### E8 - heterogeneous (congested) arc noise: improvement over det (%)
 
-| measure   |   inst |   saa_impr_pct |   saa_wins |   saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |   sortie1_impr_pct |   sortie1_wins |   sortie1_p |
-|:----------|-------:|---------------:|-----------:|--------:|-------------------:|---------------:|------------:|-------------------:|---------------:|------------:|
-| gmd       |      3 |         -0.26  |          1 |     nan |              0.261 |              1 |         nan |             0.0826 |              1 |         nan |
-| max       |      3 |          0.382 |          1 |     nan |              0.403 |              1 |         nan |             0.405  |              2 |         nan |
-| range     |      4 |          0.196 |          3 |     nan |              1.02  |              4 |         nan |             1.27   |              4 |         nan |
+| measure   |   inst |   saa_impr_pct |   saa_wins |    saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |   sortie1_impr_pct |   sortie1_wins |   sortie1_p |
+|:----------|-------:|---------------:|-----------:|---------:|-------------------:|---------------:|------------:|-------------------:|---------------:|------------:|
+| gmd       |     25 |          0.443 |          7 | 0.809    |               1.36 |             10 |     0.0121  |               1.38 |             13 |    0.099    |
+| max       |     25 |          1.78  |         23 | 2.07e-05 |               2.03 |             23 |     2.7e-05 |               2.04 |             23 |    3.43e-05 |
+| range     |     25 |          1.59  |         14 | 0.0355   |               2.23 |             19 |     0.00012 |               2.13 |             20 |    0.000255 |
 
 ### E8 - improvement over det by size (measures pooled)
 
 |   n |   inst |   saa_impr_pct |   saa_wins |   saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |   sortie1_impr_pct |   sortie1_wins |   sortie1_p |
 |----:|-------:|---------------:|-----------:|--------:|-------------------:|---------------:|------------:|-------------------:|---------------:|------------:|
-|  15 |      4 |          0.268 |          3 |     nan |              0.705 |              4 |         nan |              0.945 |              4 |         nan |
+|  15 |      5 |          0.264 |          4 |     nan |              0.672 |              5 |         nan |              0.766 |              5 |         nan |
+|  20 |      5 |          2.5   |          5 |     nan |              2.83  |              5 |         nan |              2.54  |              5 |         nan |
+|  25 |      5 |          0.969 |          5 |     nan |              1.43  |              5 |         nan |              1.49  |              5 |         nan |
+|  30 |      5 |          1.55  |          5 |     nan |              2.52  |              5 |         nan |              2.48  |              5 |         nan |
+|  35 |      5 |          2.49  |          5 |     nan |              2.55  |              5 |         nan |              2.6   |              5 |         nan |
