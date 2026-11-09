@@ -28,7 +28,10 @@ DEFAULT_RESULTS = os.path.join(PAPER_DIR, "results")
 if CODE_DIR not in sys.path:
     sys.path.insert(0, CODE_DIR)
 
-from sortie.instances import DATA_PATH, load_x641, make_instance  # noqa: E402
+from sortie.instances import (  # noqa: E402
+    CONG_SUFFIX, DATA_PATH, base_name, effective_H, load_x641, make_instance, noise_matrix,
+    with_congestion,
+)
 from sortie.pboi import exante, expost_var, lam_vector, pboi  # noqa: E402
 from sortie.search import SCEN_SEED, solve_fair  # noqa: E402
 from sortie.sim import evaluate_plans  # noqa: E402
@@ -36,7 +39,7 @@ from sortie.tsp import is_tsp_optimal, tour_stats  # noqa: E402
 
 RESULTS = os.path.abspath(os.environ.get("SORTIE_RESULTS") or DEFAULT_RESULTS)
 PLANS = os.path.join(RESULTS, "plans")
-DEFAULT_PLANS = os.path.join(DEFAULT_RESULTS, "plans")
+DEFAULT_PLANS = os.path.abspath(os.environ.get("SORTIE_PLANS") or os.path.join(DEFAULT_RESULTS, "plans"))
 
 V_DEF = 0.3
 SY = 0.15
@@ -104,15 +107,18 @@ def _raw():
     return load_x641(DATA_PATH)
 
 
-def load_instance(n, b, tiny=False):
+def load_instance(n, b, tiny=False, cong=False):
+    """Block instance; cong=True applies the heterogeneous-noise multiplier (with_congestion)."""
     coords, demand = _raw()
     if tiny:
-        return make_instance(coords, demand, n, b, m=TINY_M, cap_div=TINY_CAP)
-    return make_instance(coords, demand, n, b, m=MAIN_M, cap_div=MAIN_CAP)
+        inst = make_instance(coords, demand, n, b, m=TINY_M, cap_div=TINY_CAP)
+    else:
+        inst = make_instance(coords, demand, n, b, m=MAIN_M, cap_div=MAIN_CAP)
+    return with_congestion(inst) if cong else inst
 
 
-def instance_name(n, b):
-    return f"X641-n{n}-b{b}"
+def instance_name(n, b, cong=False):
+    return f"X641-n{n}-b{b}" + (CONG_SUFFIX if cong else "")
 
 
 def ensure_dirs():
@@ -156,16 +162,19 @@ def plan_file_for(exp, key):
     return os.path.join(PLANS, exp, safe_name(key) + ".json")
 
 
-def scen_tensor(N, v, S=SCEN_S, seed=SCEN_SEED):
+def scen_tensor(N, v, S=SCEN_S, seed=SCEN_SEED, H=None):
     """Arc scenario tensor for the SAA method (independent of the evaluation seed)."""
     rng = np.random.default_rng(seed)
-    return rng.gamma(shape=1.0 / (v * v), scale=v * v, size=(S, N, N))
+    if H is None:
+        return rng.gamma(shape=1.0 / (v * v), scale=v * v, size=(S, N, N))
+    vh = v * np.asarray(H, dtype=np.float64)
+    return rng.gamma(shape=1.0 / (vh * vh), scale=vh * vh, size=(S, N, N))
 
 
-def route_stats(routes, C):
+def route_stats(routes, C, D=None):
     Ls, Ws = [], []
     for r in routes:
-        L, W = tour_stats(r, C)
+        L, W = tour_stats(r, C, D)
         Ls.append(L)
         Ws.append(W)
     return np.array(Ls), np.array(Ws)
@@ -212,7 +221,7 @@ def build_row(exp, key, inst, routes, measure, B, method, v, kappa, time_limit, 
               eval_seed, S, Cstar, res, ev, screen, consistency, plan_file, sY=SY):
     """Flat result row shared by all solve and seed experiments."""
     C = inst.C
-    L, W = route_stats(routes, C)
+    L, W = route_stats(routes, C, noise_matrix(inst))
     sumL = float(L.sum())
     row = {
         "key": key,
@@ -281,18 +290,18 @@ def evaluate_plan_row(exp, key, inst, routes, measure, B, method, v, kappa, time
 def run_unit(job):
     """One fair run: solve_fair from the seed cost plan, then out-of-sample evaluation.
 
-    job keys: exp, n, b, tiny, measure, B, method, v, time_limit, S, eval_seed, key.
+    job keys: exp, n, b, tiny, cong, measure, B, method, v, time_limit, S, eval_seed, key.
     """
     exp = job["exp"]
     n, b = job["n"], job["b"]
-    inst = load_instance(n, b, tiny=job.get("tiny", False))
-    seed_rec = load_seed(inst.name)
+    inst = load_instance(n, b, tiny=job.get("tiny", False), cong=job.get("cong", False))
+    seed_rec = load_seed(base_name(inst.name))
     Cstar = float(seed_rec["Cstar"])
     spec = METHODS[job["method"]]
     v = float(job["v"])
     scen = None
     if spec["mode"] == "saa":
-        scen = scen_tensor(inst.C.shape[0], v)
+        scen = scen_tensor(inst.C.shape[0], v, H=effective_H(inst))
     budget = float(job["B"]) * Cstar
     res = solve_fair(inst, seed_rec["routes"], spec["mode"], job["measure"], v, spec["kappa"],
                      budget, float(job["time_limit"]), SOLVE_SEED, screen=spec["screen"],
@@ -315,11 +324,12 @@ def run_unit(job):
 
 def run_cost_unit(job):
     """Out-of-sample evaluation of the e0 cost plan (no solve)."""
-    inst = load_instance(job["n"], job["b"], tiny=job.get("tiny", False))
-    rec = load_seed(inst.name)
+    inst = load_instance(job["n"], job["b"], tiny=job.get("tiny", False),
+                         cong=job.get("cong", False))
+    rec = load_seed(base_name(inst.name))
     routes = rec["routes"]
     cstar = float(rec["Cstar"])
-    pf = os.path.relpath(_seed_file(inst.name), RESULTS)
+    pf = os.path.relpath(_seed_file(base_name(inst.name)), RESULTS)
     row = evaluate_plan_row(job["exp"], job["key"], inst, routes, "cost", float("nan"), "cost",
                             V_DEF, 0.0, float(rec["seed_time"]), inst_seed(job["n"], job["b"]),
                             inst_seed(job["n"], job["b"]), int(job["S"]), cstar, None, "",
@@ -333,20 +343,20 @@ def run_any(job):
     return run_unit(job)
 
 
-def solve_key(exp, n, b, measure, B, method, v, tl, S):
-    return (f"{exp}|{instance_name(n, b)}|{measure}|B{B:.2f}|{method}|v{v:g}|t{tl:g}|S{S}")
+def solve_key(exp, n, b, measure, B, method, v, tl, S, cong=False):
+    return (f"{exp}|{instance_name(n, b, cong)}|{measure}|B{B:.2f}|{method}|v{v:g}|t{tl:g}|S{S}")
 
 
-def make_job(exp, n, b, measure, B, method, v, tl, S, tiny=False):
-    return dict(exp=exp, n=n, b=b, tiny=tiny, measure=measure, B=B, method=method, v=v,
-                time_limit=tl, S=S, eval_seed=inst_seed(n, b),
-                key=solve_key(exp, n, b, measure, B, method, v, tl, S))
+def make_job(exp, n, b, measure, B, method, v, tl, S, tiny=False, cong=False):
+    return dict(exp=exp, n=n, b=b, tiny=tiny, cong=cong, measure=measure, B=B, method=method,
+                v=v, time_limit=tl, S=S, eval_seed=inst_seed(n, b),
+                key=solve_key(exp, n, b, measure, B, method, v, tl, S, cong))
 
 
-def make_cost_job(exp, n, b, S, tiny=False):
-    return dict(exp=exp, n=n, b=b, tiny=tiny, measure="cost", B=float("nan"), method="cost",
-                v=V_DEF, time_limit=0.0, S=S, eval_seed=inst_seed(n, b),
-                key=f"{exp}|{instance_name(n, b)}|cost|S{S}")
+def make_cost_job(exp, n, b, S, tiny=False, cong=False):
+    return dict(exp=exp, n=n, b=b, tiny=tiny, cong=cong, measure="cost", B=float("nan"),
+                method="cost", v=V_DEF, time_limit=0.0, S=S, eval_seed=inst_seed(n, b),
+                key=f"{exp}|{instance_name(n, b, cong)}|cost|S{S}")
 
 
 def _guard(args):

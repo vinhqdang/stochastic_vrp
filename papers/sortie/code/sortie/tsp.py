@@ -67,13 +67,20 @@ def held_karp(Wmat):
     return [int(x) for x in order], float(cost)
 
 
-def tour_stats(tour, C):
-    """(L, W) of the closed tour depot -> tour -> depot."""
+def tour_stats(tour, C, D=None):
+    """(L, W) of the closed tour depot -> tour -> depot.
+
+    L = sum of C over the arcs; W = sum of D^2 over the arcs (D = C o H for
+    heterogeneous arc noise, D = C when omitted).
+    """
     if len(tour) == 0:
         return 0.0, 0.0
     seq = np.concatenate(([0], np.asarray(tour, dtype=np.int64), [0]))
     c = C[seq[:-1], seq[1:]]
-    return float(c.sum()), float((c * c).sum())
+    if D is None:
+        return float(c.sum()), float((c * c).sum())
+    d = D[seq[:-1], seq[1:]]
+    return float(c.sum()), float((d * d).sum())
 
 
 @njit(cache=True)
@@ -215,12 +222,14 @@ class TourSolver:
     kappa == 0 returns the TSP-optimal tour (ties broken by smaller W).
     kappa > 0 runs the dichotomic search of Theorem 6 over arc weights
     c + theta*c^2 and returns the enumerated tour with the smallest objective.
-    Results are memoised on frozenset(S).
+    Results are memoised on frozenset(S). W and the dichotomic weights use
+    D (the arc noise weights C o H); D defaults to C.
     """
 
-    def __init__(self, C, kappa, v):
+    def __init__(self, C, kappa, v, D=None):
         self.C = np.ascontiguousarray(C, dtype=np.float64)
-        self.C2 = self.C * self.C
+        self.D = self.C if D is None else np.ascontiguousarray(D, dtype=np.float64)
+        self.D2 = self.D * self.D
         self.kappa = float(kappa)
         self.v = float(v)
         self._cache = {}
@@ -244,18 +253,19 @@ class TourSolver:
 
     def _supported_tours(self, nodes):
         C = self.C
-        C2 = self.C2
+        D = self.D
+        D2 = self.D2
         found = {}
 
         def add(t):
             key = tuple(t)
             if key not in found:
-                L, W = tour_stats(t, C)
+                L, W = tour_stats(t, C, D)
                 found[key] = (list(t), L, W)
             return found[key]
 
-        a_tour = self._opt_tour(nodes, C + 1e-9 * C2)
-        b_tour = self._opt_tour(nodes, C2 + 1e-9 * C)
+        a_tour = self._opt_tour(nodes, C + 1e-9 * D2)
+        b_tour = self._opt_tour(nodes, D2 + 1e-9 * C)
         a = add(a_tour)
         b = add(b_tour)
         stack = [(a, b)]
@@ -266,7 +276,7 @@ class TourSolver:
             if not (La < Lb and Wa > Wb):
                 continue
             theta = (Lb - La) / (Wa - Wb)
-            t = add(self._opt_tour(nodes, C + theta * C2))
+            t = add(self._opt_tour(nodes, C + theta * D2))
             Lt, Wt = t[1], t[2]
             if Lt + theta * Wt < La + theta * Wa - 1e-9:
                 stack.append((pa, t))
@@ -284,8 +294,8 @@ class TourSolver:
         if len(nodes) == 0:
             res = ([], 0.0, 0.0)
         elif self.kappa == 0.0:
-            tour = self._opt_tour(nodes, self.C + 1e-9 * self.C2)
-            L, W = tour_stats(tour, self.C)
+            tour = self._opt_tour(nodes, self.C + 1e-9 * self.D2)
+            L, W = tour_stats(tour, self.C, self.D)
             res = (tour, L, W)
         else:
             cands, _ = self._supported_tours(nodes)

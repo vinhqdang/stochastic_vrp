@@ -6,7 +6,7 @@ from sortie.tsp import tour_stats
 
 import os
 
-DATA = os.path.join(os.path.dirname(__file__), "..", "..", "data", "X-n641-k35.vrp")
+from sortie.instances import DATA_PATH as DATA
 
 
 def _instance():

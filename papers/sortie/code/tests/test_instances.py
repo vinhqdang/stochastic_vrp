@@ -6,7 +6,7 @@ import pytest
 
 from sortie.instances import DATA_PATH, load_x641, make_instance
 
-DATA = os.path.join(os.path.dirname(__file__), "..", "..", "data", "X-n641-k35.vrp")
+from sortie.instances import DATA_PATH as DATA
 
 
 @pytest.fixture(scope="module")

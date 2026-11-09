@@ -13,6 +13,7 @@ import time
 
 import numpy as np
 
+from .instances import effective_H, noise_matrix
 from .pboi import expost_var, lam_vector, ordered, pboi, rank_prices, sigma_prices
 from .tsp import TourSolver, tour_stats
 
@@ -158,12 +159,13 @@ class SAAAdapter:
         return varpi, np.zeros(m)
 
 
-def make_objective(mode, measure, v, scen=None, C=None, S=SCEN_S, seed=SCEN_SEED):
+def make_objective(mode, measure, v, scen=None, C=None, S=SCEN_S, seed=SCEN_SEED, H=None):
     """Objective adapter with value(L, W, routes) and prices(L, W, routes).
 
     `mode` is one of cost, det, pboi, saa. For saa the arc scenario tensor
     eps (S, N, N) is `scen` or, if absent, drawn from Gamma(1/v^2, v^2) with
-    `seed` (requires C for the node count and the arc costs).
+    `seed` (requires C for the node count and the arc costs). With a
+    multiplier H the arc (i, j) is drawn with cv v * H_ij instead.
     """
     if mode == "cost":
         return CostAdapter()
@@ -184,9 +186,13 @@ def make_objective(mode, measure, v, scen=None, C=None, S=SCEN_S, seed=SCEN_SEED
         N = C.shape[0]
         if v == 0:
             eps = np.ones((S, N, N))
-        else:
+        elif H is None:
             rng = np.random.default_rng(seed)
             eps = rng.gamma(shape=1.0 / (v * v), scale=v * v, size=(S, N, N))
+        else:
+            rng = np.random.default_rng(seed)
+            vh = v * np.asarray(H, dtype=np.float64)
+            eps = rng.gamma(shape=1.0 / (vh * vh), scale=vh * vh, size=(S, N, N))
     else:
         eps = np.asarray(scen, dtype=np.float64)
     return SAAAdapter(measure, v, eps, C)
@@ -199,7 +205,8 @@ def make_objective(mode, measure, v, scen=None, C=None, S=SCEN_S, seed=SCEN_SEED
 class _Ctx:
     def __init__(self, inst, solver, consistency, v, rng, K, screen, deadline):
         self.C = np.ascontiguousarray(inst.C, dtype=np.float64)
-        self.C2 = self.C * self.C
+        self.D = np.ascontiguousarray(noise_matrix(inst), dtype=np.float64)
+        self.D2 = self.D * self.D
         self.N = self.C.shape[0]
         self.n = self.N - 1
         self.m = int(inst.m)
@@ -237,7 +244,7 @@ def _build_plan(seqs, ctx):
     L = np.empty(m)
     W = np.empty(m)
     for k, s in enumerate(seqs):
-        L[k], W[k] = tour_stats(s, ctx.C)
+        L[k], W[k] = tour_stats(s, ctx.C, ctx.D)
     return _Plan(seqs, L, W, [None] * m, ctx)
 
 
@@ -254,7 +261,7 @@ def _route_pre(seq, ctx):
     position p (edges touching p are replaced by the bridging edge).
     """
     C = ctx.C
-    C2 = ctx.C2
+    D2 = ctx.D2
     N = ctx.N
     n = len(seq)
     full = np.array([0] + list(seq) + [0], dtype=np.int64)
@@ -262,17 +269,17 @@ def _route_pre(seq, ctx):
     cur = full[1:n + 1]
     nxt = full[2:n + 2]
     Lrem = C[prev, cur] + C[cur, nxt] - C[prev, nxt]
-    Wrem = C2[prev, cur] + C2[cur, nxt] - C2[prev, nxt]
+    Wrem = D2[prev, cur] + D2[cur, nxt] - D2[prev, nxt]
     X = full[:-1]
     Y = full[1:]
     Lins = C[X, :] + C[:, Y].T - C[X, Y][:, None]
-    Wins = C2[X, :] + C2[:, Y].T - C2[X, Y][:, None]
+    Wins = D2[X, :] + D2[:, Y].T - D2[X, Y][:, None]
     cols = np.arange(N)
     eb = np.argmin(Lins, axis=0)
     Lbest = Lins[eb, cols]
     Wbest = Wins[eb, cols]
     Lbr = C[prev, :] + C[:, nxt].T - C[prev, nxt][:, None]
-    Wbr = C2[prev, :] + C2[:, nxt].T - C2[prev, nxt][:, None]
+    Wbr = D2[prev, :] + D2[:, nxt].T - D2[prev, nxt][:, None]
     rows = np.arange(n)
     Lm = np.broadcast_to(Lins, (n, n + 1, N)).copy()
     Wm = np.broadcast_to(Wins, (n, n + 1, N)).copy()
@@ -421,7 +428,7 @@ def _free_descent(seqs, L, W, idxs, adapter, budget, ctx):
                 return seqs, L, W
             improved = False
             for cand in _intra_neighbours(seqs[idx]):
-                Lc, Wc = tour_stats(cand, ctx.C)
+                Lc, Wc = tour_stats(cand, ctx.C, ctx.D)
                 Ln = L.copy()
                 Wn = W.copy()
                 Ln[idx] = Lc
@@ -518,17 +525,19 @@ def _repair(plan, budget, ctx):
 # Construction, regret insertion and ruin-and-recreate
 # ---------------------------------------------------------------------------
 
-def _regret_insert(seqs, todo, varpi, psi, C, C2, dem, Q, v, extra):
+def _regret_insert(seqs, todo, varpi, psi, C, D, dem, Q, v, extra):
     """Regret-2 insertion of `todo` into the sequences (capacity-feasible first).
 
-    Insertion score of i into route b: varpi_b dL + psi_b dsigma + extra dL.
+    Insertion score of i into route b: varpi_b dL + psi_b dsigma + extra dL,
+    with sigma = v sqrt(W) and W built from the noise weights D (D^2 per arc).
     A customer with no feasible route goes to the route of largest residual
     capacity and the result is flagged as violated.
     """
     m = len(seqs)
     seqs = [list(s) for s in seqs]
+    D2 = D * D
     loads = [int(dem[np.asarray(s, dtype=np.int64)].sum()) for s in seqs]
-    W = [tour_stats(s, C)[1] for s in seqs]
+    W = [tour_stats(s, C, D)[1] for s in seqs]
     cache = [dict() for _ in range(m)]
     touched = set()
     violated = False
@@ -544,7 +553,7 @@ def _regret_insert(seqs, todo, varpi, psi, C, C2, dem, Q, v, extra):
             e = int(np.argmin(dl))
             x = X[e]
             y = Y[e]
-            dw = float(C2[x, i] + C2[i, y] - C2[x, y])
+            dw = float(D2[x, i] + D2[i, y] - D2[x, y])
             dLb = float(dl[e])
             dsig = v * (math.sqrt(max(W[b] + dw, 0.0)) - math.sqrt(W[b]))
             score = float(varpi[b]) * dLb + float(psi[b]) * dsig + extra * dLb
@@ -576,7 +585,7 @@ def _regret_insert(seqs, todo, varpi, psi, C, C2, dem, Q, v, extra):
         e = info(b, i)[1]
         seqs[b].insert(e, i)
         loads[b] += qi
-        W[b] = tour_stats(seqs[b], C)[1]
+        W[b] = tour_stats(seqs[b], C, D)[1]
         cache[b] = {}
         touched.add(b)
         remaining.remove(i)
@@ -589,7 +598,7 @@ def construct_initial(inst, rng):
     N = xy.shape[0]
     m = int(inst.m)
     C = np.ascontiguousarray(inst.C, dtype=np.float64)
-    C2 = C * C
+    D = np.ascontiguousarray(noise_matrix(inst), dtype=np.float64)
     dem = np.asarray(inst.demand, dtype=np.int64)
     Q = int(inst.Q)
     cust = np.arange(1, N)
@@ -605,7 +614,7 @@ def construct_initial(inst, rng):
         seed_set = set(seeds)
         todo = [int(c) for c in order if int(c) not in seed_set]
         seqs = [[s] for s in seeds]
-        seqs, violated, _ = _regret_insert(seqs, todo, ones, zeros, C, C2, dem, Q, 0.0, 1e-3)
+        seqs, violated, _ = _regret_insert(seqs, todo, ones, zeros, C, D, dem, Q, 0.0, 1e-3)
         if violated:
             continue
         if all(int(dem[np.asarray(s, dtype=np.int64)].sum()) <= Q for s in seqs):
@@ -664,7 +673,7 @@ def _perturb(plan, varpi, psi, adapter, budget, ctx):
     for r in touched:
         seqs[r] = [x for x in seqs[r] if x not in rem]
     seqs, violated, touched2 = _regret_insert(
-        seqs, removed, varpi, psi, C, ctx.C2, ctx.demand, ctx.Q, ctx.v, 1e-3)
+        seqs, removed, varpi, psi, C, ctx.D, ctx.demand, ctx.Q, ctx.v, 1e-3)
     if violated:
         return None
     changed = sorted(touched | touched2)
@@ -725,10 +734,12 @@ def solve_fair(inst, start_routes, mode, measure, v, kappa, budget, time_limit, 
     if len(start_routes) != m or any(len(r) == 0 for r in start_routes) or cover != list(range(1, N)):
         raise ValueError("start routes must be m nonempty tours covering every customer once")
     budget = float(budget)
+    H = effective_H(inst)
+    D = noise_matrix(inst)
     if solver is None:
-        solver = TourSolver(C, kappa, v)
+        solver = TourSolver(C, kappa, v, D=D)
     snap = (solver.n_calls, solver.n_hk, solver.n_cache_hits, solver.n_ls)
-    adapter = make_objective(mode, measure, v, scen=scen, C=C)
+    adapter = make_objective(mode, measure, v, scen=scen, C=C, H=H)
     rng = np.random.default_rng(seed)
     deadline = t_start + float(time_limit)
     ctx = _Ctx(inst, solver, consistency, v, rng, K, screen, deadline)

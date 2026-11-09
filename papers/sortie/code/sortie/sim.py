@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from .instances import effective_H, noise_matrix
 from .pboi import lam_vector, ordered
 from .tsp import tour_stats
 
@@ -12,17 +13,23 @@ def _chunk_size(N, chunk):
     return max(1, min(int(chunk), _MAX_CHUNK_CELLS // (N * N)))
 
 
-def _draw_chunk(N, v, sY, size, seed, chunk_index):
+def _draw_chunk(N, v, sY, size, seed, chunk_index, H=None):
     """Day factors Y (size,) and arc factors eps (size, N, N) for one chunk.
 
     eps[s, i, j] depends only on (seed, chunk_index, s, i, j), never on a plan.
+    With a multiplier H the arc (i, j) has cv v * H_ij: Gamma(shape 1/(vH)^2,
+    scale (vH)^2), mean 1.
     """
     rng = np.random.default_rng([int(seed), int(chunk_index)])
     Z = rng.standard_normal(size)
     Y = np.exp(sY * Z - 0.5 * sY * sY)
     if v == 0:
         return Y, None
-    eps = rng.gamma(shape=1.0 / (v * v), scale=v * v, size=(size, N, N))
+    if H is None:
+        eps = rng.gamma(shape=1.0 / (v * v), scale=v * v, size=(size, N, N))
+    else:
+        vh = v * np.asarray(H, dtype=np.float64)
+        eps = rng.gamma(shape=1.0 / (vh * vh), scale=vh * vh, size=(size, N, N))
     return Y, eps
 
 
@@ -44,13 +51,14 @@ def simulate(inst, routes, v, sY, S, seed, chunk=2000):
     """
     C = inst.C
     N = C.shape[0]
+    H = effective_H(inst)
     cs = _chunk_size(N, chunk)
     m = len(routes)
     X = np.empty((S, m))
     Y = np.empty(S)
     for ci, s0 in enumerate(range(0, S, cs)):
         size = min(cs, S - s0)
-        Yc, eps = _draw_chunk(N, v, sY, size, seed, ci)
+        Yc, eps = _draw_chunk(N, v, sY, size, seed, ci, H)
         Y[s0:s0 + size] = Yc
         for k, r in enumerate(routes):
             X[s0:s0 + size, k] = _route_X(eps, C, r, size)
@@ -85,6 +93,8 @@ def evaluate_plans(inst, list_of_routes, v, sY, S=20000, seed=2026, chunk=2000):
     """
     C = inst.C
     N = C.shape[0]
+    H = effective_H(inst)
+    D = noise_matrix(inst)
     cs = _chunk_size(N, chunk)
     P = len(list_of_routes)
     m = len(list_of_routes[0])
@@ -92,7 +102,7 @@ def evaluate_plans(inst, list_of_routes, v, sY, S=20000, seed=2026, chunk=2000):
     Y_all = np.empty(S)
     for ci, s0 in enumerate(range(0, S, cs)):
         size = min(cs, S - s0)
-        Yc, eps = _draw_chunk(N, v, sY, size, seed, ci)
+        Yc, eps = _draw_chunk(N, v, sY, size, seed, ci, H)
         Y_all[s0:s0 + size] = Yc
         for p, plan in enumerate(list_of_routes):
             for k, r in enumerate(plan):
@@ -105,7 +115,7 @@ def evaluate_plans(inst, list_of_routes, v, sY, S=20000, seed=2026, chunk=2000):
         d.update(_summaries(Phi, "", m))
         d.update(_summaries(X, "_X", m))
         d["L_driver"] = [tour_stats(r, C)[0] for r in plan]
-        d["W_driver"] = [tour_stats(r, C)[1] for r in plan]
+        d["W_driver"] = [tour_stats(r, C, D)[1] for r in plan]
         results.append(d)
     return results
 

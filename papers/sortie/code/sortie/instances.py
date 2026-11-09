@@ -2,13 +2,18 @@
 
 import math
 import os
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, replace
+from typing import Optional
 
 import numpy as np
 
-DATA_PATH = os.path.normpath(
+_DEFAULT_DATA = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "X-n641-k35.vrp")
 )
+DATA_PATH = os.path.normpath(os.environ.get("SORTIE_DATA") or _DEFAULT_DATA)
+CONG_SUFFIX = "-cong"
+_BASE_RE = re.compile(r"^X641-n(\d+)-b(\d+)$")
 
 
 def load_x641(path=DATA_PATH):
@@ -60,6 +65,7 @@ class Instance:
     m: int
     Q: int
     C: np.ndarray
+    H: Optional[np.ndarray] = None
 
 
 def make_instance(coords, demand, n, b, m=5, cap_div=4.0):
@@ -80,3 +86,59 @@ def make_instance(coords, demand, n, b, m=5, cap_div=4.0):
     C = np.ceil(dist)
     np.fill_diagonal(C, 0.0)
     return Instance(name=f"X641-n{n}-b{b}", coords=xy, demand=q, m=int(m), Q=Q, C=C)
+
+
+def base_name(name):
+    """Instance name without the congestion suffix (the seed plan is shared with the base)."""
+    return name[:-len(CONG_SUFFIX)] if name.endswith(CONG_SUFFIX) else name
+
+
+def with_congestion(inst, v_lo_mult=1.0 / 3.0, v_hi_mult=2.0, radius_frac=0.3, seed=0):
+    """Copy of inst with a heterogeneous arc-noise multiplier H (arc cv = v * H_ij).
+
+    The centre is the coordinate of a customer drawn from default_rng([seed, n, b]);
+    r = radius_frac * (largest pairwise coordinate distance); H_ij = lo + (hi - lo) *
+    exp(-d^2 / (2 r^2)) with d the distance from the midpoint of arc (i, j) to the
+    centre. H is symmetric, lies in [lo, hi] and equals 1 on the diagonal.
+    """
+    base = base_name(inst.name)
+    match = _BASE_RE.match(base)
+    if match is None:
+        raise ValueError(f"cannot parse n, b from instance name {inst.name!r}")
+    n, b = int(match.group(1)), int(match.group(2))
+    xy = np.asarray(inst.coords, dtype=np.float64)
+    N = xy.shape[0]
+    if N - 1 != n:
+        raise ValueError("instance name and node count disagree")
+    rng = np.random.default_rng([int(seed), n, b])
+    centre = xy[int(rng.integers(1, N))]
+    diff = xy[:, None, :] - xy[None, :, :]
+    span = float(np.sqrt((diff ** 2).sum(axis=2)).max())
+    r = float(radius_frac) * span
+    mid = 0.5 * (xy[:, None, :] + xy[None, :, :])
+    d2 = ((mid - centre) ** 2).sum(axis=2)
+    lo = float(v_lo_mult)
+    hi = float(v_hi_mult)
+    H = lo + (hi - lo) * np.exp(-d2 / (2.0 * r * r))
+    np.fill_diagonal(H, 1.0)
+    return replace(inst, name=base + CONG_SUFFIX, H=H)
+
+
+def effective_H(inst):
+    """The multiplier matrix, or None when it is absent or identically one.
+
+    Returning None for an all-ones H keeps every downstream computation on the
+    homogeneous code path, so H = 1 reproduces the homogeneous results exactly.
+    """
+    H = getattr(inst, "H", None)
+    if H is None or np.all(H == 1.0):
+        return None
+    return np.ascontiguousarray(H, dtype=np.float64)
+
+
+def noise_matrix(inst):
+    """D = C o H (elementwise), the arc standard-deviation weights; C itself when H is None."""
+    H = effective_H(inst)
+    if H is None:
+        return inst.C
+    return np.ascontiguousarray(inst.C * H, dtype=np.float64)
