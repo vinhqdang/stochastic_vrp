@@ -268,8 +268,18 @@
 
 ### E8 - heterogeneous (congested) arc noise: improvement over det (%)
 
-
+| measure   |   inst |   saa_impr_pct |   saa_wins |    saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |   sortie1_impr_pct |   sortie1_wins |   sortie1_p |
+|:----------|-------:|---------------:|-----------:|---------:|-------------------:|---------------:|------------:|-------------------:|---------------:|------------:|
+| gmd       |     25 |          0.763 |         11 | 0.37     |              1.4   |             13 |     0.00147 |              1.82  |             15 |    0.0276   |
+| max       |     25 |          1.87  |         23 | 2.07e-05 |              2.15  |             23 |     2.7e-05 |              2.21  |             24 |    1.82e-05 |
+| range     |     25 |          1.22  |         13 | 0.0534   |              0.964 |             17 |     0.0022  |              0.936 |             18 |    0.0026   |
 
 ### E8 - improvement over det by size (measures pooled)
 
-
+|   n |   inst |   saa_impr_pct |   saa_wins |   saa_p |   sortie0_impr_pct |   sortie0_wins |   sortie0_p |   sortie1_impr_pct |   sortie1_wins |   sortie1_p |
+|----:|-------:|---------------:|-----------:|--------:|-------------------:|---------------:|------------:|-------------------:|---------------:|------------:|
+|  15 |      5 |          0.264 |          4 |     nan |              0.672 |              5 |         nan |              0.766 |              5 |         nan |
+|  20 |      5 |          2.76  |          5 |     nan |              2.83  |              5 |         nan |              2.54  |              5 |         nan |
+|  25 |      5 |          0.835 |          5 |     nan |              1.5   |              5 |         nan |              1.53  |              5 |         nan |
+|  30 |      5 |          1.72  |          5 |     nan |              2.63  |              5 |         nan |              2.67  |              5 |         nan |
+|  35 |      5 |          2.26  |          5 |     nan |              1.02  |              4 |         nan |              1.58  |              4 |         nan |

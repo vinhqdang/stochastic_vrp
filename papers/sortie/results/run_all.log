@@ -15,3 +15,6 @@
 [run_all] e7_scale -> /home/user/stochastic_vrp/papers/sortie/results/e7_scale.log
 [run_all] e7_scale ok
 [run_all] e8_congestion -> /home/user/stochastic_vrp/papers/sortie/results/e8_congestion.log
+[run_all] e8_congestion ok
+[run_all] finished with status 0
+ALLDONE
