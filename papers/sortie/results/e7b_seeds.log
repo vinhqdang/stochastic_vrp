@@ -1,2 +1,6 @@
 == e7b quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-09 15:01:14
 [e7b] jobs total=162 already_done=0 todo=162
+[e7b] 1/162 e7b|X641-n100-b0|range|B1.10|det|v0.3|t240|S10000|seed17 t=243s
+[e7b] 2/162 e7b|X641-n100-b0|range|B1.10|det|v0.3|t240|S10000|seed13 t=243s
+[e7b] 3/162 e7b|X641-n100-b0|range|B1.10|det|v0.3|t240|S10000|seed11 t=243s
+[e7b] 4/162 e7b|X641-n100-b0|range|B1.10|saa|v0.3|t240|S10000|seed11 t=243s
