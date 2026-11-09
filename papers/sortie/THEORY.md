@@ -21,7 +21,8 @@ that satisfy the triangle inequality, `m` identical vehicles of capacity
     τ_ij = Y · c_ij · ε_ij ,
 
 where `Y > 0` is a *day factor* common to the whole fleet (weather,
-network-wide congestion) with `E[Y] = 1`, `Var Y = s_Y²`, and the
+network-wide congestion) lognormal, `Y = exp(s_Y Z − s_Y²/2)` (so `E[Y] = 1`,
+`E[Y²] = e^{s_Y²}`), and the
 `ε_ij` are arc-level disturbances, independent of each other and of `Y`,
 with `E ε = 1`, `Var ε = v²` (`v` is the arc coefficient of variation).
 The workload of driver `k` is `Φ_k = Y · X_k` with
@@ -87,7 +88,12 @@ tail sums `Λ_r = Σ_{j=r+1}^{m} λ_j` (`r = 0,…,m−1`). Then
 by `m` convolution steps (`O(m²)` per abscissa). Below
 `t_lo = min_k F_k^{-1}(10^{-12})` the integrand equals `Λ_0` (contributes
 `Λ_0 t_lo` analytically) and above `t_hi = max_k F_k^{-1}(1−10^{-12})` it
-is `0` (`Λ_m := 0`). The evaluation is `O(G m²)` for `G` abscissae and is
+is `0` (`Λ_m := 0`). In between, the integral is computed with
+6-point Gauss–Legendre panels whose breakpoints are the quantiles of
+*every* marginal, so a short low-variance route is resolved however wide
+the others are (a single uniform grid is not: it mis-prices exactly the
+light routes whose negative prices drive route inconsistency). The
+evaluation costs `O(G m²)` for `G` nodes (≈ 0.6 ms for `m = 5`) and is
 *deterministic*: plans can be compared without sampling noise, unlike
 sample-average approximation. The order-statistics identity is classical
 in statistics (Poisson–binomial / permanent representation of
