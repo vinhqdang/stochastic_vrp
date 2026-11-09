@@ -1,1 +1,3 @@
 [run_ext] e9_budget -> /home/user/stochastic_vrp/papers/sortie/results/e9_budget.log
+[run_ext] e9_budget ok
+[run_ext] e10_fleet -> /home/user/stochastic_vrp/papers/sortie/results/e10_fleet.log

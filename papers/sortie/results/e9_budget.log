@@ -356,3 +356,9 @@
 [e9] 354/360 e9|X641-n35-b4|max|B1.10|sortie0|v0.3|t25|S20000 t=1810s
 [e9] 355/360 e9|X641-n35-b4|max|B1.15|det|v0.3|t25|S20000 t=1810s
 [e9] 356/360 e9|X641-n35-b4|max|B1.15|sortie0|v0.3|t25|S20000 t=1810s
+[e9] 357/360 e9|X641-n35-b4|max|B1.20|det|v0.3|t25|S20000 t=1835s
+[e9] 358/360 e9|X641-n35-b4|max|B1.20|sortie0|v0.3|t25|S20000 t=1835s
+[e9] 359/360 e9|X641-n35-b4|max|B1.30|det|v0.3|t25|S20000 t=1836s
+[e9] 360/360 e9|X641-n35-b4|max|B1.30|sortie0|v0.3|t25|S20000 t=1836s
+[e9] finished ok=360 failed=0 elapsed=1836s
+[e9] jobs=360 failures=0
