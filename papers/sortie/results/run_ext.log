@@ -16,3 +16,4 @@
 [run_ext] e16_baselines ok
 [run_ext] e17_family -> /home/user/stochastic_vrp/papers/sortie/results/e17_family.log
 [resume] e17 exit 0
+ALLEXTDONE

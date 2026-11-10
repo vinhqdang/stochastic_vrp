@@ -48,11 +48,15 @@ relocate and swap moves with the rank prices. On instances derived from the
 CVRPLIB benchmark used by the deterministic literature, deterministic fair
 plans understate their realised unfairness by 8--27\%, while the integral agrees with Monte Carlo
 to about $0.1\%$ at under a millisecond per plan.
-Optimising ex-post fairness improves realised fairness by about $1\%$ when
-noise is proportional to length and by about $1.5\%$ under congestion-driven
-heterogeneous noise; screening with rank prices gives plans 6--9\% better than
-random screening; and without the lower level, nearly all range-optimised
-plans buy fairness with detours.
+In seventeen experiments on two benchmark families, optimising ex-post
+fairness improves realised fairness by about $1\%$ at the standard budget,
+$2\%$ on a second family of twelve CVRPLIB instances (better on all twelve),
+and up to $7\%$ at generous budgets, where it also uses less of the budget. It
+beats sample average approximation with up to 5000 scenarios and a
+risk-adjusted deterministic baseline, which is worse than ignoring
+uncertainty altogether. Rank-price screening ranks moves with a Spearman
+correlation of about $0.9$ with their exact effect, and without the lower
+level nearly all range-optimised plans buy fairness with detours.
 \end{abstract}
 
 \noindent\textbf{Keywords:} vehicle routing; fairness; stochastic travel times;
@@ -129,8 +133,12 @@ supported Pareto tour of (length, quadratic length), found exactly by
 dichotomic parametric Held--Karp.
 \item \textbf{Algorithm and evidence.} SORTIE, a bilevel local search whose
 moves are screened by rank prices, is compared with the deterministic fair plan,
-SAA and ablations on the instances used by the deterministic literature, with
-exact enumeration on small instances.
+SAA with up to 5000 scenarios, a risk-adjusted deterministic baseline and
+ablations, in seventeen experiments: on the instances used by the
+deterministic literature and on a second family of twelve CVRPLIB instances,
+with exact enumeration on small instances, budget, fleet-size, noise-level
+and risk-attitude sweeps, four noise models including correlated noise, and
+up to 100 customers.
 \end{itemize}
 
 %==========================================================================
@@ -257,8 +265,11 @@ of sample.
 \section{Theory}\label{sec:theory}
 
 \begin{proposition}[Common shocks]\label{prop:common}
-For every $\lambda$, $\E\lord(\Phi)=\E\lord(X)$, and
-$\E\operatorname{Var}_{\rm emp}(\Phi)=e^{s_Y^2}\,\E\operatorname{Var}_{\rm emp}(X)$.
+For every $\lambda$,
+\[
+\E\lord(\Phi)=\E\lord(X)\qquad\text{and}\qquad
+\E\operatorname{Var}_{\rm emp}(\Phi)=e^{s_Y^2}\,\E\operatorname{Var}_{\rm emp}(X).
+\]
 \end{proposition}
 \begin{proof}
 Sorting commutes with multiplication by $y>0$, so $\lord(yX)=y\lord(X)$; take
@@ -863,9 +874,67 @@ proportional to the range ($4/9$ of it), so the two rows coincide.
 number of vehicles.}\label{fig:e10}
 \end{figure}
 
-%E11SECTION
+\subsection{Common shocks in practice (E11)}
+E11 re-evaluates all 500 E3 plans with $B=1.10$ under day-factor
+dispersions $s_Y\in\{0,0.15,0.3,0.5\}$, using the same arc draws
+(Table~\ref{tab:e11}, Figure~\ref{fig:e11}). As Proposition~\ref{prop:common}
+predicts, the expected ordered measures are unchanged: the ratio of the value
+with and without the day factor is $1.000$ up to Monte Carlo error (at most
+$1.0006$ on average, at $s_Y=0.5$). The expected empirical variance is
+multiplied by $1.023$, $1.095$ and $1.285$, against $e^{s_Y^2}=1.023$, $1.094$
+and $1.284$. The tail is a different matter: the CVaR$_{0.9}$ of the realised
+range grows by $7\%$, $25\%$ and $58\%$. A fleet-wide shock is irrelevant for
+the choice of a plan by expected ordered fairness, but not for the risk of a
+very unfair day.
 
-%E12SECTION
+\begin{table}[t]\centering\small
+\caption{E11: ratio of each measure with the day factor to its value without,
+mean $\pm$ standard deviation over the 500 E3 plans with $B=1.10$.}\label{tab:e11}
+\resizebox{\textwidth}{!}{\input{results/tables/paper/tab_e11.tex}}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e11.pdf}
+\caption{E11: effect of the day-factor dispersion $s_Y$ on the expected
+ordered measures, the expected variance and the CVaR of the range.}\label{fig:e11}
+\end{figure}
+
+
+\subsection{Robustness to the noise model (E12)}
+PBOI assumes independent route durations with given means and variances,
+and SORTIE was tuned to gamma arc noise. E12 re-evaluates the $B=1.10$ plans
+of E3 (500 plans) and E8 (300 plans) under four arc-noise families with the
+same mean and coefficient of variation per arc: gamma (the planning model),
+lognormal (heavier right tail), \emph{incident} (with probability $0.02$ an
+arc takes $2.5$ times as long, the rest of the variability being gamma), and
+\emph{regional} (a multiplicative factor shared by all arcs whose tail lies in
+the same quadrant of the plane, which makes routes in the same region
+positively correlated and so violates the independence that PBOI assumes)
+(Table~\ref{tab:e12}, Figure~\ref{fig:e12}).
+
+The accuracy of PBOI degrades gracefully. Under lognormal noise its mean
+absolute error rises from $0.16\%$ to $0.29\%$; under incidents to $1.4\%$, with
+a bias of $+1.4\%$ (it overstates unfairness) and a worst case of $9.5\%$; under regional correlation to $1.9\%$, with a
+worst case of $20\%$ for the variance measure, the one most affected by
+correlation. What matters for planning is that the ranking of plans survives:
+under every family SORTIE-0 remains significantly better than Det, by $1.0\%$
+to $1.2\%$ on the E3 plans and $1.5\%$ on the E8 plans, against $1.2\%$ and
+$1.5\%$ under the planning model.
+
+\begin{table}[t]\centering\small
+\caption{E12: noise-model misspecification. PBOI error of the gamma-based
+prediction against the true expected value under each family, and
+improvement of SORTIE-0 over Det evaluated under that family (format as
+Table~\ref{tab:e3}).}\label{tab:e12}
+\resizebox{\textwidth}{!}{\input{results/tables/paper/tab_e12.tex}}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e12.pdf}
+\caption{E12: PBOI error and improvement of SORTIE-0 over Det under four
+arc-noise families.}\label{fig:e12}
+\end{figure}
+
 
 \subsection{Risk attitude of the drivers (E13)}
 E13 solves the $n\in\{25,35\}$ instances with the risk-consistent lower level
@@ -886,7 +955,7 @@ $\kappa$ is a matter of the drivers' preferences rather than of fairness.
 instances per row. Routes changed: share of routes whose tour differs from
 the shortest tour of the same customers; extra length: total, per plan; mean
 risk: mean of $L_k+v\sqrt{W_k}$.}\label{tab:e13}
-\input{results/tables/paper/tab_e13.tex}
+\resizebox{\textwidth}{!}{\input{results/tables/paper/tab_e13.tex}}
 \end{table}
 
 \begin{figure}[t]\centering
@@ -915,7 +984,7 @@ median ex-post value is the same for $K$ from 1 to 32.
 (instance, plan) pairs with at least one exactly improving move; top-8 hit:
 share of those groups in which the exact-best improving move is among the 8
 best predicted moves (in brackets: expected share under a random order).}\label{tab:e14}
-\input{results/tables/paper/tab_e14.tex}
+\resizebox{\textwidth}{!}{\input{results/tables/paper/tab_e14.tex}}
 \end{table}
 
 \begin{table}[t]\centering\small
@@ -1090,10 +1159,14 @@ When noise is heterogeneous, as with
 congestion concentrated in part of the network, the illusion grows to
 $26\%$ for the range ($23\%$ on the same cells without congestion), and the
 gain of SORTIE grows only to about $1.5\%$.
-The main practical value of the stochastic model in our experiments is
-therefore that it tells the planner, accurately, how unfair a plan will be,
-and that it guarantees consistent tours; the improvement of the plan itself
-is significant in the pooled comparisons but small.
+The improvement of the plan itself is significant but modest at the standard
+budget, and it grows where the deterministic model has most freedom to choose
+wrongly: with more slack in the budget (up to $7\%$, with a lower total
+length), with more vehicles ($3\%$ with seven) and on instances whose depot is
+not a block corner ($2.2\%$, better on all twelve instances of the second
+family). It survives misspecified and spatially correlated noise, it is not
+reproduced by a risk-adjusted deterministic model, which is worse than the
+plain one, and a sample average with 5000 scenarios does not reach it.
 On instances with 100 customers the faster search makes the improvement
 over the deterministic plan statistically significant when search noise is
 averaged over three seeds and the 18 instance--measure pairs are pooled

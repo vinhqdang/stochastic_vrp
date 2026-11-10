@@ -59,11 +59,12 @@ def e3_tables():
                 rows.append([inst.replace("X641-", "") if meas == "max" else "", MNAME[meas],
                              _fmt(cval)] + cells + [f"{imp:+.2f}", f"{cr.loc[(inst, meas)].get('sortie0', float('nan')):.3f}"])
         header = ("Instance & Measure & Cost & " + " & ".join(LAB[m] for m in meths)
-                  + " & S-0 vs Det (\\%) & Cost ratio S-0")
+                  + " & Gain (\\%) & $\\sum L/C^\\ast$")
         tag = "105" if B < 1.07 else "110"
         _longtable(f"app_e3_B{tag}", "llrrrrrrr", header, rows,
                    f"E3, $B={B:.2f}$: out-of-sample ex-post value of every plan (bold: best); "
-                   "Cost: the cost-optimal plan; S-0/S-1: SORTIE-0/1.", f"tab:app_e3_{tag}")
+                   "Cost: the cost-optimal plan; S-0/S-1: SORTIE-0/1; Gain: improvement of S-0 over Det; "
+                   "last column: total length of the S-0 plan relative to $C^\\ast$.", f"tab:app_e3_{tag}")
 
 
 def e7b_table():
