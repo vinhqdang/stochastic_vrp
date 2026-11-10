@@ -797,6 +797,195 @@ multiplier $H$ of their arcs, with the range-optimised Det and SORTIE-0 plans of
 (E3) and with (E8) congestion, $B=1.10$.}\label{fig:e8e3}
 \end{figure}
 
+\subsection{The budget frontier (E9)}
+E9 repeats the comparison of Det and SORTIE-0 on the 10 instances with
+$n\in\{25,35\}$ for budget factors $B$ from $1.02$ to $1.30$
+(Table~\ref{tab:e9}, Figure~\ref{fig:frontier}). Two effects stand out. First,
+the gain of SORTIE-0 grows with the budget: from about $1\%$ for $B\le1.10$ to
+$3.2\%$ at $B=1.15$ and $6.8\%$ at $B=1.30$, where SORTIE-0 is better on all 30
+instance--measure pairs. With little slack every fair plan is close to the
+cost-optimal one and there is little room to choose; with more slack there
+are many plans whose deterministic range is about equal but whose realised
+range differs, and only the ex-post objective can tell them apart. Second,
+SORTIE-0 uses \emph{less} of the budget. At $B=1.30$ the Det plans for the
+maximum have a total length $20.5\%$ above $C^\ast$ and an expected realised
+maximum $5.2\%$ below that of the cost plan; the SORTIE-0 plans use $13.5\%$
+and achieve $8.7\%$. For the maximum the deterministic objective even
+deteriorates from $B=1.20$ to $B=1.30$: the extra length it buys goes into
+routes whose deterministic length is irrelevant to the maximum but whose
+variance raises the realised one. The price of fairness is therefore lower
+under the ex-post objective, at every budget level we tested.
+
+The same cells at $B=1.10$ appear in E3, and the per-cell means differ (for
+example $-0.7\%$ for the range in E9 against $+0.9\%$ in E3 on the
+same ten instances). The runs are identical except for wall-clock
+timing: the search stops at a time limit, so the iteration at which it stops,
+and hence the plan, can differ between two executions on a shared machine.
+This is another manifestation of the search noise analysed in E7b, and the
+reason we draw conclusions only from pooled comparisons.
+
+\begin{table}[t]\centering\small
+\caption{E9: improvement of the ex-post value of SORTIE-0 over Det by budget
+factor, $n\in\{25,35\}$, ten instances per measure; cost ratio: mean
+$\sum_kL_k/C^\ast$ of the SORTIE-0 plans (format as Table~\ref{tab:e3}).}\label{tab:e9}
+\input{results/tables/paper/tab_e9.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e9_frontier.pdf}
+\caption{E9: price of fairness. Mean total length relative to $C^\ast$
+against the mean expected realised unfairness relative to the cost-optimal
+plan, for budget factors $B$ from 1.02 to 1.30 (labels).}\label{fig:frontier}
+\end{figure}
+
+\subsection{Fleet size (E10)}
+E10 varies the number of vehicles on the $n=35$ instances, with capacity
+$\lfloor\sum_iq_i/(m-1)\rfloor$ so that one vehicle's worth of slack remains
+(Table~\ref{tab:e10}, Figure~\ref{fig:e10}). The illusion grows with $m$:
+a deterministic plan understates its range by $10\%$ with three vehicles,
+$24\%$ with five and $27\%$ with seven. More routes compete for the extreme
+ranks, so more of the realised unfairness comes from which route happens to
+be longest on the day, which a deterministic model cannot see. The gain of
+SORTIE-0 grows accordingly, from $0.5\%$ ($m=3$) and $0.6\%$ ($m=5$) to
+$3.2\%$ with seven vehicles (better on 13 of 15 pairs). With $m=3$ the GMD is
+proportional to the range ($4/9$ of it), so the two rows coincide.
+
+\begin{table}[t]\centering\small
+\caption{E10: fleet size, $n=35$, five instances per measure, $B=1.10$
+(format as Table~\ref{tab:e3}).}\label{tab:e10}
+\input{results/tables/paper/tab_e10.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e10.pdf}
+\caption{E10: belief error of Det and improvement over Det against the
+number of vehicles.}\label{fig:e10}
+\end{figure}
+
+%E11SECTION
+
+%E12SECTION
+
+\subsection{Risk attitude of the drivers (E13)}
+E13 solves the $n\in\{25,35\}$ instances with the risk-consistent lower level
+for $\kappa\in\{0,0.5,1,2,4\}$ (Table~\ref{tab:e13}, Figure~\ref{fig:e13}).
+Under homogeneous noise the risk-consistent tour rarely differs from the
+shortest one: even at $\kappa=4$ only $14$--$16\%$ of the routes change, and
+the extra length is about 13 distance units per plan, under $0.2\%$ of the
+total. The ex-post value changes by less than the search noise (median ratio
+to $\kappa=0$ equal to one, interquartile range within $\pm1\%$). The reason is
+that, for a fixed customer set, a tour's length and its quadratic length are
+nearly comonotone: the shortest tour is also nearly the least variable one.
+Proposition~\ref{prop:mono} shows that this need not be so, and with
+heterogeneous noise the two can separate, but on these instances the choice of
+$\kappa$ is a matter of the drivers' preferences rather than of fairness.
+
+\begin{table}[t]\centering\small
+\caption{E13: risk-consistent lower level, $n\in\{25,35\}$, $B=1.10$, ten
+instances per row. Routes changed: share of routes whose tour differs from
+the shortest tour of the same customers; extra length: total, per plan; mean
+risk: mean of $L_k+v\sqrt{W_k}$.}\label{tab:e13}
+\input{results/tables/paper/tab_e13.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e13.pdf}
+\caption{E13: effect of the drivers' risk weight $\kappa$.}\label{fig:e13}
+\end{figure}
+
+\subsection{Why the rank prices work (E14)}
+E14 checks the first-order model behind the screen directly. For the
+cost-optimal start plan and the final SORTIE-0 plan of the ten
+$n\in\{25,35\}$ instances, we evaluated up to 400 relocate and swap moves
+both by the rank-price prediction and exactly (exact lower level and PBOI);
+5577 moves in total (Table~\ref{tab:e14}, Figures~\ref{fig:e14scatter}
+and~\ref{fig:e14topk}). The prediction ranks the moves almost as the exact
+evaluation does: Spearman's $\rho$ is $0.89$--$0.94$ on the start plans and
+$0.78$--$0.89$ on the final plans. On the start plans the exact-best improving
+move is among the 8 best predicted moves in $80\%$ of the cases (random
+ordering: $7\%$) and always among the 21 best. On the final plans of SORTIE-0
+there is no improving relocate or swap move in 28 of 30 cases: the search
+ends in genuine local optima of its neighbourhood. Consistently, the number of
+candidates $K$ evaluated per step barely matters (Table~\ref{tab:e14k}): the
+median ex-post value is the same for $K$ from 1 to 32.
+
+\begin{table}[t]\centering\small
+\caption{E14: rank-price prediction against exact evaluation. Groups:
+(instance, plan) pairs with at least one exactly improving move; top-8 hit:
+share of those groups in which the exact-best improving move is among the 8
+best predicted moves (in brackets: expected share under a random order).}\label{tab:e14}
+\input{results/tables/paper/tab_e14.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{E14: number of candidates $K$ evaluated per step; ex-post value
+relative to $K=8$, median and interquartile range over 20 instance--measure
+pairs.}\label{tab:e14k}
+\input{results/tables/paper/tab_e14k.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e14_scatter.pdf}
+\caption{E14: predicted (rank prices) against exact change of the
+objective for 5577 moves.}\label{fig:e14scatter}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.55\textwidth]{figures/fig_e14_topk.pdf}
+\caption{E14: share of cases in which the exact-best improving move is among
+the $K$ best predicted moves.}\label{fig:e14topk}
+\end{figure}
+
+\subsection{Is a larger sample enough? (E15)}
+A natural objection is that SAA with 200 scenarios is simply too small. E15
+reruns SAA with $S\in\{50,200,1000,5000\}$ scenarios on the $n\in\{25,35\}$
+instances (Table~\ref{tab:e15}, Figure~\ref{fig:e15}). SORTIE-0 beats every
+SAA variant: by $1.4\%$ ($S=50$), $1.6\%$ ($S=200$), $1.1\%$ ($S=1000$) and
+$0.9\%$ ($S=5000$). The gap shrinks as the sample grows, as it should, since
+SAA converges to the objective that PBOI evaluates exactly; but with 5000
+scenarios SAA still loses (better on 2, worse on 9 of 30 pairs, the rest
+tied). The sample average is cached per route, so the number of iterations
+drops only from about 5300 to 4200, and the remaining gap is the sampling
+error of the objective, not a lack of search time.
+
+\begin{table}[t]\centering\small
+\caption{E15: improvement of SORTIE-0 over SAA with $S$ scenarios, $n\in\{25,35\}$,
+$B=1.10$, ten instances per measure (format as Table~\ref{tab:e3}; positive:
+SORTIE-0 better).}\label{tab:e15}
+\input{results/tables/paper/tab_e15.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e15.pdf}
+\caption{E15: ex-post value of SAA relative to SORTIE-0 against the sample
+size $S$.}\label{fig:e15}
+\end{figure}
+
+\subsection{Simpler stochastic baselines (E16)}
+Two simpler ways of taking uncertainty into account are tested on the full E3
+grid at $B=1.10$ (Table~\ref{tab:e16}). \emph{Det-$\sigma$} applies the
+deterministic ordered measure to risk-adjusted lengths $L_k+\sigma_k$, the
+fairness analogue of the robust-length heuristics common in stochastic
+routing. It is \emph{worse} than Det ($-0.8\%$, better on 37 and worse on 61 of
+125 pairs, $p=0.02$), and SORTIE-0 beats it by $1.9\%$ (97 of 125, $p<10^{-14}$).
+Adding a standard deviation to every route treats each route's risk
+separately, whereas the expected ordered measure depends on how likely each
+route is to occupy each rank, which is what the Poisson--binomial integral
+and the rank prices capture. \emph{PBOI-N} replaces the gamma marginals by
+normal ones; it performs like SORTIE-0 (no significant difference, $p=0.65$),
+so the method is insensitive to the marginal family once the first two
+moments are right.
+
+\begin{table}[t]\centering\small
+\caption{E16: risk-adjusted deterministic (Det-$\sigma$) and normal-marginal
+(PBOI-N) objectives, E3 grid, $B=1.10$ (format as Table~\ref{tab:e3}; the
+variance is omitted for PBOI-N because the expected empirical variance does
+not depend on the marginal family).}\label{tab:e16}
+\input{results/tables/paper/tab_e16.tex}
+\end{table}
+
+%E17SECTION
+
 %==========================================================================
 \section{Conclusions}\label{sec:concl}
 Fair routing under random travel times has to say whose fairness it measures.

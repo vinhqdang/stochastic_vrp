@@ -1,1 +1,5 @@
 key,experiment,instance,n,b,m,cap_div,Cstar,seed_time,restarts,solver_seed,plan_file
+e17seed|X-n101-k25-h50,e17,X-n101-k25-h50,50,0,5,4.0,7415.0,60.0,3,2026500,plans/seed_X-n101-k25-h50.json
+e17seed|X-n106-k14-h50,e17,X-n106-k14-h50,50,1,5,4.0,9767.0,60.0,3,2026501,plans/seed_X-n106-k14-h50.json
+e17seed|X-n115-k10-h50,e17,X-n115-k10-h50,50,3,5,4.0,7183.0,60.0,3,2026503,plans/seed_X-n115-k10-h50.json
+e17seed|X-n110-k13-h50,e17,X-n110-k13-h50,50,2,5,4.0,7194.0,60.0,3,2026502,plans/seed_X-n110-k13-h50.json

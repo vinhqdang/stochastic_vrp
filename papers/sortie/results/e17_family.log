@@ -1,2 +1,6 @@
 == e17 quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-10 00:53:14
 [e17] jobs total=12 already_done=0 todo=12
+[e17] 1/12 e17seed|X-n101-k25-h50 t=60s
+[e17] 2/12 e17seed|X-n106-k14-h50 t=60s
+[e17] 3/12 e17seed|X-n115-k10-h50 t=60s
+[e17] 4/12 e17seed|X-n110-k13-h50 t=60s
