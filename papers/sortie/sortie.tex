@@ -569,40 +569,238 @@ factor. With $v=0$ and $\kappa=0$ this is the X-CVRP-TSP of \citet{ljubic2026fai
 %==========================================================================
 \section{The SORTIE algorithm}\label{sec:alg}
 
+The SORTIE problem combines three difficulties: a capacitated partitioning
+problem in the upper level, a travelling salesman problem (or, for $\kappa>0$,
+a bi-criteria tour problem) for every route in the lower level, and an
+objective that is an expectation over order statistics of random variables.
+Exact methods for the deterministic special case \citep{ljubic2026fair,vanrossum2026enforcing}
+report instances with up to about 25 customers \citep{vanrossum2026enforcing};
+the stochastic objective is non-linear in the route statistics and is not
+representable in their formulations. We therefore propose a bilevel local search that keeps the
+lower level exact wherever it is applied to a plan the search accepts, and
+uses the theory of Section~\ref{sec:theory} in two places: PBOI evaluates the
+objective without sampling, and the rank prices predict the effect of a move
+before it is evaluated. This section describes the representation and lower
+level (\S\ref{sec:alg:lower}), the evaluator (\S\ref{sec:alg:eval}), the
+first-order screen (\S\ref{sec:alg:screen}), the exact confirmation that
+keeps every accepted plan bilevel feasible (\S\ref{sec:alg:confirm}), the
+ruin-and-recreate perturbation and acceptance rule (\S\ref{sec:alg:perturb}),
+and the parameters and complexity (\S\ref{sec:alg:params}).
+Algorithms~\ref{alg:sortie} and~\ref{alg:improve} give the pseudocode.
+
 \begin{algorithm}[t]
-\caption{SORTIE}\label{alg:sortie}
+\caption{SORTIE: main loop}\label{alg:sortie}
 \begin{algorithmic}[1]
-\State $P\gets$ cost-efficient plan; $P^\ast\gets P$
+\Require instance, measure $\lambda$, noise level $v$, risk weight $\kappa$, budget $B\,C^\ast$, time limit
+\State $P\gets$ cost-efficient plan; re-solve every route with the exact lower level; repair cost if $\sum_kL_k>B\,C^\ast$
+\State $P^\ast\gets P$; $T_0\gets0.02\,|\E\lord(X(P))|$; \textit{stuck}$\gets$\textsc{none}
 \While{time remains}
-  \State compute rank prices $\varpi_k$ and dispersion prices $\psi_k$ of $P$ (Prop.~\ref{prop:prices})
-  \State score every relocate and swap move by $\sum_{k\in\{a,b\}}\varpi_k\Delta L_k+\psi_k\Delta\sigma_k$ (insertion deltas)
-  \State evaluate the $K$ best-scored budget- and capacity-feasible moves with screening tours and PBOI (Thm.~\ref{thm:pboi})
-  \State confirm the improving candidates in order with the exact lower level (Thm.~\ref{thm:supported})
-  \If{a confirmed move improves $P$} apply it
-  \Else\ ruin (price-weighted or related removal, at most 12 customers) and recreate (price-scored regret-2); repair cost if over budget; confirm every changed route; accept by simulated annealing
+  \State compute rank prices $\varpi$ and dispersion prices $\psi$ of $P$ (Prop.~\ref{prop:prices})
+  \If{\textit{stuck}$\neq P$}
+    \State $P'\gets$\textsc{ImproveStep}$(P,\varpi,\psi)$ \Comment{Algorithm~\ref{alg:improve}}
+    \If{$P'\neq$\textsc{none}} $P\gets P'$; update $P^\ast$; \textbf{continue}
+    \Else\ \textit{stuck}$\gets P$
+    \EndIf
   \EndIf
+  \State $P''\gets$\textsc{RuinRecreate}$(P,\varpi,\psi)$; repair cost; confirm changed routes exactly
+  \State accept $P''$ with probability $\min\{1,\exp(-(F(P'')-F(P))/T)\}$, $T=T_0\,(10^{-3})^{\,\text{elapsed}/\text{limit}}$
   \State update $P^\ast$
 \EndWhile
 \State \Return $P^\ast$
 \end{algorithmic}
 \end{algorithm}
 
-The lower level is exact for routes of up to 15 customers (numba Held--Karp,
-memoised by customer set, about 5\,ms at 15 customers) and uses 2-opt/Or-opt from
-several starts beyond that, including a warm start built from the route's
-previous tour by cheapest insertion. Solving it for every candidate move would
-dominate the run time, so candidates are evaluated with \emph{screening tours}:
-a single warm-started 2-opt/Or-opt descent (for $\kappa>0$, inside the same
-dichotomic search). A move is applied only after both changed routes have been
-re-solved by the exact lower level and the move still improves the objective and
-respects the budget; perturbed plans are confirmed route by route in the same
-way. Every plan the search accepts therefore satisfies the bilevel constraint;
-the screening tours only decide which moves are examined. Because a screening
-tour is never shorter than the exact one, a move that improves only with exact
-tours can be missed; this costs search quality, not feasibility. The evaluator
-costs about 0.4\,ms per plan for $m=5$. Together with a cap of 12 customers on the ruin
-size, this raises the iteration rate of SORTIE-0 at $n=100$ from about 250 to
-about 1700 per minute, and at $n=75$ from about 170 to about 1800.
+\begin{algorithm}[t]
+\caption{\textsc{ImproveStep}$(P,\varpi,\psi)$: screen, evaluate, confirm}\label{alg:improve}
+\begin{algorithmic}[1]
+\For{every relocate $(i:a\to b)$ and swap $(i\in a,\,j\in b)$}
+  \State compute insertion and removal deltas $\Delta L_a,\Delta L_b,\Delta W_a,\Delta W_b$
+  \If{capacity holds and $\sum_kL_k+\Delta L_a+\Delta L_b\le(1+\epsilon_B)\,B\,C^\ast$}
+    \State $\hat\Delta\gets\varpi_a\Delta L_a+\varpi_b\Delta L_b+\psi_a\Delta\sigma_a+\psi_b\Delta\sigma_b$ \Comment{eq.~\eqref{eq:pred}}
+  \EndIf
+\EndFor
+\State $\mathcal K\gets$ the $K$ moves with the smallest $\hat\Delta$
+\For{each move in $\mathcal K$} \State re-solve routes $a,b$ with \emph{screening} tours; evaluate $F$ by PBOI \EndFor
+\For{each improving candidate, best first}
+  \State re-solve routes $a,b$ with the \emph{exact} lower level; re-evaluate $F$
+  \If{$F$ still improves and $\sum_kL_k\le B\,C^\ast$} \Return the confirmed plan \EndIf
+\EndFor
+\State \Return \textsc{none}
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Representation and lower level}\label{sec:alg:lower}
+A solution is a list of $m$ customer sequences, one per vehicle. The upper
+level is the partition; the sequence of each route is not a decision of the
+upper level but the output of the lower-level solver applied to the route's
+customer set $S$. For $\kappa=0$ the lower level returns a shortest tour of
+$\{0\}\cup S$, with ties broken by smaller quadratic length. For $|S|\le15$ it
+is solved exactly by the Held--Karp recursion \citep{heldkarp1962dynamic}
+compiled with numba, in $O(2^{|S|}|S|^2)$ time (about 5\,ms at 15
+customers); for larger sets we use 2-opt and Or-opt (segments of one to three
+customers, both orientations) from eight starts: a warm start built from the
+route's previous sequence by cheapest insertion of new customers, the
+nearest-neighbour tour, and random permutations. For $\kappa>0$ the lower
+level minimises $\rho_\kappa=L+\kappa v\sqrt W$ by the dichotomic search of
+Theorem~\ref{thm:supported}: starting from the tour minimising $L$ (ties by
+$W$) and the tour minimising $W$ (ties by $L$), it repeatedly solves the
+weighted problem with arc weights $c_{ij}+\theta d_{ij}^2$, where $\theta$ is
+the slope between two known supported tours and $d_{ij}=H_{ij}c_{ij}$ (so
+$d=c$ under homogeneous noise), until no new supported tour appears; every
+weighted problem is solved like the $\kappa=0$ case. Lower-level results are
+memoised by customer set, so a set that reappears during the search is never
+solved twice.
+
+\subsection{Evaluation}\label{sec:alg:eval}
+Given the tour lengths $L_k$ and quadratic lengths $W_k$, every route has
+mean $L_k$ and standard deviation $\sigma_k=v\sqrt{W_k}$, and its duration is
+modelled by a gamma marginal with these two moments (normal marginals are an
+option; E16 shows that the choice hardly matters). The objective
+$F(P)=\E\lord(X)$ is evaluated by the integral of Theorem~\ref{thm:pboi}. The
+integrand is smooth between the quantiles of the marginals and changes
+quickly near them, so we integrate by six-point Gauss--Legendre rules on the
+panels delimited by the quantiles of every marginal at 13 levels from
+$10^{-12}$ to $1-10^{-12}$; with $m=5$ this gives about 360 nodes. At each node
+the Poisson--binomial probability mass function of the number of routes
+finished by time $t$ is computed by the standard recursion over routes in
+$O(m^2)$, so one evaluation costs $O(Gm^2)$ for $G$ nodes, about $0.4$\,ms.
+The rank prices of Proposition~\ref{prop:prices} reuse the same nodes, with
+the mass function of the other $m-1$ routes, in $O(Gm^3)$; the dispersion
+prices $\psi_k=\partial F/\partial\sigma_k$ are obtained by forward
+differences with step $0.05\,\sigma_k$, i.e.\ $m$ further evaluations. For the
+expected empirical variance all quantities are in closed form
+(Proposition~\ref{prop:gap}). Prices are computed once per accepted plan.
+
+\subsection{First-order screening}\label{sec:alg:screen}
+The neighbourhood consists of all \emph{relocate} moves (customer $i$ from
+route $a$ to route $b$) and all \emph{swap} moves (customers $i\in a$ and
+$j\in b$ exchanged), about $n(m-1)+n^2(m-1)/(2m)$ moves in total. Evaluating
+every move exactly would require two lower-level solves and one PBOI
+evaluation per move. Instead, for every route we precompute, in vectorised
+form, the change in $L$ and $W$ caused by removing each of its customers
+(bridging its neighbours), by inserting any customer at its cheapest position,
+and by replacing each of its customers by any other customer at the cheapest
+position in the shortened route. These insertion deltas approximate the
+change of the route statistics, and the change of the objective is predicted
+to first order by the prices:
+\begin{equation}\label{eq:pred}
+\hat\Delta=\sum_{k\in\{a,b\}}\Big(\varpi_k\,\Delta L_k+\psi_k\,v\big(\sqrt{W_k+\Delta W_k}-\sqrt{W_k}\big)\Big).
+\end{equation}
+Moves that violate capacity, or whose predicted total length exceeds the
+budget by more than $\epsilon_B=2\%$, are discarded; the remaining moves are
+ranked by $\hat\Delta$ and the best $K=8$ are evaluated. By
+Proposition~\ref{prop:prices}, $\varpi_k$ is the exact derivative of $F$
+with respect to a shift of route $k$, so~\eqref{eq:pred} is the
+linearisation of $F$ in the route statistics, with the insertion deltas
+standing in for the re-optimised tours. A negative $\varpi_k$ (possible for the
+range, the GMD and the MAD) predicts a gain from \emph{lengthening} route $k$,
+which is exactly the incentive the lower level neutralises; the screen
+therefore proposes such moves, and the exact evaluation then reveals whether
+they survive the re-optimisation of the tour. E14 shows that the prediction
+ranks moves with a Spearman correlation of about $0.9$ with their exact
+effect. For the deterministic baseline the same screen is used with the
+deterministic rank prices ($\lambda$ at the rank of each route, $\psi=0$),
+for SAA with the empirical rank frequencies over the scenarios, and for
+Det-$\sigma$ with the deterministic prices of $L+\sigma$, so all methods share
+the search and differ only in the objective.
+
+\subsection{Exact confirmation}\label{sec:alg:confirm}
+The $K$ candidates are evaluated with \emph{screening tours}: a single
+2-opt/Or-opt descent from the warm start (for $\kappa>0$ inside the same
+dichotomic search, capped at 24 tours), without Held--Karp. Improving
+candidates are then confirmed in order of their screened value: both changed
+routes are re-solved by the exact lower level, the objective is re-evaluated,
+and the move is applied only if it still improves and respects the budget.
+Plans produced by the perturbation are confirmed route by route in the same
+way.
+
+\begin{proposition}[Bilevel feasibility of accepted plans]\label{prop:confirm}
+Every plan that Algorithm~\ref{alg:sortie} accepts as its current or best plan
+is capacity feasible, satisfies $\sum_kL_k\le B\,C^\ast$, and routes every
+customer set on the tour returned by the exact lower level.
+\end{proposition}
+\begin{proof}
+The start plan is re-solved by the exact lower level and repaired by cost
+descent, whose steps are themselves confirmed moves. A plan becomes current
+only through \textsc{ImproveStep}, which returns a plan only after re-solving
+the two changed routes exactly and re-checking the budget, or through the
+perturbation, whose output is accepted only after every route that differs
+from the current plan has been re-solved exactly and the budget re-checked.
+All other routes are unchanged and were exact before. Capacity is checked
+for every move and every insertion.
+\end{proof}
+
+The screening tour is never shorter than the exact one, so a move that
+improves only with exact tours can be missed; this affects the quality of the
+search, not feasibility. E14 shows that 28 of 30 final SORTIE plans admit no
+improving relocate or swap move at all, i.e.\ the search ends in genuine
+local optima of the neighbourhood. Together with a cap on the ruin size, lazy
+confirmation raises the iteration rate of SORTIE-0 at $n=100$ from about 250
+to about 1700 per minute, and at $n=75$ from about 170 to about 1800.
+
+\subsection{Perturbation and acceptance}\label{sec:alg:perturb}
+When no screened move improves the current plan, SORTIE applies a
+ruin-and-recreate perturbation. The number of removed customers $q$ is drawn
+uniformly from $\{2,\dots,\max(3,\min(12,\lceil n/4\rceil))\}$. With
+probability $1/2$ the removal pool is \emph{price-weighted}: routes are
+ordered by sampling without replacement with probabilities proportional to
+$|\varpi_k|$, and their customers are added to the pool until it holds at
+least $q$; otherwise the pool is all customers. From the pool, with
+probability $1/2$ the $q$ customers closest to a random seed customer are
+removed (related removal), otherwise $q$ random customers; no route is
+emptied. The removed customers are reinserted by \emph{price-scored regret-2
+insertion}: inserting customer $i$ at its cheapest position in route $b$ is
+scored by
+\[
+s_b(i)=\varpi_b\,\Delta L_b+\psi_b\,\Delta\sigma_b+10^{-3}\,\Delta L_b,
+\]
+the customer with the largest difference between its best and second-best
+capacity-feasible score is inserted first, and the scores of the modified
+route are updated. The small cost term breaks ties in favour of shorter
+insertions. If the result exceeds the budget it is repaired by cost descent:
+\textsc{ImproveStep} with unit prices and zero dispersion prices, so that
+$\hat\Delta$ is the change in total length, for at most 200 steps; if the
+budget cannot be met the perturbation is discarded. The repaired plan is
+confirmed exactly (\S\ref{sec:alg:confirm}) and accepted by simulated
+annealing with temperature $T=T_0(10^{-3})^{\tau}$, where $\tau$ is the
+elapsed fraction of the time limit. The initial temperature
+$T_0=0.02\,|\E\lord(X(P_0))|$ is computed from the PBOI value of the start
+plan for every method, so that Det, SAA and SORTIE accept uphill moves of the
+same absolute size.
+
+\subsection{Parameters and complexity}\label{sec:alg:params}
+Table~\ref{tab:params} lists all parameters; none was tuned per instance.
+E14 shows that the number of evaluated candidates $K$ between 1 and 32 does not
+change the median result. One improvement step costs the precomputation of
+the deltas, $O(m\,n_k^2N)$ for routes of $n_k$ customers and $N=n+1$ nodes,
+which is vectorised; the ranking of all moves, $O(n^2)$; $K$ screening
+re-solves of two routes, each a local-search descent; $K$ PBOI evaluations,
+$O(KGm^2)$; and at most a few exact re-solves. The prices cost
+$O(Gm^3)+m$ PBOI evaluations per accepted plan. On the main grid an iteration takes 7 to 9\,ms (median), and the search
+runs 2300 to 3100 iterations in 15 to 25\,s; at $n=100$ it runs about 3500
+iterations in 120\,s (E7).
+
+\begin{table}[t]\centering\small
+\caption{Parameters of SORTIE (identical for all methods and instances).}\label{tab:params}
+\begin{tabular}{llr}
+\toprule
+Component & Parameter & Value\\
+\midrule
+Lower level & exact Held--Karp up to & 15 customers\\
+ & local-search starts beyond that & 8\\
+ & screening tours & 1 descent, $\le$24 tours if $\kappa>0$\\
+Evaluator & Gauss--Legendre points per panel / quantile levels & 6 / 13\\
+ & dispersion-price step & $0.05\,\sigma_k$\\
+Screen & candidates evaluated per step $K$ & 8\\
+ & budget slack in the screen $\epsilon_B$ & 2\%\\
+Ruin & removed customers $q$ & $2$ to $\max(3,\min(12,\lceil n/4\rceil))$\\
+ & price-weighted pool / related removal & probability $1/2$ each\\
+Recreate & cost tie-breaker in $s_b(i)$ & $10^{-3}$\\
+Repair & maximum cost-descent steps & 200\\
+Annealing & initial temperature / final ratio & $0.02\,|F(P_0)|$ / $10^{-3}$\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 %==========================================================================
 \section{Computational study}\label{sec:exp}
