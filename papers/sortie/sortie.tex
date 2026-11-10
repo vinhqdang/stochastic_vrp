@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
+\usepackage{longtable}
 \usepackage{amsmath,amssymb,amsthm,booktabs,graphicx,natbib,hyperref,xcolor,algorithm,algpseudocode}
 \hypersetup{colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black}
 \newtheorem{theorem}{Theorem}
@@ -1044,6 +1045,10 @@ slices of one benchmark file with five vehicles.
 fairness, in which unfairness can be compensated across days, and
 time-dependent travel times.
 
+\bibliographystyle{plainnat}
+\bibliography{lit/references}
+
+\clearpage
 \appendix
 \section{Per-instance results}\label{app:tables}
 
@@ -1053,8 +1058,15 @@ time-dependent travel times.
 every instance, measure and budget.}\label{fig:heatmap}
 \end{figure}
 
-%APPENDIX_TABLES
+Tables~\ref{tab:app_e3_110} and~\ref{tab:app_e3_105} list the out-of-sample
+ex-post value of every E3 plan, Table~\ref{tab:app_e7b} the seed means and
+standard deviations of E7b%APP_E17REF
+. Every plan is stored in the released plan cache and can be re-evaluated
+with the released simulator.
 
-\bibliographystyle{plainnat}
-\bibliography{lit/references}
+\input{results/tables/paper/app_e3_B110.tex}
+\input{results/tables/paper/app_e3_B105.tex}
+\input{results/tables/paper/app_e7b.tex}
+%APP_E17
+
 \end{document}
