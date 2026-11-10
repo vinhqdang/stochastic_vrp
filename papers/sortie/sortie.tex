@@ -474,8 +474,8 @@ homogeneous of degree two and $\E Y^2=e^{s_Y^2}$.
 \end{proof}
 
 \begin{corollary}[Additive shocks]\label{cor:additive}
-If $\Phi=X+Z\mathbf 1$ for a random variable $Z$ independent of $X$ with
-finite mean (for example, a fleet-wide delay at the depot), then
+If $\Phi=X+Z\mathbf 1$ for a random variable $Z$ with finite mean, and
+$\E\lord(X)$ exists (for example, a fleet-wide delay at the depot), then
 $\E\lord(\Phi)=\E\lord(X)+\E Z\sum_j\lambda_j$. In particular every dispersion
 measure is unaffected, and the expected maximum shifts by $\E Z$ for every
 plan alike.
@@ -510,7 +510,7 @@ is applied to the positive and negative parts of $\lambda$ separately.
 \end{proof}
 
 \begin{corollary}[Maximum, minimum and range]\label{cor:special}
-Under the assumptions of Theorem~\ref{thm:pboi},
+Under the assumptions of Theorem~\ref{thm:pboi}, and if the means are finite,
 \[
 \E\max_kX_k=\int_0^\infty\Big(1-\prod_kF_k(t)\Big)dt,\qquad
 \E\min_kX_k=\int_0^\infty\prod_k\big(1-F_k(t)\big)dt,
@@ -562,7 +562,9 @@ gives the integral. The ranks form a permutation, so $\sum_k\Prob(R_k=j)=1$.
 \end{proof}
 
 \begin{proposition}[Convexity and first-order bound]\label{prop:convex}
-Let $\lambda$ be nondecreasing and $F(\delta)=\E\lord(X+\delta)$ for
+Under the assumptions of Proposition~\ref{prop:prices} (independent
+durations with densities and finite means), let $\lambda$ be nondecreasing
+and $F(\delta)=\E\lord(X+\delta)$ for
 $\delta\in\mathbb{R}^m$. Then $F$ is convex and differentiable with
 $\nabla F(0)=\varpi$, so that for every shift $\delta$
 \[
@@ -585,7 +587,8 @@ because the means are distinct.
 Proposition~\ref{prop:convex} explains the role of the rank prices in the
 search. For a pure shift of route durations, the linear prediction
 $\sum_k\varpi_k\delta_k$ is a \emph{lower bound} on the true change, and the
-error is of second order. A move changes the variances as well; the
+error is $o(\|\delta\|)$ (of second order for fixed $\sigma>0$ and smooth
+densities; the curvature grows like $1/\sigma$ as the noise vanishes). A move changes the variances as well; the
 dispersion prices $\psi_k=\partial F/\partial\sigma_k$ account for that to
 first order. In the deterministic limit the prices reduce to the weight of
 each route's rank, which is how the deterministic screen of the baseline is
@@ -626,8 +629,8 @@ sharply: it is exponentially small when the expected lengths are well
 separated and of the order of the standard deviation when they are equal.
 
 \begin{proposition}[Balance amplifies the illusion]\label{prop:balance}
-Let $X_k=L_k+\sigma_kZ_k$ with $Z_1,\dots,Z_m$ independent standard normal,
-$\bar\sigma=\max_k\sigma_k$, and $\lambda$ nondecreasing.
+Let $m\ge2$, $X_k=L_k+\sigma_kZ_k$ with $Z_1,\dots,Z_m$ independent standard
+normal, $\bar\sigma=\max_k\sigma_k>0$, and $\lambda$ nondecreasing.
 \begin{enumerate}
 \item[(a)] If $L_1=\dots=L_m$ and $\sigma_1=\dots=\sigma_m=\sigma$, then
 $\E\lord(X)-\lord(L)=\sigma\sum_j\lambda_j\mu_{j:m}$, where $\mu_{j:m}$ is the
@@ -729,9 +732,11 @@ weights $c_{ij}+\theta H_{ij}^2c_{ij}^2$.
 \end{proof}
 
 \begin{corollary}[Effort and monotonicity in $\kappa$]\label{cor:kappa}
-(a) If a customer set has $s$ supported extreme tours, the dichotomic search
-solves $2s-1$ weighted tour problems.
-(b) Let $r_\kappa$ and $r_{\kappa'}$ minimise $\rho_\kappa$ and $\rho_{\kappa'}$ with
+(a) If a customer set has $s\ge2$ supported extreme tours with unique
+minimisers of every weighted problem, the dichotomic search solves $2s-1$
+weighted tour problems (two if $s=1$), counting the two lexicographic
+end-point problems.
+(b) Let $v>0$, and let $r_\kappa$ and $r_{\kappa'}$ minimise $\rho_\kappa$ and $\rho_{\kappa'}$ with
 $\kappa<\kappa'$. Then $W(r_{\kappa'})\le W(r_\kappa)$ and $L(r_{\kappa'})\ge L(r_\kappa)$:
 more risk-averse drivers choose tours that are longer but less variable.
 \end{corollary}
@@ -765,7 +770,8 @@ For every noise level $v\ge0$, the SORTIE problem with the maximum measure and
 $\kappa=0$ is NP-hard, and so is the lower level for a single customer set.
 \end{proposition}
 \begin{proof}
-Take $m=1$, $B=\infty$ and no capacity limit. Then the only partition is
+Take $m=1$, any $B\ge1$ and no capacity limit (with one vehicle the budget
+holds automatically). Then the only partition is
 $S_1=V'$, $\E\max_kX_k=\E X_1=L(r_1)$, and $r_1$ must be a shortest tour of
 $\{0\}\cup V'$: solving the problem, or its lower level, solves the
 travelling salesman problem.
