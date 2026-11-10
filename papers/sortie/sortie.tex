@@ -987,6 +987,40 @@ not depend on the marginal family).}\label{tab:e16}
 
 %E17SECTION
 
+\subsection{Managerial insights}\label{sec:insights}
+The experiments support five statements a planner can act on.
+
+\emph{(i) Report realised, not planned, fairness.} A deterministic fair plan
+understates the unfairness its drivers will experience by $8$--$27\%$ at a
+moderate noise level, by more with more vehicles (E10) and more noise (E6),
+and the understatement is not uniform across plans. PBOI computes the
+realised value in under a millisecond, so it can be reported for any plan,
+whatever method produced it.
+
+\emph{(ii) Do not spend the budget on deterministic balance.} With generous
+budgets a deterministic fair model spends the slack to equalise route
+lengths, which does little for realised fairness and can make it worse (E9).
+The ex-post objective uses less of the budget and achieves more: up to $7\%$
+lower expected range with a total length $3.4$ percentage points closer to
+$C^\ast$ at $B=1.30$.
+
+\emph{(iii) Risk adjustment is not a substitute.} Adding a safety margin to
+each route and then balancing (Det-$\sigma$) is worse than doing nothing
+(E16). What matters is the probability that each route ends up the longest or
+the shortest, which is what the rank prices measure.
+
+\emph{(iv) More scenarios are not a substitute either.} Sample average
+approximation needs thousands of scenarios to approach the exact objective
+and still loses at 5000 (E15). The exact integral takes $0.4$\,ms per plan,
+whereas the 200-scenario average takes $0.06$\,ms, so a 5000-scenario average
+would, extrapolating linearly, cost several times more than PBOI.
+
+\emph{(v) Keep the shortest-tour requirement.} Without it, a fairness
+objective buys balance by sending drivers on detours (E4), which is exactly
+the behaviour the bilevel formulation of \citet{ljubic2026fair} was designed
+to exclude; under uncertainty it must be imposed explicitly, and the
+risk-consistent variant changes few tours in practice (E13).
+
 %==========================================================================
 \section{Conclusions}\label{sec:concl}
 Fair routing under random travel times has to say whose fairness it measures.
