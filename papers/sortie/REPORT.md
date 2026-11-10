@@ -260,7 +260,8 @@ Each method is represented by its mean ex-post value over seeds.
 | **1.30** | **+6.8% / +6.7%** | **30 / 0** | 1.256 vs **1.222** |
 
 - The gain grows with the budget.
-- SORTIE uses *less* of the budget. For the max, Det reaches 1.205·C\* at
+- For B ≥ 1.15 SORTIE uses *less* of the budget (below that, lengths agree
+  within 0.3 points). For the max, Det reaches 1.205·C\* at
   B = 1.30 and gets worse than at B = 1.20; SORTIE stays at 1.135.
 - B = 1.10 here differs from the same cells in E3 (range: −0.7% vs +0.9%).
   The runs differ only in wall-clock timing, so this is search noise from the
@@ -324,14 +325,14 @@ misspecification and correlation.
 | 50 | 1.35% | 22 / 3 | 0.001 |
 | 200 | 1.57% | 24 / 1 | 2e-5 |
 | 1000 | 1.09% | 15 / 3 | 0.003 |
-| 5000 | 0.91% | 9 / 2 | 0.05 |
+| 5000 | 0.91% | 9 / 2 | 0.0505 (n.s.) |
 
 ### E16 — simpler baselines (E3 grid, B = 1.10)
 
 | Method vs Det | Mean | Better / worse | p |
 |---|---|---|---|
 | Det-σ (ordered measure of L + σ) | **−0.81%** | 37 / 61 | 0.02 |
-| PBOI-normal | +1.10% | 71 / 3 | |
+| PBOI-normal (100 pairs, no Var) | +1.10% | 71 / 3 | |
 | SORTIE-0 | +1.23% | 81 / 7 | |
 
 - SORTIE-0 beats Det-σ by 1.86% (97 / 8).
@@ -340,14 +341,14 @@ misspecification and correlation.
 ### E17 — second benchmark family (12 X instances, depot + first 50 customers, 2 seeds)
 
 - **Det belief error:** −40% for the range, −35% for the GMD, −8% for the
-  max.
+  max, against −23%, −19% and −8% on the sliced instances at the same B.
 - **Improvement over Det:**
 
   | Method | Mean | Median | Better / worse (of 36) | p |
   |---|---|---|---|---|
   | SORTIE-0 | **+2.16%** | +1.74% | **31 / 5** | 1e-7 |
   | SAA | +0.74% | | | |
-  | Det-σ | −0.84% | | | |
+  | Det-σ | −0.84% | | 13 / 23 | 0.15 (n.s.) |
 
 - SORTIE-0 is positive on **all 12 instances** (+0.7% to +4.2%) and beats SAA
   on 33 of 36 pairs.
@@ -363,8 +364,9 @@ misspecification and correlation.
    The gain grows with budget slack (6.8% at B = 1.30, using less length) and
    with fleet size (3.2% at m = 7). It survives four noise models, including
    correlated noise.
-3. **Simple alternatives fail.** Det-σ is worse than Det. SAA needs thousands
-   of scenarios and still loses at 5000.
+3. **Simple alternatives fail.** Det-σ is worse than Det in E16 (p = 0.02)
+   and in E17 on average (not significant). SAA is significantly worse up to
+   1000 scenarios and still worse on average at 5000 (p = 0.05).
 4. **Rank prices are a good first-order model.** They give ρ ≈ 0.9, a top-8
    hit rate of 80%, and plans 6–9% better than random screening.
 5. **The bilevel constraint matters.** Without it, fairness is bought with

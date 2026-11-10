@@ -52,9 +52,9 @@ In seventeen experiments on two benchmark families, optimising ex-post
 fairness improves realised fairness by about $1\%$ at the standard budget,
 $2\%$ on a second family of twelve CVRPLIB instances (better on all twelve),
 and up to $7\%$ at generous budgets, where it also uses less of the budget. It
-beats sample average approximation with up to 5000 scenarios and a
-risk-adjusted deterministic baseline, which is worse than ignoring
-uncertainty altogether. Rank-price screening ranks moves with a Spearman
+significantly beats sample average approximation with up to 1000 scenarios,
+and a risk-adjusted deterministic baseline, which does no better than
+ignoring uncertainty. Rank-price screening ranks moves with a Spearman
 correlation of about $0.9$ with their exact effect, and without the lower
 level nearly all range-optimised plans buy fairness with detours.
 \end{abstract}
@@ -578,8 +578,8 @@ when one instance dominates (Var, $B=1.10$, SORTIE-1).}\label{tab:e3}
 
 \paragraph{An illustrative instance.} Figure~\ref{fig:routes} shows the
 cost-optimal plan and the range-optimised Det and SORTIE-0 plans of
-X641-n30-b0 at $B=1.10$, the instance whose SORTIE-0 gain is closest to the
-median of the 25 instances ($+0.5\%$). The cost plan leaves one driver with a
+X641-n30-b0 at $B=1.10$, an instance whose SORTIE-0 gain ($+0.47\%$) is
+close to the median of the 25 instances ($+0.54\%$). The cost plan leaves one driver with a
 route of length 148 and another with 2610. Both fair plans balance the
 lengths to a deterministic range of about 940, and they differ only in how
 two route pairs are split. Figure~\ref{fig:workloads} shows what the drivers
@@ -819,14 +819,15 @@ instance--measure pairs. With little slack every fair plan is close to the
 cost-optimal one and there is little room to choose; with more slack there
 are many plans whose deterministic range is about equal but whose realised
 range differs, and only the ex-post objective can tell them apart. Second,
-SORTIE-0 uses \emph{less} of the budget. At $B=1.30$ the Det plans for the
+for $B\ge1.15$ SORTIE-0 uses \emph{less} of the budget (below that the total
+lengths agree within $0.3$ percentage points). At $B=1.30$ the Det plans for the
 maximum have a total length $20.5\%$ above $C^\ast$ and an expected realised
 maximum $5.2\%$ below that of the cost plan; the SORTIE-0 plans use $13.5\%$
 and achieve $8.7\%$. For the maximum the deterministic objective even
 deteriorates from $B=1.20$ to $B=1.30$: the extra length it buys goes into
 routes whose deterministic length is irrelevant to the maximum but whose
-variance raises the realised one. The price of fairness is therefore lower
-under the ex-post objective, at every budget level we tested.
+variance raises the realised one. At every budget level the ex-post objective reaches lower realised
+unfairness, and for generous budgets it does so with less total length.
 
 The same cells at $B=1.10$ appear in E3, and the per-cell means differ (for
 example $-0.7\%$ for the range in E9 against $+0.9\%$ in E3 on the
@@ -858,8 +859,9 @@ a deterministic plan understates its range by $10\%$ with three vehicles,
 $24\%$ with five and $27\%$ with seven. More routes compete for the extreme
 ranks, so more of the realised unfairness comes from which route happens to
 be longest on the day, which a deterministic model cannot see. The gain of
-SORTIE-0 grows accordingly, from $0.5\%$ ($m=3$) and $0.6\%$ ($m=5$) to
-$3.2\%$ with seven vehicles (better on 13 of 15 pairs). With $m=3$ the GMD is
+SORTIE-0 is small with three and five vehicles ($0.5\%$ and $0.6\%$; with
+$m=5$ not significant on these 15 pairs, $p=0.06$) and $3.2\%$ with seven
+(better on 13 of 15 pairs, $p=0.001$). With $m=3$ the GMD is
 proportional to the range ($4/9$ of it), so the two rows coincide.
 
 \begin{table}[t]\centering\small
@@ -880,7 +882,7 @@ dispersions $s_Y\in\{0,0.15,0.3,0.5\}$, using the same arc draws
 (Table~\ref{tab:e11}, Figure~\ref{fig:e11}). As Proposition~\ref{prop:common}
 predicts, the expected ordered measures are unchanged: the ratio of the value
 with and without the day factor is $1.000$ up to Monte Carlo error (at most
-$1.0006$ on average, at $s_Y=0.5$). The expected empirical variance is
+$1.0007$ on average, at $s_Y=0.5$). The expected empirical variance is
 multiplied by $1.023$, $1.095$ and $1.285$, against $e^{s_Y^2}=1.023$, $1.094$
 and $1.284$. The tail is a different matter: the CVaR$_{0.9}$ of the realised
 range grows by $7\%$, $25\%$ and $58\%$. A fleet-wide shock is irrelevant for
@@ -903,7 +905,9 @@ ordered measures, the expected variance and the CVaR of the range.}\label{fig:e1
 \subsection{Robustness to the noise model (E12)}
 PBOI assumes independent route durations with given means and variances,
 and SORTIE was tuned to gamma arc noise. E12 re-evaluates the $B=1.10$ plans
-of E3 (500 plans) and E8 (300 plans) under four arc-noise families with the
+of E3 (500 plans) under four arc-noise families, and those of E8 (300 plans)
+under the first two (the other two cannot reach the low per-arc variability
+of the uncongested arcs of E8) with the
 same mean and coefficient of variation per arc: gamma (the planning model),
 lognormal (heavier right tail), \emph{incident} (with probability $0.02$ an
 arc takes $2.5$ times as long, the rest of the variability being gamma), and
@@ -918,7 +922,7 @@ a bias of $+1.4\%$ (it overstates unfairness) and a worst case of $9.5\%$; under
 worst case of $20\%$ for the variance measure, the one most affected by
 correlation. What matters for planning is that the ranking of plans survives:
 under every family SORTIE-0 remains significantly better than Det, by $1.0\%$
-to $1.2\%$ on the E3 plans and $1.5\%$ on the E8 plans, against $1.2\%$ and
+to $1.2\%$ on the E3 plans and $1.5\%$ on the E8 plans (gamma and lognormal), against $1.2\%$ and
 $1.5\%$ under the planning model.
 
 \begin{table}[t]\centering\small
@@ -1009,12 +1013,12 @@ the $K$ best predicted moves.}\label{fig:e14topk}
 \subsection{Is a larger sample enough? (E15)}
 A natural objection is that SAA with 200 scenarios is simply too small. E15
 reruns SAA with $S\in\{50,200,1000,5000\}$ scenarios on the $n\in\{25,35\}$
-instances (Table~\ref{tab:e15}, Figure~\ref{fig:e15}). SORTIE-0 beats every
-SAA variant: by $1.4\%$ ($S=50$), $1.6\%$ ($S=200$), $1.1\%$ ($S=1000$) and
-$0.9\%$ ($S=5000$). The gap shrinks as the sample grows, as it should, since
-SAA converges to the objective that PBOI evaluates exactly; but with 5000
-scenarios SAA still loses (better on 2, worse on 9 of 30 pairs, the rest
-tied). The sample average is cached per route, so the number of iterations
+instances (Table~\ref{tab:e15}, Figure~\ref{fig:e15}). SORTIE-0 is better than every
+SAA variant on average: by $1.4\%$ ($S=50$), $1.6\%$ ($S=200$), $1.1\%$
+($S=1000$) and $0.9\%$ ($S=5000$), significantly for $S\le1000$. The gap shrinks as the sample grows, as it should, since
+SAA converges to the objective that PBOI evaluates exactly; with 5000
+scenarios SAA is still worse on 9 pairs and better on 2 (the rest tied), but
+the difference is no longer significant at the $5\%$ level ($p=0.0505$). The sample average is cached per route, so the number of iterations
 drops only from about 5300 to 4200, and the remaining gap is the sampling
 error of the objective, not a lack of search time.
 
@@ -1066,13 +1070,14 @@ mean ex-post value over its seeds (Tables~\ref{tab:e17}
 and~\ref{tab:e17inst}, Figure~\ref{fig:e17}).
 
 The results are stronger than on the sliced instances. The illusion reaches
-$40\%$ for the range and $35\%$ for the GMD, against $18\%$ and $15\%$ on the
-sliced instances; plausibly the file's own depot, which is often eccentric,
+$40\%$ for the range and $35\%$ for the GMD, against $23\%$ and $19\%$ on the
+sliced instances at the same budget; plausibly the file's own depot, which is often eccentric,
 makes the routes differ more in variance than a block depot does. SORTIE-0 improves on Det by $2.2\%$ on average
 (median $1.7\%$; better on 31 and worse on 5 of 36 pairs, $p<10^{-6}$), with a
 positive average on every one of the twelve instances ($0.7\%$ to $4.2\%$).
 SAA improves by $0.7\%$, and SORTIE-0 beats it on 33 of 36 pairs
-($p<10^{-7}$). Det-$\sigma$ is again worse than Det ($-0.8\%$). The
+($p<10^{-7}$). Det-$\sigma$ is again worse than Det on average ($-0.8\%$; better on 13 and
+worse on 23 pairs, not significant here, $p=0.15$). The
 conclusions of E3 and E16 thus carry over to instances with other depot
 positions and customer distributions, with larger effects.
 
@@ -1109,9 +1114,10 @@ whatever method produced it.
 \emph{(ii) Do not spend the budget on deterministic balance.} With generous
 budgets a deterministic fair model spends the slack to equalise route
 lengths, which does little for realised fairness and can make it worse (E9).
-The ex-post objective uses less of the budget and achieves more: up to $7\%$
-lower expected range with a total length $3.4$ percentage points closer to
-$C^\ast$ at $B=1.30$.
+The ex-post objective achieves more and, with generous budgets, uses less:
+at $B=1.30$ its expected unfairness is $6.8\%$ lower on average ($7.6\%$ for
+the range) and its total length $3.4$ percentage points closer to $C^\ast$ on
+average, mostly because of the maximum.
 
 \emph{(iii) Risk adjustment is not a substitute.} Adding a safety margin to
 each route and then balancing (Det-$\sigma$) is worse than doing nothing
@@ -1119,8 +1125,9 @@ each route and then balancing (Det-$\sigma$) is worse than doing nothing
 the shortest, which is what the rank prices measure.
 
 \emph{(iv) More scenarios are not a substitute either.} Sample average
-approximation needs thousands of scenarios to approach the exact objective
-and still loses at 5000 (E15). The exact integral takes $0.4$\,ms per plan,
+approximation needs thousands of scenarios to approach the exact objective,
+and with 5000 it is still worse on average, though no longer significantly
+(E15). The exact integral takes $0.4$\,ms per plan,
 whereas the 200-scenario average takes $0.06$\,ms, so a 5000-scenario average
 would, extrapolating linearly, cost several times more than PBOI.
 
@@ -1166,7 +1173,7 @@ length), with more vehicles ($3\%$ with seven) and on instances whose depot is
 not a block corner ($2.2\%$, better on all twelve instances of the second
 family). It survives misspecified and spatially correlated noise, it is not
 reproduced by a risk-adjusted deterministic model, which is worse than the
-plain one, and a sample average with 5000 scenarios does not reach it.
+plain one, and a sample average needs thousands of scenarios to come close.
 On instances with 100 customers the faster search makes the improvement
 over the deterministic plan statistically significant when search noise is
 averaged over three seeds and the 18 instance--measure pairs are pooled
