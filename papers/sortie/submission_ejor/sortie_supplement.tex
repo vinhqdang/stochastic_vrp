@@ -1,0 +1,753 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[natbibapa]{apacite}
+\renewcommand{\doiprefix}{https://doi.org/}
+\usepackage{amsmath,amssymb,booktabs,graphicx,xcolor,algorithm,algpseudocode,longtable}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{figures/}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\lord}{\ell_\lambda}
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thealgorithm}{S\arabic{algorithm}}
+\title{Online Supplement to\\[3pt]
+\textbf{Fair vehicle routing with random route durations: ex-post ordered
+fairness, rank prices and risk-consistent tours}}
+\author{Quang-Vinh Dang, Hoang-Viet Vu, Phuc-Son Nguyen}
+\date{}
+\begin{document}
+\maketitle
+\noindent This supplement contains the detailed pseudocode and parameters of
+the algorithm (Section~\ref{sec:salg}), the complete computational study with
+all seventeen experiments E1--E17 and their tables and figures
+(Section~\ref{sec:sexp}), and per-instance results
+(Section~\ref{app:tables}). Numbers of sections, propositions, theorems,
+tables and figures without the prefix S refer to the main paper.
+
+\section{Algorithm details}\label{sec:salg}
+Algorithm~\ref{alg:improve} details the improvement step of the main loop
+(Algorithm~1 of the main paper), and Table~\ref{tab:params} lists all
+parameters; they are identical for all methods and instances.
+
+\begin{algorithm}[t]
+\caption{\textsc{ImproveStep}$(P,\varpi,\psi)$: screen, evaluate, confirm}\label{alg:improve}
+\begin{algorithmic}[1]
+\For{every relocate $(i:a\to b)$ and swap $(i\in a,\,j\in b)$}
+  \State compute insertion and removal deltas $\Delta L_a,\Delta L_b,\Delta W_a,\Delta W_b$
+  \If{capacity holds and $\sum_kL_k+\Delta L_a+\Delta L_b\le(1+\epsilon_B)\,B\,C^\ast$}
+    \State $\hat\Delta\gets\varpi_a\Delta L_a+\varpi_b\Delta L_b+\psi_a\Delta\sigma_a+\psi_b\Delta\sigma_b$ \Comment{eq.~the prediction formula of Section~5.3}
+  \EndIf
+\EndFor
+\State $\mathcal K\gets$ the $K$ moves with the smallest $\hat\Delta$
+\For{each move in $\mathcal K$} \State re-solve routes $a,b$ with \emph{screening} tours; evaluate $F$ by PBOI \EndFor
+\For{each improving candidate, best first}
+  \State re-solve routes $a,b$ with the \emph{exact} lower level; re-evaluate $F$
+  \If{$F$ still improves and $\sum_kL_k\le B\,C^\ast$} \Return the confirmed plan \EndIf
+\EndFor
+\State \Return \textsc{none}
+\end{algorithmic}
+\end{algorithm}
+
+\begin{table}[t]\centering\small
+\caption{Parameters of SORTIE (identical for all methods and instances).}\label{tab:params}
+\begin{tabular}{llr}
+\toprule
+Component & Parameter & Value\\
+\midrule
+Lower level & exact Held--Karp up to & 15 customers\\
+ & local-search starts beyond that & 8\\
+ & screening tours & 1 descent, $\le$24 tours if $\kappa>0$\\
+Evaluator & Gauss--Legendre points per panel / quantile levels & 6 / 13\\
+ & dispersion-price step & $0.05\,\sigma_k$\\
+Screen & candidates evaluated per step $K$ & 8\\
+ & budget slack in the screen $\epsilon_B$ & 2\%\\
+Ruin & removed customers $q$ & $2$ to $\max(3,\min(12,\lceil n/4\rceil))$\\
+ & price-weighted pool / related removal & probability $1/2$ each\\
+Recreate & cost tie-breaker in $s_b(i)$ & $10^{-3}$\\
+Repair & maximum cost-descent steps & 200\\
+Annealing & initial temperature / final ratio & $0.02\,|F(P_0)|$ / $10^{-3}$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Extended computational study}\label{sec:sexp}
+
+\subsection{Set-up}
+\paragraph{Instances.} We follow the slicing rule of the deterministic fair
+routing literature \citep{ljubic2026fair}. Block $b$ of size $n$ consists of the
+depot and the $n$ consecutive customers $bn+1,\dots,(b+1)n$ of CVRPLIB
+X-n641-k35 \citep{uchoa2017new}, with ceiled Euclidean distances, $m=5$
+vehicles and capacity $Q=\lfloor\sum_i q_i/4\rfloor$, so one vehicle's worth
+of slack is available. The main grid uses $n\in\{15,20,25,30,35\}$ and blocks
+$b=0,\dots,4$ (25 instances); the scale test uses $n\in\{50,75,100\}$ and
+blocks $0$--$5$; the exactness test uses ten instances with $n=10$, $m=3$ and
+$Q=\lfloor\sum_i q_i/2.4\rfloor$.
+
+\paragraph{Uncertainty.} Unless stated otherwise $v=0.3$ (gamma arc noise) and
+$s_Y=0.15$. In the congestion experiment (E8) the arc coefficient of variation
+is $vH_{ij}$, where $H_{ij}\in[1/3,2]$ is largest for arcs near a randomly
+drawn congestion centre, so noise is no longer proportional to length.
+
+\paragraph{Budget.} $C^\ast$ is the cost of the best of three restarts of
+the cost-minimising search; the total length of every fair plan must satisfy
+$\sum_k L_k\le B\,C^\ast$ with $B\in\{1.05,1.10\}$.
+
+\paragraph{Methods.} All methods share the search of Algorithm~1,
+the start plan, the time limit (15\,s for $n\le25$, 25\,s for $n\ge30$, 120\,s
+for $n\ge50$) and the random seed. They differ only in the objective and in the
+lower level.
+\emph{Det} minimises the deterministic ordered measure $\lord(L)$ of the tour
+lengths, i.e.\ the model of \citet{ljubic2026fair} solved heuristically.
+\emph{SAA} minimises the sample average of $\lord(X)$ over 200 fixed arc
+scenarios. \emph{SORTIE-0} minimises the exact ex-post value by PBOI with
+TSP-optimal tours ($\kappa=0$); \emph{SORTIE-1} uses the risk-consistent lower
+level with $\kappa=1$. In Det and SAA the moves are screened by the
+deterministic and the sample objective respectively.
+
+\paragraph{Evaluation.} Every plan is evaluated out of sample by arc-level
+Monte Carlo with $20\,000$ scenarios ($10\,000$ for $n\ge 50$), including the
+day factor, with common random numbers across methods. The reported
+\emph{ex-post value} is the Monte Carlo estimate of $\E\lord(\Phi)$. Paired
+comparisons use the Wilcoxon signed-rank test. All tables are generated from
+the raw results by the released scripts.
+
+\subsection{Accuracy and cost of the evaluator (E1, E2)}
+Table~\ref{tab:e1} compares PBOI with $50\,000$-sample arc-level Monte Carlo
+on 168 plans: the cost-efficient plans and random feasible plans whose
+routes are sequenced by the lower level, for $n\in\{15,25,35,50\}$. The mean absolute
+relative error is below $0.11\%$ for all five measures and at most $0.44\%$ in
+the worst case, and 99--100\% of the differences lie within three Monte Carlo
+standard errors. The mean $z$-scores are not exactly zero (up to $0.34$ for the
+MAD): PBOI carries a systematic bias of a few hundredths of a percent, which
+we attribute to the moment-matched gamma marginal of each route (a sum of arc
+gammas with different scales is not exactly gamma). PBOI takes $0.44$\,ms per plan for $m=5$, against
+$0.28$\,s for $20\,000$-scenario Monte Carlo. A 200-scenario SAA is about
+seven times faster than PBOI but is a noisy estimate. The advantage of PBOI is
+therefore that it is exact and noise-free at a cost compatible with thousands
+of evaluations per second, not raw speed.
+
+\begin{table}[t]\centering\small
+\caption{E1: PBOI against arc-level Monte Carlo ($50\,000$ samples) on 168 plans; $z$: difference over its Monte Carlo standard error.}\label{tab:e1}
+\input{tables/tab_e1.tex}
+\end{table}
+
+On the ten $n=10$ instances we enumerated all capacity- and budget-feasible
+partitions (4 to 145 per instance) with exact Held--Karp tours. The cost
+search found the optimal $C^\ast$ on all ten. For both range and GMD, SORTIE-0
+found the plan with the smallest exact ex-post value on nine of ten
+instances (mean gap $0.39\%$, maximum $3.9\%$). Det found the deterministic
+optimum on nine of ten; on the tenth instance, which has only 20
+budget-feasible partitions, it stopped at a plan with twice the optimal
+deterministic range.
+
+\subsection{The fairness illusion and the value of ex-post optimisation (E3)}
+Table~\ref{tab:illusion} quantifies Proposition~9. A
+deterministic fair plan believes its unfairness is the ex-ante value, which
+understates the true ex-post value by $8\%$ for the maximum, $15$--$18\%$ for
+the range, GMD and MAD, and $27\%$ for the variance. The in-sample SAA value is optimistic by
+about $1\%$, which is the optimiser's curse on 200 scenarios. The PBOI value
+believed by SORTIE has a mean signed error below $0.1\%$, a mean absolute
+error of $0.07$--$0.23\%$ and a worst case of $1\%$.
+
+\begin{table}[t]\centering\small
+\caption{E3: what each method believes its unfairness is, relative to the
+true ex-post value (Monte Carlo without the day factor, which is what each
+model represents), mean signed error over 50 runs per cell. Last column:
+largest absolute error of the PBOI prediction for any method's plan.}\label{tab:illusion}
+\input{tables/tab_illusion.tex}
+\end{table}
+
+Table~\ref{tab:e3} reports the out-of-sample ex-post value relative to Det.
+The signed-rank test favours SORTIE-0 and SORTIE-1 over Det in 9 of the 10
+cells each. Pooled over all 250 runs, SORTIE-0 improves on Det by $0.89\%$ on
+average (median $0.23\%$; better in 141 runs, tied in 96, worse in 13;
+$p<10^{-18}$) and SORTIE-1 by $0.77\%$ (better in 154, worse in 31). SAA
+improves by only $0.14\%$ (median zero; better in 115, worse in 74) and is
+favoured significantly in 3 cells. Head to head, SORTIE-0 beats SAA in 145
+runs and loses in 15, and SORTIE-1 beats it in 147 and loses in 27
+($p<10^{-17}$). The largest gains are for the maximum at
+$B=1.10$ ($2.1\%$, 24 of 25 instances), where the extra budget lets the
+planner trade a slightly longer but less variable longest route.
+
+The improvements are small, about one percent on average, and this is itself
+a finding. With homogeneous
+noise ($\sigma_k^2=v^2W_k$) the standard deviation of a route grows with its
+length, so the plans that balance lengths also nearly balance risks, and a
+deterministic fair plan is close to ex-post optimal even though its
+\emph{assessment} of its own fairness is badly wrong. For context, the
+cost-optimal plan has an ex-post range of 2087 against about 1340 for the fair
+plans, at a cost $6.5\%$ higher: fairness itself is worth optimising; the
+stochastic refinement adds about one percent on top. For range-optimised plans
+the CVaR$_{0.9}$ of the realised range, which none of the methods optimises, is
+2054 for Det, 2059 for SAA, 2037 for SORTIE-0 and 2032 for SORTIE-1; both
+SORTIE variants improve it at both budgets, SAA at neither.
+
+\begin{table}[t]\centering\small
+\caption{E3: improvement of the out-of-sample ex-post value over Det (mean
+\%, positive is better; in brackets the number of instances on which the
+method is strictly better). $^\ast$: Wilcoxon signed-rank $p<0.05$ in favour
+of the method; the test is on ranks and can disagree in sign with the mean
+when one instance dominates (Var, $B=1.10$, SORTIE-1).}\label{tab:e3}
+\input{tables/tab_e3.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{e3_improvement.pdf}
+\caption{E3, $B=1.10$: per-instance improvement of the ex-post value over Det.}\label{fig:e3}
+\end{figure}
+
+\paragraph{An illustrative instance.} Figure~\ref{fig:routes} shows the
+cost-optimal plan and the range-optimised Det and SORTIE-0 plans of
+X641-n30-b0 at $B=1.10$, an instance whose SORTIE-0 gain ($+0.47\%$) is
+close to the median of the 25 instances ($+0.54\%$). The cost plan leaves one driver with a
+route of length 148 and another with 2610. Both fair plans balance the
+lengths to a deterministic range of about 940, and they differ only in how
+two route pairs are split. Figure~\ref{fig:workloads} shows what the drivers
+experience. The realised workloads are wide and right-skewed, and the
+expected realised range is about 1225 for both fair plans: 30\% above the
+deterministic range the Det planner reports. Figure~\ref{fig:rangedist} gives
+the distribution of the realised range of the two plans; in one day out of
+ten it exceeds 1750. The worst instance for SORTIE-0 in this cell is
+X641-n35-b0, where Det is $7.5\%$ better (Figure~\ref{fig:heatmap} in
+Appendix~\ref{app:tables}); this is consistent with the search noise
+documented in E7b rather than a systematic effect, since on the same instance
+SORTIE-0 is better or tied in eight of the other nine cells.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_routes.pdf}
+\caption{X641-n30-b0, $B=1.10$: cost-optimal plan and the range-optimised Det
+and SORTIE-0 plans. $L_k$: tour lengths.}\label{fig:routes}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_workloads.pdf}
+\caption{Simulated realised workloads $\Phi_k=YX_k$ of the three plans of
+Figure~\ref{fig:routes} ($20\,000$ days); diamonds mark the tour lengths
+$L_k$ that a deterministic model sees.}\label{fig:workloads}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{fig_rangedist.pdf}
+\caption{Distribution of the realised range of the Det and SORTIE-0 plans of
+Figure~\ref{fig:routes}; dashed: deterministic range of the tour lengths,
+solid: expected realised range.}\label{fig:rangedist}
+\end{figure}
+
+\paragraph{How tight is the illusion bound?} Figure~\ref{fig:bound} plots the
+gap between the true ex-post value and the ex-ante value of every Det plan
+against the bound of Proposition~9. No plan violates the bound.
+The bound is conservative: the realised gap is on average $33\%$ of the
+bound for the maximum, $18\%$ for the range and $11$--$12\%$ for the GMD and
+MAD, because it charges every route its full standard deviation while only
+the routes near the extreme ranks matter. Its value is that it is computable
+from the quadratic lengths alone and grows like $v\sqrt{\sum_kW_k}$, which is
+the scaling observed in E6.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{fig_illusion_bound.pdf}
+\caption{Fairness illusion of the Det plans of E3 (true ex-post minus
+ex-ante value) against the bound $\|\lambda\|_1v(\sum_kW_k)^{1/2}$ of
+Proposition~9.}\label{fig:bound}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{fig_cost_fairness.pdf}
+\caption{E3, range-optimised plans: total length relative to $C^\ast$ against
+the expected realised range relative to that of the cost-optimal plan.}\label{fig:costfair}
+\end{figure}
+
+\subsection{Route consistency (E4)}
+E4 removes the lower level: the planner may sequence each route freely
+(\emph{free}) instead of using the TSP-optimal tour (\emph{lower}). For the
+maximum, free sequencing changes almost nothing, as monotonicity predicts in
+the deterministic case. For the range and the GMD the free planner lengthens
+the short routes: 23 of 25 Det plans and 24 of 25 SORTIE plans for the range
+contain a route that is not a shortest tour of its customers; the excess
+length is 95 (Det) and 113 (SORTIE) distance units on average over the runs
+that have one. This lowers the ex-post value by $1$--$3\%$ for Det
+on both measures and for SORTIE on the range (Table~\ref{tab:e4}); for SORTIE
+on the GMD it is $0.9\%$ worse, because the larger space slows the search. Wherever it helps, the reduction
+comes from making some drivers drive detours. This is exactly the behaviour signalled by negative rank prices
+and excluded by the bilevel constraint. The deterministic belief error persists
+with free tours ($-24\%$ for the range); the PBOI belief remains exact.
+
+\begin{table}[t]\centering\small
+\caption{E4: free tours against lower-level tours, $B=1.10$, 25 instances per
+row. $^a$Runs with at least one route that is not a shortest tour of its
+customers. $^b$Mean number of such routes. Excess: total length above the
+shortest tours of the same customer sets. Belief err: believed minus true
+ex-post value. Ex-post: out-of-sample ex-post value.}\label{tab:e4}
+\input{tables/tab_e4.tex}
+\end{table}
+
+\subsection{Rank-price screening (E5)}
+Replacing the price screen by $K=8$ random feasible moves, with everything else
+unchanged, gives slightly more iterations (3200 against 2700) but worse plans: price
+screening lowers the ex-post value by $5.6\%$ for the range and $8.5\%$ for the
+GMD on average (medians $0\%$ and $5.4\%$; better on 12 and 17 of 25
+instances, worse on 3 and 2, ties otherwise; $p=0.005$ and $p<10^{-3}$). For
+the range the mean is driven by a few instances on which random screening
+stalls far from a good plan; for the GMD the advantage is broad. The
+rank prices are thus an effective first-order guide for the search, and not
+only an interpretive device.
+
+\subsection{Noise level (E6)}
+Table~\ref{tab:e6} varies $v$ for $n=25$. The illusion grows monotonically with $v$, as the bound of
+Proposition~9 suggests: at $v=0.5$
+a deterministic plan understates its range by $43\%$. The gain of SORTIE over
+Det also grows with $v$ for the range, from $-0.5\%$ at $v=0.1$ (where the
+illusion is small and the differences are search noise) to $2.1\%$ at $v=0.5$
+(better on all five instances); for the GMD it is $1.1\%$, $0.7\%$ and $1.8\%$.
+
+\begin{table}[t]\centering\small
+\caption{E6: arc noise $v$, $n=25$, $B=1.10$, five instances per row.}\label{tab:e6}
+\input{tables/tab_e6.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.48\textwidth]{illusion_range.pdf}\hfill
+\includegraphics[width=0.48\textwidth]{e6_illusion_v.pdf}
+\caption{Left: range believed by Det (ex-ante) and by SORTIE (PBOI) against
+the true expected range, E3. Right: share of the true ex-post unfairness that
+a deterministic plan does not see, against $v$ (E6).}\label{fig:illusion}
+\end{figure}
+
+\subsection{Larger instances (E7, E7b)}
+E7 runs $n\in\{50,75,100\}$ on six blocks each, with a 120\,s limit, for the
+range, GMD and maximum (18 instance--measure pairs per size). With the
+screening lower level the search runs about 9000 iterations per run at
+$n=50$ and 3500 at $n=100$ for SORTIE-0 (Det: 15\,000 and 4400). PBOI remains
+accurate (mean absolute error $0.15\%$, at most $0.9\%$) and the deterministic
+belief error is $-17\%$ on average, as on the small instances.
+
+Table~\ref{tab:e7} pools the 18 pairs per size. SORTIE-0 improves on Det by
+about $2\%$ at every size and is better on 12--13 of 18 pairs; the improvement
+is significant at $n=50$ ($p=0.035$) but not at $n=75$ or $n=100$
+($p=0.17$). SORTIE-1 is significant at $n=50$ but not beyond: its lower level
+runs a dichotomic search per route and completes only about 850 iterations at
+$n=100$, and $56\%$ of its runs there ($39\%$ at $n=75$) still improved by
+more than $0.5\%$ in the second half of the time limit. Single runs at $n\ge75$ are thus dominated by search
+noise, especially for the range and the GMD, whose value depends on a few
+routes.
+
+E7b separates the method from the search noise at $n=100$: the six instances
+and three measures are solved by Det, SAA and SORTIE-0 with three solver seeds
+each and a 240\,s limit, and each method is represented by the mean ex-post
+value over its seeds (Table~\ref{tab:e7b}). Averaged over seeds, SORTIE-0
+improves on Det by $4.2\%$ (median $2.5\%$, better on 13 of 18 pairs,
+$p=0.021$); SAA improves by $3.2\%$ ($p=0.10$). The difference between
+SORTIE-0 and SAA ($1.1\%$, 12 of 18) is not significant ($p=0.25$), and no
+single measure is significant on six instances. The seed-to-seed variation is
+itself informative: for the range, the ex-post value of the Det plan varies by
+$11\%$ across seeds, that of SORTIE-0 by $3\%$. The deterministic range is flat
+over many plans whose realised fairness differs, and the search picks among
+them arbitrarily; the ex-post objective distinguishes them. Even at 240\,s,
+19\% of the SORTIE-0 runs improved their in-model value by more than
+$0.5\%$ in the second half of the run, so the absolute values at $n=100$ are
+not fully converged.
+
+\begin{table}[t]\centering\small
+\caption{E7: improvement of the ex-post value over Det, $B=1.10$, 120\,s,
+pooled over six instances and three measures (range, GMD, max); format as
+Table~\ref{tab:e3}.}\label{tab:e7}
+\input{tables/tab_e7_pooled.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{E7b, $n=100$, $B=1.10$, 240\,s, three solver seeds: improvement of
+the seed-averaged ex-post value over Det (six instances per measure; format as
+Table~\ref{tab:e3}) and coefficient of variation of the ex-post value across
+seeds, averaged over instances.}\label{tab:e7b}
+\input{tables/tab_e7b.tex}
+\end{table}
+
+Figure~\ref{fig:convergence} shows the anytime behaviour behind these
+numbers, and Figure~\ref{fig:seeds} the seed-to-seed spread at $n=100$.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_convergence.pdf}
+\caption{E7: best in-model value relative to the final value over the run
+(median and interquartile range over the 18 runs per method and size).}\label{fig:convergence}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e7b_seeds.pdf}
+\caption{E7b, $n=100$: ex-post value of each solver seed, relative to the mean
+Det value of the instance; larger markers: seed means.}\label{fig:seeds}
+\end{figure}
+
+\subsection{Heterogeneous noise: congestion (E8)}
+E3 suggests that the stochastic refinement matters little when a route's
+variance is proportional to its length. E8 breaks that proportionality: arcs
+near a congestion centre have up to twice the base coefficient of variation
+and arcs far from it a third. We rerun the main grid ($B=1.10$; range, GMD
+and max) on the congested versions of the same 25 instances, starting from
+the same cost plans.
+
+The illusion becomes somewhat larger: a deterministic plan understates its
+range by $26\%$, its GMD by $22\%$ and its maximum by $10\%$, against $23\%$,
+$19\%$ and $9\%$ on the same cells under homogeneous noise. The PBOI belief
+has a mean signed error below $0.2\%$ (mean absolute error at most
+$0.26\%$).
+The gain of optimising ex-post fairness, however, grows only slightly
+(Table~\ref{tab:e8}). Pooled over 75 runs, SORTIE-0 improves on Det by
+$1.51\%$ (median $1.24\%$; better in 53, worse in 3; $p<10^{-8}$) and
+SORTIE-1 by $1.66\%$ (better in 57, worse in 10), against $1.36\%$ for
+SORTIE-0 on the same cells without congestion. By measure the change is
+$0.94\%\to1.40\%$ for the GMD, $2.08\%\to2.15\%$ for the maximum and
+$1.07\%\to0.96\%$ for the range. SAA gains $1.28\%$, but with a median of only
+$0.47\%$, and SORTIE-0 beats it head to head in 49 of 75 runs (worse in 6;
+$p<10^{-6}$). The CVaR$_{0.9}$ of the range is 1919 for Det, 1905 for SAA,
+1912 for SORTIE-0 and 1907 for SORTIE-1. Heterogeneous noise thus makes a
+deterministic plan's self-assessment much worse, but in our instances it
+changes the best plan only a little more than homogeneous noise does: the
+congested arcs are concentrated in one part of the network, and the
+assignment that balances lengths still roughly balances risk there.
+
+\begin{table}[t]\centering\small
+\caption{E8: congested arc noise, $B=1.10$, 25 instances per row;
+improvement of the ex-post value over Det (format as Table~\ref{tab:e3}).}\label{tab:e8}
+\input{tables/tab_e8.tex}
+\end{table}
+
+
+%==========================================================================
+Figure~\ref{fig:congestion} shows the congestion multiplier on the
+illustrative instance, and Figure~\ref{fig:e8e3} pairs every instance and
+measure with and without congestion: the points scatter around the diagonal,
+with the GMD above it and the range on both sides.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_congestion.pdf}
+\caption{X641-n30-b0 with congestion: customers coloured by the mean noise
+multiplier $H$ of their arcs, with the range-optimised Det and SORTIE-0 plans of E8.}\label{fig:congestion}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{fig_e8_vs_e3.pdf}
+\caption{Improvement of SORTIE-0 over Det per instance and measure, without
+(E3) and with (E8) congestion, $B=1.10$.}\label{fig:e8e3}
+\end{figure}
+
+\subsection{The budget frontier (E9)}
+E9 repeats the comparison of Det and SORTIE-0 on the 10 instances with
+$n\in\{25,35\}$ for budget factors $B$ from $1.02$ to $1.30$
+(Table~\ref{tab:e9}, Figure~\ref{fig:frontier}). Two effects stand out. First,
+the gain of SORTIE-0 grows with the budget: from about $1\%$ for $B\le1.10$ to
+$3.2\%$ at $B=1.15$ and $6.8\%$ at $B=1.30$, where SORTIE-0 is better on all 30
+instance--measure pairs. With little slack every fair plan is close to the
+cost-optimal one and there is little room to choose; with more slack there
+are many plans whose deterministic range is about equal but whose realised
+range differs, and only the ex-post objective can tell them apart. Second,
+for $B\ge1.15$ SORTIE-0 uses \emph{less} of the budget (below that the total
+lengths agree within $0.3$ percentage points). At $B=1.30$ the Det plans for the
+maximum have a total length $20.5\%$ above $C^\ast$ and an expected realised
+maximum $5.2\%$ below that of the cost plan; the SORTIE-0 plans use $13.5\%$
+and achieve $8.7\%$. For the maximum the deterministic objective even
+deteriorates from $B=1.20$ to $B=1.30$: the extra length it buys goes into
+routes whose deterministic length is irrelevant to the maximum but whose
+variance raises the realised one. At every budget level the ex-post objective reaches lower realised
+unfairness, and for generous budgets it does so with less total length.
+
+The same cells at $B=1.10$ appear in E3, and the per-cell means differ (for
+example $-0.7\%$ for the range in E9 against $+0.9\%$ in E3 on the
+same ten instances). The runs are identical except for wall-clock
+timing: the search stops at a time limit, so the iteration at which it stops,
+and hence the plan, can differ between two executions on a shared machine.
+This is another manifestation of the search noise analysed in E7b, and the
+reason we draw conclusions only from pooled comparisons.
+
+\begin{table}[t]\centering\small
+\caption{E9: improvement of the ex-post value of SORTIE-0 over Det by budget
+factor, $n\in\{25,35\}$, ten instances per measure; cost ratio: mean
+$\sum_kL_k/C^\ast$ of the SORTIE-0 plans (format as Table~\ref{tab:e3}).}\label{tab:e9}
+\input{tables/tab_e9.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e9_frontier.pdf}
+\caption{E9: price of fairness. Mean total length relative to $C^\ast$
+against the mean expected realised unfairness relative to the cost-optimal
+plan, for budget factors $B$ from 1.02 to 1.30 (labels).}\label{fig:frontier}
+\end{figure}
+
+\subsection{Fleet size (E10)}
+E10 varies the number of vehicles on the $n=35$ instances, with capacity
+$\lfloor\sum_iq_i/(m-1)\rfloor$ so that one vehicle's worth of slack remains
+(Table~\ref{tab:e10}, Figure~\ref{fig:e10}). The illusion grows with $m$:
+a deterministic plan understates its range by $10\%$ with three vehicles,
+$24\%$ with five and $27\%$ with seven. More routes compete for the extreme
+ranks, so more of the realised unfairness comes from which route happens to
+be longest on the day, which a deterministic model cannot see. The gain of
+SORTIE-0 is small with three and five vehicles ($0.5\%$ and $0.6\%$; with
+$m=5$ not significant on these 15 pairs, $p=0.06$) and $3.2\%$ with seven
+(better on 13 of 15 pairs, $p=0.001$). With $m=3$ the GMD is
+proportional to the range ($4/9$ of it), so the two rows coincide.
+
+\begin{table}[t]\centering\small
+\caption{E10: fleet size, $n=35$, five instances per measure, $B=1.10$
+(format as Table~\ref{tab:e3}).}\label{tab:e10}
+\input{tables/tab_e10.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e10.pdf}
+\caption{E10: belief error of Det and improvement over Det against the
+number of vehicles.}\label{fig:e10}
+\end{figure}
+
+\subsection{Common shocks in practice (E11)}
+E11 re-evaluates all 500 E3 plans with $B=1.10$ under day-factor
+dispersions $s_Y\in\{0,0.15,0.3,0.5\}$, using the same arc draws
+(Table~\ref{tab:e11}, Figure~\ref{fig:e11}). As Proposition~3
+predicts, the expected ordered measures are unchanged: the ratio of the value
+with and without the day factor is $1.000$ up to Monte Carlo error (at most
+$1.0007$ on average, at $s_Y=0.5$). The expected empirical variance is
+multiplied by $1.023$, $1.095$ and $1.285$, against $e^{s_Y^2}=1.023$, $1.094$
+and $1.284$. The tail is a different matter: the CVaR$_{0.9}$ of the realised
+range grows by $7\%$, $25\%$ and $58\%$. A fleet-wide shock is irrelevant for
+the choice of a plan by expected ordered fairness, but not for the risk of a
+very unfair day.
+
+\begin{table}[t]\centering\small
+\caption{E11: ratio of each measure with the day factor to its value without,
+mean $\pm$ standard deviation over the 500 E3 plans with $B=1.10$.}\label{tab:e11}
+\resizebox{\textwidth}{!}{\input{tables/tab_e11.tex}}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e11.pdf}
+\caption{E11: effect of the day-factor dispersion $s_Y$ on the expected
+ordered measures, the expected variance and the CVaR of the range.}\label{fig:e11}
+\end{figure}
+
+
+\subsection{Robustness to the noise model (E12)}
+PBOI assumes independent route durations with given means and variances,
+and SORTIE was tuned to gamma arc noise. E12 re-evaluates the $B=1.10$ plans
+of E3 (500 plans) under four arc-noise families, and those of E8 (300 plans)
+under the first two (the other two cannot reach the low per-arc variability
+of the uncongested arcs of E8) with the
+same mean and coefficient of variation per arc: gamma (the planning model),
+lognormal (heavier right tail), \emph{incident} (with probability $0.02$ an
+arc takes $2.5$ times as long, the rest of the variability being gamma), and
+\emph{regional} (a multiplicative factor shared by all arcs whose tail lies in
+the same quadrant of the plane, which makes routes in the same region
+positively correlated and so violates the independence that PBOI assumes)
+(Table~\ref{tab:e12}, Figure~\ref{fig:e12}).
+
+The accuracy of PBOI degrades gracefully. Under lognormal noise its mean
+absolute error rises from $0.16\%$ to $0.29\%$; under incidents to $1.4\%$, with
+a bias of $+1.4\%$ (it overstates unfairness) and a worst case of $9.5\%$; under regional correlation to $1.9\%$, with a
+worst case of $20\%$ for the variance measure, the one most affected by
+correlation. What matters for planning is that the ranking of plans survives:
+under every family SORTIE-0 remains significantly better than Det, by $1.0\%$
+to $1.2\%$ on the E3 plans and $1.5\%$ on the E8 plans (gamma and lognormal), against $1.2\%$ and
+$1.5\%$ under the planning model.
+
+\begin{table}[t]\centering\small
+\caption{E12: noise-model misspecification. PBOI error of the gamma-based
+prediction against the true expected value under each family, and
+improvement of SORTIE-0 over Det evaluated under that family (format as
+Table~\ref{tab:e3}).}\label{tab:e12}
+\resizebox{\textwidth}{!}{\input{tables/tab_e12.tex}}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e12.pdf}
+\caption{E12: PBOI error and improvement of SORTIE-0 over Det under four
+arc-noise families.}\label{fig:e12}
+\end{figure}
+
+
+\subsection{Risk attitude of the drivers (E13)}
+E13 solves the $n\in\{25,35\}$ instances with the risk-consistent lower level
+for $\kappa\in\{0,0.5,1,2,4\}$ (Table~\ref{tab:e13}, Figure~\ref{fig:e13}).
+Under homogeneous noise the risk-consistent tour rarely differs from the
+shortest one: even at $\kappa=4$ only $14$--$16\%$ of the routes change, and
+the extra length is about 13 distance units per plan, under $0.2\%$ of the
+total. The ex-post value changes by less than the search noise (median ratio
+to $\kappa=0$ equal to one, interquartile range within $\pm1\%$). The reason is
+that, for a fixed customer set, a tour's length and its quadratic length are
+nearly comonotone: the shortest tour is also nearly the least variable one.
+Proposition~11 shows that this need not be so, and with
+heterogeneous noise the two can separate, but on these instances the choice of
+$\kappa$ is a matter of the drivers' preferences rather than of fairness.
+
+\begin{table}[t]\centering\small
+\caption{E13: risk-consistent lower level, $n\in\{25,35\}$, $B=1.10$, ten
+instances per row. Routes changed: share of routes whose tour differs from
+the shortest tour of the same customers; extra length: total, per plan; mean
+risk: mean of $L_k+v\sqrt{W_k}$.}\label{tab:e13}
+\resizebox{\textwidth}{!}{\input{tables/tab_e13.tex}}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e13.pdf}
+\caption{E13: effect of the drivers' risk weight $\kappa$.}\label{fig:e13}
+\end{figure}
+
+\subsection{Why the rank prices work (E14)}
+E14 checks the first-order model behind the screen directly. For the
+cost-optimal start plan and the final SORTIE-0 plan of the ten
+$n\in\{25,35\}$ instances, we evaluated up to 400 relocate and swap moves
+both by the rank-price prediction and exactly (exact lower level and PBOI);
+5577 moves in total (Table~\ref{tab:e14}, Figures~\ref{fig:e14scatter}
+and~\ref{fig:e14topk}). The prediction ranks the moves almost as the exact
+evaluation does: Spearman's $\rho$ is $0.89$--$0.94$ on the start plans and
+$0.78$--$0.89$ on the final plans. On the start plans the exact-best improving
+move is among the 8 best predicted moves in $80\%$ of the cases (random
+ordering: $7\%$) and always among the 21 best. On the final plans of SORTIE-0
+there is no improving relocate or swap move in 28 of 30 cases: the search
+ends in genuine local optima of its neighbourhood. Consistently, the number of
+candidates $K$ evaluated per step barely matters (Table~\ref{tab:e14k}): the
+median ex-post value is the same for $K$ from 1 to 32.
+
+\begin{table}[t]\centering\small
+\caption{E14: rank-price prediction against exact evaluation. Groups:
+(instance, plan) pairs with at least one exactly improving move; top-8 hit:
+share of those groups in which the exact-best improving move is among the 8
+best predicted moves (in brackets: expected share under a random order).}\label{tab:e14}
+\resizebox{\textwidth}{!}{\input{tables/tab_e14.tex}}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{E14: number of candidates $K$ evaluated per step; ex-post value
+relative to $K=8$, median and interquartile range over 20 instance--measure
+pairs.}\label{tab:e14k}
+\input{tables/tab_e14k.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e14_scatter.pdf}
+\caption{E14: predicted (rank prices) against exact change of the
+objective for 5577 moves.}\label{fig:e14scatter}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.55\textwidth]{fig_e14_topk.pdf}
+\caption{E14: share of cases in which the exact-best improving move is among
+the $K$ best predicted moves.}\label{fig:e14topk}
+\end{figure}
+
+\subsection{Is a larger sample enough? (E15)}
+A natural objection is that SAA with 200 scenarios is simply too small. E15
+reruns SAA with $S\in\{50,200,1000,5000\}$ scenarios on the $n\in\{25,35\}$
+instances (Table~\ref{tab:e15}, Figure~\ref{fig:e15}). SORTIE-0 is better than every
+SAA variant on average: by $1.4\%$ ($S=50$), $1.6\%$ ($S=200$), $1.1\%$
+($S=1000$) and $0.9\%$ ($S=5000$), significantly for $S\le1000$. The gap shrinks as the sample grows, as it should, since
+SAA converges to the objective that PBOI evaluates exactly; with 5000
+scenarios SAA is still worse on 9 pairs and better on 2 (the rest tied), but
+the difference is no longer significant at the $5\%$ level ($p=0.0505$). The sample average is cached per route, so the number of iterations
+drops only from about 5300 to 4200, and the remaining gap is the sampling
+error of the objective, not a lack of search time.
+
+\begin{table}[t]\centering\small
+\caption{E15: improvement of SORTIE-0 over SAA with $S$ scenarios, $n\in\{25,35\}$,
+$B=1.10$, ten instances per measure (format as Table~\ref{tab:e3}; positive:
+SORTIE-0 better).}\label{tab:e15}
+\input{tables/tab_e15.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e15.pdf}
+\caption{E15: ex-post value of SAA relative to SORTIE-0 against the sample
+size $S$.}\label{fig:e15}
+\end{figure}
+
+\subsection{Simpler stochastic baselines (E16)}
+Two simpler ways of taking uncertainty into account are tested on the full E3
+grid at $B=1.10$ (Table~\ref{tab:e16}). \emph{Det-$\sigma$} applies the
+deterministic ordered measure to risk-adjusted lengths $L_k+\sigma_k$, the
+fairness analogue of the robust-length heuristics common in stochastic
+routing. It is \emph{worse} than Det ($-0.8\%$, better on 37 and worse on 61 of
+125 pairs, $p=0.02$), and SORTIE-0 beats it by $1.9\%$ (97 of 125, $p<10^{-14}$).
+Adding a standard deviation to every route treats each route's risk
+separately, whereas the expected ordered measure depends on how likely each
+route is to occupy each rank, which is what the Poisson--binomial integral
+and the rank prices capture. \emph{PBOI-N} replaces the gamma marginals by
+normal ones; it performs like SORTIE-0 (no significant difference, $p=0.65$),
+so the method is insensitive to the marginal family once the first two
+moments are right.
+
+\begin{table}[t]\centering\small
+\caption{E16: risk-adjusted deterministic (Det-$\sigma$) and normal-marginal
+(PBOI-N) objectives, E3 grid, $B=1.10$ (format as Table~\ref{tab:e3}; the
+variance is omitted for PBOI-N because the expected empirical variance does
+not depend on the marginal family).}\label{tab:e16}
+\input{tables/tab_e16.tex}
+\end{table}
+
+\subsection{A second benchmark family (E17)}\label{sec:e17}
+All instances so far are slices of one file, and slicing places the depot at
+the first node of each block. E17 tests twelve further CVRPLIB X instances of
+\citet{uchoa2017new} (X-n101-k25 to X-n153-k22), which were generated with
+different depot positions and customer distributions. From each we take the depot of the file and its
+first 50 customers, keep $m=5$ and the capacity rule $Q=\lfloor\sum_iq_i/4\rfloor$,
+and solve range, GMD and maximum at $B=1.10$ with Det, SAA, SORTIE-0 and
+Det-$\sigma$, 120\,s and two solver seeds; each method is represented by the
+mean ex-post value over its seeds (Tables~\ref{tab:e17}
+and~\ref{tab:e17inst}, Figure~\ref{fig:e17}).
+
+The results are stronger than on the sliced instances. The illusion reaches
+$40\%$ for the range and $35\%$ for the GMD, against $23\%$ and $19\%$ on the
+sliced instances at the same budget; plausibly the file's own depot, which is often eccentric,
+makes the routes differ more in variance than a block depot does. SORTIE-0 improves on Det by $2.2\%$ on average
+(median $1.7\%$; better on 31 and worse on 5 of 36 pairs, $p<10^{-6}$), with a
+positive average on every one of the twelve instances ($0.7\%$ to $4.2\%$).
+SAA improves by $0.7\%$, and SORTIE-0 beats it on 33 of 36 pairs
+($p<10^{-7}$). Det-$\sigma$ is again worse than Det on average ($-0.8\%$; better on 13 and
+worse on 23 pairs, not significant here, $p=0.15$). The
+conclusions of E3 and E16 thus carry over to instances with other depot
+positions and customer distributions, with larger effects.
+
+\begin{table}[t]\centering\small
+\caption{E17: second benchmark family (12 X instances, depot plus first 50
+customers), $B=1.10$, 120\,s, mean of two solver seeds; improvement of the
+ex-post value over Det (format as Table~\ref{tab:e3}).}\label{tab:e17}
+\input{tables/tab_e17.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{E17 per instance: depot position, $C^\ast$ and the improvement of
+SORTIE-0 over Det pooled over the three measures.}\label{tab:e17inst}
+\input{tables/tab_e17_inst.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_e17.pdf}
+\caption{E17: improvement of SORTIE-0 over Det per instance (mean over
+measures and seeds), coloured by depot position.}\label{fig:e17}
+\end{figure}
+
+
+
+\clearpage
+\section{Per-instance results}\label{app:tables}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.9\textwidth]{fig_heatmap_e3.pdf}
+\caption{E3: improvement of the ex-post value of SORTIE-0 over Det (\%) for
+every instance, measure and budget.}\label{fig:heatmap}
+\end{figure}
+
+Tables~\ref{tab:app_e3_110} and~\ref{tab:app_e3_105} list the out-of-sample
+ex-post value of every E3 plan, Table~\ref{tab:app_e7b} the seed means and
+standard deviations of E7b, and Table~\ref{tab:app_e17} the E17 values per instance and measure
+. Every plan is stored in the released plan cache and can be re-evaluated
+with the released simulator.
+
+\input{tables/app_e3_B110.tex}
+\input{tables/app_e3_B105.tex}
+\input{tables/app_e7b.tex}
+\input{tables/app_e17.tex}
+
+
+\bibliographystyle{apacite}
+\bibliography{references}
+\end{document}

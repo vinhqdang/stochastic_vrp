@@ -1,0 +1,47 @@
+\documentclass[11pt]{letter}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\signature{Quang-Vinh Dang\\School of Computing, British University Vietnam, Hung Yen, Vietnam\\vinh.dq4@buv.edu.vn}
+\address{}
+\begin{document}
+\begin{letter}{The Editors\\European Journal of Operational Research}
+\opening{Dear Editors,}
+
+On behalf of my co-authors, Hoang-Viet Vu and Phuc-Son Nguyen, I submit the
+manuscript \emph{Fair vehicle routing with random route durations: ex-post
+ordered fairness, rank prices and risk-consistent tours} for consideration as
+a Theory and Methodology paper in the area of Production, Manufacturing,
+Transportation and Logistics (first keyword: Routing).
+
+Fair vehicle routing balances drivers' workloads with ordered measures of
+route lengths, and recent exact work requires every route to be a shortest
+tour of its customers. All of this work assumes deterministic travel times,
+whereas drivers experience realised durations. Our paper studies fair routing
+when travel times are random. We separate ex-ante from ex-post fairness and
+prove that deterministic fair plans systematically overstate the fairness
+drivers experience, with a bound that shows the gap is largest exactly for
+balanced plans. We give an exact, sampling-free integral for the expected
+value of any ordered measure of independent route durations, derive rank
+prices as its gradient, show that route consistency must be imposed
+explicitly under uncertainty, and characterise risk-consistent tours as
+supported Pareto tours. A bilevel local search builds on these results.
+
+Seventeen experiments on two families of CVRPLIB instances show that
+deterministic fair plans understate realised unfairness by 8 to 40 percent,
+that optimising realised fairness improves it consistently (up to 7 percent
+with generous budgets, while using less of the budget), and that it
+outperforms sample average approximation and a risk-adjusted deterministic
+model, which turns out to be no better than ignoring uncertainty.
+
+We believe the paper fits EJOR's scope through its methodological
+contributions to stochastic and fair routing and its practical message for
+planners: realised fairness should be reported and optimised, and it can be,
+at a cost of under a millisecond per plan. The manuscript is original, has not
+been published, and is not under consideration elsewhere; all authors have
+approved the submission. An Online Supplement contains the complete
+computational study and per-instance results.
+
+\closing{Yours sincerely,}
+\end{letter}
+\end{document}

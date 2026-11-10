@@ -3,6 +3,10 @@
 - **Title (working):** SORTIE: Stochastic Ordered Route fairness with
   Tour-consistency via Integral Evaluation — fair vehicle routing when
   route durations are random.
+- **Target venue (decided 2026-11-10):** European Journal of Operational
+  Research, Theory and Methodology (Routing). Submission package in
+  `submission_ejor/` (see its README for the upload list and the items to
+  confirm). Not yet submitted; once submitted, freeze this directory.
 - **State:** ACTIVE — research prototype. Theory (`THEORY.md`), code
   (`code/`), experiments (`results/`) and report (`REPORT.md`) in place.
   Not submitted anywhere. Open for edits.
