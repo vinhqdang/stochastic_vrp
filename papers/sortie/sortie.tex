@@ -144,81 +144,236 @@ up to 100 customers.
 %==========================================================================
 \section{Literature review}\label{sec:lit}
 
-\paragraph{Workload equity in deterministic routing.}
-\citet{matl2018workload} survey equity measures for routing workloads and show
-that their monotonicity governs whether optimal plans can contain needlessly
-inefficient routes; \citet{matl2019impact} study how the choice of workload
-resource changes balanced plans, and \citet{matl2019leveraging} approximate
-cost--balance Pareto fronts. Min-max routing has a long exact tradition
-\citep{applegate2002solution,bertazzi2015minmax}, and bi-objective route balancing
-is solved exactly by \citet{halvorsen2016biobjective}; $\ell_p$ norms as fairness
-measures appear in \citet{bektas2020lp}. Recent work on non-monotone and
-ordered objectives includes branching rules for range and order-based objectives
-\citep{vanrossum2024branching,vanrossum2026efficient}, cutting planes that enforce
-TSP-optimality for the range \citep{vanrossum2026enforcing}, route-cost equity
-constraints \citep{agius2026solution}, Gini-bounded mTSP variants
-\citep{bhadoriya2026equitable}, fair cooperative fleets \citep{lopezsanchez2024fair},
-driver satisfaction \citep{bruinink2025beyond}, multi-period equity
-\citep{nekooghadirli2026workload} and workload/pay design for heterogeneous or
-crowdsourced drivers \citep{mahmoodian2025equitable,sobhanan2026equity}. The
-ordered machinery comes from location theory
-\citep{nickel2005location,ogryczak2000inequality,blanco2024intra,ljubic2024benders,blanco2026optimization},
-the ordered median TSP \citep{ljubic2026ordered}, OWA
-\citep{yager1988owa,ogryczak2003solving} and top-$k$ sums
-\citep{ogryczak2003minimizing}. Closest to us, \citet{ljubic2026fair} propose a
-unified ordered framework with per-vehicle TSP-optimality through bilevel
-optimisation. All of these works are deterministic.
+SORTIE sits at the intersection of four literatures: workload equity in
+deterministic vehicle routing, inequity-averse optimisation with ordered
+measures, fairness under uncertainty, and routing with stochastic travel
+times. We review each in turn, stating for the closest works what they model,
+how they solve it and what they leave open, and close with the tools we
+borrow from probability and multicriteria optimisation.
+Table~\ref{tab:positioning} summarises the positioning.
 
-\paragraph{Fairness under uncertainty.}
-In routing, \citet{kinable2026fair} study a stochastic VRP with partial deliveries
-where fairness is among \emph{customers} (expected fill rates) under uncertain
-demand, and \citet{gao2026sequential} combine sequential fair allocation and
-routing with ex-post max-min objectives across locations. Consistency in the
-sense of the consistent VRP (same driver, similar arrival times) is treated
-under stochastic customers and demands by \citet{alvarez2024consistent} and with
-robust demand by \citet{wu2025exact}, following
-\citet{groer2009consistent,kovacs2015generalized,yu2024consistent}; this notion differs from
-the TSP-optimality consistency studied here. For drivers, \citet{anh2022workload}
-bound workload differences in task assignment with a distributionally robust
-chance constraint and \citet{lin2022robust} add robust workload fairness to
-two-echelon meal-delivery routing; gig and rideshare work considers fairness of
-assignment probabilities and matching under stochastic arrivals
-\citep{singh2023fairassign,basik2021fair,nanda2020balancing,hosseini2025algorithmic}.
-The ex-ante/ex-post distinction is established in welfare economics
-\citep{fleurbaey2012exante}, in inequity-averse stochastic optimisation
-\citep{gutjahr2021inequity}, in Gini-based stochastic shelter location and
-humanitarian logistics \citep{mostajabdaveh2019inequity,alem2022revisiting,mostajabdaveh2025branch}
-and in sequential allocation \citep{sinclair2023sequential}; see also
-\citet{shehadeh2023reducing,tsang2026unified,ye2024distributionally,barak2026exante}.
-To our knowledge no paper optimises an ordered measure of \emph{random route
-durations}, separates its ex-ante and ex-post versions, or defines route
-consistency for random travel times.
+\subsection{Workload equity in deterministic routing}
 
-\paragraph{Stochastic travel times.}
-A-priori routing with random travel times goes back to
-\citet{laporte1992vehicle} and \citet{kenyon2003stochastic}, the latter with
-makespan-type objectives; see \citet{gomez2016modeling,adulyasak2016models,
-errico2016apriori,errico2018vehicle,zhang2013stochastic,ehmke2015ensuring,osoriomora2025riskaverse}
-and the surveys \citet{oyola2018part1,gendreau2016future}. Correlated travel
-times are handled by \citet{rostami2021branch,bakach2021solving,
-rajabibahaabadi2021reliable,bomboi2022stochastic}, robust and distributionally robust
-variants by \citet{han2014robust,jaillet2016routing,zhang2021distribution,ghosal2020distributionally},
-and SAA by \citet{verweij2003sample}. Mean--risk path choice
-\citep{nikolova2014meanrisk,sen2001meanvariance} motivates our driver-level
-consistency criterion. CVaR \citep{rockafellar2000optimization,rockafellar2002conditional}
-and the price of fairness \citep{bertsimas2011price,mo2000fair} complete the
-background.
+The systematic study of balanced routing starts with
+\citet{matl2018workload}, who compare the equity functions used in the
+literature (min-max, range, mean absolute deviation, Gini-type
+measures and others) on the same instances. Their central observation is
+that the measures differ in \emph{monotonicity}: a measure that is not
+monotone in the individual workloads can be improved by making a short route
+longer, so an optimal ``fair'' plan may contain routes that are needlessly
+inefficient. \citet{matl2019impact} show that the choice of the workload
+resource (distance, duration, load or number of customers) changes the
+balanced plan and the cost of equity, and
+\citet{matl2019leveraging} approximate the cost--balance Pareto front with a
+box-splitting scheme around a single-objective heuristic. In all three works
+the workload is a deterministic quantity attached to a route.
 
-\paragraph{Order statistics and parametric optimisation.}
-Order statistics of independent, non-identically distributed variables have
-permanent representations \citep{vaughan1972permanent,bapat1989order,balakrishnan2007permanents,glueck2008fast}
-and are related to the Poisson--binomial count of successes in independent
-trials \citep{hoeffding1956distribution,fernandez2010closed,hong2013computing,biscarri2018simple};
-see \citet{david2003order,sen1970note}. Supported efficient solutions of
-bi-criteria problems are found by dichotomic search
-\citep{aneja1979bicriteria,ehrgott2005multicriteria,ehrgott2000survey,ralphs2006improved},
-and the TSP on few nodes by the Held--Karp recursion
+Exact methods have followed two directions. The min-max (makespan) objective
+has a long tradition \citep{applegate2002solution}, and
+\citet{bertazzi2015minmax} quantify how much longer the longest route can
+become when total cost is minimised instead. For balance objectives,
+\citet{halvorsen2016biobjective} study bi-objective general routing with
+several balance criteria, \citet{bektas2020lp} propose $\ell_p$ norms
+of the workload vector as a tunable family between efficiency and min-max
+fairness, and \citet{agius2026solution} develop exact algorithms for routing
+with route-cost equity \emph{constraints}. \citet{vanrossum2024branching,vanrossum2026efficient}
+design branching rules for range and order-based objectives that make the
+range tractable in branch-and-price, and \citet{vanrossum2026enforcing} add
+cutting planes that forbid arc sequences dominated by a shorter tour of the
+same customers, which removes exactly the inefficiency identified by
+\citet{matl2018workload}. Related models balance tours in the multiple
+travelling salesman problem with a bound on the Gini coefficient of tour
+lengths \citep{bhadoriya2026equitable}, trade egalitarian against
+utilitarian welfare in cooperative fleets \citep{lopezsanchez2024fair},
+weigh the cost of driver satisfaction \citep{bruinink2025beyond}, equalise
+\emph{cumulative} workload across periods by assigning daily routes to drivers
+\citep{nekooghadirli2026workload}, and allocate workload among heterogeneous drivers by Nash social welfare under a
+cost cap \citep{mahmoodian2025equitable}, and design equity-oriented workload
+and pay for crowdsourced drivers \citep{sobhanan2026equity}.
+
+The direct predecessor of this paper is \citet{ljubic2026fair}. They write a
+whole family of fairness objectives (maximum, range, Gini mean difference,
+absolute deviation, variance) as ordered measures of the vector of route
+lengths, borrowing the ordered-median machinery of location theory, and
+resolve the monotonicity problem of \citet{matl2018workload} with a
+\emph{bilevel} formulation: the upper level chooses the partition of the
+customers, and each lower level must route its customers on a shortest tour.
+They solve the resulting X-CVRP-TSP exactly on instances sliced from CVRPLIB
+X-n641-k35, which we reuse. Their model, like every work in this subsection,
+is deterministic; their conclusion lists uncertain demands as future work
+and does not discuss travel-time uncertainty. SORTIE keeps their bilevel
+structure and their ordered measures but lets route durations be random.
+Three things change. The objective becomes an expectation of an ordered
+measure of random variables, which no deterministic formulation represents
+(Section~\ref{sec:theory}). Monotonicity no longer guarantees that the
+optimal tours are shortest ones (Proposition~\ref{prop:mono}), so route
+consistency must be imposed for every measure, not only for the
+non-monotone ones. And ``shortest'' itself needs a definition when the
+duration of a tour is a random variable; we give one through each driver's
+mean--standard-deviation criterion and show that it is computable
+(Theorem~\ref{thm:supported}).
+
+\subsection{Ordered measures and inequity-averse optimisation}
+
+Ordered weighted averaging was introduced by \citet{yager1988owa} as an
+aggregation that weights outcomes by their rank rather than by their
+identity; with nondecreasing weights it is convex and contains the maximum,
+the range and the Gini mean difference as special cases. In location theory
+the same idea became the ordered median problem
+\citep{nickel2005location}, with linear programming representations of
+sorted sums through top-$k$ sums \citep{ogryczak2003minimizing,ogryczak2003solving}
+and a theory of equitable location built on inequality measures
+\citep{ogryczak2000inequality}. Recent work extends the machinery to equity
+within facilities \citep{blanco2024intra}, to Benders decomposition for the
+discrete ordered median problem \citep{ljubic2024benders}, to quadratic
+ordered measures such as the variance \citep{blanco2026optimization}, and to
+the ordered median travelling salesman problem, in which the edges of a
+single tour are weighted by rank \citep{ljubic2026ordered}. The broader
+inequity-averse literature is surveyed by \citet{karsu2015inequity}, and
+\citet{tsang2026unified} characterise a class of convex fairness measures and
+show how stable optimal solutions are with respect to the choice of measure.
+In all of these works the ordered measure is applied to a deterministic
+vector. Our Theorem~\ref{thm:pboi} gives the expectation of an ordered
+measure of independent random variables in closed integral form, and
+Proposition~\ref{prop:prices} its derivative with respect to each component;
+we are not aware of an analogue in the ordered-median literature.
+
+\subsection{Fairness under uncertainty}
+
+Only a handful of papers combine routing, fairness and uncertainty, and none
+of them concerns the fairness of drivers' random workloads.
+\citet{kinable2026fair} study a stochastic vehicle routing problem with
+partial deliveries in which demand is random and fairness is defined among
+\emph{customers}, as a minimum expected fill rate with a Rawlsian criterion;
+the quantity to be shared is the service received, not the work done. \citet{gao2026sequential} combine sequential fair allocation with
+routing under demand uncertainty and define max-min objectives over
+locations, both ex post (per realisation) and in a forward sense; again the
+recipients of fairness are locations, and the measure is max-min rather
+than a general ordered measure. On the workforce side, \citet{anh2022workload}
+assign tasks to workers with uncertain service times so that the difference
+in total working time stays below a threshold with high probability, using a
+distributionally robust joint chance constraint approximated by worst-case
+CVaR; there is no routing. \citet{lin2022robust} design two-echelon routes
+for meal delivery with a workload-fairness criterion among workers and
+protect it against service-time uncertainty with robust constraints; the
+fairness measure is evaluated on the deterministic side of the robust
+counterpart, not as a distribution of realised workloads. Gig-economy and
+rideshare work treats fairness of assignment \emph{probabilities} and of
+matching under stochastic arrivals \citep{singh2023fairassign,nanda2020balancing}
+and fair allocation of delivery tasks \citep{basik2021fair,hosseini2025algorithmic};
+the object is an assignment, not the duration of a route.
+
+The word \emph{consistency} is used differently in the consistent vehicle
+routing problem, where it means that customers are visited by the same driver
+at similar times across days \citep{groer2009consistent,kovacs2015generalized}.
+This notion has been extended to stochastic customers and demands with a
+two-stage model solved by sample average approximation and decomposition
+\citep{alvarez2024consistent}, to robust demand \citep{wu2025exact} and to
+driver equity with flexible consistency \citep{yu2024consistent}. It is
+unrelated to the route consistency of \citet{ljubic2026fair} and of this
+paper, which requires each route to be an optimal tour of its own customers.
+
+The distinction between ex-ante and ex-post fairness that organises our model
+is well established outside routing. In welfare economics,
+\citet{fleurbaey2012exante} contrast equality of prospects with equality of
+outcomes. \citet{gutjahr2021inequity} formalises ex-ante and ex-post
+inequity aversion in stochastic decision processes and relates them to
+time consistency, and \citet{mostajabdaveh2019inequity} combine ex-ante and
+ex-post Gini-based inequity in stochastic shelter location, followed by
+\citet{alem2022revisiting} for two-stage humanitarian location--allocation and
+by \citet{mostajabdaveh2025branch} for a bi-objective relief routing problem
+with a Gini index of unsatisfied demand. \citet{sinclair2023sequential}
+characterise the envy--efficiency trade-off of sequential allocation under
+stochastic demand, \citet{shehadeh2023reducing} reduce disparities in
+transport distance in stochastic facility location,
+\citet{ye2024distributionally} define distributional fairness through
+Wasserstein distances, and \citet{barak2026exante} use exactly our two
+definitions (the measure of expected loads against the expected measure) in
+facility-location mechanism design. These works establish that the two
+notions differ and that the ex-post one is the relevant one for affected
+individuals; none of them concerns routing or ordered measures of random
+route durations. We bring the distinction to fair routing, quantify the gap
+between the two notions (Proposition~\ref{prop:gap}) and show how to optimise
+the ex-post notion exactly in the objective.
+
+\subsection{Stochastic travel times in vehicle routing}
+
+Routing with random travel times has a rich literature, but its objectives
+are cost, feasibility or reliability rather than equity.
+\citet{laporte1992vehicle} introduce a priori routes with chance-constrained
+and recourse models, \citet{kenyon2003stochastic} include a makespan-type
+objective on the expected or quantile completion time of the longest route,
+and \citet{bakach2021solving} study makespan objectives with correlated
+travel times; these are the closest to our maximum measure, but they
+optimise a moment or quantile of the makespan, not an ordered measure of all
+routes, and they do not consider the dispersion of workloads. Distribution
+fitting and correlation are discussed by \citet{gomez2016modeling},
+stochastic and robust formulations with deadlines by
+\citet{adulyasak2016models}, a priori optimisation with recourse for time
+windows by \citet{errico2016apriori,errico2018vehicle}, the cost--service
+trade-off by \citet{zhang2013stochastic}, service-level guarantees by
+\citet{ehmke2015ensuring}, and CVaR-type risk in latency location-routing by
+\citet{osoriomora2025riskaverse}; the surveys of \citet{oyola2018part1} and
+\citet{gendreau2016future} give the wider picture. Correlated travel times are
+handled exactly by \citet{rostami2021branch} and approximately by
+\citet{rajabibahaabadi2021reliable,bomboi2022stochastic}; robust and
+distributionally robust variants include \citet{han2014robust},
+\citet{jaillet2016routing}, \citet{zhang2021distribution} and
+\citet{ghosal2020distributionally}. Sample average approximation
+\citep{verweij2003sample} is the generic alternative to our closed-form
+evaluation, and we compare against it directly (E15). Mean--risk path choice
+\citep{sen2001meanvariance,nikolova2014meanrisk} motivates our definition of
+a risk-consistent tour as one that minimises the driver's mean plus a
+multiple of the standard deviation. Conditional value-at-risk
+\citep{rockafellar2000optimization,rockafellar2002conditional}, which we report
+for the realised range, and the price of fairness
+\citep{bertsimas2011price,mo2000fair}, which E9 traces for stochastic
+fairness, complete the background.
+
+\subsection{Order statistics and parametric optimisation}
+
+Our evaluator rests on classical results on order statistics of independent,
+non-identically distributed variables. Their joint distribution can be
+written with permanents \citep{vaughan1972permanent,bapat1989order}, which
+are expensive to evaluate \citep{balakrishnan2007permanents,glueck2008fast};
+the alternative we use expresses the event ``at most $r$ variables lie below
+$t$'' through the Poisson--binomial distribution of the number of successes
+in independent non-identical trials \citep{hoeffding1956distribution}, whose
+probability mass function is computed exactly by a short recursion
+\citep{fernandez2010closed,hong2013computing,biscarri2018simple}; see also
+\citet{david2003order} and \citet{sen1970note}. To our knowledge the
+Poisson--binomial representation has not been used to evaluate or
+differentiate ordered fairness measures in optimisation. For the lower level,
+supported efficient solutions of bi-criteria problems are enumerated by
+dichotomic (weighted-sum) search \citep{aneja1979bicriteria}, see
+\citet{ehrgott2005multicriteria,ehrgott2000survey,ralphs2006improved}, and
+small travelling salesman problems are solved by the Held--Karp recursion
 \citep{heldkarp1962dynamic,bellman1962dynamic}.
+
+\begin{table}[t]\centering\small
+\caption{Positioning of SORTIE among the closest works. Drivers: fairness
+among drivers' workloads; Ordered: general ordered measures; Random
+durations: route durations are random; Ex post: fairness of realised
+outcomes is optimised; Consistency: every route is an optimal tour of its
+customers. ($\circ$: partly, see text.)}\label{tab:positioning}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{\begin{tabular}{lcccccc}
+\toprule
+Work & Routing & Drivers & Ordered & Random durations & Ex post & Consistency\\
+\midrule
+\citet{matl2018workload} & \checkmark & \checkmark & $\circ$ & & & \\
+\citet{vanrossum2026enforcing} & \checkmark & \checkmark & $\circ$ & & & \checkmark \\
+\citet{ljubic2026fair} & \checkmark & \checkmark & \checkmark & & & \checkmark \\
+\citet{kenyon2003stochastic,bakach2021solving} & \checkmark & $\circ$ & & \checkmark & $\circ$ & \\
+\citet{kinable2026fair} & \checkmark & & & & & \\
+\citet{gao2026sequential} & \checkmark & & & & \checkmark & \\
+\citet{lin2022robust} & \checkmark & \checkmark & & $\circ$ & & \\
+\citet{anh2022workload} & & \checkmark & & \checkmark & $\circ$ & \\
+\citet{mostajabdaveh2019inequity,gutjahr2021inequity} & & & $\circ$ & & \checkmark & \\
+SORTIE (this paper) & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}}
+\end{table}
 
 %==========================================================================
 \section{Model}\label{sec:model}
