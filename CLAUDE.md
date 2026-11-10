@@ -193,7 +193,7 @@ measures, rank prices, the fairness-illusion bound, and risk-consistent
 tours (L + κv√W, supported Pareto, parametric Held–Karp). Instances are
 slices of CVRPLIB X-n641-k35. Self-contained: shares no code, instances or
 results with the papers under review; all code in `papers/sortie/code/`
-(67 tests). Candidate venues: Transportation Science / EJOR (not C&OR while
+(102 tests). Candidate venues: Transportation Science / EJOR (not C&OR while
 BATON is there). Report: `papers/sortie/REPORT.md`.
 
 ## Layout

@@ -248,27 +248,131 @@ Each method is represented by its mean ex-post value over seeds.
 - **Correction.** The first run's claim that the gain doubles under
   congestion did not survive the rerun.
 
+### E9 — budget frontier (n = 25, 35; 5 blocks; range, GMD, max)
+
+| B | SORTIE-0 vs Det (mean / median) | Better / worse (of 30) | Total length / C*: Det vs SORTIE-0 |
+|---|---|---|---|
+| 1.02 | +1.4% / +0.2% | 17 / 1 | 1.015 vs 1.014 |
+| 1.05 | +0.7% / +0.2% | 19 / 0 | 1.042 vs 1.041 |
+| 1.10 | +0.7% / +1.4% | 20 / 3 | 1.093 vs 1.094 |
+| 1.15 | +3.2% / +2.3% | 27 / 2 | 1.144 vs 1.134 |
+| 1.20 | +2.5% / +3.0% | 26 / 3 | 1.185 vs 1.170 |
+| **1.30** | **+6.8% / +6.7%** | **30 / 0** | 1.256 vs **1.222** |
+
+- The gain grows with the budget.
+- SORTIE uses *less* of the budget. For the max, Det reaches 1.205·C\* at
+  B = 1.30 and gets worse than at B = 1.20; SORTIE stays at 1.135.
+- B = 1.10 here differs from the same cells in E3 (range: −0.7% vs +0.9%).
+  The runs differ only in wall-clock timing, so this is search noise from the
+  time limit.
+
+### E10 — fleet size (n = 35, cap = Σq/(m−1))
+
+| m | Det belief error | SORTIE-0 vs Det | SAA vs Det |
+|---|---|---|---|
+| 3 | −8.2% | +0.5% (8/15) | +2.8% (median 0) |
+| 5 | −18.6% | +0.6% (median +1.9%) | −1.6% |
+| 7 | −20.3% | **+3.2% (13/15)** | +2.3% |
+
+### E11 — day factor (all 500 E3 plans at B = 1.10)
+
+| s_Y | Ordered measures | Variance (e^{s_Y²}) | CVaR90 of range |
+|---|---|---|---|
+| 0.15 | 1.0002 | 1.023 (1.023) | 1.07 |
+| 0.30 | 1.0004 | 1.095 (1.094) | 1.25 |
+| 0.50 | 1.0006 | 1.285 (1.284) | 1.58 |
+
+This confirms Proposition 1: expectations are unchanged and the variance
+scales by e^{s_Y²}, but the tail grows.
+
+### E12 — noise-model misspecification
+
+| Family | Source | PBOI mean abs. error | Worst case | SORTIE-0 vs Det |
+|---|---|---|---|---|
+| Gamma (model) | E3 | 0.16% | 1.0% | +1.23% (81/125) |
+| Lognormal | E3 | 0.29% | 1.3% | +1.21% (82/125) |
+| Incident (2%, ×2.5) | E3 | 1.43% (bias +1.35%) | 9.5% | +1.03% (71/125) |
+| Regional (correlated) | E3 | 1.88% | 20.4% (Var) | +0.96% (65/125) |
+| Gamma | E8 | 0.18% | | +1.51% (53/75) |
+| Lognormal | E8 | 0.51% | | +1.48% (55/75) |
+
+All improvements are significant. The ranking of plans survives
+misspecification and correlation.
+
+### E13 — risk attitude κ ∈ {0, 0.5, 1, 2, 4}
+
+- Even at κ = 4 only 14–16% of routes change their tour, with about 13
+  distance units of extra length per plan.
+- The ex-post value is unchanged within search noise.
+- Under homogeneous noise, length and quadratic length of tours are nearly
+  comonotone.
+
+### E14 — screening diagnostics (5577 moves)
+
+- **Correlation.** Spearman ρ between predicted (rank-price) and exact change
+  is 0.89–0.94 on cost plans and 0.78–0.89 on final plans.
+- **Top-K hit.** The exact-best improving move is in the predicted top-8 in
+  80% of cases (random ordering: 7%) and always in the top-21.
+- **Local optima.** 28/30 final SORTIE plans have no improving relocate or
+  swap move.
+- **K sweep.** Varying K from 1 to 32 does not change the median result.
+
+### E15 — SAA sample size (n = 25, 35; B = 1.10)
+
+| S | SORTIE-0 better than SAA by | Wins / losses (of 30) | p |
+|---|---|---|---|
+| 50 | 1.35% | 22 / 3 | 0.001 |
+| 200 | 1.57% | 24 / 1 | 2e-5 |
+| 1000 | 1.09% | 15 / 3 | 0.003 |
+| 5000 | 0.91% | 9 / 2 | 0.05 |
+
+### E16 — simpler baselines (E3 grid, B = 1.10)
+
+| Method vs Det | Mean | Better / worse | p |
+|---|---|---|---|
+| Det-σ (ordered measure of L + σ) | **−0.81%** | 37 / 61 | 0.02 |
+| PBOI-normal | +1.10% | 71 / 3 | |
+| SORTIE-0 | +1.23% | 81 / 7 | |
+
+- SORTIE-0 beats Det-σ by 1.86% (97 / 8).
+- SORTIE-0 vs PBOI-normal: p = 0.65, so the marginal family does not matter.
+
+### E17 — second benchmark family (12 X instances, depot + first 50 customers, 2 seeds)
+
+- **Det belief error:** −40% for the range, −35% for the GMD, −8% for the
+  max.
+- **Improvement over Det:**
+
+  | Method | Mean | Median | Better / worse (of 36) | p |
+  |---|---|---|---|---|
+  | SORTIE-0 | **+2.16%** | +1.74% | **31 / 5** | 1e-7 |
+  | SAA | +0.74% | | | |
+  | Det-σ | −0.84% | | | |
+
+- SORTIE-0 is positive on **all 12 instances** (+0.7% to +4.2%) and beats SAA
+  on 33 of 36 pairs.
+
 ## 5. Summary
 
 1. **The fairness illusion is large and certain.** Deterministic fair plans
-   understate realised unfairness by 8–27% at v = 0.3, 43% at v = 0.5 and 26%
-   for the range under congestion. PBOI removes the illusion at 0.4 ms per
-   plan.
-2. **Optimising ex-post fairness helps, but modestly.** The gain over Det is
-   about 1% at n ≤ 35, about 1.5% under congestion and about 2% at
-   n = 50–100.
-   - It is significant in the pooled E3 and E8 comparisons and at n = 50.
-   - At n = 75 and n = 100 single runs are not significant (p = 0.17).
-   - At n = 100 it becomes significant once seeds are averaged (pooled
-     p = 0.021), but no single measure is significant on six instances.
-   - It clearly beats SAA at n ≤ 35 and under congestion, but not at
-     n = 100.
-3. **Rank prices help the search.** Plans are 6–9% better than with random
-   screening.
-4. **The bilevel constraint matters.** Without it, fairness is bought with
-   detours.
-5. **The deterministic objective makes the search erratic.** At n = 100 its
-   flat range objective gives an 11% seed-to-seed spread in realised fairness.
+   understate realised unfairness by 8–27% on the sliced instances, 40% (range)
+   on the second family, 43% at v = 0.5 and 27% with seven vehicles. PBOI
+   removes the illusion at 0.4 ms per plan.
+2. **Ex-post optimisation helps.** It gains about 1% at the standard budget
+   on the sliced instances and 2.2% on the second family (12/12 instances).
+   The gain grows with budget slack (6.8% at B = 1.30, using less length) and
+   with fleet size (3.2% at m = 7). It survives four noise models, including
+   correlated noise.
+3. **Simple alternatives fail.** Det-σ is worse than Det. SAA needs thousands
+   of scenarios and still loses at 5000.
+4. **Rank prices are a good first-order model.** They give ρ ≈ 0.9, a top-8
+   hit rate of 80%, and plans 6–9% better than random screening.
+5. **The bilevel constraint matters.** Without it, fairness is bought with
+   detours. The risk-consistent lower level changes few tours under
+   homogeneous noise.
+6. **At n = 100 the comparison is noise-limited.** The deterministic objective
+   is the noisiest (seed CV 11% for the range). SORTIE is significant against
+   Det once seeds are averaged, but not separable from SAA.
 
 ## 6. Limitations
 
