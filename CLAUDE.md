@@ -194,7 +194,7 @@ tours (L + κv√W, supported Pareto, parametric Held–Karp). Instances are
 slices of CVRPLIB X-n641-k35. Self-contained: shares no code, instances or
 results with the papers under review; all code in `papers/sortie/code/`
 (102 tests). Submitted to the European Journal of Operational Research on
-10 November 2026 (git tag `sortie-ejor-v1`; package in
+10 November 2026 (commit `aaaecad`; package in
 `papers/sortie/submission_ejor/`). **Frozen while under review** (see its
 STATUS.md). Report: `papers/sortie/REPORT.md`.
 

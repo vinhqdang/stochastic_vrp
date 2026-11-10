@@ -8,7 +8,7 @@
   EJOR manuscript number: _to be added when the confirmation e-mail arrives_.
 - **Submitted version:** `submission_ejor/upload/` (31-page manuscript,
   27-page Online Supplement, cover letter, highlights, graphical abstract,
-  separate figures); git tag `sortie-ejor-v1`.
+  separate figures); git commit `aaaecad` (last change to the package).
 - **Authors:** Quang-Vinh Dang (corresponding), Hoang-Viet Vu, Phuc-Son Nguyen.
 - **Freeze policy:** do not modify `submission_ejor/`, `sortie.tex`, `code/`,
   `results/` or `figures/` while the paper is under review, except for
