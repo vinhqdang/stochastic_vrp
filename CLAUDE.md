@@ -182,7 +182,7 @@ rare events against mixture IS) found no regime where quantum amplitude
 estimation beats the best classical method on this model; see
 `papers/quasar/REFRAME_M4.md` and `DESIGN_RARE.md`.
 
-### Paper 9 — SORTIE (papers/sortie/, ACTIVE)
+### Paper 9 — SORTIE (papers/sortie/, UNDER REVIEW at EJOR, submitted 2026-11-10)
 
 *Stochastic Ordered Route fairness with Tour-consistency via Integral
 Evaluation.* Fair CVRP (ordered measures: max, range, GMD, MAD, variance;
@@ -193,8 +193,10 @@ measures, rank prices, the fairness-illusion bound, and risk-consistent
 tours (L + κv√W, supported Pareto, parametric Held–Karp). Instances are
 slices of CVRPLIB X-n641-k35. Self-contained: shares no code, instances or
 results with the papers under review; all code in `papers/sortie/code/`
-(102 tests). Candidate venues: Transportation Science / EJOR (not C&OR while
-BATON is there). Report: `papers/sortie/REPORT.md`.
+(102 tests). Submitted to the European Journal of Operational Research on
+10 November 2026 (git tag `sortie-ejor-v1`; package in
+`papers/sortie/submission_ejor/`). **Frozen while under review** (see its
+STATUS.md). Report: `papers/sortie/REPORT.md`.
 
 ## Layout
 
@@ -223,9 +225,9 @@ BATON is there). Report: `papers/sortie/REPORT.md`.
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP) and 8
-  (RARECERT, JoC) are closed to edits while under review, paper 4 is
-  abandoned, and papers 5 (ECLAIR), 6 (PARCEL) and 9 (SORTIE) are the **open papers**.
+  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP), 8
+  (RARECERT, JoC) and 9 (SORTIE, EJOR) are closed to edits while under review, paper 4 is
+  abandoned, and papers 5 (ECLAIR) and 6 (PARCEL) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
   `eclair.tex`, `parcel.tex`), never `main.*`.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
