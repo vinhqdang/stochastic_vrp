@@ -985,7 +985,47 @@ not depend on the marginal family).}\label{tab:e16}
 \input{results/tables/paper/tab_e16.tex}
 \end{table}
 
-%E17SECTION
+\subsection{A second benchmark family (E17)}\label{sec:e17}
+All instances so far are slices of one file, and slicing places the depot at
+the first node of each block. E17 tests twelve further CVRPLIB X instances of
+\citet{uchoa2017new} (X-n101-k25 to X-n153-k22), which were generated with
+different depot positions and customer distributions. From each we take the depot of the file and its
+first 50 customers, keep $m=5$ and the capacity rule $Q=\lfloor\sum_iq_i/4\rfloor$,
+and solve range, GMD and maximum at $B=1.10$ with Det, SAA, SORTIE-0 and
+Det-$\sigma$, 120\,s and two solver seeds; each method is represented by the
+mean ex-post value over its seeds (Tables~\ref{tab:e17}
+and~\ref{tab:e17inst}, Figure~\ref{fig:e17}).
+
+The results are stronger than on the sliced instances. The illusion reaches
+$40\%$ for the range and $35\%$ for the GMD, against $18\%$ and $15\%$ on the
+sliced instances; plausibly the file's own depot, which is often eccentric,
+makes the routes differ more in variance than a block depot does. SORTIE-0 improves on Det by $2.2\%$ on average
+(median $1.7\%$; better on 31 and worse on 5 of 36 pairs, $p<10^{-6}$), with a
+positive average on every one of the twelve instances ($0.7\%$ to $4.2\%$).
+SAA improves by $0.7\%$, and SORTIE-0 beats it on 33 of 36 pairs
+($p<10^{-7}$). Det-$\sigma$ is again worse than Det ($-0.8\%$). The
+conclusions of E3 and E16 thus carry over to instances with other depot
+positions and customer distributions, with larger effects.
+
+\begin{table}[t]\centering\small
+\caption{E17: second benchmark family (12 X instances, depot plus first 50
+customers), $B=1.10$, 120\,s, mean of two solver seeds; improvement of the
+ex-post value over Det (format as Table~\ref{tab:e3}).}\label{tab:e17}
+\input{results/tables/paper/tab_e17.tex}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{E17 per instance: depot position, $C^\ast$ and the improvement of
+SORTIE-0 over Det pooled over the three measures.}\label{tab:e17inst}
+\input{results/tables/paper/tab_e17_inst.tex}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_e17.pdf}
+\caption{E17: improvement of SORTIE-0 over Det per instance (mean over
+measures and seeds), coloured by depot position.}\label{fig:e17}
+\end{figure}
+
 
 \subsection{Managerial insights}\label{sec:insights}
 The experiments support five statements a planner can act on.
@@ -1094,13 +1134,13 @@ every instance, measure and budget.}\label{fig:heatmap}
 
 Tables~\ref{tab:app_e3_110} and~\ref{tab:app_e3_105} list the out-of-sample
 ex-post value of every E3 plan, Table~\ref{tab:app_e7b} the seed means and
-standard deviations of E7b%APP_E17REF
+standard deviations of E7b, and Table~\ref{tab:app_e17} the E17 values per instance and measure
 . Every plan is stored in the released plan cache and can be re-evaluated
 with the released simulator.
 
 \input{results/tables/paper/app_e3_B110.tex}
 \input{results/tables/paper/app_e3_B105.tex}
 \input{results/tables/paper/app_e7b.tex}
-%APP_E17
+\input{results/tables/paper/app_e17.tex}
 
 \end{document}
