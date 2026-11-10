@@ -586,7 +586,20 @@ first-order screen (\S\ref{sec:alg:screen}), the exact confirmation that
 keeps every accepted plan bilevel feasible (\S\ref{sec:alg:confirm}), the
 ruin-and-recreate perturbation and acceptance rule (\S\ref{sec:alg:perturb}),
 and the parameters and complexity (\S\ref{sec:alg:params}).
-Algorithms~\ref{alg:sortie} and~\ref{alg:improve} give the pseudocode.
+Figure~\ref{fig:algorithm} gives an overview, and
+Algorithms~\ref{alg:sortie} and~\ref{alg:improve} the pseudocode.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_algorithm.pdf}
+\caption{The SORTIE algorithm. The improvement phase (blue) screens every
+relocate and swap move with the rank and dispersion prices, evaluates the $K$
+best with screening tours and PBOI, and confirms improving candidates with the
+exact lower level. When no confirmed move improves the plan, the perturbation
+phase (red) removes and reinserts customers guided by the same prices,
+repairs the budget, confirms the changed routes and accepts by simulated
+annealing. The two support modules (green) supply tours and objective values;
+dashed arrows mark their calls.}\label{fig:algorithm}
+\end{figure}
 
 \begin{algorithm}[t]
 \caption{SORTIE: main loop}\label{alg:sortie}

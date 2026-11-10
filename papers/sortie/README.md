@@ -76,6 +76,7 @@ All tables are written by `code/experiments/analyze.py` to
 | `e7_scale.tex`, `e7_pooled.tex`, `e7_convergence.tex`, `paper/tab_e7_pooled.tex` | `e7_scale.csv` + plan histories | E7: n = 50–100, 120 s |
 | `e7b_*.tex`, `paper/tab_e7b.tex` | `e7b_seeds.csv` + plan histories | E7b: n = 100, three seeds, 240 s |
 | `e8_congestion.tex`, `e8_by_n.tex` | `e8_congestion.csv` | E8: heterogeneous (congested) arc noise |
+| `figures/fig_algorithm.pdf` | — | TikZ source `figures/fig_algorithm.tex` (`pdflatex fig_algorithm.tex`) |
 | `figures/fig_*` (E3–E8) | E3–E8 CSVs, plan files | `experiments/figures.py` |
 | `figures/fig_e9*` … `fig_e17*`, `tables/paper/tab_e9`–`tab_e17*`, `tables/ext/*` | E9–E17 CSVs | `experiments/analyze_ext.py` |
 | `tables/paper/app_*.tex` | E3, E7b, E17 CSVs | `experiments/appendix_tables.py` |
