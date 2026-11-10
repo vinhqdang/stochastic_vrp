@@ -11,3 +11,5 @@
 [run_ext] e14_screen -> /home/user/stochastic_vrp/papers/sortie/results/e14_screen.log
 [run_ext] e14_screen ok
 [run_ext] e15_saa -> /home/user/stochastic_vrp/papers/sortie/results/e15_saa.log
+[run_ext] e15_saa ok
+[run_ext] e16_baselines -> /home/user/stochastic_vrp/papers/sortie/results/e16_baselines.log
