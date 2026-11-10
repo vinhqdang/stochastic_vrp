@@ -1,0 +1,5 @@
+- Deterministic fair routing plans understate drivers' realised unfairness by up to 40%
+- The understatement is provably largest for the balanced plans that fairness produces
+- An exact sampling-free integral gives expected ordered fairness of random route times
+- Rank prices give the gradient of expected unfairness and steer a bilevel local search
+- Optimising realised fairness beats sample averages and risk-adjusted baselines
