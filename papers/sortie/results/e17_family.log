@@ -34,3 +34,19 @@
 [e17] 18/288 e17|X-n101-k25-h50|max|B1.10|saa|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed7|stemX-n101-k25 t=603s
 [e17] 19/288 e17|X-n101-k25-h50|max|B1.10|det|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n101-k25 t=603s
 [e17] 20/288 e17|X-n101-k25-h50|max|B1.10|saa|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n101-k25 t=603s
+[e17] 21/288 e17|X-n101-k25-h50|max|B1.10|sortie0|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed7|stemX-n101-k25 t=723s
+[e17] 22/288 e17|X-n101-k25-h50|max|B1.10|sortie0|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n101-k25 t=723s
+[e17] 23/288 e17|X-n101-k25-h50|max|B1.10|detsig|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed7|stemX-n101-k25 t=723s
+[e17] 24/288 e17|X-n101-k25-h50|max|B1.10|detsig|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n101-k25 t=723s
+[e17] 25/288 e17|X-n106-k14-h50|range|B1.10|det|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed7|stemX-n106-k14 t=843s
+[e17] 26/288 e17|X-n106-k14-h50|range|B1.10|saa|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n106-k14 t=844s
+[e17] 27/288 e17|X-n106-k14-h50|range|B1.10|det|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n106-k14 t=844s
+[e17] 28/288 e17|X-n106-k14-h50|range|B1.10|saa|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed7|stemX-n106-k14 t=844s
+[e17] 29/288 e17|X-n106-k14-h50|range|B1.10|sortie0|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed7|stemX-n106-k14 t=964s
+[e17] 30/288 e17|X-n106-k14-h50|range|B1.10|detsig|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed7|stemX-n106-k14 t=964s
+[e17] 31/288 e17|X-n106-k14-h50|range|B1.10|sortie0|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n106-k14 t=964s
+[e17] 32/288 e17|X-n106-k14-h50|range|B1.10|detsig|v0.3|t120|S10000|cap_div4.0|familyX|m5|solve_seed11|stemX-n106-k14 t=964s
+== e17 quick=False results=/home/user/stochastic_vrp/papers/sortie/results workers=4 started=2026-11-10 01:14:33
+[e17] jobs total=12 already_done=12 todo=0
+[e17] finished ok=0 failed=0 elapsed=0s
+[e17] jobs total=288 already_done=32 todo=256
