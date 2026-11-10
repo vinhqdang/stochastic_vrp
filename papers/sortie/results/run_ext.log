@@ -9,3 +9,5 @@
 [run_ext] e13_kappa -> /home/user/stochastic_vrp/papers/sortie/results/e13_kappa.log
 [run_ext] e13_kappa ok
 [run_ext] e14_screen -> /home/user/stochastic_vrp/papers/sortie/results/e14_screen.log
+[run_ext] e14_screen ok
+[run_ext] e15_saa -> /home/user/stochastic_vrp/papers/sortie/results/e15_saa.log
