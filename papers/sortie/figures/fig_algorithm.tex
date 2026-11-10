@@ -45,14 +45,14 @@
 \node[sup, left=24mm of screen, yshift=6mm] (lower) {\textbf{Lower level} (tour of each route)\\[2pt]
   $|S|\le15$: Held--Karp (exact)\\
   $|S|>15$: 2-opt/Or-opt, 8 starts\\
-  $\kappa>0$: dichotomic search over\\\quad weights $c_{ij}+\theta d_{ij}^2$ (Thm.~6)\\
+  $\kappa>0$: dichotomic search over\\\quad weights $c_{ij}+\theta d_{ij}^2$ (Thm.~13)\\
   screening tours: 1 warm-started descent\\
   memoised by customer set};
-\node[sup, below=8mm of lower] (pboi) {\textbf{Evaluator} (PBOI, Thm.~2)\\[2pt]
+\node[sup, below=8mm of lower] (pboi) {\textbf{Evaluator} (PBOI, Thm.~5)\\[2pt]
   $\E\ell_\lambda(X)=\int\sum_r\Lambda_r\pi_r(t)\,dt$\\
   Gauss--Legendre on quantile panels\\
   Poisson--binomial pmf: $O(Gm^2)$\\
-  prices $\varpi_k$ (Prop.~4), $\psi_k$};
+  prices $\varpi_k$ (Prop.~7), $\psi_k$};
 
 % ---------------- main flow ----------------
 \draw[flow] (start) -- (prices);

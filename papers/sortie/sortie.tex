@@ -6,6 +6,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
 \theoremstyle{definition}
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{example}[theorem]{Example}
@@ -419,6 +420,46 @@ of sample.
 %==========================================================================
 \section{Theory}\label{sec:theory}
 
+This section develops the properties of expected ordered fairness that the
+model and the algorithm rely on. Section~\ref{sec:th:prelim} collects
+elementary properties of ordered measures; Section~\ref{sec:th:shocks} shows
+that fleet-wide shocks drop out of the objective;
+Section~\ref{sec:th:pboi} gives the exact evaluation formula and
+Section~\ref{sec:th:prices} its derivatives; Section~\ref{sec:th:illusion}
+quantifies the fairness illusion and shows that it is a consequence of
+balance itself; Section~\ref{sec:th:consistency} treats route consistency;
+and Section~\ref{sec:th:problem} states the SORTIE problem and its
+complexity. Throughout, $X=(X_1,\dots,X_m)$ is a vector of route durations,
+$L=\E X$, $\sigma_k^2=\operatorname{Var}X_k$, and $\lambda\in\mathbb{R}^m$.
+
+\subsection{Ordered measures}\label{sec:th:prelim}
+
+\begin{lemma}[Properties of ordered measures]\label{lem:ordered}
+For $a,b\in\mathbb{R}^m$, $y>0$ and $c\in\mathbb{R}$:
+\begin{enumerate}
+\item[(a)] $\lord(ya)=y\,\lord(a)$ and $\lord(a+c\mathbf 1)=\lord(a)+c\sum_j\lambda_j$;
+\item[(b)] $|\lord(a)-\lord(b)|\le\|\lambda\|_1\|a-b\|_\infty$;
+\item[(c)] if $\lambda$ is nondecreasing, $\lord(a)=\max_{\pi}\sum_k\lambda_{\pi(k)}a_k$ over
+all permutations $\pi$, so $\lord$ is convex, and the maximum is attained by
+the permutation that assigns to each component its rank in $a$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Sorting commutes with multiplication by $y>0$ and with adding a constant
+to every component. (b) The sorted vectors satisfy
+$|a_{(j)}-b_{(j)}|\le\|a-b\|_\infty$ for every $j$. (c) This is the
+rearrangement inequality: for nondecreasing $\lambda$ the sum
+$\sum_k\lambda_{\pi(k)}a_k$ is largest when larger weights meet larger
+components. A maximum of linear functions is convex.
+\end{proof}
+
+The maximum, range, GMD and MAD all have nondecreasing weights; the range,
+GMD and MAD in addition have $\sum_j\lambda_j=0$ (\emph{dispersion
+measures}), so by (a) they are invariant to a common additive shift, while the
+maximum has $\sum_j\lambda_j=1$.
+
+\subsection{Common shocks}\label{sec:th:shocks}
+
 \begin{proposition}[Common shocks]\label{prop:common}
 For every $\lambda$,
 \[
@@ -427,13 +468,29 @@ For every $\lambda$,
 \]
 \end{proposition}
 \begin{proof}
-Sorting commutes with multiplication by $y>0$, so $\lord(yX)=y\lord(X)$; take
-expectations using independence of $Y$ and $X$ and $\E Y=1$. The empirical
-variance is homogeneous of degree two and $\E Y^2=e^{s_Y^2}$.
+By Lemma~\ref{lem:ordered}(a), $\lord(yX)=y\lord(X)$; take expectations
+using the independence of $Y$ and $X$ and $\E Y=1$. The empirical variance is
+homogeneous of degree two and $\E Y^2=e^{s_Y^2}$.
 \end{proof}
 
-Fleet-wide shocks therefore drop out of the planning objective for ordered
-measures, which reduces evaluation to the conditionally independent vector $X$.
+\begin{corollary}[Additive shocks]\label{cor:additive}
+If $\Phi=X+Z\mathbf 1$ for a random variable $Z$ independent of $X$ with
+finite mean (for example, a fleet-wide delay at the depot), then
+$\E\lord(\Phi)=\E\lord(X)+\E Z\sum_j\lambda_j$. In particular every dispersion
+measure is unaffected, and the expected maximum shifts by $\E Z$ for every
+plan alike.
+\end{corollary}
+\begin{proof}
+Lemma~\ref{lem:ordered}(a) and linearity of expectation.
+\end{proof}
+
+Fleet-wide shocks, multiplicative or additive, therefore do not change the
+ranking of plans by expected ordered fairness, which reduces evaluation to the
+conditionally independent vector $X$. They do change the distribution of
+unfairness: Proposition~\ref{prop:common} does not extend to quantiles or to
+the CVaR, which grows by $58\%$ at $s_Y=0.5$ in our experiments (E11).
+
+\subsection{Exact evaluation}\label{sec:th:pboi}
 
 \begin{theorem}[Poisson--binomial order-statistic integral]\label{thm:pboi}
 Let $X_1,\dots,X_m\ge 0$ be independent with CDFs $F_k$. For $t\ge0$ let
@@ -452,21 +509,44 @@ $\E\lord(X)=\int_0^\infty\sum_j\lambda_j\sum_{r\le j-1}\pi_r(t)\,dt
 is applied to the positive and negative parts of $\lambda$ separately.
 \end{proof}
 
-The vector $\pi(t)$ is the coefficient vector of $\prod_k(1-F_k(t)+F_k(t)z)$,
-obtained by $m$ convolution steps. Below the smallest lower quantile the
-integrand equals $\Lambda_0$, above the largest upper quantile it vanishes
-($\Lambda_m:=0$), and in between we use Gauss--Legendre panels whose
-breakpoints are quantiles of \emph{every} marginal, so that a short,
-low-variance route is resolved even when the other routes are long. We use
-moment-matched gamma marginals $X_k\sim\Gamma(L_k^2/\sigma_k^2,\sigma_k^2/L_k)$.
-The identity behind \eqref{eq:pboi} is classical for order statistics of
-non-identical variables \citep{bapat1989order,balakrishnan2007permanents}; our
-contribution is to make it an exact planning objective for ordered fairness,
-where the tail sums $\Lambda_r$ absorb the negative weights of dispersion
-measures, and to differentiate it.
+\begin{corollary}[Maximum, minimum and range]\label{cor:special}
+Under the assumptions of Theorem~\ref{thm:pboi},
+\[
+\E\max_kX_k=\int_0^\infty\Big(1-\prod_kF_k(t)\Big)dt,\qquad
+\E\min_kX_k=\int_0^\infty\prod_k\big(1-F_k(t)\big)dt,
+\]
+\[
+\E\big(\max_kX_k-\min_kX_k\big)=\int_0^\infty\Big(1-\prod_kF_k(t)-\prod_k\big(1-F_k(t)\big)\Big)dt .
+\]
+\end{corollary}
+\begin{proof}
+For the maximum, $\lambda=e_m$, so $\Lambda_r=1$ for $r<m$ and
+$\sum_{r<m}\pi_r(t)=1-\pi_m(t)=1-\prod_kF_k(t)$. For the minimum, $\lambda=e_1$,
+so only $\Lambda_0=1$ is non-zero and $\pi_0(t)=\prod_k(1-F_k(t))$. The range
+is the difference.
+\end{proof}
+
+For the maximum and the range only products of marginals are needed; for
+general weights, and in particular for the GMD and MAD, all $m+1$
+Poisson--binomial probabilities are required. The vector $\pi(t)$ is the
+coefficient vector of the generating function $\prod_k(1-F_k(t)+F_k(t)z)$
+and is obtained by $m$ convolution steps in $O(m^2)$. Below the smallest
+lower quantile of the marginals the integrand equals $\Lambda_0$, above the
+largest upper quantile it vanishes ($\Lambda_m:=0$), and in between we use
+Gauss--Legendre panels whose breakpoints are quantiles of \emph{every}
+marginal, so that a short, low-variance route is resolved even when the other
+routes are long (Section~\ref{sec:alg:eval}). We use moment-matched gamma
+marginals $X_k\sim\Gamma(L_k^2/\sigma_k^2,\sigma_k^2/L_k)$. The identity behind
+\eqref{eq:pboi} is classical for order statistics of non-identical variables
+\citep{bapat1989order,balakrishnan2007permanents}; our contribution is to make
+it an exact planning objective for ordered fairness, where the tail sums
+$\Lambda_r$ absorb the negative weights of dispersion measures, and to
+differentiate it.
+
+\subsection{Rank prices}\label{sec:th:prices}
 
 \begin{proposition}[Rank prices]\label{prop:prices}
-Let $R_k$ be the rank of $X_k$ and define
+Let the $X_k$ have densities, let $R_k$ be the rank of $X_k$ and define
 $\varpi_k=\sum_j\lambda_j\Prob(R_k=j)$, where
 $\Prob(R_k=j)=\int f_k(t)\,\Prob(N_{-k}(t)=j-1)\,dt$ and $N_{-k}$ counts the
 other drivers. Then
@@ -476,20 +556,50 @@ $\sum_k\varpi_k=\sum_j\lambda_j$.
 \begin{proof}
 $\lord$ is piecewise linear with $\partial\lord/\partial a_k=\lambda_{R_k(a)}$
 off the null set of ties and is $\|\lambda\|_1$-Lipschitz, so differentiation
-and expectation commute by dominated convergence. The ranks form a permutation,
-so $\sum_k\Prob(R_k=j)=1$.
+and expectation commute by dominated convergence. The event $R_k=j$ occurs
+when $X_k=t$ and exactly $j-1$ of the other variables are below $t$, which
+gives the integral. The ranks form a permutation, so $\sum_k\Prob(R_k=j)=1$.
 \end{proof}
 
-For the range, GMD and MAD the prices sum to zero: burdened drivers carry
-positive prices and light drivers negative ones. A negative price is exactly
-the incentive to lengthen a route. Deterministically, the price of the lightest
-route under the range is $-1$, and a detour of length $\delta$ reduces the range by
-$\delta$; stochastically, the incentive is spread over all drivers that might be
-the lightest on a given day. SORTIE uses the prices, together with
-$\psi_k=\partial\E\lord/\partial\sigma_k$, to predict the effect of a move.
+\begin{proposition}[Convexity and first-order bound]\label{prop:convex}
+Let $\lambda$ be nondecreasing and $F(\delta)=\E\lord(X+\delta)$ for
+$\delta\in\mathbb{R}^m$. Then $F$ is convex and differentiable with
+$\nabla F(0)=\varpi$, so that for every shift $\delta$
+\[
+F(\delta)\ \ge\ F(0)+\sum_k\varpi_k\,\delta_k ,
+\qquad\text{and}\qquad \lambda_1\le\varpi_k\le\lambda_m\ \ \forall k .
+\]
+If the means $L_k$ are pairwise distinct and $\sigma_k\to0$ for all $k$, then
+$\varpi_k\to\lambda_{r_k}$, where $r_k$ is the rank of $L_k$ in $L$.
+\end{proposition}
+\begin{proof}
+$\delta\mapsto\lord(X+\delta)$ is convex for every realisation
+(Lemma~\ref{lem:ordered}(c)), so $F$ is convex; differentiability and the
+gradient follow from Proposition~\ref{prop:prices} applied at every $\delta$.
+A differentiable convex function lies above its tangent plane. $\varpi_k$ is a
+convex combination of the $\lambda_j$, which lie between $\lambda_1$ and
+$\lambda_m$. As $\sigma\to0$, $X\to L$ in probability and $\Prob(R_k=r_k)\to1$
+because the means are distinct.
+\end{proof}
+
+Proposition~\ref{prop:convex} explains the role of the rank prices in the
+search. For a pure shift of route durations, the linear prediction
+$\sum_k\varpi_k\delta_k$ is a \emph{lower bound} on the true change, and the
+error is of second order. A move changes the variances as well; the
+dispersion prices $\psi_k=\partial F/\partial\sigma_k$ account for that to
+first order. In the deterministic limit the prices reduce to the weight of
+each route's rank, which is how the deterministic screen of the baseline is
+built. For the range, the GMD and the MAD the prices sum to zero: burdened
+drivers carry positive prices and light drivers negative ones, and a negative
+price is exactly the incentive to lengthen a route. Deterministically the
+price of the lightest route under the range is $-1$, and a detour of length
+$\delta$ reduces the range by $\delta$; stochastically the incentive is spread
+over all drivers who might be the lightest on a given day.
+
+\subsection{The fairness illusion}\label{sec:th:illusion}
 
 \begin{proposition}[Fairness illusion]\label{prop:gap}
-If $\lambda$ is nondecreasing then $\lord$ is convex and
+If $\lambda$ is nondecreasing then
 \[
 0\le\E\lord(X)-\lord(L)\le\|\lambda\|_1\,\E\|X-L\|_\infty\le\|\lambda\|_1\,v\Big(\sum_kW_k\Big)^{1/2}.
 \]
@@ -499,19 +609,78 @@ $\E\,\mathrm{GMD}(X)=m^{-2}\sum_{i\ne j}\big[s_{ij}\sqrt{2/\pi}\,e^{-d_{ij}^2/(2
 with $d_{ij}=L_i-L_j$ and $s_{ij}^2=\sigma_i^2+\sigma_j^2$.
 \end{proposition}
 \begin{proof}
-For nondecreasing $\lambda$ the rearrangement inequality gives
-$\lord(a)=\max_\sigma\sum_j\lambda_ja_{\sigma(j)}$, a maximum of linear functions;
-Jensen's inequality gives the lower bound. Since $|a_{(j)}-b_{(j)}|\le\|a-b\|_\infty$
-for every $j$, $\lord$ is $\|\lambda\|_1$-Lipschitz in the sup norm, and
-$\E\max_k|Z_k|\le(\E\sum_kZ_k^2)^{1/2}$. The variance identity follows from
-$\E X_k^2=L_k^2+\sigma_k^2$ and $\E\bar X^2=\bar L^2+m^{-2}\sum_k\sigma_k^2$; the
-GMD formula is the mean of a folded normal.
+Convexity (Lemma~\ref{lem:ordered}(c)) and Jensen's inequality give the lower
+bound, Lemma~\ref{lem:ordered}(b) the first upper bound, and
+$\E\max_k|X_k-L_k|\le(\E\sum_k(X_k-L_k)^2)^{1/2}=v(\sum_kW_k)^{1/2}$ the
+second. The variance identity follows from $\E X_k^2=L_k^2+\sigma_k^2$ and
+$\E\bar X^2=\bar L^2+m^{-2}\sum_k\sigma_k^2$; the GMD formula is the mean of a
+folded normal.
 \end{proof}
 
 A deterministic fair plan therefore \emph{overstates} the fairness drivers will
-experience. The overstatement grows with the arc noise and with the
-quadratic lengths: long arcs, not long routes, are what make a balanced plan
-unbalanced in practice.
+experience. The bound grows with the arc noise and with the quadratic lengths:
+long arcs, not long routes, are what make a balanced plan unbalanced in
+practice. The bound of Proposition~\ref{prop:gap} does not depend on how
+balanced the plan is. The next result shows that the gap itself depends on it
+sharply: it is exponentially small when the expected lengths are well
+separated and of the order of the standard deviation when they are equal.
+
+\begin{proposition}[Balance amplifies the illusion]\label{prop:balance}
+Let $X_k=L_k+\sigma_kZ_k$ with $Z_1,\dots,Z_m$ independent standard normal,
+$\bar\sigma=\max_k\sigma_k$, and $\lambda$ nondecreasing.
+\begin{enumerate}
+\item[(a)] If $L_1=\dots=L_m$ and $\sigma_1=\dots=\sigma_m=\sigma$, then
+$\E\lord(X)-\lord(L)=\sigma\sum_j\lambda_j\mu_{j:m}$, where $\mu_{j:m}$ is the
+expected $j$-th order statistic of $m$ standard normals; the constant
+$\sum_j\lambda_j\mu_{j:m}$ is positive unless $\lambda$ is constant.
+\item[(b)] If the $L_k$ are pairwise separated by at least $\Delta>0$, then
+\[
+0\le\E\lord(X)-\lord(L)\le 2\|\lambda\|_1\,\bar\sigma\sqrt{\tfrac{m(m-1)}{2}}\;e^{-\Delta^2/(8\bar\sigma^2)} .
+\]
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) With equal means, $\lord(X)=\lord(L)+\sigma\lord(Z)$ by
+Lemma~\ref{lem:ordered}(a), and $\E\lord(Z)=\sum_j\lambda_j\mu_{j:m}$. The
+$\mu_{j:m}$ are strictly increasing in $j$ and sum to zero by symmetry, so by
+Chebyshev's sum inequality $\sum_j\lambda_j\mu_{j:m}\ge\frac1m\sum_j\lambda_j\sum_j\mu_{j:m}=0$,
+with equality only if $\lambda$ is constant.
+(b) Let $r$ be the ranking of $L$ and $A$ the event that $X$ is not ranked
+like $L$. By Lemma~\ref{lem:ordered}(c),
+$\lord(X)=\max_\pi\sum_k\lambda_{\pi(k)}X_k$ and $\lord(L)=\sum_k\lambda_{r(k)}L_k$, so
+\[
+G:=\lord(X)-\lord(L)-\sum_k\lambda_{r(k)}\sigma_kZ_k
+=\max_\pi\sum_k(\lambda_{\pi(k)}-\lambda_{r(k)})(L_k+\sigma_kZ_k).
+\]
+On $A^c$ the maximum is attained at $\pi=r$ and $G=0$. Since $r$ maximises
+$\sum_k\lambda_{\pi(k)}L_k$, the $L$-part of every term is non-positive, so
+$G\le\bar\sigma\max_k|Z_k|\max_\pi\sum_k|\lambda_{\pi(k)}-\lambda_{r(k)}|\le2\|\lambda\|_1\bar\sigma\max_k|Z_k|$.
+The correction term has mean zero, hence
+$\E\lord(X)-\lord(L)=\E[G\,\mathbf 1_A]\le2\|\lambda\|_1\bar\sigma\,(\E\max_kZ_k^2)^{1/2}\Prob(A)^{1/2}$
+by Cauchy--Schwarz, with $\E\max_kZ_k^2\le m$. If the ranking of $X$
+differs from that of $L$, some pair of routes adjacent in $L$ is reversed; for
+such a pair $(k,l)$ with $L_l-L_k\ge\Delta$, reversal requires
+$\sigma_kZ_k-\sigma_lZ_l\ge\Delta$, which has probability at most
+$\bar\Phi(\Delta/(\sqrt2\bar\sigma))\le\frac12e^{-\Delta^2/(4\bar\sigma^2)}$. A union
+bound over the $m-1$ adjacent pairs completes the proof.
+\end{proof}
+
+Proposition~\ref{prop:balance} identifies the mechanism behind the size of
+the illusion: a deterministic fairness objective drives the expected lengths
+together, and the closer they are, the more the realised ranking is decided by
+noise rather than by the plan. In the limit of a perfectly balanced plan the
+gap is a fixed multiple of the standard deviation (for the range with $m=5$
+the constant is $\mu_{5:5}-\mu_{1:5}\approx2.33$), whereas for a plan whose
+routes differ by several standard deviations it is negligible. Fair plans
+are therefore exactly the plans in which the deterministic assessment is
+least reliable. The data agree: on the 25 main-grid instances the
+deterministic value of the \emph{cost-optimal} plans, whose route lengths
+differ by about 110 distance units between neighbours (median), understates
+the true range by $5.5\%$ on average, against $23\%$ for the Det range plans
+at $B=1.10$, and the same pattern holds for the maximum ($4.6\%$ against $9\%$),
+the GMD ($4.8\%$ against $19\%$) and the MAD ($4.3\%$ against $20\%$).
+
+\subsection{Route consistency under uncertainty}\label{sec:th:consistency}
 
 \begin{proposition}[Monotonicity no longer protects drivers]\label{prop:mono}
 With deterministic workloads, every monotone measure ($\lambda\ge0$) has an
@@ -525,8 +694,11 @@ $\E\max=100+10\varphi(0)\approx103.99$ under A and $\approx101$ under B, so the
 optimiser picks the longer tour B.
 \end{example}
 
-Route consistency must therefore be imposed for every measure, and it needs a
-risk attitude. We let each driver rank the tours of their customer set by
+The example generalises: by Corollary~\ref{cor:special}, $\E\max$ depends on
+the whole distribution of each route, and lowering a route's variance can
+reduce the expected maximum by more than the extra length it costs. Route
+consistency must therefore be imposed for every measure, and it needs a risk
+attitude. We let each driver rank the tours of their customer set by
 \[
 \rho_\kappa(r)=\frac{\E[\Phi(r)\mid Y]+\kappa\,\mathrm{SD}[\Phi(r)\mid Y]}{Y}=L(r)+\kappa v\sqrt{W(r)},
 \]
@@ -556,7 +728,29 @@ variance $v^2H_{ij}^2$) the same holds with $W=\sum (H_{ij}c_{ij})^2$ and arc
 weights $c_{ij}+\theta H_{ij}^2c_{ij}^2$.
 \end{proof}
 
-\paragraph{The SORTIE problem.}
+\begin{corollary}[Effort and monotonicity in $\kappa$]\label{cor:kappa}
+(a) If a customer set has $s$ supported extreme tours, the dichotomic search
+solves $2s-1$ weighted tour problems.
+(b) Let $r_\kappa$ and $r_{\kappa'}$ minimise $\rho_\kappa$ and $\rho_{\kappa'}$ with
+$\kappa<\kappa'$. Then $W(r_{\kappa'})\le W(r_\kappa)$ and $L(r_{\kappa'})\ge L(r_\kappa)$:
+more risk-averse drivers choose tours that are longer but less variable.
+\end{corollary}
+\begin{proof}
+(a) Two problems give the end points; every later problem either produces a
+new supported tour (at most $s-2$ times) or certifies one of the $s-1$ edges
+between adjacent supported tours. (b) Write $u=v\sqrt W$. Optimality gives
+$L_\kappa+\kappa u_\kappa\le L_{\kappa'}+\kappa u_{\kappa'}$ and
+$L_{\kappa'}+\kappa'u_{\kappa'}\le L_\kappa+\kappa'u_\kappa$; adding yields
+$(\kappa'-\kappa)(u_{\kappa'}-u_\kappa)\le0$, so $u_{\kappa'}\le u_\kappa$, and
+then the first inequality gives $L_{\kappa'}\ge L_\kappa$.
+\end{proof}
+
+Under homogeneous noise the length and the quadratic length of the tours of a
+fixed customer set are nearly comonotone, so $s$ is small and the
+risk-consistent tour rarely differs from the shortest one; E13 confirms this
+(at most 16\% of the routes change even at $\kappa=4$).
+
+\subsection{The SORTIE problem}\label{sec:th:problem}
 \begin{align*}
 \min\ \ & \E\,\lord\big(X(r_1,\dots,r_m)\big)\\
 \text{s.t.}\ \ & (S_1,\dots,S_m)\ \text{capacity-feasible partition},\ S_k\ne\emptyset,\qquad
@@ -565,6 +759,24 @@ weights $c_{ij}+\theta H_{ij}^2c_{ij}^2$.
 \end{align*}
 where $C^\ast$ is the minimum expected total length and $B\ge1$ the budget
 factor. With $v=0$ and $\kappa=0$ this is the X-CVRP-TSP of \citet{ljubic2026fair}.
+
+\begin{proposition}[Complexity]\label{prop:np}
+For every noise level $v\ge0$, the SORTIE problem with the maximum measure and
+$\kappa=0$ is NP-hard, and so is the lower level for a single customer set.
+\end{proposition}
+\begin{proof}
+Take $m=1$, $B=\infty$ and no capacity limit. Then the only partition is
+$S_1=V'$, $\E\max_kX_k=\E X_1=L(r_1)$, and $r_1$ must be a shortest tour of
+$\{0\}\cup V'$: solving the problem, or its lower level, solves the
+travelling salesman problem.
+\end{proof}
+
+The problem is therefore at least as hard as the deterministic fair routing
+problem of \citet{ljubic2026fair}, which it contains, and the stochastic
+objective adds a non-linear evaluation on top. This motivates the heuristic
+of Section~\ref{sec:alg}, which keeps the lower level exact on accepted plans
+(Proposition~\ref{prop:confirm}) and evaluates the objective exactly by
+Theorem~\ref{thm:pboi}.
 
 %==========================================================================
 \section{The SORTIE algorithm}\label{sec:alg}
