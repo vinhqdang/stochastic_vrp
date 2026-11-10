@@ -3,3 +3,5 @@
 [run_ext] e10_fleet -> /home/user/stochastic_vrp/papers/sortie/results/e10_fleet.log
 [run_ext] e10_fleet ok
 [run_ext] e11_dayfactor -> /home/user/stochastic_vrp/papers/sortie/results/e11_dayfactor.log
+[run_ext] e11_dayfactor ok
+[run_ext] e12_misspec -> /home/user/stochastic_vrp/papers/sortie/results/e12_misspec.log
