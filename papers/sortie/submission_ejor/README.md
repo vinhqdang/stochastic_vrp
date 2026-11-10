@@ -44,7 +44,7 @@ The submission manuscript is a condensed version of `../sortie.tex`.
 - [x] Keywords: Routing (EJOR list, first); Fairness; Stochastic travel times; Order statistics; Bilevel optimization
 - [x] Abbreviations defined at first use (TSP, X-CVRP-TSP, SAA, GMD, MAD, PBOI, CVaR, SORTIE)
 - [x] Proofs in the main text
-- [x] Declarations sections before the references: competing interests, funding, CRediT, data availability
+- [x] Declarations sections before the references: competing interests, funding, CRediT, data availability, generative AI use
 
 ## To confirm before submitting
 
@@ -64,10 +64,8 @@ The submission manuscript is a condensed version of `../sortie.tex`.
 5. **Data availability.** The manuscript says the material will be released
    in a repository upon acceptance. Name the repository (Zenodo/GitHub) if
    one is to be cited at submission.
-6. **Declaration of generative AI use.** EJOR requires a statement in a
-   section before the references whenever AI tools were used in preparing
-   the manuscript. Decide whether this applies and add it if so; nothing has
-   been added.
+6. **Declaration of generative AI use.** Added to the manuscript (section
+   before the references), as requested by the authors.
 7. **Competing interests.** Complete the Elsevier declarations tool and
    upload the generated .docx.
 8. **Co-authors.** Enter ORCID iDs for the co-authors if available.
