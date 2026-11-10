@@ -84,3 +84,21 @@
 [e13] 82/100 e13|X641-n35-b3|range|B1.10|sortie0|v0.3|t25|S20000|kappa0.5 t=402s
 [e13] 83/100 e13|X641-n35-b3|range|B1.10|sortie0|v0.3|t25|S20000|kappa1.0 t=413s
 [e13] 84/100 e13|X641-n35-b3|range|B1.10|sortie0|v0.3|t25|S20000|kappa2.0 t=413s
+[e13] 85/100 e13|X641-n35-b3|range|B1.10|sortie0|v0.3|t25|S20000|kappa4.0 t=428s
+[e13] 86/100 e13|X641-n35-b3|max|B1.10|sortie0|v0.3|t25|S20000|kappa0.0 t=428s
+[e13] 87/100 e13|X641-n35-b3|max|B1.10|sortie0|v0.3|t25|S20000|kappa0.5 t=438s
+[e13] 88/100 e13|X641-n35-b3|max|B1.10|sortie0|v0.3|t25|S20000|kappa1.0 t=438s
+[e13] 89/100 e13|X641-n35-b3|max|B1.10|sortie0|v0.3|t25|S20000|kappa2.0 t=453s
+[e13] 90/100 e13|X641-n35-b3|max|B1.10|sortie0|v0.3|t25|S20000|kappa4.0 t=453s
+[e13] 91/100 e13|X641-n35-b4|range|B1.10|sortie0|v0.3|t25|S20000|kappa0.0 t=464s
+[e13] 92/100 e13|X641-n35-b4|range|B1.10|sortie0|v0.3|t25|S20000|kappa0.5 t=464s
+[e13] 93/100 e13|X641-n35-b4|range|B1.10|sortie0|v0.3|t25|S20000|kappa1.0 t=479s
+[e13] 94/100 e13|X641-n35-b4|range|B1.10|sortie0|v0.3|t25|S20000|kappa2.0 t=479s
+[e13] 95/100 e13|X641-n35-b4|range|B1.10|sortie0|v0.3|t25|S20000|kappa4.0 t=489s
+[e13] 96/100 e13|X641-n35-b4|max|B1.10|sortie0|v0.3|t25|S20000|kappa0.0 t=489s
+[e13] 97/100 e13|X641-n35-b4|max|B1.10|sortie0|v0.3|t25|S20000|kappa0.5 t=504s
+[e13] 98/100 e13|X641-n35-b4|max|B1.10|sortie0|v0.3|t25|S20000|kappa1.0 t=504s
+[e13] 99/100 e13|X641-n35-b4|max|B1.10|sortie0|v0.3|t25|S20000|kappa2.0 t=515s
+[e13] 100/100 e13|X641-n35-b4|max|B1.10|sortie0|v0.3|t25|S20000|kappa4.0 t=515s
+[e13] finished ok=100 failed=0 elapsed=515s
+[e13] jobs=100 failures=0
