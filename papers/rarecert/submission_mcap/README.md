@@ -1,15 +1,20 @@
-# RARECERT — PEIS submission package
+# RARECERT — MCAP submission package
 
-Target: *Probability in the Engineering and Informational Sciences* (Cambridge
-University Press). Initial submission is one PDF (no template required).
+Target: *Methodology and Computing in Applied Probability* (MCAP, Springer;
+subscription/hybrid — publishing is free when the open-access option is not chosen).
 History: rejected without review at INFORMS J. Computing on 2026-11-13; the editor
-suggested PEIS (see `../reviews/ijoc_decision_2026-11-13.md`).
+suggested a probability outlet such as PEIS, but PEIS has been gold open access since
+2024 (article processing charge), so the author chose MCAP (2026-11-13). See
+`../reviews/ijoc_decision_2026-11-13.md`. The scripts and result folder keep the
+`peis` prefix (`run_rarecert_peis_*.py`, `results/rarecert/peis/`) from the first
+retargeting; the name is historical.
 
 | file | content |
 |---|---|
-| `rarecert_peis.tex` / `.pdf` | manuscript (17 pages) |
+| `rarecert_mcap.tex` / `.pdf` | manuscript, Springer Nature template (19 pages) |
 | `cover_letter.tex` / `.pdf` | cover letter (mentions the IJOC history) |
-| `references.bib` | bibliography (apalike) |
+| `references.bib` | bibliography |
+| `sn-jnl.cls`, `sn-mathphys-ay.bst` | Springer Nature LaTeX template (author-year), from the author's template zip |
 | `make_tables.py` | writes `tab_conditions.tex`, `tab_bias.tex`, `bias_sentence.tex` from the result CSVs — never edit those three by hand |
 | `figures/` | copied from `../manuscript/figures/` (made by `svrpspd_wdro/scripts/make_rarecert_figures*.py`) |
 
@@ -30,6 +35,9 @@ suggested PEIS (see `../reviews/ijoc_decision_2026-11-13.md`).
 
 ```
 python make_tables.py
-pdflatex rarecert_peis && bibtex rarecert_peis && pdflatex rarecert_peis && pdflatex rarecert_peis
+pdflatex rarecert_mcap && bibtex rarecert_mcap && pdflatex rarecert_mcap && pdflatex rarecert_mcap
 pdflatex cover_letter
 ```
+
+Note: the figures are matplotlib PDFs with Type 3 fonts; if Springer production asks
+for Type 1/TrueType fonts, regenerate them with `matplotlib.rcParams['pdf.fonttype'] = 42`.

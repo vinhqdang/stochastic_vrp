@@ -1,0 +1,311 @@
+%% BioMed_Central_Bib_Style_v1.01
+
+\begin{thebibliography}{18}
+% BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
+\ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
+\ifx \binits  \undefined \def \binits#1{#1}\fi
+\ifx \bauthor  \undefined \def \bauthor#1{#1}\fi
+\ifx \batitle  \undefined \def \batitle#1{#1}\fi
+\ifx \bjtitle  \undefined \def \bjtitle#1{#1}\fi
+\ifx \bvolume  \undefined \def \bvolume#1{\textbf{#1}}\fi
+\ifx \byear  \undefined \def \byear#1{#1}\fi
+\ifx \bissue  \undefined \def \bissue#1{#1}\fi
+\ifx \bfpage  \undefined \def \bfpage#1{#1}\fi
+\ifx \blpage  \undefined \def \blpage #1{#1}\fi
+\ifx \burl  \undefined \def \burl#1{\textsf{#1}}\fi
+\ifx \doiurl  \undefined \def \doiurl#1{\url{https://doi.org/#1}}\fi
+\ifx \betal  \undefined \def \betal{\textit{et al.}}\fi
+\ifx \binstitute  \undefined \def \binstitute#1{#1}\fi
+\ifx \binstitutionaled  \undefined \def \binstitutionaled#1{#1}\fi
+\ifx \bctitle  \undefined \def \bctitle#1{#1}\fi
+\ifx \beditor  \undefined \def \beditor#1{#1}\fi
+\ifx \bpublisher  \undefined \def \bpublisher#1{#1}\fi
+\ifx \bbtitle  \undefined \def \bbtitle#1{#1}\fi
+\ifx \bedition  \undefined \def \bedition#1{#1}\fi
+\ifx \bseriesno  \undefined \def \bseriesno#1{#1}\fi
+\ifx \blocation  \undefined \def \blocation#1{#1}\fi
+\ifx \bsertitle  \undefined \def \bsertitle#1{#1}\fi
+\ifx \bsnm \undefined \def \bsnm#1{#1}\fi
+\ifx \bsuffix \undefined \def \bsuffix#1{#1}\fi
+\ifx \bparticle \undefined \def \bparticle#1{#1}\fi
+\ifx \barticle \undefined \def \barticle#1{#1}\fi
+\bibcommenthead
+\ifx \bconfdate \undefined \def \bconfdate #1{#1}\fi
+\ifx \botherref \undefined \def \botherref #1{#1}\fi
+\ifx \url \undefined \def \url#1{\textsf{#1}}\fi
+\ifx \bchapter \undefined \def \bchapter#1{#1}\fi
+\ifx \bbook \undefined \def \bbook#1{#1}\fi
+\ifx \bcomment \undefined \def \bcomment#1{#1}\fi
+\ifx \oauthor \undefined \def \oauthor#1{#1}\fi
+\ifx \citeauthoryear \undefined \def \citeauthoryear#1{#1}\fi
+\ifx \endbibitem  \undefined \def \endbibitem {}\fi
+\ifx \bconflocation  \undefined \def \bconflocation#1{#1}\fi
+\ifx \arxivurl  \undefined \def \arxivurl#1{\textsf{#1}}\fi
+\csname PreBibitemsHook\endcsname
+
+%%% 1
+\bibitem[\protect\citeauthoryear{Au and Beck}{2001}]{AuBeck2001}
+\begin{barticle}
+\bauthor{\bsnm{Au}, \binits{S.-K.}},
+\bauthor{\bsnm{Beck}, \binits{J.L.}}:
+\batitle{Estimation of small failure probabilities in high dimensions by subset
+  simulation}.
+\bjtitle{Probabilistic Engineering Mechanics}
+\bvolume{16}(\bissue{4}),
+\bfpage{263}--\blpage{277}
+(\byear{2001})
+\doiurl{10.1016/S0266-8920(01)00019-4}
+\end{barticle}
+\endbibitem
+
+%%% 2
+\bibitem[\protect\citeauthoryear{Asmussen and Glynn}{2007}]{AsmussenGlynn2007}
+\begin{bbook}
+\bauthor{\bsnm{Asmussen}, \binits{S.}},
+\bauthor{\bsnm{Glynn}, \binits{P.W.}}:
+\bbtitle{Stochastic Simulation: Algorithms and Analysis}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2007}).
+\doiurl{10.1007/978-0-387-69033-9}
+\end{bbook}
+\endbibitem
+
+%%% 3
+\bibitem[\protect\citeauthoryear{Bassamboo
+  et~al.}{2008}]{BassambooJunejaZeevi2008}
+\begin{barticle}
+\bauthor{\bsnm{Bassamboo}, \binits{A.}},
+\bauthor{\bsnm{Juneja}, \binits{S.}},
+\bauthor{\bsnm{Zeevi}, \binits{A.}}:
+\batitle{Portfolio credit risk with extremal dependence: asymptotic analysis
+  and efficient simulation}.
+\bjtitle{Operations Research}
+\bvolume{56}(\bissue{3}),
+\bfpage{593}--\blpage{606}
+(\byear{2008})
+\doiurl{10.1287/opre.1080.0513}
+\end{barticle}
+\endbibitem
+
+%%% 4
+\bibitem[\protect\citeauthoryear{Bucklew}{2004}]{Bucklew2004}
+\begin{bbook}
+\bauthor{\bsnm{Bucklew}, \binits{J.A.}}:
+\bbtitle{Introduction to Rare Event Simulation}.
+\bpublisher{Springer},
+\blocation{New York}
+(\byear{2004})
+\end{bbook}
+\endbibitem
+
+%%% 5
+\bibitem[\protect\citeauthoryear{de~Boer et~al.}{2005}]{deBoerEtAl2005}
+\begin{barticle}
+\bauthor{\bsnm{Boer}, \binits{P.-T.}},
+\bauthor{\bsnm{Kroese}, \binits{D.P.}},
+\bauthor{\bsnm{Mannor}, \binits{S.}},
+\bauthor{\bsnm{Rubinstein}, \binits{R.Y.}}:
+\batitle{A tutorial on the cross-entropy method}.
+\bjtitle{Annals of Operations Research}
+\bvolume{134}(\bissue{1}),
+\bfpage{19}--\blpage{67}
+(\byear{2005})
+\doiurl{10.1007/s10479-005-5724-z}
+\end{barticle}
+\endbibitem
+
+%%% 6
+\bibitem[\protect\citeauthoryear{Dethloff}{2001}]{Dethloff2001}
+\begin{barticle}
+\bauthor{\bsnm{Dethloff}, \binits{J.}}:
+\batitle{Vehicle routing and reverse logistics: the vehicle routing problem
+  with simultaneous delivery and pick-up}.
+\bjtitle{OR Spektrum}
+\bvolume{23}(\bissue{1}),
+\bfpage{79}--\blpage{96}
+(\byear{2001})
+\end{barticle}
+\endbibitem
+
+%%% 7
+\bibitem[\protect\citeauthoryear{Dinh et~al.}{2018}]{DinhFukasawaLuedtke2018}
+\begin{barticle}
+\bauthor{\bsnm{Dinh}, \binits{T.}},
+\bauthor{\bsnm{Fukasawa}, \binits{R.}},
+\bauthor{\bsnm{Luedtke}, \binits{J.}}:
+\batitle{Exact algorithms for the chance-constrained vehicle routing problem}.
+\bjtitle{Mathematical Programming}
+\bvolume{172},
+\bfpage{105}--\blpage{138}
+(\byear{2018})
+\doiurl{10.1007/s10107-017-1151-6}
+\end{barticle}
+\endbibitem
+
+%%% 8
+\bibitem[\protect\citeauthoryear{Dupuis and Wang}{2007}]{DupuisWang2007}
+\begin{barticle}
+\bauthor{\bsnm{Dupuis}, \binits{P.}},
+\bauthor{\bsnm{Wang}, \binits{H.}}:
+\batitle{Subsolutions of an {I}saacs equation and efficient schemes for
+  importance sampling}.
+\bjtitle{Mathematics of Operations Research}
+\bvolume{32}(\bissue{3}),
+\bfpage{723}--\blpage{757}
+(\byear{2007})
+\doiurl{10.1287/moor.1070.0266}
+\end{barticle}
+\endbibitem
+
+%%% 9
+\bibitem[\protect\citeauthoryear{Glasserman
+  et~al.}{2000}]{GlassermanHeidelbergerShahabuddin2000}
+\begin{barticle}
+\bauthor{\bsnm{Glasserman}, \binits{P.}},
+\bauthor{\bsnm{Heidelberger}, \binits{P.}},
+\bauthor{\bsnm{Shahabuddin}, \binits{P.}}:
+\batitle{Variance reduction techniques for estimating value-at-risk}.
+\bjtitle{Management Science}
+\bvolume{46}(\bissue{10}),
+\bfpage{1349}--\blpage{1364}
+(\byear{2000})
+\doiurl{10.1287/mnsc.46.10.1349.12274}
+\end{barticle}
+\endbibitem
+
+%%% 10
+\bibitem[\protect\citeauthoryear{Gendreau et~al.}{2016}]{GendreauJabaliRei2016}
+\begin{barticle}
+\bauthor{\bsnm{Gendreau}, \binits{M.}},
+\bauthor{\bsnm{Jabali}, \binits{O.}},
+\bauthor{\bsnm{Rei}, \binits{W.}}:
+\batitle{50th anniversary invited article---future research directions in
+  stochastic vehicle routing}.
+\bjtitle{Transportation Science}
+\bvolume{50}(\bissue{4}),
+\bfpage{1163}--\blpage{1173}
+(\byear{2016})
+\doiurl{10.1287/trsc.2016.0709}
+\end{barticle}
+\endbibitem
+
+%%% 11
+\bibitem[\protect\citeauthoryear{Glasserman and Li}{2005}]{GlassermanLi2005}
+\begin{barticle}
+\bauthor{\bsnm{Glasserman}, \binits{P.}},
+\bauthor{\bsnm{Li}, \binits{J.}}:
+\batitle{Importance sampling for portfolio credit risk}.
+\bjtitle{Management Science}
+\bvolume{51}(\bissue{11}),
+\bfpage{1643}--\blpage{1656}
+(\byear{2005})
+\doiurl{10.1287/mnsc.1050.0415}
+\end{barticle}
+\endbibitem
+
+%%% 12
+\bibitem[\protect\citeauthoryear{Glasserman and
+  Wang}{1997}]{GlassermanWang1997}
+\begin{barticle}
+\bauthor{\bsnm{Glasserman}, \binits{P.}},
+\bauthor{\bsnm{Wang}, \binits{Y.}}:
+\batitle{Counterexamples in importance sampling for large deviations
+  probabilities}.
+\bjtitle{The Annals of Applied Probability}
+\bvolume{7}(\bissue{3}),
+\bfpage{731}--\blpage{746}
+(\byear{1997})
+\end{barticle}
+\endbibitem
+
+%%% 13
+\bibitem[\protect\citeauthoryear{Ghosal and
+  Wiesemann}{2020}]{GhosalWiesemann2020}
+\begin{barticle}
+\bauthor{\bsnm{Ghosal}, \binits{S.}},
+\bauthor{\bsnm{Wiesemann}, \binits{W.}}:
+\batitle{The distributionally robust chance-constrained vehicle routing
+  problem}.
+\bjtitle{Operations Research}
+\bvolume{68}(\bissue{3}),
+\bfpage{716}--\blpage{732}
+(\byear{2020})
+\doiurl{10.1287/opre.2019.1924}
+\end{barticle}
+\endbibitem
+
+%%% 14
+\bibitem[\protect\citeauthoryear{Gounaris
+  et~al.}{2013}]{GounarisWiesemannFloudas2013}
+\begin{barticle}
+\bauthor{\bsnm{Gounaris}, \binits{C.E.}},
+\bauthor{\bsnm{Wiesemann}, \binits{W.}},
+\bauthor{\bsnm{Floudas}, \binits{C.A.}}:
+\batitle{The robust capacitated vehicle routing problem under demand
+  uncertainty}.
+\bjtitle{Operations Research}
+\bvolume{61}(\bissue{3}),
+\bfpage{677}--\blpage{693}
+(\byear{2013})
+\end{barticle}
+\endbibitem
+
+%%% 15
+\bibitem[\protect\citeauthoryear{Horn and Johnson}{2013}]{HornJohnson2013}
+\begin{bbook}
+\bauthor{\bsnm{Horn}, \binits{R.A.}},
+\bauthor{\bsnm{Johnson}, \binits{C.R.}}:
+\bbtitle{Matrix Analysis},
+\bedition{2nd} edn.
+\bpublisher{Cambridge University Press},
+\blocation{Cambridge}
+(\byear{2013})
+\end{bbook}
+\endbibitem
+
+%%% 16
+\bibitem[\protect\citeauthoryear{Olver et~al.}{2010}]{DLMF2010}
+\begin{bbook}
+\bauthor{\bsnm{Olver}, \binits{F.W.J.}},
+\bauthor{\bsnm{Lozier}, \binits{D.W.}},
+\bauthor{\bsnm{Boisvert}, \binits{R.F.}},
+\bauthor{\bsnm{Clark}, \binits{C.W.}}:
+\bbtitle{{NIST} Handbook of Mathematical Functions}.
+\bpublisher{Cambridge University Press},
+\blocation{Cambridge}
+(\byear{2010})
+\end{bbook}
+\endbibitem
+
+%%% 17
+\bibitem[\protect\citeauthoryear{Owen et~al.}{2019}]{OwenMaximovChertkov2019}
+\begin{barticle}
+\bauthor{\bsnm{Owen}, \binits{A.B.}},
+\bauthor{\bsnm{Maximov}, \binits{Y.}},
+\bauthor{\bsnm{Chertkov}, \binits{M.}}:
+\batitle{Importance sampling the union of rare events with an application to
+  power systems analysis}.
+\bjtitle{Electronic Journal of Statistics}
+\bvolume{13}(\bissue{1}),
+\bfpage{231}--\blpage{254}
+(\byear{2019})
+\doiurl{10.1214/18-EJS1527}
+\end{barticle}
+\endbibitem
+
+%%% 18
+\bibitem[\protect\citeauthoryear{Sadowsky and
+  Bucklew}{1990}]{SadowskyBucklew1990}
+\begin{barticle}
+\bauthor{\bsnm{Sadowsky}, \binits{J.S.}},
+\bauthor{\bsnm{Bucklew}, \binits{J.A.}}:
+\batitle{On large deviations theory and asymptotically efficient {M}onte
+  {C}arlo estimation}.
+\bjtitle{IEEE Transactions on Information Theory}
+\bvolume{36}(\bissue{3}),
+\bfpage{579}--\blpage{588}
+(\byear{1990})
+\end{barticle}
+\endbibitem
+
+\end{thebibliography}

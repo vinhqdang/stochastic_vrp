@@ -1,4 +1,4 @@
-"""Generate the table inputs of rarecert_peis.tex from the result files.
+"""Generate the table inputs of rarecert_mcap.tex from the result files.
 
 Reads svrpspd_wdro/results/rarecert/peis/{conditions.csv, bias_check.csv} and writes
 tab_conditions.tex, tab_bias.tex and bias_sentence.tex next to this script.

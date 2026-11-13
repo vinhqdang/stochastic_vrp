@@ -12,14 +12,17 @@
   Decision and response plan: `reviews/ijoc_decision_2026-11-13.md`. The IJOC files
   (`submission_ijoc/`, `manuscript/`) are kept unchanged as the record of that
   submission.
-- **Venue now:** *Probability in the Engineering and Informational Sciences*
-  (Cambridge University Press). No LaTeX format required at submission; one PDF with
-  tables and figures embedded. Files in `submission_peis/` (`rarecert_peis.tex`,
-  `cover_letter.tex`, figures, generated table inputs).
-- **State:** **ACTIVE — preparing the PEIS submission; open for edits** in
-  `submission_peis/` only. Not yet submitted. When it is submitted, mark it frozen
+- **Venue now:** *Methodology and Computing in Applied Probability* (MCAP,
+  Springer; subscription/hybrid, no fee without the open-access option). The editor's
+  suggestion, PEIS, was dropped the same day: it has been gold open access since 2024
+  (article processing charge) and the author has no funds for that. Files in
+  `submission_mcap/` (`rarecert_mcap.tex`, `cover_letter.tex`, figures, generated
+  table inputs); Springer-style abstract (230 words), keywords, MSC codes and a
+  Declarations section.
+- **State:** **ACTIVE — preparing the MCAP submission; open for edits** in
+  `submission_mcap/` only. Not yet submitted. When it is submitted, mark it frozen
   here and in the root CLAUDE.md.
-- **PEIS version (2026-11-13):** rewritten as a probability paper with complete
+- **Rewrite as a probability paper (2026-11-13; first aimed at PEIS):** rewritten as a probability paper with complete
   proofs (log-asymptotics with explicit error terms, sharp single-shift threshold
   ϱ = 1/4, new silent-underestimation proposition, mixture efficiency under a covering
   condition with constant Ψ computed by `svrpspd_wdro/rarecert/covering.py`).

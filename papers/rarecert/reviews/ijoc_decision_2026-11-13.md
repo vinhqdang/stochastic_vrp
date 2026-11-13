@@ -34,3 +34,10 @@ contribution. Changes, in `submission_peis/`:
    ρ = 0.6 and 0.8.
 5. Numerics cut to an illustration; quantum section, route-day simulator and most
    logistics detail removed (they remain in the IJOC version).
+
+## Venue change (same day)
+
+PEIS has been gold open access since volume 38 (2024), so publishing there carries an
+article processing charge that the author cannot pay. New target: *Methodology and
+Computing in Applied Probability* (Springer, subscription/hybrid, free without the
+open-access option). The package moved from `submission_peis/` to `submission_mcap/`.

@@ -1,23 +1,21 @@
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage{amsmath,amssymb,amsthm}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{natbib}
-\usepackage[hidelinks]{hyperref}
-\usepackage{setspace}
-\setstretch{1.15}
+\documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}% Springer Nature template, author-year references
 
+\usepackage{graphicx}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{booktabs}%
+
+\theoremstyle{thmstyleone}%
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}{Proposition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{corollary}{Corollary}
-\theoremstyle{definition}
+\theoremstyle{thmstylethree}%
 \newtheorem{definition}{Definition}
 \newtheorem{assumption}{Assumption}
-\theoremstyle{remark}
+\theoremstyle{thmstyletwo}%
 \newtheorem{remark}{Remark}
 
 \newcommand{\E}{\mathbb{E}}
@@ -26,43 +24,40 @@
 \newcommand{\one}{\mathbf{1}}
 \newcommand{\ip}[2]{\langle #1,#2\rangle}
 
-\title{Two end modes: logarithmic asymptotics and importance sampling for the peak
-load of a pickup-and-delivery route}
-\author{Quang-Vinh Dang\\
-British University Vietnam, Hung Yen, Vietnam\\
-\texttt{vinh.dq4@buv.edu.vn}\quad ORCID 0000-0002-3877-8024}
-\date{}
+\raggedbottom
 
 \begin{document}
+
+\title[Two end modes: importance sampling for a pickup-and-delivery peak load]{Two end modes: logarithmic asymptotics and importance sampling for the peak load of a pickup-and-delivery route}
+
+\author*[1]{\fnm{Quang-Vinh} \sur{Dang}}\email{vinh.dq4@buv.edu.vn}
+
+\affil*[1]{\orgname{British University Vietnam}, \orgaddress{\city{Hung Yen}, \country{Vietnam}}}
+
+\abstract{A vehicle that delivers and collects goods along a route carries, after each stop, the
+deliveries still to be made plus the pickups already made. We study the probability that
+the peak of this load exceeds a large level $c$ when the demands are gamma variables
+coupled by one-factor Gaussian copulas, one for deliveries and one for pickups. We prove
+$\log\P(\text{peak}>c)=-c/\lambda^\star+O(\sqrt c)$, where $\lambda^\star$ is the larger
+of two spectral scales, roots of secular equations for the delivery block at the start of
+the route and the pickup block at its end. A single mean shift at the dominant end is
+logarithmically efficient when the weaker end scale is below $\lambda^\star/4$ and the
+dominant block has a spectral gap, and is not efficient above $\lambda^\star/4$. The
+failure can be silent: when few draws are expected in the weaker end mode, the estimate
+has conditional mean equal to the probability minus that mode's mass, with a small
+sample variance. A mixture of shifts at the stage dominating points with a defensive
+component is logarithmically efficient under a covering condition that reduces to a
+two-dimensional min--max problem, with closed-form special cases. On 5\,920 routes of two
+regional plans the condition holds, for constant weights, on every route at copula
+correlation $0.6$; checks against a quadrature reference confirm the predicted
+underestimation of the single shift and the accuracy of the mixture down to $10^{-6}$.}
+
+\keywords{rare-event simulation, importance sampling, logarithmic efficiency, large deviations, Gaussian copula, vehicle routing}
+
+\pacs[MSC Classification]{65C05, 60F10, 90B06}
+
 \maketitle
 
-\begin{abstract}
-A vehicle that delivers and collects goods along a route of $L$ stops carries, after
-stop $k$, the deliveries still to be made plus the pickups already made. We study the
-probability that the peak of this load exceeds a large level $c$ when the demands are
-gamma variables coupled by one-factor Gaussian copulas, one for deliveries and one for
-pickups. The peak is a maximum of $L+1$ sums of transformed correlated normals, and
-we show that $\log\P(\text{peak}>c) = -c/\lambda^\star + O(\sqrt c)$, where
-$\lambda^\star$ is the larger of two explicit spectral scales: the largest root of a
-secular equation for the delivery block at the start of the route and for the pickup
-block at its end. Importance sampling with a single mean shift at the dominant end is
-logarithmically efficient when the weaker end scale is below $\lambda^\star/4$ and the
-dominant block has a spectral gap, and is not efficient when it is above
-$\lambda^\star/4$. In the second case the failure need not show: when the
-sample size is small compared with the inverse probability of the weaker end mode, with
-high probability no draw reaches it, and given that, the estimate has mean equal to the
-probability minus that mode's mass while its sample variance stays small. A mixture of shifts at the
-dominating points of the stage blocks, with a defensive component, is logarithmically
-efficient under a covering condition that we reduce to a two-dimensional min--max
-problem, with closed-form sufficient conditions. On 5\,920 routes of two regional plans
-the condition holds, for constant weights, on every route at copula correlation $0.6$; numerical checks
-against a quadrature reference confirm the predicted underestimation of the single
-shift and the accuracy of the mixture down to $10^{-6}$.
-
-\medskip\noindent\textbf{Keywords:} rare-event simulation; importance sampling;
-logarithmic efficiency; large deviations; Gaussian copula; quadratic forms; vehicle
-routing.
-\end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
@@ -765,7 +760,7 @@ $Np_B$ is small. The relative variance of SMIS grows from $3.8$ to $5.9$ over th
 decades of $\gamma$, consistent with logarithmic efficiency.
 
 \begin{table}[t]
-\centering\small
+\centering\footnotesize
 \caption{120 routes, $10^6$ draws: absolute relative error (median / $90\%$ quantile)
 and sample relative variance (median) by band of $\varrho$. The reference is the
 quadrature program for 178 of the 480 rows and the CE mixture for the others, so the CE
@@ -912,15 +907,25 @@ the numerical checks support but we do not prove; continuum mixtures for stages 
 near ties at large scale; and the case of correlated delivery and pickup factors, in
 which the two end blocks are no longer independent.
 
-{\sloppy\paragraph{Code and data.} The instances, plans, simulators, estimators and the scripts
-that produce every number in this paper are in the repository
-\url{https://github.com/vinhqdang/stochastic_vrp} (directory \texttt{svrpspd\_wdro}); the
-conditions of Table~\ref{tab:conditions} come from
-\texttt{scripts/run\_rarecert\_peis\_conditions.py}, Table~\ref{tab:bias} from
-\texttt{scripts/run\_rarecert\_peis\_bias.py}, and the covering constant is
-\texttt{rarecert/covering.py}.\par}
+\section*{Declarations}
 
-\bibliographystyle{apalike}
+\begin{itemize}
+\item \textbf{Funding.} No funding was received for this work.
+\item \textbf{Competing interests.} The author has no competing interests to declare.
+\item \textbf{Ethics approval and consent to participate.} Not applicable.
+\item \textbf{Consent for publication.} Not applicable.
+\item \textbf{Data availability.} The instances, plans and all results used in this paper
+are in the public repository \url{https://github.com/vinhqdang/stochastic_vrp}.
+\item \textbf{Materials availability.} Not applicable.
+\item \textbf{Code availability.} The simulators, estimators and the scripts that produce
+every number in this paper are in the same repository (directory
+\texttt{svrpspd\_wdro}): Table~\ref{tab:conditions} from
+\texttt{scripts/run\_rarecert\_peis\_conditions.py}, Table~\ref{tab:bias} from
+\texttt{scripts/run\_rarecert\_peis\_bias.py}, and the covering constant of
+Definition~\ref{def:psi} in \texttt{rarecert/covering.py}.
+\item \textbf{Author contribution.} The author is responsible for all parts of the work.
+\end{itemize}
+
 \bibliography{references}
 
 \end{document}
