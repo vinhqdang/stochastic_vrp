@@ -20,7 +20,7 @@
   table inputs); Springer-style abstract (230 words), keywords, MSC codes and a
   Declarations section.
 - **State:** **SUBMITTED to MCAP on 2026-11-13 — UNDER REVIEW, FROZEN.** Submitted
-  version = commit `68f1c6b` (git tag `rarecert-mcap`), package `submission_mcap/`
+  version = commit `68f1c6b`, package `submission_mcap/`
   (`rarecert_mcap.pdf`, 19 pages, Springer Nature template; standard non-open-access
   model). Do not edit `submission_mcap/`, the scripts it cites
   (`run_rarecert_peis_*.py`, `rarecert/covering.py`) or `results/rarecert/peis/` until

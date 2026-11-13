@@ -180,7 +180,7 @@ model too narrow; suggested *Probability in the Engineering and
 Informational Sciences*, which is gold open access with an APC the author
 cannot pay). Rewritten as a probability paper with complete proofs and **submitted to
 *Methodology and Computing in Applied Probability*** (Springer, no fee
-without OA) on 2026-11-13 (commit `68f1c6b`, tag `rarecert-mcap`; package
+without OA) on 2026-11-13 (commit `68f1c6b`; package
 `papers/rarecert/submission_mcap/`). **Frozen while under review** (see its
 STATUS.md and `reviews/ijoc_decision_2026-11-13.md`).
 
