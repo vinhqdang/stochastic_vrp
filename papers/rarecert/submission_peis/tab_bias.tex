@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering\small
+\caption{Silent underestimation on the 15 balanced routes ($\varrho>0.75$) of
+Table~\ref{tab:rivals}. $p_{\mathcal B}$ is the probability of the weaker end event,
+estimated on the single block, and $s=p_{\mathcal B}/p$ its share, with $p$ the quadrature
+reference; $Np_{\mathcal B}$ is the expected number of draws that reach that mode.
+Underestimate: $-(\hat p-p)/p$. Ratio: underestimate$/s$ on the rows with $s>0.01$. All
+medians over routes; last column: routes with $Np_{\mathcal B}<1$.}
+\label{tab:bias}
+\begin{tabular}{llrrrrrr}
+\toprule
+estimator & $\gamma$ & $N$ & $Np_{\mathcal B}$ & $s$ & underestimate & ratio & $Np_{\mathcal B}<1$ \\
+\midrule
+single CE shift & $10^{-4}$ & $10^6$ & 14 & 0.139 & 6.2\% & 0.90 & 2 \\
+single CE shift & $10^{-6}$ & $10^6$ & 0.085 & 0.086 & 9.7\% & 1.02 & 15 \\
+Glasserman--Li & $10^{-4}$ & $2\times10^4$ & 0.28 & 0.139 & 15.5\% & 1.05 & 15 \\
+Glasserman--Li & $10^{-6}$ & $2\times10^4$ & 0.0017 & 0.086 & 7.4\% & 0.97 & 15 \\
+\bottomrule
+\end{tabular}
+\end{table}

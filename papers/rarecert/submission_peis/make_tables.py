@@ -49,46 +49,61 @@ $\rho$ & region & routes & $\varrho$ & $\varrho>1/4$ & Cor.~\ref{{cor:closed}} &
 """
 
 
+N_DRAWS = {"single": 1_000_000, "gl": 20_000}
+ERR = {"single": "single_relerr", "gl": "gl_shift_relerr"}
+NAME = {"single": "single CE shift", "gl": "Glasserman--Li"}
+
+
 def bias():
     d = pd.read_csv(RES / "bias_check.csv")
-    d["bal"] = d.ratio > 0.75
+    b = d[d.ratio > 0.75].copy()
+    b["p_B"] = b.s_missed * b.p_ref
     rows = []
-    for g in (1e-4, 1e-6):
-        for bal, name in ((True, r"$\varrho>0.75$"), (False, r"$\varrho\le0.75$")):
-            s = d[(d.gamma == g) & (d.bal == bal)]
+    stats = {}
+    for est in ("single", "gl"):
+        for g in (1e-4, 1e-6):
+            s = b[b.gamma == g]
+            NpB = N_DRAWS[est] * s.p_B
+            under = -s[ERR[est]]
             exp = f"10^{{{int(round(np.log10(g)))}}}"
-            rows.append(
-                f"${exp}$ & {name} & {len(s)} & {np.median(s.s_missed):.2g} & "
-                f"{100 * np.median(-s.single_relerr):+.2f}\\% & {100 * np.median(-s.gl_shift_relerr):+.2f}\\% & "
-                f"{100 * np.median(np.abs(s.single_relerr + s.s_missed)):.2f}\\% & "
-                f"{100 * np.median(np.abs(s.gl_shift_relerr + s.s_missed)):.2f}\\% \\\\")
+            ratio = (under / s.s_missed)[s.s_missed > 1e-2]
+            rows.append(f"{NAME[est]} & ${exp}$ & {N_DRAWS[est]:.0e} & {np.median(NpB):.2g} & "
+                        f"{np.median(s.s_missed):.3f} & {100 * np.median(under):.1f}\\% & "
+                        f"{np.median(ratio):.2f} & {(NpB < 1).sum()} \\\\".replace("e+0", "e").replace("1e6", "$10^6$").replace("2e4", "$2\\times10^4$"))
+            stats[(est, g)] = (NpB, under, s.s_missed)
     body = "\n".join(rows)
     tab = rf"""\begin{{table}}[t]
 \centering\small
-\caption{{Predicted and measured underestimation, 30 routes. $s$ is the quadrature
-share of the weaker end event, $\P(\text{{weaker end event}})/p$; the next columns give
-the measured underestimate $-(\hat p-p)/p$ of the single CE shift ($10^6$ draws) and of
-Glasserman--Li ($2\times10^4$ draws), and the absolute difference between the measured
-relative error and the prediction $-s$ of Proposition~\ref{{prop:silent}} (all medians
-over routes).}}
+\caption{{Silent underestimation on the 15 balanced routes ($\varrho>0.75$) of
+Table~\ref{{tab:rivals}}. $p_{{\mathcal B}}$ is the probability of the weaker end event,
+estimated on the single block, and $s=p_{{\mathcal B}}/p$ its share, with $p$ the quadrature
+reference; $Np_{{\mathcal B}}$ is the expected number of draws that reach that mode.
+Underestimate: $-(\hat p-p)/p$. Ratio: underestimate$/s$ on the rows with $s>0.01$. All
+medians over routes; last column: routes with $Np_{{\mathcal B}}<1$.}}
 \label{{tab:bias}}
 \begin{{tabular}}{{llrrrrrr}}
 \toprule
-$\gamma$ & routes & $n$ & $s$ & single shift & Glasserman--Li & $|{{\rm err}}+s|$ single & $|{{\rm err}}+s|$ GL \\
+estimator & $\gamma$ & $N$ & $Np_{{\mathcal B}}$ & $s$ & underestimate & ratio & $Np_{{\mathcal B}}<1$ \\
 \midrule
 {body}
 \bottomrule
 \end{{tabular}}
 \end{{table}}
 """
-    b = d[d.bal]
-    corr_single = np.corrcoef(-b.single_relerr, b.s_missed)[0, 1]
-    corr_gl = np.corrcoef(-b.gl_shift_relerr, b.s_missed)[0, 1]
-    sent = (f"On the 15 balanced routes the share $s$ is ${np.median(b.s_missed):.2f}$ in median "
-            f"(range ${b.s_missed.min():.2f}$--${b.s_missed.max():.2f}$), and the measured underestimates "
-            f"follow it: their correlation with $s$ across route--level rows is ${corr_single:.2f}$ for the "
-            f"single shift and ${corr_gl:.2f}$ for Glasserman--Li. On the other routes $s$ is below "
-            f"${d[~d.bal].s_missed.max():.1g}$ and both estimators are unbiased within their sampling error.")
+    from scipy.stats import spearmanr
+    NpB, under, sm = [pd.concat(x) for x in zip(*[stats[k] for k in stats])]
+    m = NpB < 1
+    rho_s = spearmanr(under[m], sm[m]).correlation
+    med_ratio = np.median((under[m] / sm[m])[sm[m] > 1e-2])
+    nd = int(m.sum())
+    sent = (f"In the {nd} route--level rows where an estimator expects fewer than one draw in the "
+            f"weaker mode ($Np_{{\\mathcal B}}<1$), its underestimate follows $s$: the Spearman "
+            f"correlation is ${rho_s:.2f}$ and the median ratio of underestimate to $s$ is "
+            f"${med_ratio:.2f}$. The single shift at $10^{{-4}}$ expects about "
+            f"${np.median(stats[('single', 1e-4)][0]):.0f}$ such draws in median; it then reaches the "
+            f"weaker mode, and the deficit shows partly as error and partly as variance (relative "
+            f"variance $212$ in Table~\\ref{{tab:rivals}}). On the routes with $\\varrho\\le0.75$, "
+            f"$s<10^{{-15}}$ and both estimators are unbiased within their sampling error.")
     return tab, sent
 
 

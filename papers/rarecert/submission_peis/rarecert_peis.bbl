@@ -1,0 +1,103 @@
+\begin{thebibliography}{}
+
+\bibitem[Asmussen and Glynn, 2007]{AsmussenGlynn2007}
+Asmussen, S. and Glynn, P.~W. (2007).
+\newblock {\em Stochastic Simulation: Algorithms and Analysis}.
+\newblock Springer.
+
+\bibitem[Au and Beck, 2001]{AuBeck2001}
+Au, S.-K. and Beck, J.~L. (2001).
+\newblock Estimation of small failure probabilities in high dimensions by
+  subset simulation.
+\newblock {\em Probabilistic Engineering Mechanics}, 16(4):263--277.
+
+\bibitem[Bassamboo et~al., 2008]{BassambooJunejaZeevi2008}
+Bassamboo, A., Juneja, S., and Zeevi, A. (2008).
+\newblock Portfolio credit risk with extremal dependence: asymptotic analysis
+  and efficient simulation.
+\newblock {\em Operations Research}, 56(3):593--606.
+
+\bibitem[Bucklew, 2004]{Bucklew2004}
+Bucklew, J.~A. (2004).
+\newblock {\em Introduction to Rare Event Simulation}.
+\newblock Springer, New York.
+
+\bibitem[de~Boer et~al., 2005]{deBoerEtAl2005}
+de~Boer, P.-T., Kroese, D.~P., Mannor, S., and Rubinstein, R.~Y. (2005).
+\newblock A tutorial on the cross-entropy method.
+\newblock {\em Annals of Operations Research}, 134(1):19--67.
+
+\bibitem[Dethloff, 2001]{Dethloff2001}
+Dethloff, J. (2001).
+\newblock Vehicle routing and reverse logistics: the vehicle routing problem
+  with simultaneous delivery and pick-up.
+\newblock {\em OR Spektrum}, 23(1):79--96.
+
+\bibitem[Dinh et~al., 2018]{DinhFukasawaLuedtke2018}
+Dinh, T., Fukasawa, R., and Luedtke, J. (2018).
+\newblock Exact algorithms for the chance-constrained vehicle routing problem.
+\newblock {\em Mathematical Programming}, 172:105--138.
+
+\bibitem[Dupuis and Wang, 2007]{DupuisWang2007}
+Dupuis, P. and Wang, H. (2007).
+\newblock Subsolutions of an {I}saacs equation and efficient schemes for
+  importance sampling.
+\newblock {\em Mathematics of Operations Research}, 32(3):723--757.
+
+\bibitem[Gendreau et~al., 2016]{GendreauJabaliRei2016}
+Gendreau, M., Jabali, O., and Rei, W. (2016).
+\newblock 50th anniversary invited article---future research directions in
+  stochastic vehicle routing.
+\newblock {\em Transportation Science}, 50(4):1163--1173.
+
+\bibitem[Ghosal and Wiesemann, 2020]{GhosalWiesemann2020}
+Ghosal, S. and Wiesemann, W. (2020).
+\newblock The distributionally robust chance-constrained vehicle routing
+  problem.
+\newblock {\em Operations Research}, 68(3):716--732.
+
+\bibitem[Glasserman et~al., 2000]{GlassermanHeidelbergerShahabuddin2000}
+Glasserman, P., Heidelberger, P., and Shahabuddin, P. (2000).
+\newblock Variance reduction techniques for estimating value-at-risk.
+\newblock {\em Management Science}, 46(10):1349--1364.
+
+\bibitem[Glasserman and Li, 2005]{GlassermanLi2005}
+Glasserman, P. and Li, J. (2005).
+\newblock Importance sampling for portfolio credit risk.
+\newblock {\em Management Science}, 51(11):1643--1656.
+
+\bibitem[Glasserman and Wang, 1997]{GlassermanWang1997}
+Glasserman, P. and Wang, Y. (1997).
+\newblock Counterexamples in importance sampling for large deviations
+  probabilities.
+\newblock {\em The Annals of Applied Probability}, 7(3):731--746.
+
+\bibitem[Gounaris et~al., 2013]{GounarisWiesemannFloudas2013}
+Gounaris, C.~E., Wiesemann, W., and Floudas, C.~A. (2013).
+\newblock The robust capacitated vehicle routing problem under demand
+  uncertainty.
+\newblock {\em Operations Research}, 61(3):677--693.
+
+\bibitem[Horn and Johnson, 2013]{HornJohnson2013}
+Horn, R.~A. and Johnson, C.~R. (2013).
+\newblock {\em Matrix Analysis}.
+\newblock Cambridge University Press, Cambridge, 2nd edition.
+
+\bibitem[Olver et~al., 2010]{DLMF2010}
+Olver, F. W.~J., Lozier, D.~W., Boisvert, R.~F., and Clark, C.~W. (2010).
+\newblock {\em {NIST} Handbook of Mathematical Functions}.
+\newblock Cambridge University Press, Cambridge.
+
+\bibitem[Owen et~al., 2019]{OwenMaximovChertkov2019}
+Owen, A.~B., Maximov, Y., and Chertkov, M. (2019).
+\newblock Importance sampling the union of rare events with an application to
+  power systems analysis.
+\newblock {\em Electronic Journal of Statistics}, 13(1):231--254.
+
+\bibitem[Sadowsky and Bucklew, 1990]{SadowskyBucklew1990}
+Sadowsky, J.~S. and Bucklew, J.~A. (1990).
+\newblock On large deviations theory and asymptotically efficient {M}onte
+  {C}arlo estimation.
+\newblock {\em IEEE Transactions on Information Theory}, 36(3):579--588.
+
+\end{thebibliography}

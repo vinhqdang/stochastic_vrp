@@ -1,5 +1,7 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{graphicx}
@@ -46,13 +48,14 @@ secular equation for the delivery block at the start of the route and for the pi
 block at its end. Importance sampling with a single mean shift at the dominant end is
 logarithmically efficient when the weaker end scale is below $\lambda^\star/4$ and the
 dominant block has a spectral gap, and is not efficient when it is above
-$\lambda^\star/4$. Even in the second case the failure does not show: with
-probability close to one every draw misses the weaker end mode, and the estimate is
-then centred on the probability minus that mode's mass. A mixture of shifts at the
+$\lambda^\star/4$. In the second case the failure need not show: when the
+sample size is small compared with the inverse probability of the weaker end mode, with
+high probability no draw reaches it, and given that, the estimate has mean equal to the
+probability minus that mode's mass while its sample variance stays small. A mixture of shifts at the
 dominating points of the stage blocks, with a defensive component, is logarithmically
 efficient under a covering condition that we reduce to a two-dimensional min--max
 problem, with closed-form sufficient conditions. On 5\,920 routes of two regional plans
-the condition holds for every route at copula correlation $0.6$; numerical checks
+the condition holds, for constant weights, on every route at copula correlation $0.6$; numerical checks
 against a quadrature reference confirm the predicted underestimation of the single
 shift and the accuracy of the mixture down to $10^{-6}$.
 
@@ -75,7 +78,7 @@ load profile of the vehicle routing problem with simultaneous pickup and deliver
 $\P(F>c)$ at moderate levels \citep{GendreauJabaliRei2016,GounarisWiesemannFloudas2013,
 DinhFukasawaLuedtke2018,GhosalWiesemann2020}; medical, cold-chain and dangerous-goods
 distribution ask for levels between $10^{-3}$ and $10^{-6}$, which must then be verified
-by simulation, and at such levels crude Monte Carlo needs $\approx 400/(\varepsilon^2 p)$
+by simulation, and at such levels crude Monte Carlo needs $1.96^2/(\varepsilon^2 p)$
 draws for relative error $\varepsilon$.
 
 The probabilistic question is the tail of a maximum of dependent sums. The load process
@@ -96,8 +99,8 @@ $\Theta^{1/2}C\Theta^{1/2}$ built from the gamma scales and the copula correlati
 $\log\P(L_k>c) = -c/\lambda_k + O(\sqrt c)$ (with an $O(\log c)$ upper error), and
 $\log\P(F>c) = -c/\lambda^\star + O(\sqrt c)$, where $\lambda_k$ is the larger of the
 scales of the stage's delivery and pickup blocks, each the largest root of an explicit
-secular equation, and $\lambda^\star = \max_k\lambda_k$ is attained only at the two ends
-of the route (Corollary~\ref{cor:ends}). On the logarithmic scale a route overflows in
+secular equation, and $\lambda^\star = \max_k\lambda_k$ is attained, when $\rho>0$, only
+at the two ends of the route (Corollary~\ref{cor:ends}). On the logarithmic scale a route overflows in
 one of two \emph{end modes}: all deliveries on board at the start, or all pickups on
 board at the end.
 
@@ -121,7 +124,8 @@ defensive component, is logarithmically efficient when every stage satisfies a c
 inequality $\Psi_k\ge4\lambda_k/\lambda^\star$. The constant $\Psi_k$ is the value of a
 two-dimensional min--max problem in the stage's spectral ratios; Lemma~\ref{lem:psi}
 evaluates it in closed form in the cases that matter ($\Psi=4$ when one block of the stage
-dominates by a factor $3$, $\Psi\ge2\sqrt2$ with equality for a tie), and
+dominates the other by a factor $3$ and both have a spectral gap of $3$; $\Psi\ge2\sqrt2$
+under a gap of $2$, with equality for a tie), and
 Corollary~\ref{cor:plan} extends the result to several routes sharing the factors.
 
 (v) Section~\ref{sec:numerics} checks the conditions on 5\,920 routes of plans for two
@@ -185,7 +189,7 @@ $\lambda(\emptyset)=\mu(\emptyset)=0$). The nonzero eigenvalues of $M_S$ and $K_
 coincide, with multiplicities.
 
 \begin{lemma}[Spectral facts]\label{lem:spectral}
-Let $S\ne\emptyset$ and $s=\Theta_S^{1/2}\one$.
+Let $S\ne\emptyset$ and $\xi=\Theta_S^{1/2}\one$.
 \begin{enumerate}
 \item[(a)] If $\rho>0$, $\lambda(S)$ is the unique root in
 $((1-\rho)\max_{S}\theta,\infty)$ of
@@ -200,17 +204,17 @@ satisfies $\sum_{i\in S}\theta_i\beta_{S,i}^2=\lambda(S)$; if $\rho>0$ then $\be
 \end{lemma}
 
 \begin{proof}
-$K_S=(1-\rho)\Theta_S+\rho ss^\top$. (a) For $\lambda>(1-\rho)\max\theta$,
+$K_S=(1-\rho)\Theta_S+\rho \xi\xi^\top$. (a) For $\lambda>(1-\rho)\max\theta$,
 $\lambda I-K_S=(\lambda I-(1-\rho)\Theta_S)\big(I-\rho(\lambda I-(1-\rho)\Theta_S)^{-1}ss^\top\big)$,
-which is singular iff $1=\rho s^\top(\lambda I-(1-\rho)\Theta_S)^{-1}s$, the stated
+which is singular iff $1=\rho \xi^\top(\lambda I-(1-\rho)\Theta_S)^{-1}\xi$, the stated
 equation. Its right side decreases from $+\infty$ to $0$ on the interval, so there is
 exactly one root there. By Weyl's inequalities for a rank-one update
 \citep[Thm.~4.3.4]{HornJohnson2013}, $K_S$ has at most one eigenvalue above
 $(1-\rho)\max\theta$; it has one, because for the coordinate vector $\epsilon_j$ of a
 customer with the largest scale, $\epsilon_j^\top K_S\epsilon_j=\theta_j>(1-\rho)\theta_j$.
 Hence that eigenvalue is $\lambda(S)$ and it is the root.
-(b) The lower bound is the Rayleigh quotient at $s/|s|$; the upper bound
-follows from $K_S\preceq(1-\rho)\max\theta\,I+\rho ss^\top$ and $|s|^2=\sum\theta_i$;
+(b) The lower bound is the Rayleigh quotient at $\xi/|\xi|$; the upper bound
+follows from $K_S\preceq(1-\rho)\max\theta\,I+\rho \xi\xi^\top$ and $|\xi|^2=\sum\theta_i$;
 the bound on $\mu$ is Weyl's inequality for a rank-one update of $(1-\rho)\Theta_S$.
 (c) With $f_S(\lambda)=\rho\sum_{i\in S}\theta_i/(\lambda-(1-\rho)\theta_i)$, $f_{S'}>f_S$ on
 $((1-\rho)\max_{S'}\theta,\infty)$; at $\lambda=\lambda(S')$ this gives
@@ -275,19 +279,23 @@ for $z<0$, $0\le x(z)\le x(0)$; enlarging $C$ covers both.
 \end{proof}
 
 \begin{lemma}[One block]\label{lem:block}
-For a block $S$ with $e=e_S$, $\lambda=\lambda(S)$, $\mu=\mu(S)$ and $u\in\R^n$, write
-$a=\ip ue$ and $w=u-ae$. Then
+For a block $S$ of type $b$ let $\Pi_S$ be the orthogonal projection of $\R^n$ onto the
+coordinates $W_b$ and $E_{b,i}$, $i\in S$. With $e=e_S$, $\lambda=\lambda(S)$, $\mu=\mu(S)$
+and $u\in\R^n$, write $a=\ip ue$ and $u^\perp=\Pi_Su-ae$. Then
 \[
-h_S(u)\le\tfrac12\big(\lambda a_+^2+\mu|w|^2\big).
+h_S(u)\le\tfrac12\big(\lambda a_+^2+\mu|u^\perp|^2\big).
 \]
 \end{lemma}
 
 \begin{proof}
-If $a\ge0$: $h_S(u)\le\frac12u^\top M_Su=\frac12(\lambda a^2+w^\top M_Sw)$, the cross term
-vanishing because $M_Se=\lambda e\perp w$, and $w^\top M_Sw\le\mu|w|^2$ by the
-Courant--Fischer theorem. If $a<0$: $B_Su=aB_Se+B_Sw\le B_Sw$ entrywise because
-$B_Se\ge0$ (Lemma~\ref{lem:spectral}(d)), so $(B_Su)_+\le(B_Sw)_+$ and
-$h_S(u)\le h_S(w)\le\frac12w^\top M_Sw\le\frac12\mu|w|^2$.
+Since $B_S$ only reads the coordinates in the range of $\Pi_S$, $B_Su=B_S\Pi_Su$ and
+$h_S(u)=h_S(\Pi_Su)$; also $e$ lies in that range, so $u^\perp\perp e$ there. If $a\ge0$:
+$h_S(u)\le\frac12(\Pi_Su)^\top M_S\Pi_Su=\frac12(\lambda a^2+u^{\perp\top}M_Su^\perp)$, the
+cross term vanishing because $M_Se=\lambda e\perp u^\perp$, and
+$u^{\perp\top}M_Su^\perp\le\mu|u^\perp|^2$ by the Courant--Fischer theorem applied to $M_S$
+restricted to the range of $\Pi_S$. If $a<0$: $B_Su=aB_Se+B_Su^\perp\le B_Su^\perp$
+entrywise because $B_Se\ge0$ (Lemma~\ref{lem:spectral}(d)), so
+$(B_Su)_+\le(B_Su^\perp)_+$ and $h_S(u)\le h_S(u^\perp)\le\frac12\mu|u^\perp|^2$.
 \end{proof}
 
 Since $|Z_{b,i}|\le|u|$ (unit rows), Lemma~\ref{lem:quantile} gives, for a constant $C$
@@ -297,7 +305,9 @@ L_k\le h_k(u)+C\log(2+|u|)+C\qquad(u\in\R^n,\ k=0,\dots,L).
 \end{equation}
 For stage $k$, let $e_H,e_W$ be the unit Perron directions of its dominant and weak
 blocks (orthogonal, by disjoint supports), and for $u\in\R^n$ let $a=\ip u{e_H}$,
-$b=\ip u{e_W}$ and $g^2=|u|^2-a^2-b^2$. Applying Lemma~\ref{lem:block} to each block,
+$b=\ip u{e_W}$ and $g^2=|u|^2-a^2-b^2$. The two blocks read disjoint coordinates, so
+their vectors $u^\perp$ are orthogonal to each other and to $e_H,e_W$, and the sum of their
+squared norms is at most $g^2$. Applying Lemma~\ref{lem:block} to each block,
 \begin{equation}\label{eq:stage-form}
 2h_k(u)\le\lambda_k\big(a_+^2+\varrho_k b_+^2+\nu_k g^2\big).
 \end{equation}
@@ -357,7 +367,7 @@ Lemma~\ref{lem:spectral}(c) and Theorem~\ref{thm:ld}; $c=\lambda^\star\log(1/\ga
 The error terms are not small at practical levels. For the coefficient of variation
 $0.3$ used below the gamma shape is $\kappa\approx11.1$, and the second term
 $\theta(2\kappa-1)\log z$ of Lemma~\ref{lem:quantile} is larger than the leading term
-$\theta z^2/2$ for all $z$ up to about $6$, which covers every normal score relevant at
+$\theta z^2/2$ for $1.1\le z\le9.9$, a range that contains every normal score relevant at
 levels $10^{-3}$ to $10^{-6}$. Accordingly the exact minimum of $|u|^2/2$ over
 $\{L_k\ge c\}$, computed numerically, is $5$ to $10$ times smaller than $c/\lambda_k$ on
 our routes (Figure~\ref{fig:energies}). The theorem identifies the modes and their
@@ -388,11 +398,11 @@ $q=\varphi(\cdot-\tau)$ the likelihood ratio is $w(u)=e^{-\ip u\tau+|\tau|^2/2}$
 proposals are mixtures $q=\sum_ma_m\varphi(\cdot-\tau_m)$, $a_m>0$, $\sum a_m=1$, and we
 bound $m_2$ through
 \[
-G_m(u)=\tfrac12|u+\tau_m|^2-|\tau_m|^2,\qquad \Gamma(u)=\max_m\big(G_m(u)+\log a_m\big).
+J_m(u)=\tfrac12|u+\tau_m|^2-|\tau_m|^2,\qquad \Upsilon(u)=\max_m\big(J_m(u)+\log a_m\big).
 \]
 
 \begin{lemma}[Second moment of a mixture]\label{lem:m2}
-$m_2\le(2\pi)^{-n/2}\int_Ae^{-\Gamma(u)}du$. If $\Gamma\ge\gamma_0>0$ on $A$, then for every
+$m_2\le(2\pi)^{-n/2}\int_Ae^{-\Upsilon(u)}du$. If $\Upsilon\ge\gamma_0>0$ on $A$, then for every
 component $m$,
 $m_2\le a_m^{-1}C_n\,(1+\gamma_0+|\tau_m|^2)^{n/2}e^{-\gamma_0}$ with $C_n$ depending on $n$
 only.
@@ -400,8 +410,8 @@ only.
 
 \begin{proof}
 $\varphi^2/q\le\min_m\varphi^2/(a_m\varphi(\cdot-\tau_m))$ and
-$\varphi(u)^2/\varphi(u-\tau)=(2\pi)^{-n/2}e^{-G(u)}$, which gives the first bound. Fix $m$.
-On $A$, $\Gamma\ge\max(\gamma_0,G_m+\log a_m)\ge\max(\gamma_0,G_m)+\log a_m$, so
+$\varphi(u)^2/\varphi(u-\tau)=(2\pi)^{-n/2}e^{-J(u)}$, which gives the first bound. Fix $m$.
+On $A$, $\Upsilon\ge\max(\gamma_0,J_m+\log a_m)\ge\max(\gamma_0,J_m)+\log a_m$, so
 $m_2\le a_m^{-1}(2\pi)^{-n/2}e^{|\tau_m|^2}\int e^{-\max(\gamma_0+|\tau_m|^2,|v|^2/2)}dv$
 after the substitution $v=u+\tau_m$. With $R^2=2(\gamma_0+|\tau_m|^2)$, the integral is
 at most $V_nR^ne^{-R^2/2}+(2\pi)^{n/2}\P(\chi^2_n>R^2)$, and both terms are
@@ -414,8 +424,9 @@ $\tau^\star=\sqrt{2c/\lambda^\star}\,e^\star$ the asymptotic dominating point.
 
 \begin{theorem}\label{thm:single}
 \begin{enumerate}
-\item[(a)] Let $\tau$ be any vector supported on the inputs of the dominant end block
-(for instance $\tau^\star$). Then
+\item[(a)] Let $\tau$ be any vector supported on the inputs of the dominant end's type
+(the delivery inputs $W_d,E_{d,\cdot}$ when the dominant end is the delivery block; for
+instance $\tau^\star$). Then
 $\log m_2\ge|\tau|^2-c/\lambda_{\rm o}-O(\sqrt c)$. For $\tau=\tau^\star$,
 \[
 \log m_2-2\log p\ \ge\ \frac{c}{\lambda^\star}\Big(4-\frac1\varrho\Big)-O(\sqrt c),
@@ -431,39 +442,44 @@ logarithmically efficient; indeed $\log m_2\le-2c/\lambda^\star+O(\log c)$.
 
 \begin{proof}
 Say the dominant end is the delivery block at stage $0$; the other case is symmetric. Let
-$B=\{P_L>c\}\subseteq A$, an event of the pickup inputs only, with
-$\log\P(B)=-c/\lambda_{\rm o}+O(\sqrt c)$ by Theorem~\ref{thm:ld}.
+$\mathcal{B}=\{P_L>c\}\subseteq A$, an event of the pickup inputs only, with
+$\log\P(\mathcal{B})=-c/\lambda_{\rm o}+O(\sqrt c)$ by Theorem~\ref{thm:ld}.
 
 (a) $w$ depends on the delivery inputs only, so by independence
-$m_2\ge\E[w\one_B]=\E[w]\,\P(B)=e^{|\tau|^2}\P(B)$. With $|\tau^\star|^2=2c/\lambda^\star$
+\[
+m_2\ge\E[w\one_{\mathcal{B}}]=\E[w]\,\P(\mathcal{B})=e^{|\tau|^2}\P(\mathcal{B}).
+\]
+With $|\tau^\star|^2=2c/\lambda^\star$
 and $\log p=-c/\lambda^\star+O(\sqrt c)$ the display follows, and then
 $\limsup\log m_2/(2\log p)\le1-(4-1/\varrho)/2<1$ when $\varrho>1/4$.
 
 (b) Here $w=1/(a_0+(1-a_0)e^{\ip u{\tau^\star}-|\tau^\star|^2/2})\ge1$ on
 $\{\ip u{\tau^\star}\le|\tau^\star|^2/2\}$, an event of the delivery inputs of probability at
-least $1/2$; by independence $m_2\ge\frac12\P(B)$. Efficiency would need
+least $1/2$; by independence $m_2\ge\frac12\P(\mathcal{B})$. Efficiency would need
 $\log m_2\le-2c/\lambda^\star+o(c)$, which fails when $1/\lambda_{\rm o}<2/\lambda^\star$.
 
 (c) Since $F\le D_0+P_L$, Lemma~\ref{lem:quantile} gives
 $A\subseteq\{h_{S^d_0}(u)+h_{S^p_L}(u)\ge c-C\log(2+|u|)-C\}$. Apply Lemma~\ref{lem:block}
-to the dominant block with $a=\ip u{e^\star}$, and bound the other block by
-$h\le\frac12\lambda_{\rm o}|u_{\rm o}|^2$: with $g^2=|u|^2-a^2$ and
+to the dominant block with $a=\ip u{e^\star}$, and bound the other block, of matrix
+$M_{\rm o}$ and projection $\Pi_{\rm o}$, by
+$h\le\frac12u^\top M_{\rm o}u\le\frac12\lambda_{\rm o}|\Pi_{\rm o}u|^2$; the two blocks read
+disjoint coordinates, so $|u^\perp|^2+|\Pi_{\rm o}u|^2\le|u|^2-a^2$. With $g^2=|u|^2-a^2$ and
 $\nu'=\max(\mu^\star,\lambda_{\rm o})/\lambda^\star\le1/4$,
 \[
 2(h_{S^d_0}+h_{S^p_L})(u)\le\lambda^\star(a_+^2+\nu'g^2).
 \]
-The single component has $G(u)=\frac12|u+\tau^\star|^2-|\tau^\star|^2$. Let $R=4|\tau^\star|$. If
-$|u|>R$ then $G(u)\ge\frac12(3|\tau^\star|)^2-|\tau^\star|^2>2c/\lambda^\star$. If $|u|\le R$,
+The single component has $J(u)=\frac12|u+\tau^\star|^2-|\tau^\star|^2$. Let $R=4|\tau^\star|$. If
+$|u|>R$ then $J(u)\ge\frac12(3|\tau^\star|)^2-|\tau^\star|^2>2c/\lambda^\star$. If $|u|\le R$,
 then $u\in A$ implies $a_+^2+\nu'g^2\ge2c'/\lambda^\star$ with $c'=c-O(\log c)$. Scale
 $y=u\sqrt{\lambda^\star/c'}$, so that $a_{y,+}^2+\nu'g_y^2\ge2$, $|y|=O(1)$ and
-$G(u)=\frac{c'}{2\lambda^\star}\big(|y+\sigma\sqrt2e^\star|^2-4\sigma^2\big)$ with
+$J(u)=\frac{c'}{2\lambda^\star}\big(|y+\sigma\sqrt2e^\star|^2-4\sigma^2\big)$ with
 $\sigma^2=c/c'=1+O(\log c/c)$. We claim $|y+\sqrt2e^\star|^2-4\ge4$ under the
 constraint. If $a_y\ge0$, then $g_y^2\ge4(2-a_y^2)_+$ and
 $|y+\sqrt2e^\star|^2-4=a_y^2+2\sqrt2a_y-2+g_y^2\ge6-3a_y^2+2\sqrt2a_y\ge4$ for
 $a_y\le\sqrt2$ (a concave function equal to $6$ and $4$ at the endpoints), and
 $\ge(2\sqrt2)^2-4=4$ for $a_y>\sqrt2$. If $a_y<0$, then $g_y^2\ge8$ and the left side is
 at least $g_y^2-4\ge4$. Replacing $\sqrt2$ by $\sigma\sqrt2$ changes the left side by
-$O(\sigma-1)$ on $|y|=O(1)$, so $G\ge2c/\lambda^\star-O(\log c)$ on $A$, and
+$O(\sigma-1)$ on $|y|=O(1)$, so $J\ge2c/\lambda^\star-O(\log c)$ on $A$, and
 Lemma~\ref{lem:m2} gives the bound. Since $m_2\ge p^2$, efficiency follows from
 Theorem~\ref{thm:ld}.
 \end{proof}
@@ -473,7 +489,7 @@ $\mu^\star$ in (c) is a spectral gap of the dominant block, which by
 Lemma~\ref{lem:spectral}(b) holds when
 $\rho\sum\theta_i+(1-\rho)\min\theta\ge4(1-\rho)\max\theta$. The proof of (a) also shows
 where the second moment comes from: draws with typical delivery inputs and pickup inputs in
-$B$, which carry weight $e^{-\ip u\tau+|\tau|^2/2}$ but are proposed no more often than
+$\mathcal{B}$, which carry weight $e^{-\ip u\tau+|\tau|^2/2}$ but are proposed no more often than
 under crude Monte Carlo. That has a consequence for what a user sees.
 
 \begin{proposition}[Silent underestimation]\label{prop:silent}
@@ -482,30 +498,30 @@ independent of the delivery inputs (for instance a shift supported on the delive
 inputs, with or without a defensive component, or the two-step scheme of
 \citet{GlassermanLi2005} with its factor and inner shifts taken from the delivery end
 mode, whose dominating point has no pickup coordinates), and let
-$B=\{P_L>c\}$, $p_B=\P(B)$. Then $q(B)=p_B$, and for the estimator $\hat p_N$,
+$\mathcal{B}=\{P_L>c\}$, $p_{\mathcal{B}}=\P(\mathcal{B})$. Then $q(\mathcal{B})=p_{\mathcal{B}}$, and for the estimator $\hat p_N$,
 \[
-\P_q(\text{no draw in }B)=(1-p_B)^N\ge1-Np_B,\qquad
-\E_q\big[\hat p_N\,\big|\,\text{no draw in }B\big]=\frac{p-p_B}{1-p_B}.
+\P_q(\text{no draw in }\mathcal{B})=(1-p_{\mathcal{B}})^N\ge1-Np_{\mathcal{B}},\qquad
+\E_q\big[\hat p_N\,\big|\,\text{no draw in }\mathcal{B}\big]=\frac{p-p_{\mathcal{B}}}{1-p_{\mathcal{B}}}.
 \]
-So on an event of probability at least $1-Np_B$ the estimator is centred at
-$p(1-s)(1+O(p))$, where $s=p_B/p$ is the share of the weaker end event, and the
-sample variance it reports is computed from draws that all avoid $B$, so it estimates the
-variance under $q(\cdot\mid B^c)$, not $m_2$. The symmetric statement holds with
+So on an event of probability at least $1-Np_{\mathcal{B}}$ the estimator has conditional mean
+$p(1-s)(1+O(p))$, where $s=p_{\mathcal{B}}/p$ is the share of the weaker end event, and the
+sample variance it reports is computed from draws that all avoid $\mathcal{B}$, so it estimates the
+variance under $q(\cdot\mid \mathcal{B}^c)$, not $m_2$. The symmetric statement holds with
 deliveries and pickups exchanged.
 \end{proposition}
 
 \begin{proof}
-$q(B)=p_B$ because $B$ is an event of the pickup inputs. Given that no draw falls in
-$B$ the draws are i.i.d.\ from $q(\cdot\mid B^c)$, and
-$\E_q[\one_Aw\mid B^c]=\int_{A\setminus B}\varphi\big/(1-p_B)=(p-p_B)/(1-p_B)$, because
-$B\subseteq A$. Finally $(p-p_B)/(1-p_B)=p(1-s)(1+O(p))$.
+$q(\mathcal{B})=p_{\mathcal{B}}$ because $\mathcal{B}$ is an event of the pickup inputs. Given that no draw falls in
+$\mathcal{B}$ the draws are i.i.d.\ from $q(\cdot\mid \mathcal{B}^c)$, and
+$\E_q[\one_Aw\mid \mathcal{B}^c]=\int_{A\setminus \mathcal{B}}\varphi\big/(1-p_{\mathcal{B}})=(p-p_{\mathcal{B}})/(1-p_{\mathcal{B}})$, because
+$\mathcal{B}\subseteq A$. Finally $(p-p_{\mathcal{B}})/(1-p_{\mathcal{B}})=p(1-s)(1+O(p))$.
 \end{proof}
 
 The proposition explains three facts reported in Section~\ref{sec:numerics}: the single
 shift underestimates by about the share $s$ of the weaker end mode; its reported standard
 error does not reveal this, because the variance it estimates is that of a sample that
-avoids $B$; and Glasserman--Li two-step sampling, which shifts the dominant factor only,
-has the same bias. Unbiasedness is restored only through rare draws in $B$, each
+avoids $\mathcal{B}$; and Glasserman--Li two-step sampling, which shifts the dominant factor only,
+has the same bias. Unbiasedness is restored only through rare draws in $\mathcal{B}$, each
 carrying a weight of order $e^{-\ip u\tau+|\tau|^2/2}$. By Corollary~\ref{cor:ends},
 $s=\exp\{-c(1/\lambda_{\rm o}-1/\lambda^\star)+O(\sqrt c)\}$, so the bias is negligible
 for small $\varrho$ and of order one for $\varrho$ near $1$, while the threshold of
@@ -527,7 +543,7 @@ proportional to the asymptotic mode masses, $a_m\propto e^{-c/\lambda_m}$, have
 $\delta_m=1/\lambda_m-1/\lambda^\star$.
 
 \begin{definition}[Covering constant]\label{def:psi}
-For $\varrho\in[0,1]$, $\nu\ge0$ and penalties $\pi_H,\pi_W\in[0,\infty]$ let
+For $\varrho\in[0,1]$, $\nu\in[0,1]$ and penalties $\pi_H,\pi_W\in[0,\infty]$ let
 \begin{align*}
 F_0(a,b,g)&=a^2+b^2+g^2,\\
 F_H(a,b,g)&=(a+\sqrt2)^2+b^2+g^2-4-\pi_H,\\
@@ -541,8 +557,9 @@ $\pi_H=\infty$. We write $\psi(\varrho,\nu)=\Psi(\varrho,\nu;0,0)$ (both blocks,
 weights) and $\psi_H(\varrho,\nu)=\Psi(\varrho,\nu;0,\infty)$ (dominant block only).
 \end{definition}
 
-Every function in the maximum increases in $g$, so the infimum over $g$ is attained at
-$g^2=(2-a_+^2-\varrho b_+^2)_+/\nu$, and $\Psi$ is the minimum of an explicit function of
+Every function in the maximum increases in $g$, so for $\nu>0$ the infimum over $g$ is
+attained at $g^2=(2-a_+^2-\varrho b_+^2)_+/\nu$ (for $\nu=0$ the constraint forces
+$a_+^2+\varrho b_+^2\ge2$ and $g=0$), and $\Psi$ is the minimum of an explicit function of
 two variables; it is evaluated numerically in seconds.
 
 \begin{lemma}\label{lem:psi}
@@ -552,6 +569,8 @@ Let $\varrho,\nu\in[0,1]$.
 $\Psi\ge2$.
 \item[(b)] If $\varrho\le1/3$ and $\nu\le1/3$, then $\psi_H(\varrho,\nu)=\psi(\varrho,\nu)=4$.
 \item[(c)] If $\nu\le1/2$, then $\psi(\varrho,\nu)\ge2\sqrt2$, with equality at $\varrho=1$.
+\item[(d)] For a stage with one block only ($\varrho=0$) and $\nu\in(0,1]$,
+$\psi_H(0,\nu)=\min\big(4,\tfrac12+\tfrac3{2\nu}\big)$; it equals $4$ iff $\nu\le3/7$.
 \end{enumerate}
 \end{lemma}
 
@@ -583,6 +602,14 @@ If $Y\ge y_0$, $F_W\ge2-Y+2\sqrt{2Y}\ge3.31$ on $[y_0,2]$; if $Y<y_0$,
 $F_0\ge Y+2W=4-Y>3.6$. \emph{Case $b\le0<a$} is the same with $F_H$.
 \emph{Case $a,b\le0$.} $F_0\ge g^2\ge2/\nu\ge4$.
 Equality at $\varrho=1$: at $a=b=1$, $g=0$ we get $F_0=2$ and $F_H=F_W=2\sqrt2$.
+
+(d) With $\varrho=0$ the constraint is $a_+^2+\nu g^2\ge2$ (the coordinate $b$ is part of
+$g$). If $a\le0$, $F_0\ge g^2\ge2/\nu\ge\frac12+\frac3{2\nu}$. If $a>0$, put $X=a^2$; both
+functions increase in $g$, so take $g^2=(2-X)_+/\nu$. Then $F_H\ge F_0$ iff $X\ge1/2$. On
+$[0,1/2]$ the maximum is $F_0=X+(2-X)/\nu$, decreasing in $X$, with value
+$\frac12+\frac3{2\nu}$ at $X=1/2$; on $[1/2,2]$ it is $F_H=X(1-1/\nu)+2\sqrt{2X}-2+2/\nu$,
+concave, with end values $\frac12+\frac3{2\nu}$ and $4$; for $X>2$, $F_H>4$. The infimum
+is the smaller end value, attained.
 \end{proof}
 
 \begin{theorem}\label{thm:mixture}
@@ -597,8 +624,9 @@ efficient. With constant weights the error term is $O(\log c)$.
 \end{theorem}
 
 \begin{proof}
-By Lemma~\ref{lem:m2} with the defensive component it suffices to show
-$\Gamma(u)\ge2c/\lambda^\star-o(c)$ on $A$. Since $\Gamma\ge G_0+\log a_0=|u|^2/2+\log a_0$,
+By Lemma~\ref{lem:m2} applied with the defensive component $m=0$ (whose weight $a_0$ is
+fixed) it suffices to show
+$\Upsilon(u)\ge2c/\lambda^\star-o(c)$ on $A$. Since $\Upsilon\ge J_0+\log a_0=|u|^2/2+\log a_0$,
 this holds for $|u|>R:=3\sqrt{c/\lambda^\star}$, and we take $u\in A$ with $|u|\le R$.
 Then $u\in\{L_k>c\}$ for some $k$, and by \eqref{eq:sandwich-k} and
 \eqref{eq:stage-form}, $a_+^2+\varrho_kb_+^2+\nu_kg^2\ge2c'/\lambda_k$ with
@@ -607,13 +635,13 @@ $\sigma^2=c/c'$. In these coordinates the components of the stage are
 $\tau_{k,H}=\sqrt{c'/\lambda_k}\,\sigma\sqrt2\,e_H$ and
 $\tau_{k,W}=\sqrt{c'/\lambda_k}\,\sigma\sqrt{2/\varrho_k}\,e_W$, and
 \[
-G_0(u)=\frac{c'}{2\lambda_k}F_0(y),\qquad
-G_{k,H}(u)+\log a_{k,H}=\frac{c'}{2\lambda_k}F^\sigma_H(y)+o(c),
+J_0(u)=\frac{c'}{2\lambda_k}F_0(y),\qquad
+J_{k,H}(u)+\log a_{k,H}=\frac{c'}{2\lambda_k}F^\sigma_H(y)+o(c),
 \]
 where $F^\sigma_H$ is $F_H$ with $\sqrt2$ replaced by $\sigma\sqrt2$, $4$ by $4\sigma^2$ and
 $\pi_H=2\lambda_k\delta_{k,H}$ by $2\lambda_k\delta_{k,H}c/c'$; likewise for $W$. Since
 $|y|=O(1)$ and $\sigma\to1$, $F^\sigma\ge F-o(1)$ uniformly, so
-$\Gamma(u)\ge\frac{c'}{2\lambda_k}(\Psi_k-o(1))\ge\frac{2c}{\lambda^\star}-o(c)$ by
+$\Upsilon(u)\ge\frac{c'}{2\lambda_k}(\Psi_k-o(1))\ge\frac{2c}{\lambda^\star}-o(c)$ by
 \eqref{eq:cover}. With $\delta_m=0$ the $o(\cdot)$ terms are $O(\log c)$, as in the proof
 of Theorem~\ref{thm:single}(c).
 \end{proof}
@@ -631,16 +659,19 @@ Lemma~\ref{lem:psi}(a), (b) and (c).
 
 \begin{remark}
 (1) The end stages need components. Stage $0$ has an empty pickup block ($\varrho_0=0$,
-$r_0=\lambda^d_0/\lambda^\star$), so by (ii) it is covered by the delivery end component
-whenever that block has the gap $\nu_0\le1/3$; the same holds at stage $L$. For mass
-weights, at an end stage with no weak block, $F_H-\pi_H\ge4-2(1-r_k)$ in the region where
-$F_H$ covers, which is at least $4r_k$; so the penalties never hurt at the ends.
+$r_0=\lambda^d_0/\lambda^\star$), so by Lemma~\ref{lem:psi}(d) the delivery end
+component covers it iff $\frac12+\frac3{2\nu_0}\ge4r_0$; at the dominant end ($r_0=1$)
+this is the gap condition $\nu_0\le3/7$. The same holds at stage $L$. For mass
+weights, at an end stage with no weak block and $\nu_k\le1/3$, the proof of
+Lemma~\ref{lem:psi}(b) gives $F_H-\pi_H\ge4-2(1-r_k)=2+2r_k\ge4r_k$ where $F_H$ covers,
+and $F_0\ge6$ elsewhere; so the penalties do not hurt at the ends.
 (2) Interior stages close to an end have $\varrho_k$ small and are covered by (ii); the
 crossing stage, where the two blocks are comparable, has $r_k$ near $1/2$ on routes with
 many stops, because the scales are close to $\rho\sum\theta$ and the stage splits the route
-(Lemma~\ref{lem:spectral}(b)). Ties with $r_k>1/\sqrt2$ cannot be covered by two
-components with constant weights (Lemma~\ref{lem:psi}(c) is an equality there); a continuum of components along
-the arc between the two block directions would be needed, in the spirit of
+(Lemma~\ref{lem:spectral}(b)). For ties with $r_k>1/\sqrt2$ the covering inequality fails with two
+components and constant weights ($\psi=2\sqrt2<4r_k$ by Lemma~\ref{lem:psi}(c)), so
+Theorem~\ref{thm:mixture} gives no guarantee; a continuum of components along the arc
+between the two block directions is the natural remedy, in the spirit of
 \citet{DupuisWang2007}. We do not pursue this, because it does not occur on our routes at
 $\rho\ge0.6$ (Table~\ref{tab:conditions}).
 (3) The theorem is stated for the asymptotic dominating points. Its proof uses the shifts
@@ -650,12 +681,12 @@ practice satisfy this.
 \end{remark}
 
 \begin{corollary}[Several routes]\label{cor:plan}
-Let routes $r=1,\dots,R$ share the factors $W_d,W_p$ and have their own idiosyncratic
-inputs, with capacities $c_r=\alpha_rc$ for fixed $\alpha_r>0$. Then
-$\log\P(\bigcup_r\{F_r>c_r\})=-c\min_r\alpha_r/\lambda^\star_r+O(\sqrt c)$, and the
+Let routes $j=1,\dots,J$ share the factors $W_d,W_p$ and have their own idiosyncratic
+inputs, with capacities $c_j=\alpha_jc$ for fixed $\alpha_j>0$. Then
+$\log\P(\bigcup_j\{F_j>c_j\})=-c\min_j\alpha_j/\lambda^\star_j+O(\sqrt c)$, and the
 mixture over the stage components of all routes is logarithmically efficient if
 \eqref{eq:cover} holds for every route and stage with $\lambda^\star$ replaced by
-$\max_r\lambda^\star_r/\alpha_r$ and $\lambda_k$ by $\lambda_{r,k}/\alpha_r$.
+$\max_j\lambda^\star_j/\alpha_j$ and $\lambda_k$ by $\lambda_{j,k}/\alpha_j$.
 \end{corollary}
 
 \begin{proof}
@@ -703,14 +734,19 @@ Table~\ref{tab:conditions} evaluates the conditions of Theorems~\ref{thm:single}
 and~\ref{thm:mixture} on all 5\,920 routes with at least two stops. Every route has
 $\varrho>1/4$, so the single shift is never efficient: the threshold of
 Theorem~\ref{thm:single} is not informative about which routes fail in practice; the
-share $s$ of Proposition~\ref{prop:silent} is. The covering condition~\eqref{eq:cover}
-holds for every route at $\rho=0.6$ and $0.8$, both for constant and for mass weights,
-with a smallest margin $\Psi_k-4r_k$ of $0.23$ at $\rho=0.6$, while the closed-form
-conditions of Corollary~\ref{cor:closed} miss three quarters of the Vietnamese routes:
-their crossing stages have $r_k\in(0.71,0.90)$ and $\varrho_k\in(0.33,0.8)$, where the exact
-constant is needed. At $\rho=0.3$ the blocks lose their spectral gaps and the condition
-holds for fewer routes; Section~\ref{sec:checks} shows that SMIS remains accurate there,
-so the condition is sufficient, not necessary.
+share $s$ of Proposition~\ref{prop:silent} is. With constant weights the covering condition~\eqref{eq:cover}
+holds for every route at $\rho=0.6$ and $0.8$, with a smallest margin $\Psi_k-4r_k$ of
+$0.23$ at $\rho=0.6$ among the stages that need the exact constant; the closed-form
+conditions of Corollary~\ref{cor:closed} miss three quarters of the Vietnamese routes,
+whose crossing stages have $r_k\in(0.71,0.90)$ and $\varrho_k\in(0.33,0.8)$. At $\rho=0.3$
+the blocks have smaller spectral gaps and the condition holds for $86\%$ of the routes.
+With mass weights, the finite-level analogue of which SMIS uses, it holds for every
+Guangdong route at $\rho\ge0.6$ but for only $28\%$ of the Vietnamese routes at
+$\rho=0.6$: on balanced routes the crossing stages carry a weak-block penalty that the
+covering constant cannot absorb. Section~\ref{sec:checks} shows that SMIS is accurate
+on these routes too, so the condition is sufficient, not necessary; for a guarantee on
+balanced routes, constant weights on the crossing-stage components are the safe
+choice.
 
 \input{tab_conditions.tex}
 
@@ -752,10 +788,11 @@ $10^{-6}$ & $\le0.5$ & 79 & 0.26 / 0.56\% & ref. & 0.23 / 0.56\% & 5.79 & 5.46 \
 \end{table}
 
 \emph{The share predicts the error.} Proposition~\ref{prop:silent} says that, on the
-typical event, the single shift and the Glasserman--Li estimator are centred at
-$p(1-s)$, with $s=\P(\text{weaker end event})/p$. We computed both end probabilities with
-the quadrature program for the 30 routes of Table~\ref{tab:rivals} at $10^{-4}$ and
-$10^{-6}$ (Table~\ref{tab:bias}). \input{bias_sentence.tex}
+typical event, the single shift and the Glasserman--Li estimator have mean
+$p(1-s)$, with $s=\P(\text{weaker end event})/p$. We estimated both end probabilities for the 30 routes of
+Table~\ref{tab:rivals} at $10^{-4}$ and $10^{-6}$ on the single blocks (the route with its
+pickups, respectively deliveries, set to zero), where there is one mode and SMIS has a
+relative standard error of about $0.2\%$ with $10^6$ draws (Table~\ref{tab:bias}). \input{bias_sentence.tex}
 A cheaper proxy, available without quadrature, is
 $\hat m=\exp\{-(E_{\rm o}-E_{\min})\}$ with the computed energies of the two end modes; over
 all 480 route--level rows the absolute error of the single shift is at the noise level
@@ -838,8 +875,7 @@ errors of the reference. The single shift is accurate on the seven Guangdong rou
 \emph{Model variations.} On 30 Guangdong routes at $10^{-4}$, SMIS stays within its
 sampling error (median $0.27$--$0.43\%$ against a relative standard error of $0.47\%$)
 for $\rho\in\{0.3,0.8\}$, coefficient of variation $0.2$ and $0.5$, pickups scaled by
-$0.5$ and $2$, and lognormal marginals. At $\rho=0.3$ condition~\eqref{eq:cover} fails on
-most of these routes, so the theorem is not the reason for this accuracy.
+$0.5$ and $2$, and lognormal marginals, a family the theorems do not cover.
 
 \emph{Coverage.} Over 300 independent replications of $10^4$ draws, the nominal $95\%$
 interval of SMIS covers the quadrature value in $94.4\%$ of the replications on 10
@@ -876,13 +912,13 @@ the numerical checks support but we do not prove; continuum mixtures for stages 
 near ties at large scale; and the case of correlated delivery and pickup factors, in
 which the two end blocks are no longer independent.
 
-\paragraph{Code and data.} The instances, plans, simulators, estimators and the scripts
+{\sloppy\paragraph{Code and data.} The instances, plans, simulators, estimators and the scripts
 that produce every number in this paper are in the repository
 \url{https://github.com/vinhqdang/stochastic_vrp} (directory \texttt{svrpspd\_wdro}); the
 conditions of Table~\ref{tab:conditions} come from
 \texttt{scripts/run\_rarecert\_peis\_conditions.py}, Table~\ref{tab:bias} from
 \texttt{scripts/run\_rarecert\_peis\_bias.py}, and the covering constant is
-\texttt{rarecert/covering.py}.
+\texttt{rarecert/covering.py}.\par}
 
 \bibliographystyle{apalike}
 \bibliography{references}

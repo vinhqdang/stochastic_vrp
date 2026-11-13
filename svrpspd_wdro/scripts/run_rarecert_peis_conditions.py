@@ -67,7 +67,7 @@ def route_conditions(dbar, pbar, rho):
         val = psi(float(vr[k]), float(nu[k]), n=201)
         need = 4 * lam_k[k] / lam_star
         psi_min_margin = min(psi_min_margin, val - need)
-        cpsi[k] = val >= need
+        cpsi[k] = val >= need - 1e-9
     # weights proportional to exp(-c/lam_m) (mass-proportional, as in SMIS):
     # penalties 2(1 - r) on the dominant block and 2(1/varrho - r) on the other
     cmass = ca.copy()
