@@ -165,7 +165,7 @@ Roles for this project: the master session plans and designs algorithms;
 execution is delegated in small specified modules with tests; review is a
 separate pass.
 
-### Paper 8 — RARECERT (papers/rarecert/, UNDER REVIEW at INFORMS J. Computing)
+### Paper 8 — RARECERT (papers/rarecert/, ACTIVE — retargeting to PEIS after IJOC rejection)
 
 *Certifying rare overflow risk of regional pickup-and-delivery plans.*
 Spin-off of QUASAR direction A (2026-10-14): certify service levels
@@ -175,6 +175,12 @@ sum to a maximum over stages); mixture IS for unions (Owen et al. 2019)
 and the copula two-step are NOT claimable. Uses the region set
 (`data/Region`, `results/plans_Region`). Separation from TEMPO: no
 e-values. Spec: `papers/rarecert/PROJECT.md`.
+Rejected by INFORMS J. Computing on 2026-11-13 (area editor, no review:
+model too narrow; suggested *Probability in the Engineering and
+Informational Sciences*). Being rewritten for PEIS as a probability paper
+with complete proofs in `papers/rarecert/submission_peis/`
+(`rarecert_peis.tex`); see its STATUS.md and
+`reviews/ijoc_decision_2026-11-13.md`.
 
 QUASAR (paper 7) outcome so far: four honest tests (search inside the
 optimiser, black-box simultaneous estimation, per-route certification,
@@ -217,17 +223,19 @@ STATUS.md). Report: `papers/sortie/REPORT.md`.
   self-contained (no `svrpspd_wdro/` imports — see its README.md).
 - `papers/quasar/` — paper 7 (QUASAR), **under review at QIP, frozen** (submitted Oct 2026);
   quantum code in `svrpspd_wdro/quantum/` (Qiskit).
-- `papers/rarecert/` — paper 8 (RARECERT), **under review at INFORMS J.
-  Computing, frozen** (submitted Oct 2026; files in `submission_ijoc/`).
+- `papers/rarecert/` — paper 8 (RARECERT), **rejected at INFORMS J.
+  Computing (2026-11-13), open for edits in `submission_peis/`** (PEIS
+  version); `submission_ijoc/` and `manuscript/` are the frozen IJOC record.
 - `papers/parcel/` — paper 6 (PARCEL), **ACTIVE and open for edits**;
   planning stage, self-contained (see its README.md).
 - **Parallel papers, independent review clocks** — always check each
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP), 8
-  (RARECERT, JoC) and 9 (SORTIE, EJOR) are closed to edits while under review, paper 4 is
-  abandoned, and papers 5 (ECLAIR) and 6 (PARCEL) are the **open papers**.
+  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP) and 9
+  (SORTIE, EJOR) are closed to edits while under review, paper 4 is
+  abandoned, and papers 5 (ECLAIR), 6 (PARCEL) and 8 (RARECERT, PEIS
+  version) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
   `eclair.tex`, `parcel.tex`), never `main.*`.
 - **Adding a new paper:** create `papers/<shortname>/` holding the

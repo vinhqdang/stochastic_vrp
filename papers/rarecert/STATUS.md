@@ -5,12 +5,27 @@
 - **Origin:** spin-off of QUASAR (paper 7) direction A (2026-10-14): the
   classical rival built to test quantum amplitude estimation turned out to
   be the stronger, positive result.
-- **Venue:** SUBMITTED to INFORMS Journal on Computing (October 2026), area
-  Simulation, Stochastic Models, & Stochastic Optimization; single-blind;
-  submission files in `submission_ijoc/` (INFORMS template, cover letter,
-  `rarecert_ijoc.pdf`, 28 pages = ~25 main incl. references + appendix as
-  supplement). Decision pending.
-- **State:** **UNDER REVIEW at INFORMS J. Computing — FROZEN.** Do not edit `manuscript/`, `submission_ijoc/` or the results it cites until the decision arrives (revisions only on the editor's request). Draft 3 content: both internal reviews addressed; proofs remain sketches (stated as such). Known weaknesses recorded at submission: proofs are sketches, 30-route GD sensitivity, 8 long routes, no independent hub check at 1e-5.
+- **Venue history:** INFORMS Journal on Computing (submitted October 2026,
+  JOC-2026-10-OA-2667) — **REJECTED 2026-11-13** by the area editor without review
+  (model too narrow for IJOC; the analytical importance-sampling part praised;
+  editor suggested *Probability in the Engineering and Informational Sciences*).
+  Decision and response plan: `reviews/ijoc_decision_2026-11-13.md`. The IJOC files
+  (`submission_ijoc/`, `manuscript/`) are kept unchanged as the record of that
+  submission.
+- **Venue now:** *Probability in the Engineering and Informational Sciences*
+  (Cambridge University Press). No LaTeX format required at submission; one PDF with
+  tables and figures embedded. Files in `submission_peis/` (`rarecert_peis.tex`,
+  `cover_letter.tex`, figures, generated table inputs).
+- **State:** **ACTIVE — preparing the PEIS submission; open for edits** in
+  `submission_peis/` only. Not yet submitted. When it is submitted, mark it frozen
+  here and in the root CLAUDE.md.
+- **PEIS version (2026-11-13):** rewritten as a probability paper with complete
+  proofs (log-asymptotics with explicit error terms, sharp single-shift threshold
+  ϱ = 1/4, new silent-underestimation proposition, mixture efficiency under a covering
+  condition with constant Ψ computed by `svrpspd_wdro/rarecert/covering.py`).
+  New computations: `svrpspd_wdro/scripts/run_rarecert_peis_conditions.py`
+  (conditions on all 5 920 routes) and `run_rarecert_peis_bias.py` (end-mode
+  shares vs measured bias); outputs in `svrpspd_wdro/results/rarecert/peis/`.
 - **Sharing:** uses the shared engine (instances, scenario generator, plan
   caches incl. the region set `data/Region`, `results/plans_Region`) and
   `svrpspd_wdro/quantum/rare.py` (classical parts) — to be moved to a
