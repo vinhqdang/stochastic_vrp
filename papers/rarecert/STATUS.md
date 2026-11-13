@@ -19,9 +19,15 @@
   `submission_mcap/` (`rarecert_mcap.tex`, `cover_letter.tex`, figures, generated
   table inputs); Springer-style abstract (230 words), keywords, MSC codes and a
   Declarations section.
-- **State:** **ACTIVE — preparing the MCAP submission; open for edits** in
-  `submission_mcap/` only. Not yet submitted. When it is submitted, mark it frozen
-  here and in the root CLAUDE.md.
+- **State:** **SUBMITTED to MCAP on 2026-11-13 — UNDER REVIEW, FROZEN.** Submitted
+  version = commit `68f1c6b` (git tag `rarecert-mcap`), package `submission_mcap/`
+  (`rarecert_mcap.pdf`, 19 pages, Springer Nature template; standard non-open-access
+  model). Do not edit `submission_mcap/`, the scripts it cites
+  (`run_rarecert_peis_*.py`, `rarecert/covering.py`) or `results/rarecert/peis/` until
+  the decision arrives; revisions only on the editor's request. Known weaknesses at
+  submission: efficiency theorem is for asymptotic (not computed) dominating points; with
+  mass weights the covering condition holds for only 28% of balanced Vietnamese routes;
+  figures carry Type 3 fonts.
 - **Rewrite as a probability paper (2026-11-13; first aimed at PEIS):** rewritten as a probability paper with complete
   proofs (log-asymptotics with explicit error terms, sharp single-shift threshold
   ϱ = 1/4, new silent-underestimation proposition, mixture efficiency under a covering
@@ -41,4 +47,5 @@
 - [~] R1 theory: draft revised after review (THEORY.md); SMIS measured on 120 routes; full proofs pending
 - [x] R2 richer simulator where the exact DP does not apply (route day: lognormal travel with a shared factor, load-dependent service, time windows; MDIS on 60 routes: error vs 10⁷-draw crude MC 0.76% median / 1.77% q90 at γ = 1e-3, MDIS–CE agreement 0.2–0.24%, RV 4.3–6.1, single shift off by up to 98%, CE costs 1 750–1 830× more samples at ε_rel = 0.1 and 18–19× at 0.01)
 - [x] R3 experiments: 66 calibrated hubs at 1e-3 and 1e-5 (buffers 35–43% / 64–76% median by region), exact conditional program and Glasserman–Li / conditional MC / subset simulation on 30 routes, exact hub program on 6 hubs, sensitivity (rho, cv, pickup scaling, lognormal) and CI coverage on 30 routes
+- [x] R5 MCAP submission (2026-11-13, commit `68f1c6b`)
 - [~] R4 manuscript: draft 3 (manuscript/rarecert.tex, 25 pages), no pending sections; round-2 experiments in svrpspd_wdro/results/rarecert/r3_summary.md
