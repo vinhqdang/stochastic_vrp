@@ -879,5 +879,8 @@ row's stopping decision is made by a predictor fitted on that row. Section 10's
 statement of the guarantee should be read in that sense. Other implementation
 notes (few-alive-rows and warm-start handled inside the fit function, chunk
 cache holds one full chunk, dev/test ignore `rep`) are in the code docstrings.
-Observation for M8/pilot: CON3-0 route 3 (m = 17) has 195 of 200 first-500
-training rows breaching at stop 1, so its learning problem is nearly degenerate.
+Observation for M8/pilot (corrected 2026-11-15 after re-count): CON3-0 route 3
+(m = 17) has 195 of the 500 `route_problem` training rows breaching at stop 1
+(81 of the first 200), and 281 of 500 breach somewhere; on the `expa/paths.py`
+stream the count is 159 at stop 1 and 265 in total (different seeds). Either way
+its learning problem is close to degenerate; M8 must handle it.
