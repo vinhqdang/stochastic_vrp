@@ -9,3 +9,10 @@ BATON (under review at C&OR, frozen). `costs.py` imports `_overflow_step` and
 Do not edit these two files here. New methods go in `transvrp/` next to this
 folder. If an upstream fix is needed, copy a fresh version and update the
 commit hash above. `tests/test_parity.py` records the upstream numbers.
+
+## Additional copies (EXPERIMENT_A, module M0)
+
+`dp_exec.py` (plug-in DP, `fit_dp`) and `otr21.py` (feature-enriched LSM,
+`fit_lsm_rich`) are **verbatim copies** of `svrpspd_wdro/core/dp_exec.py` and
+`svrpspd_wdro/core/otr21.py` at repo commit `b172549`. Both import only
+`.otr2` (`_overflow_step`, `_ConstantModel`), which is the copied file above.

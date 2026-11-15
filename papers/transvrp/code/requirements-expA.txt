@@ -1,0 +1,7 @@
+# Direction A (EXPERIMENT_A.md) runtime. Python 3.13.
+numpy==2.5.3
+scipy==1.18.1
+scikit-learn==1.9.1
+pandas==3.0.5
+torch==2.15.0+cpu
+pytest==9.2.0

@@ -865,3 +865,19 @@ anywhere in this specification (delta, the route list and all thresholds come
 from the dev stream). Strictly, the test stream has therefore been touched once.
 The paper must state this. Everything neural is evaluated on test days only after
 the frozen-commit gate of section 5.
+
+### 12.2 Erratum found during implementation of M0-M3 (2026-11-15)
+
+Acceptance test M3(d) as written (a fold-A row's fit must not move when its own
+outcomes after stop k change) cannot hold for rows that are still alive at k:
+such a row's target at k is built from its own later outcomes, so changing them
+moves the fit of its own fold. The implementer did not weaken the test; it
+implemented (i) a valid version (rows already overflowed by k change no
+predictor) and (ii) a characterisation test asserting the effect exists. The
+leakage guarantee of the design is the **fit/apply disjointness of M3(b)**: no
+row's stopping decision is made by a predictor fitted on that row. Section 10's
+statement of the guarantee should be read in that sense. Other implementation
+notes (few-alive-rows and warm-start handled inside the fit function, chunk
+cache holds one full chunk, dev/test ignore `rep`) are in the code docstrings.
+Observation for M8/pilot: CON3-0 route 3 (m = 17) has 195 of 200 first-500
+training rows breaching at stop 1, so its learning problem is nearly degenerate.
