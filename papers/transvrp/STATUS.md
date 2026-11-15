@@ -4,7 +4,13 @@
   for stochastic VRP (SVRPSPD) optimisation.
 - **Venue:** not chosen.
 - **State:** **ACTIVE — study phase (opened 2026-11-15).** No manuscript, no
-  experiments yet; baseline code copied and parity-tested. `PROJECT.md` holds the reading of the seed paper,
+  experiment results yet. `EXPERIMENT_A.md` (revision 2, reviewed in `REVIEW_A.md`) is
+  implemented as modules M0-M11 in `code/transvrp/expa/` (89 tests pass); **nothing has
+  been run beyond smoke/unit tests, the test stream is untouched by any neural code,
+  and the pilot has not been run.** Known gaps: pilot checker P1-P6, section 7.2 cuts,
+  summary variance item (b), `RESEARCH_LOG.md` (the test-stream gate refuses
+  evaluation until it exists with a frozen commit hash). Code has not had an
+  independent code review yet. `PROJECT.md` holds the reading of the seed paper,
   the literature map, and candidate directions with go/no-go tests.
 - **Freeze policy:** open for edits.
 - **Seed paper:** Liu et al., OR-Transformer, arXiv 2609.01933v2 (full text
