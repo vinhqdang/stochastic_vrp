@@ -147,7 +147,7 @@ My assessment:
 
 ## 6. Open decisions for the author
 
-- Share the engine (`svrpspd_wdro/neural/`) or stay self-contained like ECLAIR/PARCEL?
-  BATON and TEMPO are under review, so a neural policy that *builds on* BATON's
-  fitted values is a related paper; a policy benchmarked *against* BATON is not.
+- ~~Share the engine or stay self-contained?~~ **Resolved 2026-11-15: self-contained**
+  (`code/`). Caveat kept: a neural policy that *builds on* BATON's fitted values is a
+  related paper; one benchmarked *against* BATON is not. Keep it the second.
 - Whether the LLM angle (D) is in scope or only the transformer angle (A, B).

@@ -214,7 +214,7 @@ Transformer + pathwise gradients through a differentiable simulator, for
 stochastic joint replenishment). Candidate directions (amortised
 continuation value vs BATON; hybrid pathwise training; LLM heuristic design;
 LLM weight-space editing) and go/no-go tests are in `papers/transvrp/PROJECT.md`.
-No code yet; venue and engine-sharing decision open. The weight-space
+Self-contained code in `papers/transvrp/code/` (copied BATON baseline, parity-tested); venue open. The weight-space
 programming idea's primary source is an MIT CSAIL blog post (2026-11-02,
 not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
 
