@@ -215,8 +215,8 @@ stochastic joint replenishment). Candidate directions (amortised
 continuation value vs BATON; hybrid pathwise training; LLM heuristic design;
 LLM weight-space editing) and go/no-go tests are in `papers/transvrp/PROJECT.md`.
 No code yet; venue and engine-sharing decision open. The weight-space
-programming idea is known only from press coverage — see its
-`VERIFY_CITATIONS.md` before citing anything.
+programming idea's primary source is an MIT CSAIL blog post (2026-11-02,
+not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
 
 ## Layout
 

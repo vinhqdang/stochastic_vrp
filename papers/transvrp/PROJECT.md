@@ -108,31 +108,39 @@ continuous decision could close. Treat D(ii) as a late, optional add-on.
 
 ### D(ii) Weight-space programming (the author's idea)
 
-Press coverage reports an LLM reading a 0.8B model's weights and editing them directly,
-removing one fault direction (see VERIFY_CITATIONS.md; primary source not found).
-Possible analogue: a trained routing policy has a *diagnosable pathology*, for example
-it systematically ignores the running peak and overflows on pickup-heavy routes. An
-LLM, given tools to compute activation statistics, locates the responsible directions
-in the policy network and subtracts them, with no retraining.
+Primary source: Takehi, Teoh, Zhang, Khattab (MIT CSAIL), blog post 2026-11-02
+(`takehi2026wsp`, see VERIFY_CITATIONS.md). It is a blog, not a paper, and the
+authors call it a capability demonstration, not a method.
 
-My assessment, before any experiment:
-- It matches the reported success case (removing a fault that masks an ability), not
-  a case of adding ability. A routing policy that overflows because it never learned
-  the peak is the second kind.
-- The policy here is small (about 0.8M parameters per network), so a *programmatic*
-  edit or plain fine-tuning is cheap, and that is the real baseline. An LLM edit is
-  only interesting if it beats (1) a few hundred fine-tuning steps, (2) activation
-  steering / a rank-1 ablation found by a script, at the same budget.
-- Weights of this size do not fit in an LLM context as text; any version needs tool
-  access to summaries. That is my inference, not something the press reports state.
-- Evidence base is secondary only. Treat it as a hypothesis generator.
-- Go/no-go: build a policy with a *planted, known* defect, ask whether an LLM-driven
-  edit repairs it as well as the cheap baselines. If not, drop it.
+What it reports that matters here: an LLM edited 3.5% of the weights of a failing
+**PPO policy** (car on a ramp) from 0/256 to 1,024/1,024 episode success, and removed
+a looping fault in Qwen3.5-0.8B by editing 0.016% of weights. It did not help a
+Gemma 3 270M control, and the authors say edits remove obstacles but cannot add
+missing ability. There is **no comparison with fine-tuning or gradient-based editing**.
+
+Possible analogue: a trained routing policy has a diagnosable pathology (e.g. it
+ignores the running peak and overflows on pickup-heavy routes); an LLM with tools
+locates the responsible weights and edits them, with no retraining.
+
+My assessment:
+- Policy repair is a reported success case (Exp 4), so this is less speculative than
+  I first wrote. But it matches "remove an obstacle"; a policy that never learned the
+  peak is "missing ability", the case the post says fails.
+- Our policies are small (about 0.8M parameters per network, versus 171k to 7M in the
+  post's experiments), so size is not the obstacle. The real baseline is cheap:
+  (1) a few hundred fine-tuning or constrained-RL steps, (2) a scripted rank-1
+  ablation or activation steering. The post never runs these, so it cannot tell us
+  the LLM edit beats them. That comparison is the contribution if there is one.
+- Tool access varies in the post (Python allowed in some experiments), so a fair
+  protocol must state what the LLM may run.
+- Go/no-go: plant a known defect in a routing policy and ask whether an LLM-driven
+  edit repairs it as well as the cheap baselines at equal budget. If not, drop it.
+- Single-vendor, early, few seeds; keep it an optional late add-on to A or B.
 
 ## 5. First concrete steps (no code written yet)
 
 1. Read in full: Dastpak-Errico-Jabali (2607.16875), Iklassov (2402.09765),
-   Xiu survey (2607.00604); find the primary weight-space programming source.
+   Xiu survey (2607.00604); read the weight-space programming post in full and its logs (github.com/RikiyaT/lm_understand-logs).
 2. Define the minimum experiment for A: state features, training-data size sweep
    (10^2 ... 10^6 paths) versus BATON on the same plans and the same 2,000 test days.
 3. Decide the target venue after step 2; do not choose it first.

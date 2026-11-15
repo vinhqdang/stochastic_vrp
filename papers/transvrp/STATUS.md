@@ -16,4 +16,4 @@
   tests, or inside this directory if the author decides on full separation
   (**open decision**, see PROJECT.md section 6).
 - **Blocking:** (1) pick direction (PROJECT.md section 4); (2) separation decision;
-  (3) find the primary source for weight-space programming before using it.
+  (3) read the weight-space programming blog and logs in full (found; only summary-read so far).

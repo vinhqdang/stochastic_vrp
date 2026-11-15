@@ -29,20 +29,38 @@ transformer RL, stochastic demand *and* pickup-and-delivery with online
 recourse. This is a search result, not a proof of absence; repeat with
 targeted queries before claiming novelty.
 
-## Weight-space programming (added 2026-11-15, raised by the author)
+## Weight-space programming (primary source found 2026-11-15)
 
-Seen **only in secondary coverage** (DataCamp, VentureBeat, several DEV
-Community posts, AI Socratic), all via search snippets; the primary MIT
-CSAIL post/paper was **not located**. Reported claims (unverified): an LLM
-("GPT-6 Astra") read Qwen3.5-0.8B weights, found one direction written by
-the MLPs of layers 15 and 19 tied to runaway/looping generation, subtracted
-it from 64 output columns per layer (131,072 weights), and MATH-500 moved
-7.9% -> 48.1%; an independent Hugging Face rerun is reported as 51.0%, and
-one report gives 49.45% for the unedited model with thinking disabled, so
-the baseline depends on the setup. Reported scope: fault removal, not new
-ability; one LLM, models up to 0.8B.
-**Do not cite or quantify anything from this until the primary source is
-found and read.** No bib entry is created for it.
+Primary source, **read via fetch summary (not yet read line by line)**:
+Takehi, Teoh, Zhang, Khattab (MIT CSAIL), "Sparks of Weight-Space Programming:
+LLMs can natively read & write neural network weights", blog post dated
+2026-11-02, response section added 2026-11-12,
+https://rikiyat.github.io/blog/weight-space-programming/ . **Blog, not a
+peer-reviewed paper and not on arXiv**; no separate MIT paper is linked. Logs
+and code: github.com/RikiyaT/lm_understand-logs; edited model on Hugging Face
+(RikiyaT/Qwen3.5-0.8B-weight-space-programming). The post says it is "not a
+method" but an emerging capability, and that a benchmark/harness is being built
+but is not released.
+
+Claims relevant to us (as reported by the post):
+- Exp 4 (car-on-ramp): edited 3.5% of 171,664 weights of a failing **PPO policy**;
+  success 1,024/1,024 episodes vs 0/256 for PPO. This is the closest analogue to
+  repairing a routing policy.
+- Exp 8 (Qwen3.5-0.8B): 131,072 weights (0.016%) edited; MATH-500 7.9% -> 48.1%,
+  GSM8K 13.8% -> 67.1%, IFEval 21.0% -> 62.3%; max-length hits 93% -> 33%.
+  With only 10 or 25 forward passes the gains were far smaller (12.3%, 14.1%).
+- Control: Gemma 3 270M, no meaningful gain (6.8% -> at most 7.7%).
+- Tool use varies by experiment: some forbid Python, Exp 8 uses a Python kernel
+  and forward passes.
+- Stated limits: removes an obstacle, cannot add a missing ability; results are
+  early; some rest on few seeds or single attempts.
+- **No comparison against fine-tuning or other gradient-based editing.**
+
+Still unverified: the figures themselves (only the author-side post, reported
+through a summary tool); the independent 51.0% Hugging Face rerun and the
+49.45% no-thinking baseline come from secondary coverage. The model name
+"GPT-6 Astra" is the post's wording; its identity is not established here.
+A bib entry (`takehi2026wsp`, @misc with URL) is added, flagged as a blog post.
 
 Related, snippet-only, unread: SHINE hypernetwork (arXiv 2602.06358) and a
 universal-hypernetwork paper (arXiv 2604.02215). They generate weights with
