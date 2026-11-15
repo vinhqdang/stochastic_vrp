@@ -19,12 +19,16 @@ review clock, and its own `STATUS.md`.
 | 4 | ~~**WRNF**~~ — [`papers/wrnf/`](papers/wrnf/) | Two-stage Wasserstein-robust network flow. **Abandoned before drafting — scooped:** the thesis is Mohajerin Esfahani & Kuhn (2018) Remark 6.7, and its two-stage form is Duque, Mehrotra & Morton, SIOPT 32(3) 2022 | (was COAP) | **abandoned 2026-07-27** — kept as a documented negative result | n/a |
 | 5 | **ECLAIR** — [`papers/eclair/`](papers/eclair/) | E-process certification of LLM-generated constraint models, with Kelly-style routing of solver-seconds across candidates and probes | *Constraints* (Springer), LLM-Solve special issue | **active** — drafting | self-contained in its own directory |
 | 6 | **PARCEL** — [`papers/parcel/`](papers/parcel/) | Budget-constrained context dissemination between LLM agents: utility is neither monotone (per-agent context saturation) nor submodular (complementary facts), so the influence-maximization toolchain does not transfer | AAMAS 2027, Hanoi | **active** — planning | self-contained in its own directory |
+| 7 | **QUASAR** — [`papers/quasar/`](papers/quasar/) | Quantum amplitude estimation for chance-constrained / CVaR SVRPSPD; four honest tests found no regime where it beats the best classical method | Quantum Information Processing | **under review** — frozen | `svrpspd_wdro/quantum/` |
+| 8 | **RARECERT** — [`papers/rarecert/`](papers/rarecert/) | Importance-sampling certification of rare (10⁻³–10⁻⁶) overflow risk of SVRPSPD plans | Methodology and Computing in Applied Probability (submitted 2026-11-13; rejected earlier at INFORMS J. Computing) | **under review** — frozen | uses the region plans in `svrpspd_wdro/` |
+| 9 | **SORTIE** — [`papers/sortie/`](papers/sortie/) | Fair CVRP under random travel times: ex-ante vs ex-post fairness, Poisson–binomial order-statistic integral, risk-consistent tours | European J. of Operational Research (submitted 2026-11-10) | **under review** — frozen | self-contained in `papers/sortie/code/` |
+| 10 | **TRANSVRP** — [`papers/transvrp/`](papers/transvrp/) | Transformer / LLM methods for stochastic VRP, seeded by OR-Transformer (arXiv 2609.01933): amortised continuation value vs BATON, hybrid pathwise training, and an LLM weight-editing idea | not chosen | **active** — study phase (opened 2026-11-15) | not yet; planned `svrpspd_wdro/neural/` |
 
 **Read a paper's own `STATUS.md` before touching it.** "Frozen" is a
 per-paper state, not a repo-wide one, and a paper flips from editable to
-frozen the moment it is submitted. Papers 1–3 are all currently closed to
+frozen the moment it is submitted. Papers 1–3 and 7–9 are all currently closed to
 edits; only revision work is allowed, and only once a decision arrives.
-Papers 5 and 6 are open.
+Papers 5, 6 and 10 are open.
 
 ### Adding paper N+1
 
@@ -107,7 +111,9 @@ stochastic_vrp/
 │   ├── csonet2026/      #   paper 3 — SUBMITTED to JOCO; self-contained code
 │   ├── wrnf/            #   ABANDONED (scooped) — kept as a negative result
 │   ├── eclair/          #   paper 5 — ACTIVE, drafting; self-contained code
-│   └── parcel/          #   paper 6 — ACTIVE, planning; self-contained code
+│   ├── parcel/          #   paper 6 — ACTIVE, planning; self-contained code
+│   ├── quasar/ rarecert/ sortie/   # papers 7–9 — UNDER REVIEW (frozen)
+│   └── transvrp/        #   paper 10 — ACTIVE, study phase (transformers/LLMs for SVRP)
 ├── RESULTS_OTR2.md      # BATON results summary — eight experiment layers
 ├── legacy/              # archived ECHO-era code (not maintained, do not import)
 └── requirements.txt

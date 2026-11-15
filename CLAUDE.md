@@ -206,6 +206,18 @@ results with the papers under review; all code in `papers/sortie/code/`
 `papers/sortie/submission_ejor/`). **Frozen while under review** (see its
 STATUS.md). Report: `papers/sortie/REPORT.md`.
 
+### Paper 10 — TRANSVRP (papers/transvrp/, ACTIVE — study phase, opened 2026-11-15)
+
+Transformer / LLM methods for stochastic VRP (SVRPSPD), seeded by
+OR-Transformer (Liu et al., arXiv 2609.01933v2: permutation-equivariant
+Transformer + pathwise gradients through a differentiable simulator, for
+stochastic joint replenishment). Candidate directions (amortised
+continuation value vs BATON; hybrid pathwise training; LLM heuristic design;
+LLM weight-space editing) and go/no-go tests are in `papers/transvrp/PROJECT.md`.
+No code yet; venue and engine-sharing decision open. The weight-space
+programming idea is known only from press coverage — see its
+`VERIFY_CITATIONS.md` before citing anything.
+
 ## Layout
 
 - `svrpspd_wdro/` — the shared engine + all experiment scripts (see its
@@ -231,14 +243,16 @@ STATUS.md). Report: `papers/sortie/REPORT.md`.
   are that record).
 - `papers/parcel/` — paper 6 (PARCEL), **ACTIVE and open for edits**;
   planning stage, self-contained (see its README.md).
+- `papers/transvrp/` — paper 10 (TRANSVRP), **ACTIVE and open for edits**;
+  study phase (see its STATUS.md).
 - **Parallel papers, independent review clocks** — always check each
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
   papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP), 8
   (RARECERT, MCAP) and 9 (SORTIE, EJOR) are closed to edits while under
-  review, paper 4 is abandoned, and papers 5 (ECLAIR) and 6 (PARCEL) are
-  the **open papers**.
+  review, paper 4 is abandoned, and papers 5 (ECLAIR), 6 (PARCEL) and 10 (TRANSVRP)
+  are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
   `eclair.tex`, `parcel.tex`), never `main.*`.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
