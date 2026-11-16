@@ -45,3 +45,26 @@ hash appears, under a heading "FROZEN COMMIT".
   missing rather than assumed.
 - The P5 extrapolation rule was fixed in code before any pilot timing existed
   (plan_cells docstring); MLP cost is a prior (0.2 x FULL), not measured.
+
+### 2026-11-16 — pilot outcome (dev stream only)
+- Run 12:05-13:06 GMT+7: eligibility (80 routes, 62 eligible), fit 73 jobs in 39 min
+  on 4 workers, eval + merge 1 min, 10^6 timing pass 20.5 min (stop updates 19.5 min,
+  peak RSS 1.8 GB).
+- Two bugs found by the pilot and fixed before the report was accepted (7d9b3b7):
+  (1) the report step could not load models pickled under `python -m` (class recorded
+  as `__mp_main__.Job`); fixed by `load_payload` plus a root-cause change, existing
+  pickles reused unchanged; (2) the P5 projection added wall MINUTES to the 3 h term
+  and labelled the sum hours (printed 149.6 days). Corrected: 14,353 job-minutes /
+  60 / 4 + 3 h = **62.8 h = 2.62 days -> CPU** (spec platform rule: <= 4 days).
+- P2 rerun: cell full / CON3-0 / route 0 / N = 10^4 / rep 0 refitted at 7d9b3b7 (main
+  pilot models were fitted at e5fb8da; the changes between them touch loading,
+  reporting and job filtering, not fitting) — max |diff| = 0 on mean_cost, handoff_rate,
+  fail_rate. Rerun table: `code/results/expA/pilot/p2_rerun_*.csv`.
+- Pilot report `code/results/expA/pilot_report.md`: P1-P6 all PASS. P3: SCALAR /
+  BATON-eq = 1.00017 (tolerance 2%). P6: warm-start chosen on 7.6% of stages, fold
+  disagreement 0.47%. Monotonicity: 0% of SCALAR curves decrease. No lr/S_k iteration
+  was needed, so nothing in the design was tuned on the pilot.
+- The P5 projection rests on 2 measured FULL cells and a linear a + bN extrapolation
+  to 10^6 (one route); treat it as order-of-magnitude.
+- Pilot cost numbers are not read as evidence for any hypothesis (one instance; design
+  frozen).
