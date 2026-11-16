@@ -5,6 +5,7 @@ vehicle routing (SVRPSPD, shared engine in `svrpspd_wdro/`).
 
 | file | content |
 |---|---|
+| `HANDOFF.md` | **start here** to run the full experiment A sweep on a local machine |
 | `STATUS.md` | venue, state, freeze and separation policy, blockers |
 | `PROJECT.md` | seed-paper analysis, literature map, candidate directions, go/no-go tests |
 | `references.bib` | 13 arXiv-verified entries (no venue claims) |
