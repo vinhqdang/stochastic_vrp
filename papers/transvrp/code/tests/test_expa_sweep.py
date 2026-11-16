@@ -4,11 +4,13 @@ The smoke stage (one route, N = 100, s_max = 10, dev stream only) runs once per
 module through the CLI entry point, into pytest's tmp_path. No test evaluates
 the test stream.
 """
+import pickle
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from transvrp.expa import sweep
+from transvrp.expa import paths, sweep
 from transvrp.expa.eligibility import build_eligibility
 
 SMOKE_POLICIES = {"none", "tuned_tau", "baton_eq", "baton_big", "dp_big",
@@ -112,37 +114,116 @@ def test_smoke_test_evaluation_is_always_refused(tmp_path):
     assert rc != 0
 
 
-def _log(tmp_path, text):
-    p = tmp_path / "RESEARCH_LOG.md"
-    p.write_text(text)
-    return p
+def _no_generation(*args, **kwargs):
+    raise AssertionError("the test stream must not be generated or evaluated here")
 
 
-def test_gate_refusals(tmp_path):
-    log = _log(tmp_path, f"frozen {GOOD_HASH}\n")
-    ok = dict(stage="main", eval_set="test", research_log=log, commit=GOOD_HASH)
-    with pytest.raises(sweep.GateError):
-        sweep.check_test_gate(frozen_commit=None, **ok)
-    with pytest.raises(sweep.GateError):
-        sweep.check_test_gate(frozen_commit="abc123", **ok)
-    with pytest.raises(sweep.GateError):
-        sweep.check_test_gate(frozen_commit=HEX_COMMIT, **{**ok, "research_log": log})
-    with pytest.raises(sweep.GateError):
-        sweep.check_test_gate(frozen_commit=GOOD_HASH,
-                              **{**ok, "research_log": tmp_path / "missing.md"})
-    with pytest.raises(sweep.GateError):
-        sweep.check_test_gate(frozen_commit=GOOD_HASH, **{**ok, "commit": HEX_COMMIT})
-    with pytest.raises(sweep.GateError):
-        sweep.check_test_gate(frozen_commit=GOOD_HASH, **{**ok, "commit": "unknown"})
-    with pytest.raises(sweep.GateError):
-        sweep.check_test_gate(frozen_commit=GOOD_HASH,
-                              **{**ok, "stage": "pilot"})
+@pytest.fixture
+def gate(tmp_path, monkeypatch):
+    """Gate inputs under test control: a research log in tmp_path, the running
+    commit and the tree state. The real repository state is never read."""
+    log = tmp_path / "RESEARCH_LOG.md"
+    log.write_text(f"frozen {GOOD_HASH}\n")
+    monkeypatch.setattr(paths, "RESEARCH_LOG", log)
+    monkeypatch.setattr(paths, "current_commit", lambda *a, **k: GOOD_HASH)
+    monkeypatch.setattr(paths, "tree_is_clean", lambda *a, **k: True)
+    return log
 
 
-def test_gate_passes_only_with_hash_in_log_and_matching_commit(tmp_path):
-    log = _log(tmp_path, f"frozen {GOOD_HASH}\n")
-    sweep.check_test_gate("main", "test", GOOD_HASH, log, GOOD_HASH)
-    sweep.check_test_gate("main", "dev", None, log, "unknown")   # dev is never gated
+def test_gate_refusals(gate, tmp_path, monkeypatch):
+    with pytest.raises(sweep.GateError):
+        sweep.check_test_gate("main", "test", None)
+    with pytest.raises(sweep.GateError):
+        sweep.check_test_gate("main", "test", "abc123")
+    with pytest.raises(sweep.GateError):              # well formed, not in the log
+        sweep.check_test_gate("main", "test", HEX_COMMIT)
+    monkeypatch.setattr(paths, "RESEARCH_LOG", tmp_path / "missing.md")
+    with pytest.raises(sweep.GateError):
+        sweep.check_test_gate("main", "test", GOOD_HASH)
+    monkeypatch.setattr(paths, "RESEARCH_LOG", gate)
+    monkeypatch.setattr(paths, "current_commit", lambda *a, **k: HEX_COMMIT)
+    with pytest.raises(sweep.GateError):              # HEAD is not the frozen commit
+        sweep.check_test_gate("main", "test", GOOD_HASH)
+    monkeypatch.setattr(paths, "current_commit", lambda *a, **k: "unknown")
+    with pytest.raises(sweep.GateError):
+        sweep.check_test_gate("main", "test", GOOD_HASH)
+    monkeypatch.setattr(paths, "current_commit", lambda *a, **k: GOOD_HASH)
+    with pytest.raises(sweep.GateError):              # stage is dev-only
+        sweep.check_test_gate("pilot", "test", GOOD_HASH)
+
+
+def test_gate_passes_only_with_hash_in_log_and_clean_head(gate):
+    sweep.check_test_gate("main", "test", GOOD_HASH)
+    sweep.check_test_gate("main", "dev", None)       # dev is never gated
+
+
+def test_dirty_tree_is_refused(gate, monkeypatch):
+    monkeypatch.setattr(paths, "tree_is_clean", lambda *a, **k: False)
+    with pytest.raises(paths.TestStreamGateError, match="uncommitted"):
+        paths.verify_test_gate(GOOD_HASH)
+    with pytest.raises(sweep.GateError):
+        sweep.check_test_gate("main", "test", GOOD_HASH)
+
+
+def test_tree_check_fails_closed_outside_a_repository(tmp_path):
+    assert paths.tree_is_clean(tmp_path) is False
+
+
+def test_verify_returns_the_hash_when_every_check_holds(gate):
+    assert paths.verify_test_gate(GOOD_HASH) == GOOD_HASH
+
+
+def test_route_pool_refuses_test_without_a_verified_hash(gate, monkeypatch):
+    monkeypatch.setattr(paths, "_generate_chunk", _no_generation)
+    with pytest.raises(paths.TestStreamGateError):
+        paths.route_pool("CON3-0", "test")
+    with pytest.raises(paths.TestStreamGateError):
+        paths.route_pool("CON3-0", "test", frozen=HEX_COMMIT)
+    monkeypatch.setattr(paths, "tree_is_clean", lambda *a, **k: False)
+    with pytest.raises(paths.TestStreamGateError):
+        paths.route_pool("CON3-0", "test", frozen=GOOD_HASH)
+
+
+def _model_file(tmp_path, fit_commit):
+    job = sweep.Job("neural", "CON3-0", 0, 100, 0, arm="full")
+    payload = {"job": job, "kind": "neural", "models": {}, "stats": None,
+               "diag": [], "fit_seconds": 0.0, "fit_commit": fit_commit,
+               "m": 3, "B": 1.0}
+    path = tmp_path / "full__CON3-0__r0__N100__rep0.pkl"
+    with open(path, "wb") as fh:
+        pickle.dump(payload, fh)
+    return path
+
+
+def test_run_eval_job_refuses_test_without_the_gate(gate, tmp_path, monkeypatch):
+    monkeypatch.setattr(sweep, "route_pool", _no_generation)
+    ctx = sweep.Ctx(tmp_path, "main", sweep.StageConfig(), GOOD_HASH)
+    model = _model_file(tmp_path, GOOD_HASH)
+    with pytest.raises(sweep.GateError):
+        sweep.run_eval_job(model, "test", ctx)
+    with pytest.raises(sweep.GateError):
+        sweep.run_eval_job(model, "test", ctx, frozen=HEX_COMMIT)
+
+
+def test_run_eval_job_refuses_models_not_fitted_at_the_frozen_commit(gate, tmp_path,
+                                                                     monkeypatch):
+    monkeypatch.setattr(sweep, "route_pool", _no_generation)
+    ctx = sweep.Ctx(tmp_path, "main", sweep.StageConfig(), GOOD_HASH)
+    model = _model_file(tmp_path, HEX_COMMIT)
+    with pytest.raises(sweep.GateError, match="fitted at"):
+        sweep.run_eval_job(model, "test", ctx, frozen=GOOD_HASH)
+
+
+def test_test_eval_through_cli_refuses_without_frozen_hash(tmp_path):
+    rc = sweep.main(["eval", "--stage", "main", "--eval", "test",
+                     "--results-dir", str(tmp_path)])
+    assert rc == 2
+
+
+def test_research_log_cannot_be_redirected_from_the_cli():
+    with pytest.raises(SystemExit):
+        sweep.main(["eval", "--stage", "main", "--eval", "test",
+                    "--frozen-commit", GOOD_HASH, "--research-log", "/dev/null"])
 
 
 def test_current_commit_reads_repository_files():

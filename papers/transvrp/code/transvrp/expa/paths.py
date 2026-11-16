@@ -17,12 +17,20 @@ arrays stay alive at most until the next chunk is requested.
 from __future__ import annotations
 
 import functools
+import re
+import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
 from ..baton.costs import LastMileCosts, route_cost_schedules
 from ..data import DATA_DIR, gen_scenarios, load_plans, parse_dethloff, stable_seed
+
+HERE = Path(__file__).resolve().parent
+CODE_DIR = HERE.parents[1]
+RESEARCH_LOG = CODE_DIR.parent / "RESEARCH_LOG.md"
+FROZEN_HASH_RE = re.compile(r"[0-9a-f]{40}")
 
 CHUNK = 100_000
 N_CHUNKS = 10
@@ -31,6 +39,80 @@ DEV_N = 5_000
 TEST_N = 20_000
 TEST_STD_N = 2_000
 TRAIN_REPS = (0, 1, 2)
+
+
+class TestStreamGateError(RuntimeError):
+    """Raised when test-stream data are requested without a verified frozen commit."""
+
+
+def current_commit(start: Path = HERE) -> str:
+    """Commit hash of the checkout that holds this file, read from .git files
+    (no git process). Returns 'unknown' when it cannot be determined."""
+    gitpath = None
+    for d in [start, *start.parents]:
+        if (d / ".git").exists():
+            gitpath = d / ".git"
+            break
+    if gitpath is None:
+        return "unknown"
+    if gitpath.is_file():
+        target = gitpath.read_text().split("gitdir:", 1)[-1].strip()
+        gitdir = (gitpath.parent / target).resolve()
+    else:
+        gitdir = gitpath
+    try:
+        head = (gitdir / "HEAD").read_text().strip()
+        if not head.startswith("ref:"):
+            return head
+        ref = head[4:].strip()
+        loose = gitdir / ref
+        if loose.exists():
+            return loose.read_text().strip()
+        packed = gitdir / "packed-refs"
+        if packed.exists():
+            for line in packed.read_text().splitlines():
+                parts = line.split()
+                if len(parts) == 2 and parts[1] == ref:
+                    return parts[0]
+    except OSError:
+        pass
+    return "unknown"
+
+
+def tree_is_clean(path: Path = CODE_DIR) -> bool:
+    """True when no tracked file under ``path`` has uncommitted changes
+    (``git status --porcelain --untracked-files=no``). Any failure counts as dirty."""
+    try:
+        out = subprocess.run(["git", "-C", str(path), "status", "--porcelain",
+                              "--untracked-files=no", "--", "."],
+                             capture_output=True, text=True, timeout=120, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return out.returncode == 0 and out.stdout.strip() == ""
+
+
+def verify_test_gate(frozen: str | None) -> str:
+    """Data-layer gate for the test stream (EXPERIMENT_A.md section 5).
+
+    Passes only when ``frozen`` is a full 40-character lowercase hash that is
+    recorded in RESEARCH_LOG.md, equals the commit of the running checkout, and
+    the tracked files under papers/transvrp/code have no uncommitted changes.
+    Returns the verified hash. The log path, commit reader and tree check are
+    read from module globals at call time (tests replace them; no caller can)."""
+    if not frozen:
+        raise TestStreamGateError("test-stream data need a frozen commit hash")
+    if not FROZEN_HASH_RE.fullmatch(frozen):
+        raise TestStreamGateError("the frozen commit must be a full 40-character lowercase hash")
+    if not Path(RESEARCH_LOG).exists():
+        raise TestStreamGateError(f"research log not found: {RESEARCH_LOG}")
+    if frozen not in Path(RESEARCH_LOG).read_text():
+        raise TestStreamGateError("the frozen hash is not recorded in RESEARCH_LOG.md")
+    head = current_commit()
+    if head != frozen:
+        raise TestStreamGateError(f"running checkout is at {head}, not at the frozen commit")
+    if not tree_is_clean():
+        raise TestStreamGateError("uncommitted changes under papers/transvrp/code; refusing test stream")
+    return frozen
 
 
 @dataclass(frozen=True)
@@ -101,10 +183,15 @@ def _generate_chunk(inst: str, purpose: str, rep: int, c: int
 
 
 def route_pool(inst: str, purpose: str, rep: int = 0,
-               N: int | None = None) -> dict[int, Paths]:
-    """route_id -> Paths for every non-empty route of the 'Det' plan."""
+               N: int | None = None, *, frozen: str | None = None) -> dict[int, Paths]:
+    """route_id -> Paths for every non-empty route of the 'Det' plan.
+
+    purpose 'test' is refused (TestStreamGateError) unless ``frozen`` passes
+    ``verify_test_gate``; nothing is generated in that case."""
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
+    if purpose == "test":
+        verify_test_gate(frozen)
     specs = route_specs(inst)
     if purpose == "train":
         if rep not in TRAIN_REPS:

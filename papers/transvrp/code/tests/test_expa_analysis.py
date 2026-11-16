@@ -11,6 +11,7 @@ from transvrp.expa import analysis
 from transvrp.expa.sweep import add_gap_closed
 
 L = np.linspace(-1, 1, 20)
+SYN_ROUTES = 40          # the synthetic table has 20 instances x 2 routes
 
 
 def _go(d):
@@ -163,7 +164,7 @@ def test_crossover_rule():
 
 def test_summary_end_to_end_on_synthetic_table(tmp_path):
     df = _synthetic_rows()
-    res = analysis.write_summary(df, tmp_path)
+    res = analysis.write_summary(df, tmp_path, n_routes=SYN_ROUTES)
     assert res["primary"]["branch"] == "WIN"
     assert res["primary"]["n_pos"] == 20
     assert (tmp_path / "summary.md").exists()
@@ -176,12 +177,57 @@ def test_summary_end_to_end_on_synthetic_table(tmp_path):
     assert res["family"]["S1"]["classification"] == "better"
 
 
-def test_summary_runs_without_big_stage_rows(tmp_path):
+def test_missing_family_contrast_is_refused_not_dropped(tmp_path):
+    """Without the 10^6 rows S7, S10 and S11 cannot be computed. The summary must
+    refuse (Holm is over the 11 pre-registered tests), not run over 8 tests."""
     df = _synthetic_rows()
     df = df[df["N"] != 1000000]
-    res = analysis.write_summary(df, tmp_path)
-    assert res["family"].get("S7") is None
-    assert res["primary"]["branch"] == "WIN"
+    with pytest.raises(ValueError, match="S7"):
+        analysis.write_summary(df, tmp_path, n_routes=SYN_ROUTES)
+    assert not (tmp_path / "summary.md").exists()
+
+
+def test_missing_primary_rows_are_refused(tmp_path):
+    df = _synthetic_rows()
+    df = df[~((df["policy"] == "baton_eq") & (df["N"] == 100000))]
+    with pytest.raises(ValueError, match="PRIMARY"):
+        analysis.write_summary(df, tmp_path, n_routes=SYN_ROUTES)
+
+
+def test_contrast_does_not_swallow_incomplete_coverage():
+    df = _synthetic_rows()
+    partial = df[~((df["policy"] == "nn_scalar") & (df["N"] == 2000)
+                   & (df["inst"] == "I00"))]
+    with pytest.raises(ValueError):
+        analysis.contrast(partial, *analysis.FAMILY[7])     # S8 needs nn_scalar @ 2000
+
+
+def test_family_is_eleven_tests_and_defaults_are_the_spec_counts():
+    assert len(analysis.FAMILY) == 11 == analysis.FAMILY_SIZE
+    assert analysis.N_INSTANCES == 20
+    assert analysis.N_ROUTES == 62
+    assert analysis.N_REPS == 3
+
+
+def test_coverage_counts_are_checked(tmp_path):
+    df = _synthetic_rows()
+    with pytest.raises(ValueError, match="routes"):
+        analysis.write_summary(df, tmp_path)                 # 40 routes, default 62
+    with pytest.raises(ValueError, match="instances"):
+        analysis.write_summary(df, tmp_path, n_instances=19, n_routes=SYN_ROUTES)
+    with pytest.raises(ValueError, match="replicates"):
+        short = df[~((df["policy"] == "nn_full") & (df["rep"] == 2))]
+        analysis.write_summary(short, tmp_path, n_routes=SYN_ROUTES)
+
+
+def test_holm_runs_over_all_eleven_family_p_values(tmp_path):
+    df = _synthetic_rows()
+    res = analysis.write_summary(df, tmp_path, n_routes=SYN_ROUTES)
+    ids = [spec[0] for spec in analysis.FAMILY]
+    p_raw = [res["family"][i]["p_two_sided"] for i in ids]
+    p_adj = [res["family"][i]["p_holm"] for i in ids]
+    assert np.allclose(p_adj, analysis.holm(p_raw), rtol=0, atol=1e-12)
+    assert len(ids) == 11
 
 
 def test_cli_reads_csv_and_writes_outputs(tmp_path):
@@ -189,7 +235,8 @@ def test_cli_reads_csv_and_writes_outputs(tmp_path):
     merged = tmp_path / "main.csv"
     df.to_csv(merged, index=False)
     out = tmp_path / "out"
-    assert analysis.main(["--merged", str(merged), "--out", str(out)]) == 0
+    assert analysis.main(["--merged", str(merged), "--out", str(out),
+                          "--routes", str(SYN_ROUTES)]) == 0
     assert (out / "summary.md").exists() and (out / "curve.csv").exists()
 
 
@@ -197,7 +244,7 @@ def test_big_stage_rows_shared_with_main_are_not_double_counted(tmp_path):
     df = _synthetic_rows()
     big = df[(df["N"] == 1000000) & (df["rep"] == 0)].copy()
     big = big[big["policy"].isin(["baton_big", "dp_big", "none", "oracle"])]
-    res = analysis.write_summary(df, tmp_path, big_df=big)
+    res = analysis.write_summary(df, tmp_path, big_df=big, n_routes=SYN_ROUTES)
     assert res["family"]["S10"]["n"] == 20
     assert res["family"]["S11"]["n"] == 20
 
@@ -206,5 +253,5 @@ def test_big_stage_disagreeing_with_main_is_refused(tmp_path):
     df = _synthetic_rows()
     big = df[(df["N"] == 1000000) & (df["rep"] == 0)].copy()
     big["mean_cost"] = big["mean_cost"] * 1.01
-    with pytest.raises(ValueError):
-        analysis.write_summary(df, tmp_path, big_df=big)
+    with pytest.raises(ValueError, match="disagree"):
+        analysis.write_summary(df, tmp_path, big_df=big, n_routes=SYN_ROUTES)

@@ -73,6 +73,84 @@ def test_scalar_ignores_history_full_does_not():
     assert np.all(gs[:, list(HISTORY_IDX)] == 0)
 
 
+# Spec section 3.2, written out by hand (0-based columns of the 12 globals):
+# history globals g2 (peak), g8 (P_k), g9 (D_k), g10 (zbar_p), g11 (zbar_d),
+# g12 (p_k - d_k) are zeroed in SCALAR; g1, g3..g7 are kept.
+SCALAR_ZEROED = [1, 7, 8, 9, 10, 11]
+SCALAR_KEPT = [0, 2, 3, 4, 5, 6]
+
+
+def _pd_rows(rows):
+    """rows: list of (p, d) lists of length 3 -> cache on the toy route."""
+    p = np.array([r[0] for r in rows], dtype=float)
+    d = np.array([r[1] for r in rows], dtype=float)
+    return _toy_cache(p, d)
+
+
+def test_scalar_zeroes_the_spec_history_columns_and_nothing_else():
+    p = np.array([[3.0, 1.0, 1.0], [2.0, 2.0, 1.0]])
+    d = np.array([[1.0, 2.0, 2.0], [1.0, 1.0, 2.0]])
+    cache = _toy_cache(p, d)
+    idx = np.arange(2)
+    for k in (1, 2):
+        gf, _ = stage_batch(cache, k, idx, "full")
+        gs, _ = stage_batch(cache, k, idx, "scalar")
+        assert np.all(gs[:, SCALAR_ZEROED] == 0.0)
+        assert np.array_equal(gs[:, SCALAR_KEPT], gf[:, SCALAR_KEPT])
+        assert not np.array_equal(gf[:, SCALAR_ZEROED], gs[:, SCALAR_ZEROED])
+
+
+def test_scalar_blind_to_split_of_equal_running_sum_at_stage_1():
+    """Equal W_1 and equal peak (= W_1), different pickup/delivery split."""
+    cache = _pd_rows([([3.0, 1.0, 1.0], [1.0, 2.0, 2.0]),     # p1 = 3, d1 = 1
+                      ([2.0, 2.0, 1.0], [0.0, 2.0, 2.0])])    # p1 = 2, d1 = 0
+    assert cache.W[0, 0] == cache.W[1, 0] == 2.0
+    assert cache.P[0, 0] != cache.P[1, 0] and cache.D[0, 0] != cache.D[1, 0]
+    idx = np.arange(2)
+    gf, tf = stage_batch(cache, 1, idx, "full")
+    gs, ts = stage_batch(cache, 1, idx, "scalar")
+    assert np.array_equal(gs[0], gs[1]) and np.array_equal(ts[0], ts[1])
+    assert not np.array_equal(gf[0], gf[1])
+
+
+def test_scalar_blind_to_running_peak_at_stage_2():
+    """Equal W_2 = 1, but the running peak is 2 in row 0 and 1 in row 1, and
+    P_2, D_2 differ. SCALAR must not see the peak; FULL must."""
+    cache = _pd_rows([([3.0, 1.0, 1.0], [1.0, 2.0, 2.0]),     # g = (2, -1, -1)
+                      ([3.0, 2.0, 1.0], [2.0, 2.0, 2.0])])    # g = (1, 0, -1)
+    assert cache.W[0, 1] == cache.W[1, 1] == 1.0
+    assert cache.peak[0, 1] == 2.0 and cache.peak[1, 1] == 1.0
+    assert cache.P[0, 1] != cache.P[1, 1] and cache.D[0, 1] != cache.D[1, 1]
+    idx = np.arange(2)
+    gf, tf = stage_batch(cache, 2, idx, "full")
+    gs, ts = stage_batch(cache, 2, idx, "scalar")
+    assert np.array_equal(gs[0], gs[1]) and np.array_equal(ts[0], ts[1])
+    assert gf[0, 1] != gf[1, 1]                              # peak differs in FULL
+    assert not np.array_equal(gf[0], gf[1])
+
+
+def test_scalar_output_is_a_function_of_k_and_W_only():
+    """Random routes with exactly representable values; every row shares W_k,
+    so SCALAR outputs must be identical for every row at that stage."""
+    rng = np.random.default_rng(7)
+    n = 60
+    for k in (1, 2):
+        g = rng.integers(-16, 17, size=(n, 3)) / 8.0            # exact binary values
+        g[:, k - 1] = 1.0 - g[:, :k - 1].sum(axis=1)            # W_k = 1 for all rows
+        p = rng.integers(8, 40, size=(n, 3)) / 8.0
+        d = p - g
+        cache = _toy_cache(p, d)
+        assert np.all(cache.W[:, k - 1] == 1.0)
+        idx = np.arange(n)
+        gs, ts = stage_batch(cache, k, idx, "scalar")
+        gf, _ = stage_batch(cache, k, idx, "full")
+        assert np.array_equal(gs, np.repeat(gs[:1], n, axis=0))
+        assert np.array_equal(ts, np.repeat(ts[:1], n, axis=0))
+        assert len(np.unique(gf[:, 7])) > 1                     # FULL sees P_k
+        if k == 2:
+            assert len(np.unique(gf[:, 1])) > 1                 # FULL sees the peak
+
+
 def test_hand_computed_toy_route_stage1():
     cache = _toy_cache()
     glob, tok = stage_batch(cache, 1, np.array([0]), "full")

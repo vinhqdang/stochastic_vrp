@@ -81,3 +81,22 @@ def test_boost_arm_round_trip_through_fit_and_eval(tmp_path):
                for lst in preds.values() for p in lst)
     costs, _ = simulate_policy(cache, spec.B, spec.H, spec.E, preds, H_bill=spec.H)
     assert np.array_equal(stored, costs)
+
+
+def test_fit_boost_statistics_are_fitted_on_the_80_percent_rows_only():
+    """Same statistics rule as train.fit_neural (spec 3.1, section 9 M11)."""
+    from transvrp.expa.backward import split_80_20
+    from transvrp.expa.features import RouteStats
+    from transvrp.expa.paths import Paths
+    N_b = 200
+    spec = next(s for s in route_specs("CON3-0") if s.route_id == 1)
+    paths = route_pool("CON3-0", "train", 0, N_b)[spec.route_id]
+    _, stats, _ = fit_boost(spec, paths, N_b, 0)
+    fit_rows = np.arange(int(0.8 * N_b))
+    (fA, fB), val = split_80_20(N_b)
+    assert np.array_equal(np.sort(np.r_[fA, fB]), fit_rows)
+    want = RouteStats.fit(Paths(p=paths.p[fit_rows], d=paths.d[fit_rows]))
+    for name in ("mu_p", "mu_d", "sd_p", "sd_d"):
+        assert np.allclose(getattr(stats, name), getattr(want, name), rtol=1e-12, atol=0), name
+    everything = RouteStats.fit(paths)
+    assert not np.allclose(stats.mu_p, everything.mu_p, rtol=1e-9, atol=0)

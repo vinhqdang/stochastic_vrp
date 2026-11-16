@@ -152,3 +152,22 @@ def test_mlp_arm_trains_and_predicts():
     assert isinstance(models[k][0], NetPredictor)
     assert pred.shape == (50,)
     assert np.all(pred >= 0) and np.all(pred <= _spec().E0 + 1e-6)
+
+
+def test_fit_neural_statistics_are_fitted_on_the_80_percent_rows_only():
+    """Spec 3.1: mu and sigma come from the fitting rows (floor(0.8 N) paths),
+    never from validation rows. Compared with RouteStats.fit on those rows."""
+    from transvrp.expa.backward import split_80_20
+    from transvrp.expa.features import RouteStats
+    from transvrp.expa.paths import Paths
+    _, stats, _ = _fit("full", 0)
+    paths = _train_pool(0)
+    fit_rows = np.arange(int(0.8 * N))              # the first 160 paths
+    (fA, fB), val = split_80_20(N)
+    assert np.array_equal(np.sort(np.r_[fA, fB]), fit_rows) and val.size == N - fit_rows.size
+    want = RouteStats.fit(Paths(p=paths.p[fit_rows], d=paths.d[fit_rows]))
+    for name in ("mu_p", "mu_d", "sd_p", "sd_d"):
+        assert np.allclose(getattr(stats, name), getattr(want, name), rtol=1e-12, atol=0), name
+    everything = RouteStats.fit(paths)
+    assert not np.allclose(stats.mu_p, everything.mu_p, rtol=1e-9, atol=0)
+    assert not np.allclose(stats.sd_d, everything.sd_d, rtol=1e-9, atol=0)

@@ -18,11 +18,14 @@ Layout under ``--results-dir`` (default ``code/results/expA``):
 Fit and eval are resumable: an existing model file or rows file is skipped.
 Eval never refits and never writes models, so model mtimes are unchanged.
 
-Test-stream gate (section 5). ``--eval test`` is refused unless all of these
-hold: the stage allows test evaluation (smoke and pilot do not); the frozen
-hash is a full 40-character hex commit; the hash appears in RESEARCH_LOG.md;
-and the commit of the running code, read from the repository files, starts
-with that hash. The check runs before any data is generated.
+Test-stream gate (section 5). The gate lives in the data layer
+(``paths.verify_test_gate``), so ``route_pool(inst, "test", frozen=...)`` and
+``run_eval_job(..., frozen=...)`` refuse without it. ``--eval test`` also needs a
+stage that allows test evaluation (smoke and pilot do not). A verified hash must
+be a full 40-character hex commit recorded in RESEARCH_LOG.md, equal to the
+running checkout's commit, with no uncommitted changes under the code directory;
+every model loaded for test must carry that hash as its fit commit. The checks
+run before any data is generated.
 """
 from __future__ import annotations
 
@@ -51,14 +54,14 @@ from .boost import BoostPredictor, fit_boost  # noqa: E402
 from .eligibility import build_eligibility, stratum_of  # noqa: E402
 from .features import RouteCache, RouteStats  # noqa: E402
 from .model import MLPNet, SetNet  # noqa: E402
-from .paths import RouteSpec, route_pool, route_specs  # noqa: E402
+from .paths import (RouteSpec, TestStreamGateError, current_commit,  # noqa: E402
+                    route_pool, route_specs, verify_test_gate)
 from .simulate import simulate_policy, summarize  # noqa: E402
 from .train import ConstantPredictor, NetPredictor, StageConfig, fit_neural  # noqa: E402
 
 EXPA_DIR = Path(__file__).resolve().parent
 CODE_DIR = EXPA_DIR.parents[1]
 DEFAULT_RESULTS = CODE_DIR / "results" / "expA"
-DEFAULT_LOG = CODE_DIR.parent / "RESEARCH_LOG.md"
 SMOKE_INSTANCE = "CON3-0"
 OTR21_MIN_N = 10_000
 LADDER_LABELS = ("none", "tuned_tau", "baton_eq", "oracle")
@@ -73,8 +76,7 @@ ROW_COLUMNS = ["inst", "route_id", "m", "stratum", "N", "rep", "policy",
 KEY_COLUMNS = ["inst", "route_id", "N", "rep", "policy", "eval_set"]
 
 
-class GateError(RuntimeError):
-    """Raised when the test-stream gate refuses an evaluation."""
+GateError = TestStreamGateError     # refusals of the test-stream gate
 
 
 @dataclass(frozen=True)
@@ -207,61 +209,18 @@ def stage_eligibility(stage: str, path: Path | None) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
-# ---------------------------------------------------------------- commits and gate
+# ---------------------------------------------------------------- gate
 
-def current_commit(start: Path = EXPA_DIR) -> str:
-    """Commit hash of the checkout that holds this file, read from .git files
-    (no git process). Returns 'unknown' when it cannot be determined."""
-    gitpath = None
-    for d in [start, *start.parents]:
-        if (d / ".git").exists():
-            gitpath = d / ".git"
-            break
-    if gitpath is None:
-        return "unknown"
-    if gitpath.is_file():
-        target = gitpath.read_text().split("gitdir:", 1)[-1].strip()
-        gitdir = (gitpath.parent / target).resolve()
-    else:
-        gitdir = gitpath
-    try:
-        head = (gitdir / "HEAD").read_text().strip()
-        if not head.startswith("ref:"):
-            return head
-        ref = head[4:].strip()
-        loose = gitdir / ref
-        if loose.exists():
-            return loose.read_text().strip()
-        packed = gitdir / "packed-refs"
-        if packed.exists():
-            for line in packed.read_text().splitlines():
-                parts = line.split()
-                if len(parts) == 2 and parts[1] == ref:
-                    return parts[0]
-    except OSError:
-        pass
-    return "unknown"
-
-
-def check_test_gate(stage: str, eval_set: str, frozen_commit: str | None,
-                    research_log: Path, commit: str) -> None:
-    """Raises GateError unless test-stream evaluation is allowed (section 5)."""
+def check_test_gate(stage: str, eval_set: str, frozen_commit: str | None) -> None:
+    """Stage-level part of the gate (section 5). Raises GateError unless test
+    evaluation is allowed; the commit checks are ``paths.verify_test_gate``."""
     if eval_set not in EVAL_SETS:
         raise GateError(f"eval set must be one of {EVAL_SETS}")
     if eval_set != "test":
         return
     if not stage_spec(stage).test_allowed:
         raise GateError(f"stage {stage!r} is dev-only; test evaluation is refused")
-    if not frozen_commit:
-        raise GateError("--eval test requires --frozen-commit HASH")
-    if not re.fullmatch(r"[0-9a-f]{40}", frozen_commit):
-        raise GateError("--frozen-commit must be a full 40-character lowercase hex hash")
-    if not Path(research_log).exists():
-        raise GateError(f"research log not found: {research_log}")
-    if frozen_commit not in Path(research_log).read_text():
-        raise GateError("the frozen hash is not recorded in RESEARCH_LOG.md")
-    if commit == "unknown" or not commit.startswith(frozen_commit):
-        raise GateError(f"running code is at {commit}, not at the frozen commit")
+    verify_test_gate(frozen_commit)
 
 
 # ---------------------------------------------------------------- packing
@@ -372,16 +331,22 @@ def _rows_for(payload: dict, results: dict, spec: RouteSpec, eval_set: str,
     return rows, arrays
 
 
-def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx) -> str:
+def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
+                 frozen: str | None = None) -> str:
     job_key = model_path.stem
+    if eval_set == "test":
+        verify_test_gate(frozen)
     rows_csv = ctx.rows_dir / f"{job_key}.{eval_set}.csv"
     if rows_csv.exists():
         return "skip"
     with open(model_path, "rb") as fh:
         payload = pickle.load(fh)
+    if eval_set == "test" and payload.get("fit_commit") != frozen:
+        raise GateError(f"model {job_key} was fitted at {payload.get('fit_commit')}, "
+                        f"not at the frozen commit")
     job: Job = payload["job"]
     spec = _spec_of(job.inst, job.route_id)
-    pool = route_pool(job.inst, eval_set, 0)[job.route_id]
+    pool = route_pool(job.inst, eval_set, 0, frozen=frozen)[job.route_id]
     n_eval = int(pool.p.shape[0])
     if payload["kind"] in ("ladder", "big"):
         res = eval_classical(spec, payload["models"], pool.g)
@@ -431,22 +396,21 @@ def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
 
 
 def run_eval(stage: str, eval_set: str, results_dir: Path = DEFAULT_RESULTS,
-             frozen_commit: str | None = None, research_log: Path = DEFAULT_LOG,
-             jobs: int = 1, commit: str | None = None) -> dict:
+             frozen_commit: str | None = None, jobs: int = 1) -> dict:
     spec = stage_spec(stage)
-    ctx_commit = current_commit() if commit is None else commit
-    check_test_gate(stage, eval_set, frozen_commit, Path(research_log), ctx_commit)
-    ctx = Ctx(Path(results_dir), stage, spec.cfg, ctx_commit)
+    check_test_gate(stage, eval_set, frozen_commit)
+    ctx = Ctx(Path(results_dir), stage, spec.cfg, current_commit())
     model_files = sorted(ctx.models_dir.glob("*.pkl"))
     if not model_files:
         raise FileNotFoundError(f"no fitted models for stage {stage!r} in {ctx.models_dir}")
-    done = _run_all(partial(_eval_one, eval_set=eval_set, ctx=ctx), model_files, jobs)
+    done = _run_all(partial(_eval_one, eval_set=eval_set, ctx=ctx, frozen=frozen_commit),
+                    model_files, jobs)
     return {"models": len(model_files), "evaluated": done.count("eval"),
             "skipped": done.count("skip")}
 
 
-def _eval_one(model_path: Path, eval_set: str, ctx: Ctx) -> str:
-    return run_eval_job(model_path, eval_set, ctx)
+def _eval_one(model_path: Path, eval_set: str, ctx: Ctx, frozen: str | None = None) -> str:
+    return run_eval_job(model_path, eval_set, ctx, frozen=frozen)
 
 
 # ---------------------------------------------------------------- merge
@@ -503,7 +467,6 @@ def main(argv: list[str] | None = None) -> int:
         if name == "eval":
             p.add_argument("--eval", dest="eval_set", required=True, choices=EVAL_SETS)
             p.add_argument("--frozen-commit", default=None)
-            p.add_argument("--research-log", type=Path, default=DEFAULT_LOG)
         if name == "merge":
             p.add_argument("--eval", dest="eval_set", default="dev", choices=EVAL_SETS)
     args = ap.parse_args(argv)
@@ -513,7 +476,7 @@ def main(argv: list[str] | None = None) -> int:
             info = run_fit(args.stage, elig, args.results_dir, args.jobs)
         elif args.cmd == "eval":
             info = run_eval(args.stage, args.eval_set, args.results_dir,
-                            args.frozen_commit, args.research_log, args.jobs)
+                            args.frozen_commit, args.jobs)
         else:
             df = merge_stage(args.stage, args.eval_set, args.results_dir)
             info = {"rows": len(df), "policies": sorted(df["policy"].unique())}

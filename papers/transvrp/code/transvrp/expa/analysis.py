@@ -28,7 +28,10 @@ import pandas as pd
 from scipy import stats
 
 DELTA = 0.7                # section 1.3, frozen
-N_INSTANCES = 20
+N_INSTANCES = 20           # section 1.2 / 8: unit of analysis
+N_ROUTES = 62              # section 1.1 (dev: 62 routes over 20 instances)
+N_REPS = 3                 # section 5: replicates {0, 1, 2} of the main stage
+FAMILY_SIZE = 11           # section 8, item 3: Holm over exactly 11 tests
 WIN_MIN_COUNT = 13         # section 1.4
 ALPHA_DIRECTION = 0.025    # section 1.4, Bonferroni over two directions
 ALPHA_ATTRIBUTION = 0.05   # section 1.5 and M11
@@ -49,6 +52,7 @@ FAMILY = [
     ("S10", "nn_full", 100000, "baton_big", 1000000),
     ("S11", "nn_full", 100000, "dp_big", 1000000),
 ]
+assert len(FAMILY) == FAMILY_SIZE
 PRIMARY = ("PRIMARY", "nn_full", 100000, "baton_eq", 100000)
 M11 = ("M11", "nn_full", 100000, "boost", 100000)
 CURVE_POLICIES = ("nn_full", "baton_eq")
@@ -191,14 +195,11 @@ def _gc_mean(df: pd.DataFrame, policy: str, N: int) -> float:
 
 
 def contrast(df: pd.DataFrame, cid: str, a: str, N_a: int, b: str, N_b: int,
-             delta: float = DELTA, p_adj: float | None = None) -> dict | None:
+             delta: float = DELTA, p_adj: float | None = None) -> dict:
     """Effect sizes and classification of one contrast (section 8, item 4).
-    Returns None when the rows are missing."""
-    try:
-        d = instance_deltas(df, a, b, N_a, N_b=N_b).to_numpy()
-        routes = _paired_route_means(df, a, N_a, b, N_b)
-    except ValueError:
-        return None
+    Missing or incomplete rows raise ValueError: a contrast is never dropped."""
+    d = instance_deltas(df, a, b, N_a, N_b=N_b).to_numpy()
+    routes = _paired_route_means(df, a, N_a, b, N_b)
     lo95, hi95 = _ci(d, 0.975)
     lo90, hi90 = _ci(d, 0.95)
     return dict(id=cid, a=a, N_a=N_a, b=b, N_b=N_b, n=d.size,
@@ -218,8 +219,6 @@ def curve(df: pd.DataFrame, delta: float = DELTA) -> pd.DataFrame:
     rows = []
     for N in grid:
         c = contrast(df, f"curve@{N}", "nn_full", N, "baton_eq", N, delta)
-        if c is None:
-            continue
         rows.append(dict(N=N, log10_N=float(np.log10(N)), delta_bar=c["mean"],
                          ci95_lo=c["ci95"][0], ci95_hi=c["ci95"][1]))
     return pd.DataFrame(rows, columns=["N", "log10_N", "delta_bar", "ci95_lo", "ci95_hi"])
@@ -288,28 +287,62 @@ def _combine(df: pd.DataFrame, big_df: pd.DataFrame | None) -> pd.DataFrame:
     return both.drop_duplicates(subset=key, keep="first").reset_index(drop=True)
 
 
+def check_coverage(df: pd.DataFrame, spec: tuple, n_instances: int = N_INSTANCES,
+                   n_routes: int = N_ROUTES, n_reps: int = N_REPS) -> None:
+    """Raises ValueError unless both policies of a contrast cover exactly
+    ``n_instances`` instances, ``n_routes`` routes and ``n_reps`` replicates
+    per route (section 1.2, section 5)."""
+    cid, a, N_a, b, N_b = spec
+    routes = _paired_route_means(df, a, N_a, b, N_b)
+    n_inst = int(routes.index.get_level_values("inst").nunique())
+    if n_inst != n_instances or len(routes) != n_routes:
+        raise ValueError(f"{cid}: expected {n_instances} instances and {n_routes} routes, "
+                         f"found {n_inst} and {len(routes)}")
+    for pol, N in ((a, N_a), (b, N_b)):
+        per = _policy_rows(df, pol, N).groupby(["inst", "route_id"]).size()
+        if (per != n_reps).any():
+            raise ValueError(f"{cid}: {pol} @ {N} does not have {n_reps} replicates "
+                             f"on every route")
+
+
 def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None = None,
-                  delta: float = DELTA) -> dict:
+                  delta: float = DELTA, n_instances: int = N_INSTANCES,
+                  n_routes: int = N_ROUTES, n_reps: int = N_REPS) -> dict:
     """Writes summary.md and curve.csv into out_dir and returns the key results.
 
     ``df`` is the merged main-stage table. ``big_df`` (optional) is the merged big
     stage; its rows are concatenated so that the 10^6 classical rows are found.
+    Every primary and family contrast must be complete (instances, routes and
+    replicates), or the call raises: Holm always runs over the 11 family tests.
     """
     full = _combine(df, big_df)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    prim = contrast(full, *PRIMARY, delta=delta)
-    fam_rows = [contrast(full, *spec, delta=delta) for spec in FAMILY]
-    present = [r for r in fam_rows if r is not None]
-    adj = holm([r["p_two_sided"] for r in present])
-    for r, p in zip(present, adj):
+    def _named(spec: tuple, fn):
+        try:
+            return fn()
+        except ValueError as exc:
+            raise ValueError(f"contrast {spec[0]} cannot be computed: {exc}") from exc
+
+    for spec in (PRIMARY, *FAMILY):
+        _named(spec, lambda spec=spec: check_coverage(full, spec, n_instances,
+                                                      n_routes, n_reps))
+    prim = _named(PRIMARY, lambda: contrast(full, *PRIMARY, delta=delta))
+    fam_rows = [_named(spec, lambda spec=spec: contrast(full, *spec, delta=delta))
+                for spec in FAMILY]
+    adj = holm([r["p_two_sided"] for r in fam_rows])
+    assert len(adj) == FAMILY_SIZE
+    for r, p in zip(fam_rows, adj):
         r["p_holm"] = p
         r["classification"] = classify(r["_d"], delta, p_adj=p)
-    # attribution contrasts that are not in the family use their own alpha
-    m11 = contrast(full, *M11, delta=delta)
+    present = fam_rows
+    # attribution contrasts that are not in the family use their own alpha;
+    # M11 runs only when the boosted arm was fitted (section 1.5)
+    m11 = (contrast(full, *M11, delta=delta)
+           if (full["policy"] == M11[3]).any() else None)
 
-    go = go_no_go(prim["_d"], delta) if prim is not None else None
+    go = go_no_go(prim["_d"], delta)
     cur = curve(full, delta)
     cross = crossover_n(cur, delta) if len(cur) else None
 
@@ -317,20 +350,17 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
     lines = ["# EXPERIMENT A summary", "",
              f"delta = {delta:.2f}% of BATON recourse cost (section 1.3). "
              "Unit: instance (n = 20). CI95 uses t_{19,0.975}; CI90 uses t_{19,0.95}.", ""]
-    if go is None:
-        lines += ["## Primary (section 1.4)", "", "Not available: primary rows missing.", ""]
-    else:
-        lines += ["## Primary: FULL vs BATON-eq at N = 10^5 (section 1.4)", "",
-                  f"Branch: **{go['branch']}**. Mean Δ̄ = {go['mean']:+.3f}%, "
-                  f"median {go['median']:+.3f}%, CI95 {_fmt_ci(go['ci95'])}, "
-                  f"CI90 {_fmt_ci(go['ci90'])}, s = {go['sd']:.3f}.",
-                  f"One-sided exact Wilcoxon: p(FULL cheaper) = {go['p_greater']:.4g}, "
-                  f"p(FULL dearer) = {go['p_less']:.4g}. Instances better: "
-                  f"{go['n_pos']}/{go['n']}, worse: {go['n_neg']}/{go['n']}. "
-                  f"Significance flag: {go['significance'] or 'none'}.", ""]
-        lines += ["Claim (template filled from the data):", ""]
-        lines += [f"> {x}" for x in _claim_primary(go, full, delta)]
-        lines += [""]
+    lines += ["## Primary: FULL vs BATON-eq at N = 10^5 (section 1.4)", "",
+              f"Branch: **{go['branch']}**. Mean Δ̄ = {go['mean']:+.3f}%, "
+              f"median {go['median']:+.3f}%, CI95 {_fmt_ci(go['ci95'])}, "
+              f"CI90 {_fmt_ci(go['ci90'])}, s = {go['sd']:.3f}.",
+              f"One-sided exact Wilcoxon: p(FULL cheaper) = {go['p_greater']:.4g}, "
+              f"p(FULL dearer) = {go['p_less']:.4g}. Instances better: "
+              f"{go['n_pos']}/{go['n']}, worse: {go['n_neg']}/{go['n']}. "
+              f"Significance flag: {go['significance'] or 'none'}.", ""]
+    lines += ["Claim (template filled from the data):", ""]
+    lines += [f"> {x}" for x in _claim_primary(go, full, delta)]
+    lines += [""]
 
     lines += ["## Secondary family (section 8, Holm over S1 to S11)", "",
               "| id | a @ N | b @ N | Δ̄ % | median | CI95 | CI90 | better | rank-biserial | pooled ratio a/b | mean GC(a) | p (two-sided) | p (Holm) | class |",
@@ -342,8 +372,6 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
             f"{_fmt_ci(r['ci90'])} | {r['n_better']}/{r['n']} | {r['rank_biserial']:+.2f} | "
             f"{r['pooled_ratio']:.4f} | {r['gc_mean_a']:.3f} | {r['p_two_sided']:.4g} | "
             f"{r['p_holm']:.4g} | {r['classification']} |")
-    if not present:
-        lines.append("| - | no family rows present | | | | | | | | | | | | |")
     lines.append("")
 
     lines += ["## Attribution (section 1.5)", ""]
@@ -374,7 +402,7 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
         lines.append(f"- M11 (FULL vs BOOST @ 10^5, own alpha 0.05): {c}; {txt}.")
     else:
         lines.append("- M11 (FULL vs BOOST @ 10^5): not run.")
-    if go is not None and go["branch"] == "WIN" and h2 is not None and h2["classification"] != "better":
+    if go["branch"] == "WIN" and h2 is not None and h2["classification"] != "better":
         lines.append("- WIN without an H2 gain: the claim becomes \"the gain comes from the "
                      "regressor/procedure within BATON's information\"; S10 and S11 must "
                      "also be better, or the WIN is called fragile.")
@@ -415,10 +443,13 @@ def main(argv: list[str] | None = None) -> int:
                     help="merged main-stage CSV (dev or test)")
     ap.add_argument("--big", type=Path, default=None, help="merged big-stage CSV")
     ap.add_argument("--out", type=Path, required=True, help="output directory")
+    ap.add_argument("--instances", type=int, default=N_INSTANCES)
+    ap.add_argument("--routes", type=int, default=N_ROUTES)
     args = ap.parse_args(argv)
     df = pd.read_csv(args.merged)
     big = pd.read_csv(args.big) if args.big else None
-    res = write_summary(df, args.out, big)
+    res = write_summary(df, args.out, big, n_instances=args.instances,
+                        n_routes=args.routes)
     print({"branch": None if res["primary"] is None else res["primary"]["branch"],
            "crossover_n": res["crossover_n"]})
     return 0

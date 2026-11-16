@@ -71,6 +71,71 @@ def test_leakage_log_is_disjoint_and_validation_is_unseen():
     assert len(log) == 3 * (m - 1)
 
 
+class _SpyPredictor:
+    """Delegates to the real predictor and records every row index it is asked
+    to predict on (decision calls only: ls_backward is run with log=None)."""
+
+    def __init__(self, inner, rec):
+        self.inner = inner
+        self.rec = rec
+
+    def predict(self, cache, k, idx):
+        idx = np.asarray(idx, dtype=np.int64)
+        self.rec["predict"].append(idx.copy())
+        return self.inner.predict(cache, k, idx)
+
+    def predict_w(self, w):
+        return self.inner.predict_w(w)
+
+
+def test_cross_fit_decisions_never_use_a_predictor_fitted_on_the_row():
+    """Records the rows each predictor is fitted on and the rows it is called on
+    during the stop updates. Per epoch k: net A is fitted on A's alive rows and
+    called only on B's alive rows and validation rows; net B the reverse; no
+    validation row is ever a fitting row."""
+    p, cache = _con3_routes()[0]
+    B = p["B"]
+    N = cache.W.shape[0]
+    (fA, fB), val = split_80_20(N)
+    m = len(p["H"])
+    tau = _overflow_step(cache.W, B)
+    inner = iso_fit_fn()
+    recs: list[dict] = []
+
+    def fit(k, cache_, fit_idx, y_fit, val_idx, y_val, warm):
+        pred = inner(k, cache_, fit_idx, y_fit, val_idx, y_val, warm)
+        rec = dict(k=k, fit=np.asarray(fit_idx, dtype=np.int64).copy(),
+                   val=np.asarray(val_idx, dtype=np.int64).copy(), predict=[])
+        recs.append(rec)
+        return _SpyPredictor(pred, rec)
+
+    ls_backward(cache, B, p["H"], p["E"], fit, (fA, fB), val, log=None)
+
+    assert len(recs) == 2 * (m - 1)                  # net A then net B, per epoch
+    total_calls = 0
+    for i, rec in enumerate(recs):
+        k = rec["k"]
+        is_A = i % 2 == 0
+        own, other = (fA, fB) if is_A else (fB, fA)
+        alive = tau > k
+        own_alive = own[alive[own]]
+        other_alive = other[alive[other]]
+        # fitting rows: this fold's alive rows, never validation rows
+        assert np.array_equal(rec["fit"], own_alive)
+        assert np.intersect1d(rec["fit"], val).size == 0
+        assert np.isin(rec["fit"], own).all()
+        # prediction calls: never on a row this predictor was fitted on
+        for idx in rec["predict"]:
+            assert np.intersect1d(idx, rec["fit"]).size == 0
+            assert np.isin(idx, np.r_[other, val]).all()
+        total_calls += len(rec["predict"])
+        if other_alive.size:                         # the other fold's rows are decided here
+            assert any(np.array_equal(idx, other_alive) for idx in rec["predict"])
+        if val.size and alive[val].any():            # and so are the validation rows
+            assert any(np.array_equal(idx, val[alive[val]]) for idx in rec["predict"])
+    assert total_calls > 0
+
+
 def test_targets_and_fitted_rows():
     p, cache = _con3_routes()[0]
     N = cache.W.shape[0]
