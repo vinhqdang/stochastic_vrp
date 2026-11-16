@@ -101,13 +101,66 @@ def test_extrapolated_cells_follow_the_stated_rule():
         intercept + slope * 10 ** 6 + STOP_MIN_17, rel=1e-9)
 
 
-def test_projection_hours_are_the_plan_sum_over_four_workers_plus_data_generation():
+# Section 7.2 plan written out here, so that the hand values below do not depend on
+# pilot.py: (arm, N) -> route-replicate jobs. 186 = 62 routes x 3 replicates.
+HAND_PLAN = {("full", 100): 186, ("full", 500): 186, ("full", 2000): 186,
+             ("full", 10000): 186, ("full", 100000): 186,
+             ("scalar", 2000): 186, ("scalar", 100000): 186,
+             ("mlp", 100000): 186,
+             ("full", 10 ** 6): 12, ("scalar", 10 ** 6): 12}
+
+
+def _hand_hours(minutes):
+    """Hours by hand: job minutes = sum of (minutes per job) x (jobs); divide by 60
+    for hours, by 4 workers, then add 3 h of data generation."""
+    job_minutes = sum(minutes[cell] * n for cell, n in HAND_PLAN.items())
+    return job_minutes / 60.0 / 4 + 3.0
+
+
+def test_projection_hours_convert_job_minutes_to_hours_before_the_workers_term():
     cells = pilot.plan_cells(_pilot_df(), _timing())
     minutes = {k: c["minutes"] for k, c in cells.items()}
-    job_min = sum(minutes[(arm, N)] * n for arm, N, n in pilot.SECTION_72_PLAN)
+    job_min = sum(minutes[cell] * n for cell, n in HAND_PLAN.items())
     proj = _project()["projection"]
     assert proj["job_minutes"] == pytest.approx(job_min)
-    assert proj["hours"] == pytest.approx(job_min / 4 + 3.0)
+    assert proj["hours"] == pytest.approx(job_min / 60.0 / 4 + 3.0)
+    assert proj["hours"] == pytest.approx(_hand_hours(minutes))
+
+
+# Real pilot (results/expA/pilot.csv and its timing JSON): minutes per job by cell, as
+# reported. Hand value: 14,353.26 job-minutes / 60 / 4 + 3 = 62.81 h = 2.62 days.
+REAL_MINUTES = {("full", 100): 2.86, ("full", 500): 2.92, ("full", 2000): 3.14,
+                ("full", 10000): 5.42, ("full", 100000): 17.61,
+                ("scalar", 2000): 3.09, ("scalar", 100000): 17.31,
+                ("mlp", 100000): 3.52,
+                ("full", 10 ** 6): 166.34, ("scalar", 10 ** 6): 163.78}
+
+
+def test_real_pilot_minutes_give_about_63_hours_and_the_cpu_platform():
+    job_min = sum(REAL_MINUTES[cell] * n for cell, n in HAND_PLAN.items())
+    assert job_min == pytest.approx(14353.26)
+    hand_hours = job_min / 60.0 / 4 + 3.0
+    assert hand_hours == pytest.approx(62.8053, abs=1e-4)
+    res = pilot.projection_hours(REAL_MINUTES)
+    assert res["hours"] == pytest.approx(hand_hours, rel=0.01)
+    assert res["job_minutes"] == pytest.approx(job_min)
+    days = res["hours"] / 24.0
+    assert days == pytest.approx(hand_hours / 24.0, rel=0.01)
+    assert pilot.platform_decision(days) == "CPU"
+    assert pilot.stop_rule_6({"projection": res})["triggered"] is False
+
+
+def test_real_pilot_report_prints_hours_days_and_decision_with_their_units():
+    res = pilot.projection_hours(REAL_MINUTES)
+    cells = {f"{arm}@{N}": dict(minutes=v, source="measured")
+             for (arm, N), v in REAL_MINUTES.items()}
+    proj = dict(res, cells=cells, days=res["hours"] / 24.0)
+    report = dict(criteria=dict(P3=dict(status="NOT RUN"),
+                                P5=dict(status="PASS", projection=proj, decision="CPU")),
+                  stop_rules={}, monotonicity=None, timing=None)
+    text = pilot.render_markdown(report)
+    assert "Projection: 62.8 h = 2.62 days -> CPU." in text
+    assert "Hours = job minutes / 60 / 4 workers" in text
 
 
 def test_timing_without_stop_seconds_falls_back_to_total_and_is_labelled():
@@ -130,31 +183,40 @@ def test_p5_is_not_computable_without_a_second_full_cell_or_the_timing_record():
 
 # ---------------------------------------------------------------- platform rule and stop rule 6
 
-def _hours_at(scale):
-    return _project(scale)["projection"]["hours"]
-
-
 def _scale_for(target_days):
-    """Measured minutes are linear in the scale, so hours = s (H0 - 3) + 3."""
-    h0 = _hours_at(1.0)
+    """Every minute of the projection is linear in the scale s, so by hand
+    hours(s) = s (H0 - 3) + 3, where H0 is the hand value at scale 1 (``_hand_hours``)."""
+    cells = pilot.plan_cells(_pilot_df(), _timing())
+    h0 = _hand_hours({k: c["minutes"] for k, c in cells.items()})
     return (target_days * 24.0 - 3.0) / (h0 - 3.0)
 
 
+def _project_at_days(target_days):
+    """P5 at the scale that gives ``target_days`` by hand, checked against the hand
+    hours of the same scaled cells before any platform decision is read off it."""
+    s = _scale_for(target_days)
+    res = _project(s)
+    cells = pilot.plan_cells(_pilot_df(s), _timing(s))
+    assert res["projection"]["hours"] == pytest.approx(
+        _hand_hours({k: c["minutes"] for k, c in cells.items()}))
+    assert res["projection"]["days"] == pytest.approx(target_days)
+    return res
+
+
 def test_platform_rule_fires_on_a_projection_above_four_days():
-    res = _project(_scale_for(5.0))
-    assert res["projection"]["days"] == pytest.approx(5.0)
+    res = _project_at_days(5.0)
     assert res["decision"].startswith("GPU")
     assert pilot.stop_rule_6(res)["triggered"] is False
 
 
 def test_platform_rule_keeps_a_projection_of_three_days_on_cpu():
-    res = _project(_scale_for(3.0))
+    res = _project_at_days(3.0)
     assert res["decision"] == "CPU"
     assert pilot.stop_rule_6(res)["triggered"] is False
 
 
 def test_stop_rule_6_fires_above_seven_days_after_the_platform_rule():
-    res = _project(_scale_for(8.0))
+    res = _project_at_days(8.0)
     assert res["decision"].startswith("STOP")
     assert pilot.stop_rule_6(res)["triggered"] is True
 

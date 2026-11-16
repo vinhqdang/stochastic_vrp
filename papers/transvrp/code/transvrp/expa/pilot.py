@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import math
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -69,12 +68,11 @@ def diag_table(results_dir: Path, stage: str) -> pd.DataFrame:
     neural model of a stage (``models/<stage>/*.pkl``). Columns include inst,
     route_id, N, rep, arm, entry ('stage' or 'ls'), k, fold, action, chosen_ckpt,
     steps, select_on, n_fit, n_val, disagree_rate."""
-    from .sweep import Job  # noqa: F401  (unpickling needs the class)
+    from .sweep import load_payload
 
     rows = []
     for path in sorted((Path(results_dir) / "models" / stage).glob("*.pkl")):
-        with open(path, "rb") as fh:
-            payload = pickle.load(fh)
+        payload = load_payload(path)
         if payload.get("kind") != "neural":
             continue
         job = payload["job"]
@@ -107,19 +105,43 @@ def p1_status(tests_green: bool | None) -> dict:
                 detail=f"tests green: {bool(tests_green)}")
 
 
+P2_COLUMNS = ("mean_cost", "handoff_rate", "fail_rate")
+P2_CELL = ["inst", "route_id", "N", "rep"]
+
+
 def p2_status(df: pd.DataFrame, rerun: pd.DataFrame | None) -> dict:
-    """P2: rerunning one cell gives bit-identical dev costs."""
+    """P2: rerunning one cell gives bit-identical dev results. The rerun table is the
+    merged dev CSV of a filtered run (``sweep merge --only``, ROW_COLUMNS layout). A
+    rerun of one job holds that job's rows only (a neural job its arm's policy; the
+    classical ladder rows of the same cell come from another job and are not part of
+    it). Every rerun row must match a main-table row on KEY, and mean_cost, handoff_rate
+    and fail_rate must then be equal exactly (NaN equal to NaN)."""
     if rerun is None:
         return dict(id="P2", status="NOT RUN", detail="no rerun table given")
-    a = df.set_index(KEY)["mean_cost"]
-    b = rerun.set_index(KEY)["mean_cost"]
-    common = a.index.intersection(b.index)
-    if len(common) == 0:
-        return dict(id="P2", status="FAIL", detail="rerun shares no rows with the pilot table")
-    same = bool(np.array_equal(a.loc[common].to_numpy(), b.loc[common].to_numpy()))
-    maxdiff = float(np.max(np.abs(a.loc[common].to_numpy() - b.loc[common].to_numpy())))
-    return dict(id="P2", status=_status(same), rows=int(len(common)), max_abs_diff=maxdiff,
-                detail=f"{len(common)} rows compared, max |diff| = {maxdiff:.3e}")
+    cols = list(P2_COLUMNS)
+    missing = [c for c in KEY + cols if c not in rerun.columns]
+    if missing:
+        return dict(id="P2", status="FAIL", detail=f"rerun table lacks {', '.join(missing)}")
+    if rerun.empty:
+        return dict(id="P2", status="FAIL", detail="rerun table is empty")
+    if rerun.duplicated(subset=KEY).any():
+        return dict(id="P2", status="FAIL", detail="rerun table has duplicate keys")
+    a = df.set_index(KEY)[cols]
+    b = rerun.set_index(KEY)[cols]
+    extra = b.index.difference(a.index)
+    if len(extra):
+        return dict(id="P2", status="FAIL", rows=int(len(b)), unmatched_rerun_rows=int(len(extra)),
+                    detail=f"{len(extra)} rerun rows have no main-table row with the same key")
+    a = a.loc[b.index]
+    diffs = {c: float(np.nanmax(np.abs(a[c].to_numpy(dtype=float) - b[c].to_numpy(dtype=float))))
+             if len(b) else 0.0 for c in cols}
+    same = all(bool(np.array_equal(a[c].to_numpy(), b[c].to_numpy(), equal_nan=True))
+               for c in cols)
+    maxdiff = max(diffs.values())
+    return dict(id="P2", status=_status(same), rows=int(len(b)), max_abs_diff=maxdiff,
+                diffs=diffs,
+                detail=f"{len(b)} rows compared on {', '.join(cols)}; "
+                       f"max |diff| = {maxdiff:.3e}")
 
 
 def _pooled_scalar_vs_baton(df: pd.DataFrame, N: int) -> dict | None:
@@ -322,12 +344,15 @@ def plan_cells(df: pd.DataFrame, timing: dict | None, plan=SECTION_72_PLAN) -> d
 
 def projection_hours(minutes: dict, plan=SECTION_72_PLAN, workers: int = WORKERS) -> dict:
     """Wall hours of the section 7.2 plan on ``workers`` processes, from minutes per
-    job for every plan cell. None when a plan cell is missing from ``minutes``."""
+    job for every plan cell. Job minutes are summed, divided by 60 to hours, divided
+    by ``workers`` and the data-generation hours are added. None when a plan cell is
+    missing from ``minutes``. Returns ``job_minutes`` (total job minutes, not hours)."""
     missing = [f"{arm}@{N}" for arm, N, _ in plan if (arm, N) not in minutes]
     if missing:
         return dict(hours=None, missing=missing)
     job_min = sum(minutes[(arm, N)] * n for arm, N, n in plan)
-    return dict(hours=job_min / workers + DATA_GEN_HOURS, missing=[], job_minutes=job_min)
+    job_hours = job_min / 60.0
+    return dict(hours=job_hours / workers + DATA_GEN_HOURS, missing=[], job_minutes=job_min)
 
 
 def platform_decision(days: float) -> str:
@@ -371,14 +396,13 @@ def monotonicity_for_stage(results_dir: Path, stage: str, N: int = MONO_N,
     no such model exists."""
     from .analysis import MONO_TOL, monotonicity_curves, monotonicity_diagnostic
     from .paths import route_pool
-    from .sweep import _spec_of, _unpack
+    from .sweep import _spec_of, _unpack, load_payload
 
     files = sorted((Path(results_dir) / "models" / stage).glob(f"{arm}__*__N{N}__rep*.pkl"))
     tot = dict(n_curves=0, n_steps=0, n_steps_bad=0, curves_bad=0)
     jobs = 0
     for path in files:
-        with open(path, "rb") as fh:
-            payload = pickle.load(fh)
+        payload = load_payload(path)
         if payload.get("kind") != "neural":
             continue
         job = payload["job"]
@@ -496,7 +520,7 @@ def render_markdown(res: dict) -> str:
     if proj.get("cells"):
         lines += ["", "## P5 projection (section 7.2 plan, minutes per job)", "",
                   f"Rule: see `plan_cells` in pilot.py. Scaled to the mean eligible route "
-                  f"(work {W_PLAN_MEAN:.0f}). Hours = job minutes / {WORKERS} workers + "
+                  f"(work {W_PLAN_MEAN:.0f}). Hours = job minutes / 60 / {WORKERS} workers + "
                   f"{DATA_GEN_HOURS:g} h data generation.", "",
                   "| cell | minutes per job | source |", "|---|---|---|"]
         for name, c in proj["cells"].items():

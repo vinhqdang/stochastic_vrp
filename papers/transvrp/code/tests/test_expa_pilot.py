@@ -70,6 +70,39 @@ def test_p2_bit_identical_rerun_passes_and_one_ulp_fails():
     assert pilot.p2_status(df, None)["status"] == "NOT RUN"
 
 
+def test_p2_compares_handoff_and_fail_rates_too():
+    df = _table()
+    for col in ("handoff_rate", "fail_rate"):
+        bad = df.copy()
+        bad.loc[0, col] = np.nextafter(bad.loc[0, col], np.inf)
+        res = pilot.p2_status(df, bad)
+        assert res["status"] == "FAIL" and res["diffs"][col] > 0, col
+
+
+def test_p2_rerun_rows_are_matched_by_key_and_compared_exactly():
+    df = _table()
+    cell = df[(df.inst == "I0") & (df.route_id == 1) & (df.N == 10000) & (df.rep == 0)]
+    assert len(cell) == 5                       # five policies in the dev table
+    res = pilot.p2_status(df, cell.copy())
+    assert res["status"] == "PASS" and res["rows"] == 5
+    # a rerun of one job holds only that job's policy; the other rows are not compared
+    one = cell[cell.policy == "nn_full"].copy()
+    res = pilot.p2_status(df, one)
+    assert res["status"] == "PASS" and res["rows"] == 1
+    # a rerun row with no main-table row (here N = 999) is a mismatch
+    alien = cell.copy()
+    alien["N"] = 999
+    res = pilot.p2_status(df, alien)
+    assert res["status"] == "FAIL" and res["unmatched_rerun_rows"] == 5
+    assert pilot.p2_status(df, cell.iloc[0:0])["status"] == "FAIL"
+
+
+def test_p2_needs_the_rerun_layout_columns():
+    df = _table()
+    res = pilot.p2_status(df, df.drop(columns=["fail_rate"]))
+    assert res["status"] == "FAIL" and "fail_rate" in res["detail"]
+
+
 # ---------------------------------------------------------------- P3 and P3'
 
 def test_p3_passes_when_scalar_is_equal_to_baton():
@@ -137,10 +170,10 @@ def test_p4_fails_when_a_policy_exceeds_1_005_times_none():
 def test_projection_hand_value_with_all_cells_at_one_minute():
     minutes = {(arm, N): 1.0 for arm, N, _ in pilot.SECTION_72_PLAN}
     res = pilot.projection_hours(minutes)
-    # 930 + 372 + 186 + 24 = 1512 job-minutes; 1512 / 4 + 3 h = 381 h
+    # 930 + 372 + 186 + 24 = 1512 job-minutes = 25.2 job-hours; 25.2 / 4 + 3 h = 9.3 h
     assert res["job_minutes"] == 1512
-    assert res["hours"] == pytest.approx(381.0)
-    assert pilot.platform_decision(res["hours"] / 24) .startswith("STOP")
+    assert res["hours"] == pytest.approx(9.3)
+    assert pilot.platform_decision(res["hours"] / 24).startswith("CPU")
 
 
 def test_projection_reports_missing_cells():

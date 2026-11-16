@@ -187,8 +187,59 @@ def _route_rows(routes: str, elig: pd.DataFrame) -> list[tuple[str, int]]:
     return [(str(r.inst), int(r.route_id)) for r in el.itertuples()]
 
 
-def plan_stage(stage: str, elig: pd.DataFrame) -> list[Job]:
-    """All fit jobs of a stage, in a deterministic order (instance, then rep)."""
+FILTER_FIELDS = ("kind", "inst", "route_id", "N", "rep", "arm")
+FILTER_ALIASES = {"route": "route_id"}
+_INT_FIELDS = ("route_id", "N", "rep")
+
+
+def parse_only(text: str | None) -> dict | None:
+    """``--only`` filter: ``arm=full,inst=CON3-0,route=0,N=10000,rep=0`` becomes an
+    exact-match dict on Job fields (``route`` is an alias of ``route_id``). None when
+    no filter is given. Raises ValueError on unknown fields or malformed items."""
+    if text is None or not text.strip():
+        return None
+    out: dict = {}
+    for item in text.split(","):
+        if "=" not in item:
+            raise ValueError(f"--only item {item!r} is not field=value")
+        name, value = (part.strip() for part in item.split("=", 1))
+        name = FILTER_ALIASES.get(name, name)
+        if name not in FILTER_FIELDS:
+            raise ValueError(f"--only field {name!r} is not one of {FILTER_FIELDS}")
+        if name in _INT_FIELDS:
+            try:
+                value = int(value)
+            except ValueError as exc:
+                raise ValueError(f"--only {name} must be an integer, got {value!r}") from exc
+        out[name] = value
+    return out
+
+
+def job_fields(job: Job) -> dict:
+    return dict(kind=job.kind, inst=job.inst, route_id=job.route_id, N=job.N,
+                rep=job.rep, arm=job.arm)
+
+
+def fields_from_key(key: str) -> dict:
+    """Job fields recovered from a job key ``<arm|ladder|big>__<inst>__r<route>__N<N>__rep<rep>``
+    (the file stem of models and row files). Inverse of ``Job.key``."""
+    m = re.fullmatch(r"(?P<tag>[A-Za-z0-9]+)__(?P<inst>.+?)__r(?P<route>\d+)__N(?P<N>\d+)"
+                     r"__rep(?P<rep>\d+)", key)
+    if m is None:
+        raise ValueError(f"not a job key: {key!r}")
+    tag = m["tag"]
+    kind, arm = ("neural", tag) if tag not in ("ladder", "big") else (tag, "")
+    return dict(kind=kind, inst=m["inst"], route_id=int(m["route"]), N=int(m["N"]),
+                rep=int(m["rep"]), arm=arm)
+
+
+def _selected(fields: dict, only: dict | None) -> bool:
+    return only is None or all(fields[k] == v for k, v in only.items())
+
+
+def plan_stage(stage: str, elig: pd.DataFrame, only: dict | None = None) -> list[Job]:
+    """All fit jobs of a stage, in a deterministic order (instance, then rep). With
+    ``only`` (see ``parse_only``) just the jobs whose fields match exactly."""
     spec = stage_spec(stage)
     jobs: list[Job] = []
     for inst, rid in _route_rows(spec.routes, elig):
@@ -206,7 +257,7 @@ def plan_stage(stage: str, elig: pd.DataFrame) -> list[Job]:
             for arm, N in spec.timing:
                 jobs.append(Job("neural", inst, rid, N, 0, arm=arm))
     jobs.sort(key=lambda j: (j.inst, j.rep, j.route_id, j.N, j.kind, j.arm))
-    return jobs
+    return [j for j in jobs if _selected(job_fields(j), only)]
 
 
 def stage_eligibility(stage: str, path: Path | None) -> pd.DataFrame:
@@ -278,6 +329,31 @@ def _atomic_pickle(obj, path: Path) -> None:
     with open(tmp, "wb") as fh:
         pickle.dump(obj, fh)
     os.replace(tmp, path)
+
+
+_MAIN_MODULES = ("__main__", "__mp_main__")
+
+
+class _PayloadUnpickler(pickle.Unpickler):
+    """Resolves classes this module defines that were pickled under a main-module name.
+
+    Before the CLI was routed through this module, a run as ``python -m
+    transvrp.expa.sweep`` (or a spawn worker of it) recorded ``Job`` as
+    ``__main__.Job`` / ``__mp_main__.Job``. Only names that are classes defined here
+    are remapped; everything else is resolved as usual.
+    """
+
+    def find_class(self, module, name):
+        obj = globals().get(name)
+        if module in _MAIN_MODULES and isinstance(obj, type):
+            module = __name__
+        return super().find_class(module, name)
+
+
+def load_payload(path: Path):
+    """Read one fitted-model pickle (``models/<stage>/<key>.pkl``) and return its payload."""
+    with open(path, "rb") as fh:
+        return _PayloadUnpickler(fh).load()
 
 
 def chunk_cache_dir(ctx: Ctx) -> Path:
@@ -361,8 +437,7 @@ def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
     rows_csv = ctx.rows_dir / f"{job_key}.{eval_set}.csv"
     if rows_csv.exists():
         return "skip"
-    with open(model_path, "rb") as fh:
-        payload = pickle.load(fh)
+    payload = load_payload(model_path)
     if eval_set == "test" and payload.get("fit_commit") != frozen:
         raise GateError(f"model {job_key} was fitted at {payload.get('fit_commit')}, "
                         f"not at the frozen commit")
@@ -412,22 +487,26 @@ def _run_all(fn, items: list, jobs: int) -> list:
 
 def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
             jobs: int = 1, commit: str | None = None,
-            chunk_dir: Path | None = None) -> dict:
+            chunk_dir: Path | None = None, only: dict | None = None) -> dict:
     spec = stage_spec(stage)
     ctx = Ctx(Path(results_dir), stage, spec.cfg,
               current_commit() if commit is None else commit, chunk_dir)
-    planned = plan_stage(stage, elig)
+    planned = plan_stage(stage, elig, only)
+    if only is not None and not planned:
+        raise ValueError(f"--only {only} matches no planned job of stage {stage!r}")
     done = _run_all(partial(run_fit_job, ctx=ctx), planned, jobs)
     return {"planned": len(planned), "fitted": done.count("fit"),
             "skipped": done.count("skip")}
 
 
 def run_eval(stage: str, eval_set: str, results_dir: Path = DEFAULT_RESULTS,
-             frozen_commit: str | None = None, jobs: int = 1) -> dict:
+             frozen_commit: str | None = None, jobs: int = 1,
+             only: dict | None = None) -> dict:
     spec = stage_spec(stage)
     check_test_gate(stage, eval_set, frozen_commit)
     ctx = Ctx(Path(results_dir), stage, spec.cfg, current_commit())
-    model_files = sorted(ctx.models_dir.glob("*.pkl"))
+    model_files = [p for p in sorted(ctx.models_dir.glob("*.pkl"))
+                   if _selected(fields_from_key(p.stem), only)]
     if not model_files:
         raise FileNotFoundError(f"no fitted models for stage {stage!r} in {ctx.models_dir}")
     done = _run_all(partial(_eval_one, eval_set=eval_set, ctx=ctx, frozen=frozen_commit),
@@ -462,11 +541,17 @@ def add_gap_closed(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def merge_stage(stage: str, eval_set: str = "dev",
-                results_dir: Path = DEFAULT_RESULTS) -> pd.DataFrame:
+                results_dir: Path = DEFAULT_RESULTS, only: dict | None = None) -> pd.DataFrame:
+    """Concatenates the row files of a stage into ``<results_dir>/<stage>.csv`` (dev) or
+    ``<stage>.test.csv``. With ``only`` (see ``parse_only``) just the files of the jobs
+    that match; the layout is the same, so a filtered merge can be passed to pilot --rerun."""
     rows_dir = Path(results_dir) / stage / "rows"
-    files = sorted(rows_dir.glob(f"*.{eval_set}.csv"))
+    suffix = f".{eval_set}.csv"
+    files = sorted(f for f in rows_dir.glob(f"*{suffix}")
+                   if _selected(fields_from_key(f.name[:-len(suffix)]), only))
     if not files:
-        raise FileNotFoundError(f"no {eval_set} rows for stage {stage!r} in {rows_dir}")
+        raise FileNotFoundError(f"no {eval_set} rows for stage {stage!r} in {rows_dir}"
+                                + (f" matching --only {only}" if only else ""))
     df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
     dup = df.duplicated(subset=KEY_COLUMNS, keep=False)
     if dup.any():
@@ -499,8 +584,7 @@ def run_timing(results_dir: Path = DEFAULT_RESULTS, *, stage: str = "pilot",
     model_path = results_dir / "models" / stage / f"{key}.pkl"
     if not model_path.exists():
         raise FileNotFoundError(f"timing needs the fitted model {model_path}")
-    with open(model_path, "rb") as fh:
-        payload = pickle.load(fh)
+    payload = load_payload(model_path)
     spec = _spec_of(inst, route_id)
     stats = payload["stats"]
     preds = _unpack(payload["models"])
@@ -551,6 +635,10 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--stage", required=True, choices=tuple(STAGE_SPECS))
         p.add_argument("--jobs", type=int, default=1)
         p.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS)
+        p.add_argument("--only", default=None, metavar="FIELD=VALUE[,...]",
+                       help="restrict to jobs matching these Job fields exactly, e.g. "
+                            "arm=full,inst=CON3-0,route=0,N=10000,rep=0 (fields: "
+                            + ", ".join(FILTER_FIELDS) + ")")
         if name == "fit":
             p.add_argument("--eligibility", type=Path, default=None)
             p.add_argument("--chunk-dir", type=Path, default=None,
@@ -569,6 +657,7 @@ def main(argv: list[str] | None = None) -> int:
     tp.add_argument("--chunk-dir", type=Path, default=None)
     args = ap.parse_args(argv)
     try:
+        only = parse_only(getattr(args, "only", None))
         if args.cmd == "timing":
             info = run_timing(args.results_dir, stage=args.stage, n_rows=args.n_rows,
                               model_N=args.model_n, arm=args.arm,
@@ -580,19 +669,25 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "fit":
             elig = stage_eligibility(args.stage, args.eligibility)
             info = run_fit(args.stage, elig, args.results_dir, args.jobs,
-                           chunk_dir=args.chunk_dir)
+                           chunk_dir=args.chunk_dir, only=only)
         elif args.cmd == "eval":
             info = run_eval(args.stage, args.eval_set, args.results_dir,
-                            args.frozen_commit, args.jobs)
+                            args.frozen_commit, args.jobs, only=only)
         else:
-            df = merge_stage(args.stage, args.eval_set, args.results_dir)
+            df = merge_stage(args.stage, args.eval_set, args.results_dir, only=only)
             info = {"rows": len(df), "policies": sorted(df["policy"].unique())}
     except GateError as exc:
         print(f"refused: {exc}", file=sys.stderr)
+        return 2
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 2
     print(info)
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Run through the importable module so that classes such as Job pickle as
+    # transvrp.expa.sweep.Job rather than __main__.Job.
+    from transvrp.expa import sweep as _sweep
+    raise SystemExit(_sweep.main())
