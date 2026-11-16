@@ -157,7 +157,7 @@ def test_platform_rule_thresholds(days, decision):
 def test_p5_pass_needs_timing_and_recorded_seconds():
     df = _table()
     assert pilot.p5_status(df, None)["status"] == "FAIL"
-    timing = dict(arm="full", n_rows=10 ** 6, total_seconds=600.0)
+    timing = dict(arm="full", n_rows=10 ** 6, total_seconds=600.0, m=17)
     res = pilot.p5_status(df, timing)
     assert res["status"] == "PASS"
     assert res["minutes_per_job"][("full", 10 ** 6)] == pytest.approx(10.0)
@@ -289,7 +289,7 @@ def test_check_pilot_and_render_on_constructed_tables():
     df = _table()
     diag = _p6_rows([0, 4, 4, 4, 4])
     res = pilot.check_pilot(df, diag, tests_green=True, rerun=df.copy(),
-                            timing=dict(arm="full", n_rows=10 ** 6, total_seconds=60.0))
+                            timing=dict(arm="full", n_rows=10 ** 6, total_seconds=60.0, m=17))
     assert res["criteria"]["P1"]["status"] == "PASS"
     assert res["criteria"]["P3"]["status"] == "PASS"
     assert res["stop_rules"]["rule2"]["triggered"] is False

@@ -242,3 +242,4 @@ svrpspd_wdro/results/rarecert/r3_colab/*/ck.tgz
 
 # TRANSVRP experiment A: on-disk demand-path chunk cache (0.5-1 GB per instance at 10^6)
 papers/transvrp/code/results/**/chunks/
+papers/transvrp/code/results/**/models/

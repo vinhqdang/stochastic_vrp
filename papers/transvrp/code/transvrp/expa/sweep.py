@@ -23,9 +23,11 @@ Test-stream gate (section 5). The gate lives in the data layer
 ``run_eval_job(..., frozen=...)`` refuse without it. ``--eval test`` also needs a
 stage that allows test evaluation (smoke and pilot do not). A verified hash must
 be a full 40-character hex commit recorded in RESEARCH_LOG.md, equal to the
-running checkout's commit, with no uncommitted changes under the code directory;
-every model loaded for test must carry that hash as its fit commit. The checks
-run before any data is generated.
+running checkout's commit, with a clean code tree (no tracked change and no
+untracked .py file); every model loaded for test must carry that hash as its fit
+commit and must have been fitted on a clean tree (``fit_tree_clean``, recorded at
+fit time). The checks run before any data is generated. Private loaders take
+test-purpose data only with the ``GateToken`` that ``verify_test_gate`` returns.
 """
 from __future__ import annotations
 
@@ -56,7 +58,7 @@ from .eligibility import build_eligibility, stratum_of  # noqa: E402
 from .features import RouteCache, RouteStats  # noqa: E402
 from .model import MLPNet, SetNet  # noqa: E402
 from .paths import (RouteSpec, TestStreamGateError, current_commit,  # noqa: E402
-                    route_pool, route_specs, verify_test_gate)
+                    route_pool, route_specs, tree_is_clean, verify_test_gate)
 from .measure import Stopwatch, process_peak_rss_mb, traced_peak  # noqa: E402
 from .simulate import simulate_policy, summarize  # noqa: E402
 from .train import ConstantPredictor, NetPredictor, StageConfig, fit_neural  # noqa: E402
@@ -322,8 +324,11 @@ def run_fit_job(job: Job, ctx: Ctx) -> str:
                    "stats": stats, "diag": diag}
     else:
         raise ValueError(f"unknown job kind {job.kind!r}")
+    # the commit alone does not prove the code that was fitted: record whether the
+    # tree was clean when the fit ran (run_eval_job refuses test use otherwise)
     payload.update(job=job, fit_seconds=time.perf_counter() - t0,
-                   fit_commit=ctx.commit, m=spec.m, B=spec.B)
+                   fit_commit=ctx.commit, fit_tree_clean=bool(tree_is_clean()),
+                   m=spec.m, B=spec.B)
     _atomic_pickle(payload, path)
     return "fit"
 
@@ -361,6 +366,9 @@ def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
     if eval_set == "test" and payload.get("fit_commit") != frozen:
         raise GateError(f"model {job_key} was fitted at {payload.get('fit_commit')}, "
                         f"not at the frozen commit")
+    if eval_set == "test" and payload.get("fit_tree_clean") is not True:
+        raise GateError(f"model {job_key} was fitted on a tree with uncommitted or untracked "
+                        f".py changes (or before the flag existed); refusing test evaluation")
     job: Job = payload["job"]
     spec = _spec_of(job.inst, job.route_id)
     pool = route_pool(job.inst, eval_set, 0, frozen=frozen,
@@ -500,12 +508,15 @@ def run_timing(results_dir: Path = DEFAULT_RESULTS, *, stage: str = "pilot",
     with sw.lap("generate"), traced_peak() as gen_mem:
         pool = route_pool(inst, "train", rep, int(n_rows), cache_dir=chunk_dir,
                           routes=[route_id])[route_id]
-    with sw.lap("cache"), traced_peak() as stop_mem:
-        cache = RouteCache(spec, pool, stats)
-        del pool
-    with sw.lap("stop_updates"):
-        costs, act = simulate_policy(cache, spec.B, spec.H, spec.E, preds,
-                                     H_bill=spec.H)
+    # cache and stop updates share one traced block: the stage batches built by the
+    # stop updates are the largest allocation of this step
+    with traced_peak() as stop_mem:
+        with sw.lap("cache"):
+            cache = RouteCache(spec, pool, stats)
+            del pool
+        with sw.lap("stop_updates"):
+            costs, act = simulate_policy(cache, spec.B, spec.H, spec.E, preds,
+                                         H_bill=spec.H)
     rec = dict(stage=stage, inst=inst, route_id=route_id, m=spec.m, arm=arm,
                rep=rep, model_N=int(model_N), n_rows=int(n_rows),
                generate_seconds=sw.seconds["generate"],
@@ -515,10 +526,12 @@ def run_timing(results_dir: Path = DEFAULT_RESULTS, *, stage: str = "pilot",
                mean_cost=float(costs.mean()),
                handoff_rate=float((act == 1).mean()),
                fail_rate=float((act == 2).mean()),
-               peak_generate_mb=gen_mem["peak_mb"],
-               peak_cache_stop_mb=stop_mem["peak_mb"],
-               retained_cache_mb=stop_mem["retained_mb"],
+               # headline memory figure: process high-water mark (RSS, whole run)
                process_peak_rss_mb=process_peak_rss_mb(),
+               # secondary: tracemalloc peaks (NumPy buffers only), one per step
+               traced_generate_peak_mb=gen_mem["peak_mb"],
+               traced_cache_stop_peak_mb=stop_mem["peak_mb"],
+               traced_cache_stop_retained_mb=stop_mem["retained_mb"],
                chunk_cache=chunk_dir is not None)
     out = results_dir / stage / f"timing_{arm}_N{int(n_rows)}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -561,7 +574,8 @@ def main(argv: list[str] | None = None) -> int:
                               model_N=args.model_n, arm=args.arm,
                               chunk_dir=args.chunk_dir)
             print({k: info[k] for k in ("generate_seconds", "stop_seconds",
-                                        "peak_generate_mb", "peak_cache_stop_mb")})
+                                        "process_peak_rss_mb",
+                                        "traced_cache_stop_peak_mb")})
             return 0
         if args.cmd == "fit":
             elig = stage_eligibility(args.stage, args.eligibility)

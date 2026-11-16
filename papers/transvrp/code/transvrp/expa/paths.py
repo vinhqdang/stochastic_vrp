@@ -26,7 +26,7 @@ import re
 import subprocess
 import zlib
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -86,26 +86,62 @@ def current_commit(start: Path = HERE) -> str:
     return "unknown"
 
 
+_PORCELAIN_LINE = re.compile(r"^(.{2}) (.+)$")
+_GATE_ISSUER = object()    # only verify_test_gate holds this object
+
+
 def tree_is_clean(path: Path = CODE_DIR) -> bool:
-    """True when no tracked file under ``path`` has uncommitted changes
-    (``git status --porcelain --untracked-files=no``). Any failure counts as dirty."""
+    """True only when the checkout under ``path`` is clean for the gate:
+
+    * no tracked file has uncommitted changes (any porcelain line whose status
+      is not ``??`` makes the tree dirty), and
+    * no untracked ``.py`` file exists (untracked data files such as results
+      are allowed).
+
+    Runs ``git status --porcelain --untracked-files=all -- .`` inside ``path``.
+    Fails closed: a non-zero exit, a launch error, or any stdout line that is not
+    in porcelain form counts as dirty."""
     try:
         out = subprocess.run(["git", "-C", str(path), "status", "--porcelain",
-                              "--untracked-files=no", "--", "."],
+                              "--untracked-files=all", "--", "."],
                              capture_output=True, text=True, timeout=120, check=False)
     except (OSError, subprocess.SubprocessError):
         return False
-    return out.returncode == 0 and out.stdout.strip() == ""
+    if out.returncode != 0:
+        return False
+    for line in out.stdout.splitlines():
+        m = _PORCELAIN_LINE.match(line)
+        if m is None:
+            return False                      # not parseable: fail closed
+        status, name = m.group(1), m.group(2).strip().strip('"')
+        if status != "??":
+            return False                      # tracked change (staged or not)
+        if name.endswith(".py"):
+            return False                      # untracked source file
+    return True
 
 
-def verify_test_gate(frozen: str | None) -> str:
+@dataclass(frozen=True)
+class GateToken:
+    """Proof that ``verify_test_gate`` passed for ``commit``. Only that function
+    creates one; private loaders accept a test-purpose request only with a token."""
+    commit: str
+    _issuer: object = field(default=None, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if self._issuer is not _GATE_ISSUER:
+            raise TypeError("GateToken is issued by paths.verify_test_gate only")
+
+
+def verify_test_gate(frozen: str | None) -> GateToken:
     """Data-layer gate for the test stream (EXPERIMENT_A.md section 5).
 
     Passes only when ``frozen`` is a full 40-character lowercase hash that is
     recorded in RESEARCH_LOG.md, equals the commit of the running checkout, and
-    the tracked files under papers/transvrp/code have no uncommitted changes.
-    Returns the verified hash. The log path, commit reader and tree check are
-    read from module globals at call time (tests replace them; no caller can)."""
+    the code directory has a clean tree (``tree_is_clean``). Returns a
+    ``GateToken`` for the verified hash. The log path, commit reader and tree
+    check are read from module globals at call time (tests replace them; no
+    caller can)."""
     if not frozen:
         raise TestStreamGateError("test-stream data need a frozen commit hash")
     if not FROZEN_HASH_RE.fullmatch(frozen):
@@ -118,8 +154,16 @@ def verify_test_gate(frozen: str | None) -> str:
     if head != frozen:
         raise TestStreamGateError(f"running checkout is at {head}, not at the frozen commit")
     if not tree_is_clean():
-        raise TestStreamGateError("uncommitted changes under papers/transvrp/code; refusing test stream")
-    return frozen
+        raise TestStreamGateError("uncommitted or untracked .py changes under papers/transvrp/code; "
+                                  "refusing test stream")
+    return GateToken(commit=frozen, _issuer=_GATE_ISSUER)
+
+
+def _require_gate(purpose: str, gate: GateToken | None) -> None:
+    """Refuses test-purpose data unless ``gate`` is a token from verify_test_gate."""
+    if purpose == "test" and not (isinstance(gate, GateToken)
+                                  and gate._issuer is _GATE_ISSUER):
+        raise TestStreamGateError("test-stream chunks need a GateToken from verify_test_gate")
 
 
 @dataclass(frozen=True)
@@ -166,8 +210,10 @@ def route_specs(inst: str, plan_key: str = "Det") -> list[RouteSpec]:
     return out
 
 
-def _stream(inst: str, purpose: str, rep: int, c: int) -> tuple[object, int]:
-    """Seed and size of one generated chunk."""
+def _stream(inst: str, purpose: str, rep: int, c: int,
+            gate: GateToken | None = None) -> tuple[object, int]:
+    """Seed and size of one generated chunk. Test-purpose streams need ``gate``."""
+    _require_gate(purpose, gate)
     base = stable_seed(inst)
     if purpose == "train":
         return [base, 1, rep, c], CHUNK
@@ -188,28 +234,30 @@ def chunk_file(cache_dir: Path, inst: str, purpose: str, rep: int, c: int,
     return Path(cache_dir) / (f"{inst}__{purpose}__r{rep}__c{c}__n{n}__s{seed_tag}.npy")
 
 
-def _generate_chunk(inst: str, purpose: str, rep: int, c: int
-                    ) -> tuple[np.ndarray, np.ndarray]:
+def _generate_chunk(inst: str, purpose: str, rep: int, c: int,
+                    gate: GateToken | None = None) -> tuple[np.ndarray, np.ndarray]:
     """(deliveries, pickups) for every customer of one chunk, shape (n, cust)."""
-    seed, n = _stream(inst, purpose, rep, c)
+    seed, n = _stream(inst, purpose, rep, c, gate)
     sol = load_plans(inst)
     return gen_scenarios(sol["dbar"], sol["pbar"], n, seed)
 
 
 def _chunk_arrays(inst: str, purpose: str, rep: int, c: int,
-                  cache_dir: Path | None) -> tuple[np.ndarray, np.ndarray]:
+                  cache_dir: Path | None, gate: GateToken | None = None
+                  ) -> tuple[np.ndarray, np.ndarray]:
     """One chunk's (deliveries, pickups). With ``cache_dir`` the chunk is read from
     ``chunk_file`` when present and otherwise generated and saved there (one
     ``np.save`` of the stacked pair, written atomically). A cached chunk is the
-    exact float64 array that generation returned, so both paths agree bit for bit."""
+    exact float64 array that generation returned, so both paths agree bit for bit.
+    Test-purpose chunks are refused unless ``gate`` is a GateToken."""
     if cache_dir is None:
-        return _generate_chunk(inst, purpose, rep, c)
-    seed, n = _stream(inst, purpose, rep, c)
+        return _generate_chunk(inst, purpose, rep, c, gate)
+    seed, n = _stream(inst, purpose, rep, c, gate)
     path = chunk_file(cache_dir, inst, purpose, rep, c, seed, n)
     if path.exists():
         stacked = np.load(path)
         return stacked[0], stacked[1]
-    dsc, psc = _generate_chunk(inst, purpose, rep, c)
+    dsc, psc = _generate_chunk(inst, purpose, rep, c, gate)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + f".{os.getpid()}.tmp.npy")
     np.save(tmp, np.stack([dsc, psc]))
@@ -231,8 +279,7 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
     ``_chunk_arrays``); it must be a run directory, never the repository."""
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
-    if purpose == "test":
-        verify_test_gate(frozen)
+    gate = verify_test_gate(frozen) if purpose == "test" else None
     if purpose != "train":
         rep = 0
     specs = route_specs(inst)
@@ -258,7 +305,7 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
     parts_p: dict[int, list[np.ndarray]] = {s.route_id: [] for s in specs}
     parts_d: dict[int, list[np.ndarray]] = {s.route_id: [] for s in specs}
     for c, take in chunks:
-        dsc, psc = _chunk_arrays(inst, purpose, rep, c, cache_dir)
+        dsc, psc = _chunk_arrays(inst, purpose, rep, c, cache_dir, gate)
         for s in specs:
             r = np.array(s.route)
             # fancy indexing copies, so only the route columns outlive the chunk

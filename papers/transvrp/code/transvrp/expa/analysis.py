@@ -456,16 +456,20 @@ def check_coverage(df: pd.DataFrame, spec: tuple, n_instances: int = N_INSTANCES
 def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None = None,
                   delta: float = DELTA, n_instances: int = N_INSTANCES,
                   n_routes: int = N_ROUTES, n_reps: int = N_REPS,
-                  rows_dir: Path | None = None) -> dict:
+                  rows_dir: Path | None = None, *, eval_set: str) -> dict:
     """Writes summary.md and curve.csv into out_dir and returns the key results.
 
-    ``df`` is the merged main-stage table. ``big_df`` (optional) is the merged big
-    stage; its rows are concatenated so that the 10^6 classical rows are found.
-    Every primary and family contrast must be complete (instances, routes and
-    replicates), or the call raises: Holm always runs over the 11 family tests.
-    ``rows_dir`` (optional) is the directory of the per-job ``.npz`` day arrays;
-    it enables variance item 2(b) at N = 10^5 on the same stage's eval set.
+    ``df`` is the merged main-stage table and ``eval_set`` ("dev" or "test") names
+    the stream it was evaluated on; it is required, never defaulted, and is used for
+    the per-day arrays of variance item 2(b) and written into the summary header.
+    ``big_df`` (optional) is the merged big stage; its rows are concatenated so
+    that the 10^6 classical rows are found. Every primary and family contrast must
+    be complete (instances, routes and replicates), or the call raises: Holm always
+    runs over the 11 family tests. ``rows_dir`` (optional) is the directory of the
+    per-job ``.npz`` day arrays; it enables variance item 2(b) at N = 10^5.
     """
+    if eval_set not in ("dev", "test"):
+        raise ValueError(f"eval_set must be 'dev' or 'test', not {eval_set!r}")
     full = _combine(df, big_df)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -499,6 +503,7 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
 
     by_id = {r["id"]: r for r in present}
     lines = ["# EXPERIMENT A summary", "",
+             f"Eval set: **{eval_set}**.",
              f"delta = {delta:.2f}% of BATON recourse cost (section 1.3). "
              "Unit: instance (n = 20). CI95 uses t_{19,0.975}; CI90 uses t_{19,0.95}.", ""]
     lines += ["## Primary: FULL vs BATON-eq at N = 10^5 (section 1.4)", "",
@@ -588,10 +593,10 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
         rt = full[(full["policy"] == "nn_full") & (full["N"] == 100000)]
         routes = list(rt[["inst", "route_id"]].drop_duplicates()
                       .itertuples(index=False, name=None))
-        var_b = variance_b_median(Path(rows_dir), routes, 100000, eval_set="dev")
+        var_b = variance_b_median(Path(rows_dir), routes, 100000, eval_set=eval_set)
         lines.append(f"- (b) median over routes of the per-day paired SE of nn_full - "
-                     f"baton_eq @ 100000 (replicate-averaged days): {var_b:.4f} %-points "
-                     f"of route cost.")
+                     f"baton_eq @ 100000 (replicate-averaged days, {eval_set} stream): "
+                     f"{var_b:.4f} in route-cost units (same units as the costs).")
     else:
         lines.append("- (b), the per-day paired SE, needs the per-day arrays (pass rows_dir).")
     lines.append("")
@@ -614,11 +619,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--routes", type=int, default=N_ROUTES)
     ap.add_argument("--rows-dir", type=Path, default=None,
                     help="stage rows directory with the per-day .npz arrays (variance 2(b))")
+    ap.add_argument("--eval", dest="eval_set", required=True, choices=("dev", "test"),
+                    help="the stream the merged tables were evaluated on")
     args = ap.parse_args(argv)
     df = pd.read_csv(args.merged)
     big = pd.read_csv(args.big) if args.big else None
     res = write_summary(df, args.out, big, n_instances=args.instances,
-                        n_routes=args.routes, rows_dir=args.rows_dir)
+                        n_routes=args.routes, rows_dir=args.rows_dir,
+                        eval_set=args.eval_set)
     print({"branch": None if res["primary"] is None else res["primary"]["branch"],
            "crossover_n": res["crossover_n"]})
     return 0

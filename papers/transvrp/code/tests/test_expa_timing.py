@@ -30,9 +30,10 @@ def test_timing_record_and_bit_identity_with_chunk_cache(tiny_pilot, tmp_path):
     assert plain["handoff_rate"] == cached["handoff_rate"]
     assert plain["chunk_cache"] is False and cached["chunk_cache"] is True
     for key in ("generate_seconds", "cache_seconds", "stop_seconds", "total_seconds",
-                "peak_generate_mb", "peak_cache_stop_mb", "process_peak_rss_mb"):
+                "traced_generate_peak_mb", "traced_cache_stop_peak_mb",
+                "process_peak_rss_mb"):
         assert np.isfinite(plain[key]) and plain[key] >= 0
-    assert plain["total_seconds"] > 0 and plain["peak_cache_stop_mb"] > 0
+    assert plain["total_seconds"] > 0 and plain["traced_cache_stop_peak_mb"] > 0
     out = tiny_pilot / "pilot" / "timing_full_N2000.json"
     assert json.loads(out.read_text())["n_rows"] == 2000
 

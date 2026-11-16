@@ -170,7 +170,7 @@ def test_tree_check_fails_closed_outside_a_repository(tmp_path):
 
 
 def test_verify_returns_the_hash_when_every_check_holds(gate):
-    assert paths.verify_test_gate(GOOD_HASH) == GOOD_HASH
+    assert paths.verify_test_gate(GOOD_HASH).commit == GOOD_HASH
 
 
 def test_route_pool_refuses_test_without_a_verified_hash(gate, monkeypatch):

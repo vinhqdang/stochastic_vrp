@@ -189,20 +189,41 @@ def p4_status(df: pd.DataFrame) -> dict:
                        f"{len(upper)} above 1.005 x none")
 
 
+W_PLAN_MEAN = 117.0        # section 7.2: mean eligible route, sum over stages of (m - k + 1)
+MLP_TO_FULL = 0.2          # section 7.2: "MLP, 10^5 x 186 (~1/5 cost)"; a prior, not measured
+
+
+def route_work(m: int) -> float:
+    """Work of one route pass, sum_{k=1..m} (m - k + 1) = m(m + 1) / 2 (section 7.2)."""
+    return m * (m + 1) / 2.0
+
+
 def p5_status(df: pd.DataFrame, timing: dict | None) -> dict:
     """P5: seconds per stage and per job are recorded, and the platform rule is
-    applied to the projection when every cell of the section 7.2 plan is measured."""
+    applied to the projection (section 7.2). The projection is always computed
+    from the cells this pilot measures; cells it does not measure are extrapolated
+    by the rule in ``plan_cells`` and labelled as such."""
     recorded = bool(df["fit_seconds"].notna().all() and (df["fit_seconds"] > 0).all())
     minutes = job_minutes(df, timing)
-    proj = projection_hours(minutes)
-    detail = f"fit_seconds recorded on all rows: {recorded}"
+    cells = plan_cells(df, timing)
+    proj = projection_hours({k: c["minutes"] for k, c in cells.items()
+                             if c["minutes"] is not None})
+    proj["cells"] = {f"{arm}@{N}": c for (arm, N), c in cells.items()}
+    proj["measured"] = sorted(f"{arm}@{N}" for (arm, N), c in cells.items()
+                              if c["source"] == "measured")
+    proj["inputs"] = {f"{arm}@{N}": v for (arm, N), v in sorted(_measured_plan_minutes(df).items())}
     decision = None
     if proj["hours"] is not None:
-        decision = platform_decision(proj["hours"] / 24.0)
-        detail += f"; projection {proj['hours'] / 24.0:.2f} days -> {decision}"
+        proj["days"] = proj["hours"] / 24.0
+        decision = platform_decision(proj["days"])
+    ok = recorded and timing is not None and proj["hours"] is not None
+    detail = (f"fit_seconds recorded on all rows: {recorded}; "
+              f"cells measured: {len(proj['measured'])}, extrapolated: "
+              f"{len(cells) - len(proj['measured'])}")
+    if proj["hours"] is not None:
+        detail += f"; projection {proj['days']:.2f} days -> {decision}"
     else:
-        detail += f"; projection needs measured cells: {', '.join(proj['missing'])}"
-    ok = recorded and timing is not None
+        detail += f"; projection not computable, missing: {', '.join(proj['missing'])}"
     if timing is None:
         detail += "; no timing record given"
     return dict(id="P5", status=_status(ok), minutes_per_job=minutes, projection=proj,
@@ -210,8 +231,8 @@ def p5_status(df: pd.DataFrame, timing: dict | None) -> dict:
 
 
 def job_minutes(df: pd.DataFrame, timing: dict | None) -> dict:
-    """Mean fit minutes per job by (arm, N) from the table; the timing record
-    (generation plus stop updates at 10^6 with the 10^5 nets) adds (full, 10^6)."""
+    """Mean fit minutes per job by (arm, N) from the table, raw (per route as
+    measured); the timing record adds (arm, 10^6) with its total minutes."""
     out: dict = {}
     d = df.copy()
     d = d[d["policy"].isin(["nn_full", "nn_scalar", "nn_mlp"])]
@@ -223,9 +244,85 @@ def job_minutes(df: pd.DataFrame, timing: dict | None) -> dict:
     return out
 
 
+def _measured_plan_minutes(df: pd.DataFrame) -> dict:
+    """(arm, N) -> minutes per plan job, from the measured fits: each job's minutes
+    are divided by its route work, then the mean is taken and multiplied by
+    W_PLAN_MEAN (per average eligible route)."""
+    arm_of = {"nn_full": "full", "nn_scalar": "scalar", "nn_mlp": "mlp"}
+    d = df[df["policy"].isin(list(arm_of))].copy()
+    d["arm"] = d["policy"].map(arm_of)
+    d["rate"] = d["fit_seconds"] / 60.0 / d["m"].map(lambda m: route_work(int(m)))
+    g = d.groupby(["arm", "N"])["rate"].mean() * W_PLAN_MEAN
+    return {(arm, int(N)): float(v) for (arm, N), v in g.items()}
+
+
+def plan_cells(df: pd.DataFrame, timing: dict | None, plan=SECTION_72_PLAN) -> dict:
+    """Minutes per job for every cell of the section 7.2 plan, with its source.
+
+    Projection rule (section 7.2 gives the plan and the 186-job count but not how
+    unmeasured cells are extrapolated, so this module fixes the rule):
+
+    1. Measured cells: mean fit minutes per job, scaled to the mean eligible route
+       (route work m(m+1)/2, see ``route_work``; mean 117 over the 62 routes).
+    2. FULL at an unmeasured N: a line a + b N fitted by least squares to the
+       measured FULL cells. Training is capped at S_k steps, so a carries the
+       N-independent training cost and b the per-path cost (generation, features).
+    3. SCALAR at an unmeasured N: the mean measured SCALAR / FULL ratio at the N
+       where both are measured, times the FULL cell.
+    4. MLP: 0.2 x FULL (section 7.2 prior, not measured).
+    5. Cells at 10^6 add the stop-update minutes of the timing record, scaled the
+       same way. The 10^6 data generation stays in the fixed DATA_GEN_HOURS term,
+       as in the section 7.2 table.
+
+    Returns {(arm, N): {"minutes": float or None, "source": str}}."""
+    measured = _measured_plan_minutes(df)
+    full_pts = {N: v for (arm, N), v in measured.items() if arm == "full"}
+    line = None
+    if len(full_pts) >= 2:
+        slope, intercept = np.polyfit(np.array(list(full_pts), dtype=float),
+                                      np.array(list(full_pts.values())), 1)
+        line = (float(intercept), float(slope))
+    both = [N for N in full_pts if ("scalar", N) in measured]
+    ratio = (float(np.mean([measured[("scalar", N)] / full_pts[N] for N in both]))
+             if both else None)
+    stop_min = None
+    if timing is not None:
+        stop_sec = timing.get("stop_seconds", timing["total_seconds"])
+        stop_min = float(stop_sec) / 60.0 / route_work(int(timing["m"])) * W_PLAN_MEAN
+
+    def fit_minutes(arm: str, N: int):
+        if (arm, N) in measured:
+            return measured[(arm, N)], "measured"
+        if arm == "full":
+            if line is None:
+                return None, "missing (needs two measured FULL cells)"
+            a, b = line
+            return a + b * N, "model: a + b N"
+        if arm == "scalar":
+            if ratio is None:
+                return None, "missing (no SCALAR/FULL overlap)"
+            v, _ = fit_minutes("full", N)
+            return (None, "missing") if v is None else (ratio * v, "ratio x FULL")
+        if arm == "mlp":
+            v, _ = fit_minutes("full", N)
+            return (None, "missing") if v is None else (MLP_TO_FULL * v, "0.2 x FULL (prior)")
+        raise ValueError(f"unknown arm {arm!r}")
+
+    cells: dict = {}
+    for arm, N, _ in plan:
+        v, src = fit_minutes(arm, N)
+        if v is not None and N == 10 ** 6:
+            if stop_min is None:
+                v, src = None, "missing (no timing record)"
+            else:
+                v, src = v + stop_min, src + " + stop updates (timing)"
+        cells[(arm, N)] = dict(minutes=v, source=src)
+    return cells
+
+
 def projection_hours(minutes: dict, plan=SECTION_72_PLAN, workers: int = WORKERS) -> dict:
-    """Wall hours of the section 7.2 plan on ``workers`` processes, from measured
-    minutes per job. None when a plan cell is not measured."""
+    """Wall hours of the section 7.2 plan on ``workers`` processes, from minutes per
+    job for every plan cell. None when a plan cell is missing from ``minutes``."""
     missing = [f"{arm}@{N}" for arm, N, _ in plan if (arm, N) not in minutes]
     if missing:
         return dict(hours=None, missing=missing)
@@ -262,6 +359,45 @@ def p6_status(diag: pd.DataFrame, N: int = 10000) -> dict:
 
 
 # ---------------------------------------------------------------- stop rules
+
+MONO_N = 10000             # largest SCALAR cell of the pilot (N* = 10^5 is not in the pilot)
+
+
+def monotonicity_for_stage(results_dir: Path, stage: str, N: int = MONO_N,
+                           arm: str = "scalar") -> dict | None:
+    """Section 4.2 diagnostic for the fitted ``arm`` models at ``N`` of a stage: the
+    W-grid curves of every route and replicate (dev pool for the route minimum of
+    W_k), pooled over jobs. Each curve keeps its own route's E0. Returns None when
+    no such model exists."""
+    from .analysis import MONO_TOL, monotonicity_curves, monotonicity_diagnostic
+    from .paths import route_pool
+    from .sweep import _spec_of, _unpack
+
+    files = sorted((Path(results_dir) / "models" / stage).glob(f"{arm}__*__N{N}__rep*.pkl"))
+    tot = dict(n_curves=0, n_steps=0, n_steps_bad=0, curves_bad=0)
+    jobs = 0
+    for path in files:
+        with open(path, "rb") as fh:
+            payload = pickle.load(fh)
+        if payload.get("kind") != "neural":
+            continue
+        job = payload["job"]
+        spec = _spec_of(job.inst, job.route_id)
+        g = route_pool(job.inst, "dev", routes=[job.route_id])[job.route_id].g
+        curves = monotonicity_curves(_unpack(payload["models"]), spec, payload["stats"], g)
+        d = monotonicity_diagnostic(curves, spec.E0)
+        jobs += 1
+        tot["n_curves"] += d["n_curves"]
+        tot["n_steps"] += d["n_steps"]
+        tot["n_steps_bad"] += d["n_steps_bad"]
+        tot["curves_bad"] += int(round(d["frac_curves"] * d["n_curves"])) if d["n_curves"] else 0
+    if jobs == 0:
+        return None
+    nc, ns = tot["n_curves"], tot["n_steps"]
+    return dict(stage=stage, arm=arm, N=int(N), jobs=jobs, tol=MONO_TOL, **tot,
+                frac_curves=(tot["curves_bad"] / nc) if nc else float("nan"),
+                frac_steps=(tot["n_steps_bad"] / ns) if ns else float("nan"))
+
 
 def stop_rule_2(df: pd.DataFrame) -> dict:
     """Any policy's mean cost below the oracle on any route."""
@@ -331,8 +467,11 @@ def stop_rule_7(diag: pd.DataFrame, N_min: int = 10000) -> dict:
 
 def check_pilot(df: pd.DataFrame, diag: pd.DataFrame, *, tests_green: bool | None = None,
                 rerun: pd.DataFrame | None = None, timing: dict | None = None,
-                eligibility: pd.DataFrame | None = None) -> dict:
-    """Evaluates P1-P6 and the stop rules on the pilot tables. Nothing is written."""
+                eligibility: pd.DataFrame | None = None,
+                mono: dict | None = None) -> dict:
+    """Evaluates P1-P6 and the stop rules on the pilot tables. Nothing is written.
+    ``mono`` is the section 4.2 diagnostic (``monotonicity_for_stage``); it is
+    reported, not a criterion."""
     p3 = p3_status(df)
     p5 = p5_status(df, timing)
     crit = dict(P1=p1_status(tests_green), P2=p2_status(df, rerun), P3=p3,
@@ -341,7 +480,7 @@ def check_pilot(df: pd.DataFrame, diag: pd.DataFrame, *, tests_green: bool | Non
                  rule7=stop_rule_7(diag))
     if eligibility is not None:
         rules["rule5"] = stop_rule_5(eligibility)
-    return dict(criteria=crit, stop_rules=rules,
+    return dict(criteria=crit, stop_rules=rules, monotonicity=mono, timing=timing,
                 ok=all(c["status"] == "PASS" for c in crit.values()))
 
 
@@ -353,6 +492,45 @@ def render_markdown(res: dict) -> str:
     p3 = res["criteria"]["P3"]
     if p3.get("flag") is not None:
         lines.append(f"| P3' (flag) | {p3['flag']} | {p3.get('flag_detail', '')} |")
+    proj = res["criteria"]["P5"].get("projection") or {}
+    if proj.get("cells"):
+        lines += ["", "## P5 projection (section 7.2 plan, minutes per job)", "",
+                  f"Rule: see `plan_cells` in pilot.py. Scaled to the mean eligible route "
+                  f"(work {W_PLAN_MEAN:.0f}). Hours = job minutes / {WORKERS} workers + "
+                  f"{DATA_GEN_HOURS:g} h data generation.", "",
+                  "| cell | minutes per job | source |", "|---|---|---|"]
+        for name, c in proj["cells"].items():
+            val = "not computable" if c["minutes"] is None else f"{c['minutes']:.2f}"
+            lines.append(f"| {name} | {val} | {c['source']} |")
+        if proj.get("inputs"):
+            lines += ["", "Measured inputs (scaled as above, including cells outside the plan): "
+                      + ", ".join(f"{k} = {v:.2f}" for k, v in proj["inputs"].items()) + "."]
+        if proj.get("hours") is not None:
+            lines += ["", f"Projection: {proj['hours']:.1f} h = {proj['days']:.2f} days "
+                          f"-> {res['criteria']['P5'].get('decision')}."]
+    tim = res.get("timing")
+    if tim:
+        def mb(key):
+            return f"{tim[key]:.0f} MB" if key in tim else "not recorded"
+        lines += ["", "## Timing (10^6 pass)", "",
+                  f"- Peak memory, headline (process RSS high-water mark, whole run): "
+                  f"**{mb('process_peak_rss_mb')}**.",
+                  f"- Secondary (tracemalloc, NumPy buffers only): cache plus stop updates peak "
+                  f"{mb('traced_cache_stop_peak_mb')}; generation peak "
+                  f"{mb('traced_generate_peak_mb')}."]
+        if "total_seconds" in tim:
+            lines.append(f"- Seconds: generation {tim.get('generate_seconds', float('nan')):.1f}, "
+                         f"cache {tim.get('cache_seconds', float('nan')):.1f}, stop updates "
+                         f"{tim.get('stop_seconds', float('nan')):.1f}, total "
+                         f"{tim['total_seconds']:.1f}.")
+    mono = res.get("monotonicity")
+    if mono:
+        lines += ["", "## Monotonicity diagnostic (section 4.2, reported)", "",
+                  f"{mono['arm'].upper()} at N = {mono['N']:,} over {mono['jobs']} jobs "
+                  f"({mono['n_curves']} W-grid curves): "
+                  f"{100 * mono['frac_curves']:.1f}% of curves have a neighbour decrease "
+                  f"above {mono['tol']} E0; {100 * mono['frac_steps']:.2f}% of neighbour steps "
+                  f"do. (Section 4.2 names N*; the pilot's largest SCALAR cell is used.)", ""]
     lines += ["", "## Stop rules (section 10)", "", "| rule | triggered | detail |", "|---|---|---|"]
     for name, r in res["stop_rules"].items():
         trig = {True: "YES", False: "no", None: "not applicable"}[r.get("triggered")]
@@ -379,8 +557,9 @@ def main(argv: list[str] | None = None) -> int:
     rerun = pd.read_csv(args.rerun) if args.rerun else None
     timing = json.loads(args.timing.read_text()) if args.timing else None
     elig = pd.read_csv(args.eligibility) if args.eligibility else None
+    mono = monotonicity_for_stage(args.results_dir, args.stage)
     res = check_pilot(df, diag, tests_green=True if args.tests_green else None,
-                      rerun=rerun, timing=timing, eligibility=elig)
+                      rerun=rerun, timing=timing, eligibility=elig, mono=mono)
     out = Path(args.results_dir) / f"{args.stage}_report.md"
     out.write_text(render_markdown(res))
     print({k: v["status"] for k, v in res["criteria"].items()})

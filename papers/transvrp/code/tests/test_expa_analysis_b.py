@@ -271,7 +271,7 @@ def test_summary_reports_bootstrap_and_variance_b(tmp_path):
                 np.savez(rows_dir / f"{analysis.job_stem('ladder', inst, rid, 100000, rep)}.dev.npz",
                          baton_eq=base)
     out = tmp_path / "out"
-    res = write_summary(df, out, n_routes=40, rows_dir=rows_dir)
+    res = write_summary(df, out, n_routes=40, rows_dir=rows_dir, eval_set="dev")
     text = (out / "summary.md").read_text()
     assert "Cluster bootstrap (sensitivity only" in text
     assert "seed 20261115" in text
@@ -285,6 +285,64 @@ def test_summary_reports_bootstrap_and_variance_b(tmp_path):
 def test_summary_without_rows_dir_says_variance_b_needs_arrays(tmp_path):
     from transvrp.expa.analysis import write_summary
 
-    res = write_summary(_synthetic_rows(), tmp_path, n_routes=40)
+    res = write_summary(_synthetic_rows(), tmp_path, n_routes=40, eval_set="dev")
     assert res["variance_b"] is None
     assert "needs the per-day arrays" in (tmp_path / "summary.md").read_text()
+
+
+# ---------------------------------------------------------------- hardening (batch C)
+
+def test_bootstrap_ci95_and_ci90_are_the_stated_percentiles_exactly():
+    # five instances with means 0..4. The draw is a mean of five resampled means;
+    # P(sum <= 3) = 56/3125, P(sum <= 4) = 126/3125, P(sum <= 5) = 247/3125, so the
+    # 2.5th percentile of the draw is 0.8, the 97.5th is 3.2, the 5th is 1.0 and the
+    # 95th is 3.0 (the draw is a multiple of 0.2 and the cut points are not ties).
+    groups = [np.array([float(i)]) for i in range(5)]
+    res = analysis.cluster_bootstrap(groups, n_draws=10_000)
+    d = res["draws"]
+    assert res["ci95"] == pytest.approx(tuple(np.percentile(d, [2.5, 97.5])), abs=1e-12)
+    assert res["ci90"] == pytest.approx(tuple(np.percentile(d, [5.0, 95.0])), abs=1e-12)
+    assert res["ci95"] == pytest.approx((0.8, 3.2), abs=1e-9)
+    assert res["ci90"] == pytest.approx((1.0, 3.0), abs=1e-9)
+
+
+def _rows_with_variance(rows_dir, eval_set, noise, insts):
+    rng = np.random.default_rng(7)
+    for inst in insts:
+        for rid in range(2):
+            for rep in range(3):
+                base = rng.uniform(9, 11, size=6)
+                np.savez(rows_dir / f"{analysis.job_stem('full', inst, rid, 100000, rep)}"
+                                    f".{eval_set}.npz",
+                         nn_full=base + noise * rng.normal(size=6))
+                np.savez(rows_dir / f"{analysis.job_stem('ladder', inst, rid, 100000, rep)}"
+                                    f".{eval_set}.npz",
+                         baton_eq=base)
+
+
+def test_variance_b_reads_only_the_stream_it_is_given(tmp_path):
+    from transvrp.expa.analysis import write_summary
+
+    df = _synthetic_rows()
+    rows_dir = tmp_path / "rows"
+    rows_dir.mkdir()
+    insts = sorted(df["inst"].unique())
+    _rows_with_variance(rows_dir, "dev", 0.0, insts)    # dev: paired SE is 0
+    _rows_with_variance(rows_dir, "test", 0.5, insts)   # test: paired SE is positive
+    dev = write_summary(df, tmp_path / "dev", n_routes=40, rows_dir=rows_dir, eval_set="dev")
+    test = write_summary(df, tmp_path / "test", n_routes=40, rows_dir=rows_dir,
+                         eval_set="test")
+    assert dev["variance_b"] == pytest.approx(0.0, abs=1e-12)
+    assert test["variance_b"] > 0.05
+    assert "Eval set: **test**" in (tmp_path / "test" / "summary.md").read_text()
+    assert "in route-cost units" in (tmp_path / "test" / "summary.md").read_text()
+
+
+def test_write_summary_requires_an_explicit_eval_set_of_a_known_stream(tmp_path):
+    from transvrp.expa.analysis import write_summary
+
+    df = _synthetic_rows()
+    with pytest.raises(TypeError):
+        write_summary(df, tmp_path, n_routes=40)
+    with pytest.raises(ValueError):
+        write_summary(df, tmp_path, n_routes=40, eval_set="train")
