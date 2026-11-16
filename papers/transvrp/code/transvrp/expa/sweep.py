@@ -620,7 +620,7 @@ def run_timing(results_dir: Path = DEFAULT_RESULTS, *, stage: str = "pilot",
     out = results_dir / stage / f"timing_{arm}_N{int(n_rows)}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_name(out.name + ".tmp")
-    tmp.write_text(json.dumps(rec, indent=2, sort_keys=True))
+    tmp.write_text(json.dumps(rec, indent=2, sort_keys=True), encoding="utf-8")
     os.replace(tmp, out)
     return rec
 

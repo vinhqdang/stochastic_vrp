@@ -601,7 +601,7 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
         lines.append("- (b), the per-day paired SE, needs the per-day arrays (pass rows_dir).")
     lines.append("")
 
-    (out_dir / "summary.md").write_text("\n".join(lines))
+    (out_dir / "summary.md").write_text("\n".join(lines), encoding="utf-8")
     cur.to_csv(out_dir / "curve.csv", index=False)
     return dict(primary=go, family={r["id"]: {k: v for k, v in r.items() if k != "_d"}
                                     for r in present},

@@ -579,13 +579,13 @@ def main(argv: list[str] | None = None) -> int:
     df = merge_stage(args.stage, "dev", args.results_dir)
     diag = diag_table(args.results_dir, args.stage)
     rerun = pd.read_csv(args.rerun) if args.rerun else None
-    timing = json.loads(args.timing.read_text()) if args.timing else None
+    timing = json.loads(args.timing.read_text(encoding="utf-8")) if args.timing else None
     elig = pd.read_csv(args.eligibility) if args.eligibility else None
     mono = monotonicity_for_stage(args.results_dir, args.stage)
     res = check_pilot(df, diag, tests_green=True if args.tests_green else None,
                       rerun=rerun, timing=timing, eligibility=elig, mono=mono)
     out = Path(args.results_dir) / f"{args.stage}_report.md"
-    out.write_text(render_markdown(res))
+    out.write_text(render_markdown(res), encoding="utf-8")
     print({k: v["status"] for k, v in res["criteria"].items()})
     return 0
 

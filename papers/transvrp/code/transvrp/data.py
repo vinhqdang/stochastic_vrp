@@ -49,7 +49,7 @@ def _header(txt, key, cast):
 
 
 def parse_dethloff(path):
-    txt = Path(path).read_text(errors="ignore")
+    txt = Path(path).read_text(encoding="utf-8", errors="ignore")
     n = _header(txt, "DIMENSION", int)
     Q = _header(txt, "CAPACITY", float)
     toks = []
@@ -99,7 +99,7 @@ def stable_seed(name: str) -> int:
 
 
 def load_plans(name: str) -> dict:
-    d = json.loads((PLANS_DIR / f"{name}.json").read_text())
+    d = json.loads((PLANS_DIR / f"{name}.json").read_text(encoding="utf-8"))
     d["dbar"] = np.array(d["dbar"], dtype=float)
     d["pbar"] = np.array(d["pbar"], dtype=float)
     return d

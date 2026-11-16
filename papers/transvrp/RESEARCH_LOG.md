@@ -68,3 +68,23 @@ hash appears, under a heading "FROZEN COMMIT".
   to 10^6 (one route); treat it as order-of-magnitude.
 - Pilot cost numbers are not read as evidence for any hypothesis (one instance; design
   frozen).
+
+### 2026-11-16 — local machine for the full sweep; Windows portability fix (before any fit)
+- Machine (author's laptop): Intel i9-13950HX (24 cores / 32 threads), 64 GB RAM,
+  Windows 11 Pro, Anaconda Python 3.13.11, torch 2.6.0+cu124 **run on CPU**, numpy
+  2.2.6, scipy 1.15.3, scikit-learn 1.8.0, pandas 2.3.3. These differ from the
+  pinned pilot versions (`requirements-expA.txt`); every model of the sweep is fitted
+  in this one environment, and no pilot model is reused.
+- Platform: CPU, as the platform rule of spec 7.2 requires (projection 2.62 days ≤ 4).
+  The author asked about the GPU; it was kept off to preserve the pre-registered
+  platform and bit-identical reruns (P2). Workers: `--jobs 12` instead of 4 (more
+  cores; worker count changes wall time only, not any computed value).
+- The code did not run on Windows: `measure.py` imported the POSIX-only `resource`
+  module, text files were read/written in the cp1252 default encoding (breaking the
+  research-log gate read and `summary.md`), and concurrent workers creating the same
+  chunk could hit `PermissionError` on `os.replace`. Fix (value-neutral: no seed,
+  array, model or cost changes): Windows peak-working-set fallback for peak RSS,
+  explicit UTF-8 on text I/O, `_publish_chunk` (drop tmp if another worker already
+  published the deterministic chunk, else retry). Implemented with mutation-checked
+  tests, independently reviewed (no blocker; residual rare lock risks covered by
+  resumable fitting, run under a restart loop). 235 tests pass on this machine.

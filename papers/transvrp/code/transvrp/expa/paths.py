@@ -24,6 +24,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import time
 import zlib
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -148,7 +149,7 @@ def verify_test_gate(frozen: str | None) -> GateToken:
         raise TestStreamGateError("the frozen commit must be a full 40-character lowercase hash")
     if not Path(RESEARCH_LOG).exists():
         raise TestStreamGateError(f"research log not found: {RESEARCH_LOG}")
-    if frozen not in Path(RESEARCH_LOG).read_text():
+    if frozen not in Path(RESEARCH_LOG).read_text(encoding="utf-8"):
         raise TestStreamGateError("the frozen hash is not recorded in RESEARCH_LOG.md")
     head = current_commit()
     if head != frozen:
@@ -261,8 +262,38 @@ def _chunk_arrays(inst: str, purpose: str, rep: int, c: int,
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + f".{os.getpid()}.tmp.npy")
     np.save(tmp, np.stack([dsc, psc]))
-    os.replace(tmp, path)
+    _publish_chunk(tmp, path)
     return dsc, psc
+
+
+CHUNK_REPLACE_TRIES = 10
+CHUNK_REPLACE_PAUSE_S = 0.05
+
+
+def _publish_chunk(tmp: Path, path: Path) -> None:
+    """Moves a finished chunk file into place. Chunks are deterministic, so when another
+    worker already published ``path`` (on Windows its open handle makes os.replace fail
+    with PermissionError) the local copy is redundant: it is discarded. If ``path`` is
+    still absent, the replace is retried with a growing pause and the error is re-raised
+    after CHUNK_REPLACE_TRIES failures."""
+    for attempt in range(1, CHUNK_REPLACE_TRIES + 1):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if path.exists():
+                _discard_quietly(tmp)
+                return
+            if attempt == CHUNK_REPLACE_TRIES:
+                raise
+            time.sleep(CHUNK_REPLACE_PAUSE_S * attempt)
+
+
+def _discard_quietly(path: Path) -> None:
+    try:
+        path.unlink()
+    except OSError:
+        pass
 
 
 def route_pool(inst: str, purpose: str, rep: int = 0,

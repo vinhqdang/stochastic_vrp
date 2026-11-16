@@ -2,22 +2,60 @@
 
 ``traced_peak`` reports the peak of Python and NumPy allocations inside a block
 (tracemalloc tracks NumPy buffers). ``process_peak_rss_mb`` reports the process
-high-water mark (resource.getrusage, kilobytes on Linux). ``Stopwatch`` records
-named wall-clock intervals. None of them changes any computed value.
+high-water mark (resource.getrusage, kilobytes on Linux; GetProcessMemoryInfo
+peak working set on Windows, where ``resource`` does not exist). ``Stopwatch``
+records named wall-clock intervals. None of them changes any computed value.
 """
 from __future__ import annotations
 
-import resource
 import time
 import tracemalloc
 from contextlib import contextmanager
+
+try:
+    import resource
+except ImportError:  # Windows
+    resource = None
 
 MIB = float(2 ** 20)
 
 
 def process_peak_rss_mb() -> float:
     """Process peak resident set size in MiB (ru_maxrss is in KiB on Linux)."""
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+    if resource is not None:
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+    return _windows_peak_working_set_mb()
+
+
+def _windows_peak_working_set_mb() -> float:
+    """Peak working set of the current process in MiB, via psapi GetProcessMemoryInfo."""
+    import ctypes
+    from ctypes import wintypes
+
+    class ProcessMemoryCounters(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD),
+                    ("PageFaultCount", wintypes.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t),
+                    ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t),
+                    ("PeakPagefileUsage", ctypes.c_size_t)]
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    psapi = ctypes.WinDLL("psapi", use_last_error=True)
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessMemoryCounters),
+                                           wintypes.DWORD]
+    psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+    counters = ProcessMemoryCounters()
+    counters.cb = ctypes.sizeof(ProcessMemoryCounters)
+    if not psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters),
+                                      counters.cb):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return counters.PeakWorkingSetSize / MIB
 
 
 @contextmanager
