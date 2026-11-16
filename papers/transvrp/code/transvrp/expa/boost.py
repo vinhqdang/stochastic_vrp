@@ -72,6 +72,8 @@ def fit_boost(spec: RouteSpec, paths: Paths, N: int, rep: int
     ``train.fit_neural``. ``rep`` is accepted for symmetry (not used)."""
     if paths.p.shape[0] != N:
         raise ValueError("paths must hold exactly N rows")
+    if np.any(spec.H > spec.E0 + 1e-12) or np.any(spec.E > spec.E0 + 1e-12):
+        raise ValueError("H and E must not exceed E0")
     folds, val = split_80_20(N)
     fit_all = np.concatenate(folds)
     stats = RouteStats.fit(Paths(p=paths.p[fit_all], d=paths.d[fit_all]))

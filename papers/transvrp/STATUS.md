@@ -5,12 +5,13 @@
 - **Venue:** not chosen.
 - **State:** **ACTIVE — study phase (opened 2026-11-15).** No manuscript, no
   experiment results yet. `EXPERIMENT_A.md` (revision 2, reviewed in `REVIEW_A.md`) is
-  implemented as modules M0-M11 in `code/transvrp/expa/` (89 tests pass); **nothing has
+  implemented as modules M0-M11 in `code/transvrp/expa/` (175 tests pass after code review `CODE_REVIEW_A.md` and two fix batches); **nothing has
   been run beyond smoke/unit tests, the test stream is untouched by any neural code,
-  and the pilot has not been run.** Known gaps: pilot checker P1-P6, section 7.2 cuts,
-  summary variance item (b), `RESEARCH_LOG.md` (the test-stream gate refuses
-  evaluation until it exists with a frozen commit hash). Code has not had an
-  independent code review yet. `PROJECT.md` holds the reading of the seed paper,
+  and the pilot has not been run.** Remaining: memory at 10^6 is reduced but not measured; stop rules 1 and 4 are
+  process checks, not code; `RESEARCH_LOG.md` does not exist, so the test-stream
+  gate (now in the data layer) refuses all test evaluation until a frozen commit hash
+  is recorded there. Pass `--chunk-dir` or rely on the .gitignore rule for the chunk
+  cache. Next: re-review of the fixes, then the pilot on the dev stream. `PROJECT.md` holds the reading of the seed paper,
   the literature map, and candidate directions with go/no-go tests.
 - **Freeze policy:** open for edits.
 - **Seed paper:** Liu et al., OR-Transformer, arXiv 2609.01933v2 (full text

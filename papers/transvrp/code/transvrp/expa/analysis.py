@@ -28,6 +28,10 @@ import pandas as pd
 from scipy import stats
 
 DELTA = 0.7                # section 1.3, frozen
+BOOT_DRAWS = 10_000        # section 1.2: cluster bootstrap draws
+BOOT_SEED = 20261115       # section 1.2: cluster bootstrap seed
+MONO_GRID = 101            # section 4.2: points on the W grid
+MONO_TOL = 0.01            # section 4.2: decrease threshold, in units of E0
 N_INSTANCES = 20           # section 1.2 / 8: unit of analysis
 N_ROUTES = 62              # section 1.1 (dev: 62 routes over 20 instances)
 N_REPS = 3                 # section 5: replicates {0, 1, 2} of the main stage
@@ -82,6 +86,10 @@ def _ci(d: np.ndarray, q: float) -> tuple[float, float]:
 
 
 def _wilcoxon_p(d: np.ndarray, alternative: str = "two-sided") -> float:
+    """Exact Wilcoxon signed-rank p (scipy, method='exact'). Exact p-values assume
+    no ties in |d|; with ties scipy still computes the exact distribution of the
+    untied ranks, so the p-value is approximate in that case. Instance means of
+    continuous costs have no ties in practice."""
     if np.all(d == 0):
         return 1.0
     return float(stats.wilcoxon(d, alternative=alternative, method="exact").pvalue)
@@ -123,15 +131,53 @@ def _paired_route_means(df: pd.DataFrame, a: str, N_a: int, b: str, N_b: int
     return pair.groupby(level=["inst", "route_id"]).mean()
 
 
+def route_deltas(df: pd.DataFrame, a: str, b: str, N: int,
+                 N_b: int | None = None) -> pd.Series:
+    """delta_r (section 1.2) for "a vs b", indexed by (inst, route_id)."""
+    N_b = N if N_b is None else N_b
+    routes = _paired_route_means(df, a, N, b, N_b)
+    return 100.0 * (routes["b"] - routes["a"]) / routes["b"]
+
+
 def instance_deltas(df: pd.DataFrame, a: str, b: str, N: int,
                     N_b: int | None = None) -> pd.Series:
     """delta_i (section 1.2) for "a vs b", indexed by instance. ``N_b`` allows the
     comparison of a policy at one size with a policy fitted at another (S7,
     S10, S11 use 10^6 paths for the classical side)."""
-    N_b = N if N_b is None else N_b
-    routes = _paired_route_means(df, a, N, b, N_b)
-    delta_r = 100.0 * (routes["b"] - routes["a"]) / routes["b"]
-    return delta_r.groupby(level="inst").mean()
+    return route_deltas(df, a, b, N, N_b).groupby(level="inst").mean()
+
+
+def cluster_bootstrap(groups, n_draws: int = BOOT_DRAWS, seed: int = BOOT_SEED) -> dict:
+    """Cluster bootstrap of Delta-bar (section 1.2, sensitivity only).
+
+    ``groups`` holds one array of route deltas per instance. Each draw resamples
+    the instances with replacement and keeps all of each drawn instance's routes:
+    its delta_i is the mean of its route deltas, and the draw's statistic is the
+    mean of the drawn delta_i. Generator: ``numpy.random.default_rng(seed)``,
+    one ``integers(0, n_inst, size=(n_draws, n_inst))`` call.
+
+    Returns the point estimate, the draws, percentile intervals (CI95 from the
+    2.5 and 97.5 percentiles, CI90 from the 5 and 95 percentiles) and the seed.
+    """
+    inst_means = np.array([float(np.asarray(g, dtype=float).mean()) for g in groups])
+    n = inst_means.size
+    if n == 0:
+        raise ValueError("no instances to resample")
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, n, size=(n_draws, n))
+    draws = inst_means[idx].mean(axis=1)
+    lo95, hi95 = np.percentile(draws, [2.5, 97.5])
+    lo90, hi90 = np.percentile(draws, [5.0, 95.0])
+    return dict(mean=float(inst_means.mean()), draws=draws,
+                ci95=(float(lo95), float(hi95)), ci90=(float(lo90), float(hi90)),
+                n_draws=int(n_draws), seed=int(seed))
+
+
+def instance_bootstrap(df: pd.DataFrame, a: str, b: str, N: int,
+                       N_b: int | None = None) -> dict:
+    """``cluster_bootstrap`` of the route deltas of "a vs b", grouped by instance."""
+    rd = route_deltas(df, a, b, N, N_b)
+    return cluster_bootstrap([grp.to_numpy() for _, grp in rd.groupby(level="inst")])
 
 
 def classify(d: np.ndarray, delta: float = DELTA, p_adj: float | None = None) -> str:
@@ -185,6 +231,108 @@ def go_no_go(d: np.ndarray, delta: float = DELTA) -> dict:
                 ci95=(lo95, hi95), ci90=(lo90, hi90), sd=float(d.std(ddof=1)),
                 p_greater=p_greater, p_less=p_less, n_pos=n_pos, n_neg=n_neg,
                 significance=flag, delta=float(delta))
+
+
+# ---------------------------------------------------------------- section 4.2 diagnostic
+
+def w_grid_curve(preds: list, spec, stats, k: int, lo: float,
+                 n_grid: int = MONO_GRID) -> tuple[np.ndarray, np.ndarray]:
+    """Deployed continuation value of stage k on a grid of running sums.
+
+    The grid is W_k in [lo, B] with ``n_grid`` points. Every other feature is held
+    at a reference profile: stops before k and stop k itself use the fitted means
+    of ``stats``, except that the stop-k pickup is set so that W_k equals the grid
+    value. Features are then built by the same code path as in the pipeline.
+    Returns (grid, mean over ``preds`` of the predictions in cost units).
+    """
+    from .features import RouteCache
+    from .paths import Paths
+
+    grid = np.linspace(float(lo), float(spec.B), n_grid)
+    mu_p = np.asarray(stats.mu_p, dtype=float)
+    mu_d = np.asarray(stats.mu_d, dtype=float)
+    w_before = float(np.sum(mu_p[:k - 1] - mu_d[:k - 1]))
+    p = np.tile(mu_p, (n_grid, 1))
+    d = np.tile(mu_d, (n_grid, 1))
+    p[:, k - 1] = d[:, k - 1] + (grid - w_before)
+    cache = RouteCache(spec, Paths(p=p, d=d), stats)
+    rows = np.arange(n_grid, dtype=np.int64)
+    vals = np.mean([np.asarray(pr.predict(cache, k, rows), dtype=float) for pr in preds], axis=0)
+    return grid, vals
+
+
+def monotonicity_curves(models: dict, spec, stats, g: np.ndarray,
+                        n_grid: int = MONO_GRID) -> list[np.ndarray]:
+    """One W-grid curve per stage k of a route (section 4.2). The grid starts at
+    the smallest W_k among the rows ``g`` (N, m) and ends at B. Stages whose lower
+    end is not below B are skipped."""
+    W = np.cumsum(np.asarray(g, dtype=float), axis=1)
+    curves = []
+    for k in sorted(models):
+        lo = float(W[:, k - 1].min())
+        if lo >= spec.B:
+            continue
+        _, vals = w_grid_curve(models[k], spec, stats, k, lo, n_grid)
+        curves.append(vals)
+    return curves
+
+
+def monotonicity_diagnostic(curves: list[np.ndarray], E0: float,
+                            tol: float = MONO_TOL) -> dict:
+    """Section 4.2. A neighbour pair violates monotonicity when the predicted cost
+    decreases in W by more than ``tol * E0``. Reports the fraction of curves with at
+    least one violation (the unit of section 4.2) and the fraction of neighbour
+    pairs that violate."""
+    n_curves = len(curves)
+    steps = bad = curves_bad = 0
+    for c in curves:
+        diffs = np.diff(np.asarray(c, dtype=float))
+        viol = diffs < -tol * float(E0)
+        steps += viol.size
+        bad += int(viol.sum())
+        curves_bad += int(viol.any())
+    return dict(n_curves=n_curves, n_steps=steps, n_steps_bad=bad,
+                frac_curves=(curves_bad / n_curves) if n_curves else float("nan"),
+                frac_steps=(bad / steps) if steps else float("nan"))
+
+
+# ---------------------------------------------------------------- variance (b), section 8
+
+def job_stem(tag: str, inst: str, route_id: int, N: int, rep: int) -> str:
+    """File stem of one job's rows and arrays (same format as sweep.Job.key)."""
+    return f"{tag}__{inst}__r{route_id}__N{N}__rep{rep}"
+
+
+def per_day_paired_se(a_costs, b_costs) -> float:
+    """SE of the mean of the per-day differences C_a(t) - C_b(t) over one set of
+    paired test days: sd(diff, ddof 1) / sqrt(n)."""
+    diff = np.asarray(a_costs, dtype=float) - np.asarray(b_costs, dtype=float)
+    if diff.size < 2:
+        raise ValueError("need at least two paired days")
+    return float(diff.std(ddof=1) / np.sqrt(diff.size))
+
+
+def variance_b_median(rows_dir: Path, routes, N: int, eval_set: str = "dev",
+                      policy_a: str = "nn_full", tag_a: str = "full",
+                      policy_b: str = "baton_eq", tag_b: str = "ladder",
+                      reps=(0, 1, 2)) -> float:
+    """Section 8, item 2(b): median over routes of the per-day paired SE of
+    C_a - C_b. For each route the per-day costs are first averaged over the
+    replicates (same days in every replicate), then the SE is taken."""
+    rows_dir = Path(rows_dir)
+    ses = []
+    for inst, rid in routes:
+        ca, cb = [], []
+        for rep in reps:
+            fa = rows_dir / f"{job_stem(tag_a, inst, rid, N, rep)}.{eval_set}.npz"
+            fb = rows_dir / f"{job_stem(tag_b, inst, rid, N, rep)}.{eval_set}.npz"
+            with np.load(fa) as za, np.load(fb) as zb:
+                ca.append(np.asarray(za[policy_a], dtype=float))
+                cb.append(np.asarray(zb[policy_b], dtype=float))
+        ses.append(per_day_paired_se(np.mean(ca, axis=0), np.mean(cb, axis=0)))
+    if not ses:
+        raise ValueError("no routes given")
+    return float(np.median(ses))
 
 
 # ---------------------------------------------------------------- tables
@@ -307,13 +455,16 @@ def check_coverage(df: pd.DataFrame, spec: tuple, n_instances: int = N_INSTANCES
 
 def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None = None,
                   delta: float = DELTA, n_instances: int = N_INSTANCES,
-                  n_routes: int = N_ROUTES, n_reps: int = N_REPS) -> dict:
+                  n_routes: int = N_ROUTES, n_reps: int = N_REPS,
+                  rows_dir: Path | None = None) -> dict:
     """Writes summary.md and curve.csv into out_dir and returns the key results.
 
     ``df`` is the merged main-stage table. ``big_df`` (optional) is the merged big
     stage; its rows are concatenated so that the 10^6 classical rows are found.
     Every primary and family contrast must be complete (instances, routes and
     replicates), or the call raises: Holm always runs over the 11 family tests.
+    ``rows_dir`` (optional) is the directory of the per-job ``.npz`` day arrays;
+    it enables variance item 2(b) at N = 10^5 on the same stage's eval set.
     """
     full = _combine(df, big_df)
     out_dir = Path(out_dir)
@@ -361,6 +512,11 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
     lines += ["Claim (template filled from the data):", ""]
     lines += [f"> {x}" for x in _claim_primary(go, full, delta)]
     lines += [""]
+    boot = instance_bootstrap(full, PRIMARY[1], PRIMARY[3], PRIMARY[2], PRIMARY[4])
+    lines += [f"Cluster bootstrap (sensitivity only, not used for decisions; "
+              f"{boot['n_draws']} draws, seed {boot['seed']}): "
+              f"CI95 [{boot['ci95'][0]:+.2f}, {boot['ci95'][1]:+.2f}], "
+              f"CI90 [{boot['ci90'][0]:+.2f}, {boot['ci90'][1]:+.2f}].", ""]
 
     lines += ["## Secondary family (section 8, Holm over S1 to S11)", "",
               "| id | a @ N | b @ N | Δ̄ % | median | CI95 | CI90 | better | rank-biserial | pooled ratio a/b | mean GC(a) | p (two-sided) | p (Holm) | class |",
@@ -427,14 +583,25 @@ def write_summary(df: pd.DataFrame, out_dir: Path, big_df: pd.DataFrame | None =
         sd = sub.groupby(["inst", "route_id"])["mean_cost"].std(ddof=1).median()
         lines.append(f"- median over routes of the between-replicate SD of {pol} @ {N}: "
                      f"{sd:.4f}.")
-    lines += ["- (b), the per-day paired SE, needs the per-day arrays and is not in this table.", ""]
+    var_b = None
+    if rows_dir is not None:
+        rt = full[(full["policy"] == "nn_full") & (full["N"] == 100000)]
+        routes = list(rt[["inst", "route_id"]].drop_duplicates()
+                      .itertuples(index=False, name=None))
+        var_b = variance_b_median(Path(rows_dir), routes, 100000, eval_set="dev")
+        lines.append(f"- (b) median over routes of the per-day paired SE of nn_full - "
+                     f"baton_eq @ 100000 (replicate-averaged days): {var_b:.4f} %-points "
+                     f"of route cost.")
+    else:
+        lines.append("- (b), the per-day paired SE, needs the per-day arrays (pass rows_dir).")
+    lines.append("")
 
     (out_dir / "summary.md").write_text("\n".join(lines))
     cur.to_csv(out_dir / "curve.csv", index=False)
     return dict(primary=go, family={r["id"]: {k: v for k, v in r.items() if k != "_d"}
                                     for r in present},
                 m11=None if m11 is None else m11["classification"],
-                crossover_n=cross, curve=cur)
+                crossover_n=cross, curve=cur, bootstrap=boot, variance_b=var_b)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -445,11 +612,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, required=True, help="output directory")
     ap.add_argument("--instances", type=int, default=N_INSTANCES)
     ap.add_argument("--routes", type=int, default=N_ROUTES)
+    ap.add_argument("--rows-dir", type=Path, default=None,
+                    help="stage rows directory with the per-day .npz arrays (variance 2(b))")
     args = ap.parse_args(argv)
     df = pd.read_csv(args.merged)
     big = pd.read_csv(args.big) if args.big else None
     res = write_summary(df, args.out, big, n_instances=args.instances,
-                        n_routes=args.routes)
+                        n_routes=args.routes, rows_dir=args.rows_dir)
     print({"branch": None if res["primary"] is None else res["primary"]["branch"],
            "crossover_n": res["crossover_n"]})
     return 0

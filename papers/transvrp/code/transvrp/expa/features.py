@@ -22,6 +22,7 @@ HISTORY_IDX = (1, 7, 8, 9, 10, 11)     # g2, g8..g12 (0-based)
 MLP_DIM = G + 3
 CLIP = 5.0
 ARMS = ("full", "scalar")
+BATCH_ROWS = 65536   # rows per block in stage_batch / mlp_batch (bounds float64 temporaries)
 
 
 @dataclass
@@ -52,6 +53,11 @@ class RouteCache:
     ``W[:, k-1]`` is the running sum, ``peak`` its running maximum, ``P``/``D``
     the running pickup and delivery sums, and ``zsum_*``/``cnt_*`` the running
     sums of standardized outcomes over stops with a positive fitted SD.
+
+    Only these (N, m) arrays are kept; the caller's ``Paths`` is not referenced,
+    so its p and d can be freed after construction. The standardized sums are
+    stored as float32 (they only feed features, which are float32 anyway); the
+    running sums that feed simulation (W, peak, g) stay float64.
     """
 
     def __init__(self, spec: RouteSpec, paths: Paths, stats: RouteStats):
@@ -61,9 +67,8 @@ class RouteCache:
             raise ValueError("paths must have shape (N, m) matching the spec")
         self.spec = spec
         self.stats = stats
-        self.paths = paths
         self.m = spec.m
-        self.g = paths.g
+        self.g = p - d
         self.W = np.cumsum(self.g, axis=1)
         self.peak = np.maximum.accumulate(self.W, axis=1)
         self.P = np.cumsum(p, axis=1)
@@ -73,8 +78,9 @@ class RouteCache:
         mask_d = stats.sd_d > 0
         zp = np.where(mask_p, (p - stats.mu_p) / np.where(mask_p, stats.sd_p, 1.0), 0.0)
         zd = np.where(mask_d, (d - stats.mu_d) / np.where(mask_d, stats.sd_d, 1.0), 0.0)
-        self.zsum_p = np.cumsum(zp, axis=1)
-        self.zsum_d = np.cumsum(zd, axis=1)
+        self.zsum_p = np.cumsum(zp, axis=1).astype(np.float32)
+        self.zsum_d = np.cumsum(zd, axis=1).astype(np.float32)
+        del zp, zd
         self.cnt_p = np.cumsum(mask_p.astype(np.int64))
         self.cnt_d = np.cumsum(mask_d.astype(np.int64))
 
@@ -101,8 +107,10 @@ def _stage_arrays(cache: RouteCache, k: int, idx: np.ndarray
     W = cache.W[idx, k - 1]
     cnt_p = cache.cnt_p[k - 1]
     cnt_d = cache.cnt_d[k - 1]
-    zbar_p = cache.zsum_p[idx, k - 1] / cnt_p if cnt_p > 0 else np.zeros(n)
-    zbar_d = cache.zsum_d[idx, k - 1] / cnt_d if cnt_d > 0 else np.zeros(n)
+    zbar_p = (cache.zsum_p[idx, k - 1].astype(np.float64) / cnt_p
+              if cnt_p > 0 else np.zeros(n))
+    zbar_d = (cache.zsum_d[idx, k - 1].astype(np.float64) / cnt_d
+              if cnt_d > 0 else np.zeros(n))
 
     glob = np.empty((n, G), dtype=np.float64)
     glob[:, 0] = W / B
@@ -142,31 +150,57 @@ def _stage_arrays(cache: RouteCache, k: int, idx: np.ndarray
     return glob, tok
 
 
-def stage_batch(cache: RouteCache, k: int, idx: np.ndarray, arm: str
-                ) -> tuple[np.ndarray, np.ndarray]:
+def _blocks(idx: np.ndarray, rows: int):
+    for s in range(0, idx.shape[0], rows):
+        yield idx[s:s + rows]
+
+
+def stage_batch(cache: RouteCache, k: int, idx: np.ndarray, arm: str,
+                block_rows: int = BATCH_ROWS) -> tuple[np.ndarray, np.ndarray]:
     """(glob (n, G), tok (n, m-k, F)) as float32. arm 'scalar' zeroes the
-    history globals; 'full' keeps them."""
+    history globals; 'full' keeps them. Rows are built in blocks of
+    ``block_rows`` (every feature is row-wise, so the result does not depend on
+    the block size), which keeps the float64 temporaries per block."""
     if arm not in ARMS:
         raise ValueError(f"arm must be one of {ARMS}")
-    glob, tok = _stage_arrays(cache, k, idx)
-    if arm == "scalar":
-        glob[:, list(HISTORY_IDX)] = 0.0
-    return glob.astype(np.float32), tok.astype(np.float32)
+    idx = np.asarray(idx, dtype=np.int64)
+    _check_stage(cache, k)
+    n, nt = idx.shape[0], cache.m - k
+    glob_out = np.empty((n, G), dtype=np.float32)
+    tok_out = np.empty((n, nt, F), dtype=np.float32)
+    at = 0
+    for blk in _blocks(idx, block_rows):
+        glob, tok = _stage_arrays(cache, k, blk)
+        if arm == "scalar":
+            glob[:, list(HISTORY_IDX)] = 0.0
+        glob_out[at:at + blk.size] = glob
+        tok_out[at:at + blk.size] = tok
+        at += blk.size
+    return glob_out, tok_out
 
 
-def mlp_batch(cache: RouteCache, k: int, idx: np.ndarray) -> np.ndarray:
+def mlp_batch(cache: RouteCache, k: int, idx: np.ndarray,
+              block_rows: int = BATCH_ROWS) -> np.ndarray:
     """(n, 15) float32: the 12 globals (no zeroing) and three route-ahead
     summaries: min_j t11 over j = k+1..m, (argmin_j t11 - k)/m, and
-    min_{k<j<m} H[j-1]/E0 (0 if no such j). Uses the stored (clipped) t11."""
-    glob, tok = _stage_arrays(cache, k, idx)
-    n, nt, _ = tok.shape
-    t11 = tok[:, :, 10]
-    arg = t11.argmin(axis=1)
-    mn = t11[np.arange(n), arg]
-    s_arg = (arg + 1) / cache.m                        # (j* - k) / m, j* = k + 1 + arg
-    if nt >= 2:
-        s_h = tok[:, :-1, 6].min(axis=1)
-    else:
-        s_h = np.zeros(n)
-    out = np.concatenate([glob, mn[:, None], s_arg[:, None], s_h[:, None]], axis=1)
-    return out.astype(np.float32)
+    min_{k<j<m} H[j-1]/E0 (0 if no such j). Uses the stored (clipped) t11.
+    Built in row blocks like ``stage_batch``."""
+    idx = np.asarray(idx, dtype=np.int64)
+    _check_stage(cache, k)
+    out = np.empty((idx.shape[0], MLP_DIM), dtype=np.float32)
+    at = 0
+    for blk in _blocks(idx, block_rows):
+        glob, tok = _stage_arrays(cache, k, blk)
+        n, nt, _ = tok.shape
+        t11 = tok[:, :, 10]
+        arg = t11.argmin(axis=1)
+        mn = t11[np.arange(n), arg]
+        s_arg = (arg + 1) / cache.m                    # (j* - k) / m, j* = k + 1 + arg
+        if nt >= 2:
+            s_h = tok[:, :-1, 6].min(axis=1)
+        else:
+            s_h = np.zeros(n)
+        out[at:at + n] = np.concatenate(
+            [glob, mn[:, None], s_arg[:, None], s_h[:, None]], axis=1)
+        at += n
+    return out

@@ -9,16 +9,23 @@ Purposes and seeds follow EXPERIMENT_A.md section 5. ``base`` is
 * dev: seed ``[base, 3]``, 5,000 paths. ``rep`` is ignored.
 * test: seed ``base + 99991``, 20,000 paths. ``rep`` is ignored.
 * test_std: seed ``base + 99991``, 2,000 paths (parity with ``route_problem``).
+  It shares its seed with test (its rows are the first 2,000 test rows): use it
+  for parity tests only, never for tuning.
 
-Only route columns are returned. Chunks are generated one at a time; the
-generator is cached with ``lru_cache(maxsize=1)``, so one chunk's instance
-arrays stay alive at most until the next chunk is requested.
+Only route columns are returned (``routes=`` restricts them further). Chunks
+are processed one at a time and released after their route columns are copied.
+With ``cache_dir`` each chunk is also kept on disk, so the routes of one
+instance (and repeated jobs) reuse it instead of regenerating it. Cache
+directories belong to a run (sweep uses ``<results-dir>/chunks``), never to the
+repository.
 """
 from __future__ import annotations
 
-import functools
+import os
 import re
 import subprocess
+import zlib
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -173,7 +180,14 @@ def _stream(inst: str, purpose: str, rep: int, c: int) -> tuple[object, int]:
     raise ValueError(f"unknown purpose {purpose!r}")
 
 
-@functools.lru_cache(maxsize=1)
+def chunk_file(cache_dir: Path, inst: str, purpose: str, rep: int, c: int,
+               seed: object, n: int) -> Path:
+    """Path of one cached chunk. The key is (instance, purpose, rep, chunk, seed);
+    the size n is included because it is fixed by the purpose."""
+    seed_tag = format(zlib.crc32(repr(seed).encode()), "08x")
+    return Path(cache_dir) / (f"{inst}__{purpose}__r{rep}__c{c}__n{n}__s{seed_tag}.npy")
+
+
 def _generate_chunk(inst: str, purpose: str, rep: int, c: int
                     ) -> tuple[np.ndarray, np.ndarray]:
     """(deliveries, pickups) for every customer of one chunk, shape (n, cust)."""
@@ -182,17 +196,51 @@ def _generate_chunk(inst: str, purpose: str, rep: int, c: int
     return gen_scenarios(sol["dbar"], sol["pbar"], n, seed)
 
 
+def _chunk_arrays(inst: str, purpose: str, rep: int, c: int,
+                  cache_dir: Path | None) -> tuple[np.ndarray, np.ndarray]:
+    """One chunk's (deliveries, pickups). With ``cache_dir`` the chunk is read from
+    ``chunk_file`` when present and otherwise generated and saved there (one
+    ``np.save`` of the stacked pair, written atomically). A cached chunk is the
+    exact float64 array that generation returned, so both paths agree bit for bit."""
+    if cache_dir is None:
+        return _generate_chunk(inst, purpose, rep, c)
+    seed, n = _stream(inst, purpose, rep, c)
+    path = chunk_file(cache_dir, inst, purpose, rep, c, seed, n)
+    if path.exists():
+        stacked = np.load(path)
+        return stacked[0], stacked[1]
+    dsc, psc = _generate_chunk(inst, purpose, rep, c)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + f".{os.getpid()}.tmp.npy")
+    np.save(tmp, np.stack([dsc, psc]))
+    os.replace(tmp, path)
+    return dsc, psc
+
+
 def route_pool(inst: str, purpose: str, rep: int = 0,
-               N: int | None = None, *, frozen: str | None = None) -> dict[int, Paths]:
-    """route_id -> Paths for every non-empty route of the 'Det' plan.
+               N: int | None = None, *, frozen: str | None = None,
+               cache_dir: Path | None = None,
+               routes: Iterable[int] | None = None) -> dict[int, Paths]:
+    """route_id -> Paths for the non-empty routes of the 'Det' plan (or only
+    ``routes`` when given).
 
     purpose 'test' is refused (TestStreamGateError) unless ``frozen`` passes
-    ``verify_test_gate``; nothing is generated in that case."""
+    ``verify_test_gate``; nothing is generated in that case. ``rep`` is ignored
+    (fixed to 0) for every purpose except 'train', so dev and test pools do not
+    depend on it. ``cache_dir`` enables the on-disk chunk cache (see
+    ``_chunk_arrays``); it must be a run directory, never the repository."""
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
     if purpose == "test":
         verify_test_gate(frozen)
+    if purpose != "train":
+        rep = 0
     specs = route_specs(inst)
+    if routes is not None:
+        wanted = {int(r) for r in routes}
+        specs = [s for s in specs if s.route_id in wanted]
+        if len(specs) != len(wanted):
+            raise ValueError(f"unknown or empty route ids for {inst}: {sorted(wanted)}")
     if purpose == "train":
         if rep not in TRAIN_REPS:
             raise ValueError("train replicate must be 0, 1 or 2")
@@ -210,11 +258,13 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
     parts_p: dict[int, list[np.ndarray]] = {s.route_id: [] for s in specs}
     parts_d: dict[int, list[np.ndarray]] = {s.route_id: [] for s in specs}
     for c, take in chunks:
-        dsc, psc = _generate_chunk(inst, purpose, rep, c)
+        dsc, psc = _chunk_arrays(inst, purpose, rep, c, cache_dir)
         for s in specs:
             r = np.array(s.route)
-            parts_p[s.route_id].append(psc[:take, r].copy())
-            parts_d[s.route_id].append(dsc[:take, r].copy())
+            # fancy indexing copies, so only the route columns outlive the chunk
+            parts_p[s.route_id].append(psc[:take][:, r])
+            parts_d[s.route_id].append(dsc[:take][:, r])
+        del dsc, psc
 
     out: dict[int, Paths] = {}
     for s in specs:

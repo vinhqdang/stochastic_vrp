@@ -82,6 +82,26 @@ def iso_fit_fn() -> FitFn:
     return fit
 
 
+DISAGREE_ROWS = 20_000   # fixed evenly spaced subsample of alive rows for the diagnostic
+
+
+def _disagreement(netA: Predictor, netB: Predictor, cache: RouteCache, k: int,
+                  alive_rows: np.ndarray, h: float) -> float:
+    """Fraction of alive rows on which the two fold predictors disagree about
+    stopping at epoch k. Computed on at most DISAGREE_ROWS evenly spaced alive
+    rows, so the diagnostic costs two forward passes on a bounded set."""
+    if alive_rows.size == 0:
+        return 0.0
+    if alive_rows.size > DISAGREE_ROWS:
+        pos = np.linspace(0, alive_rows.size - 1, DISAGREE_ROWS).round().astype(np.int64)
+        rows = alive_rows[pos]
+    else:
+        rows = alive_rows
+    a = netA.predict(cache, k, rows) > h
+    b = netB.predict(cache, k, rows) > h
+    return float(np.mean(a != b))
+
+
 def _log_entry(log: list, k: int, fold: str, fit_rows: np.ndarray,
                applied_rows: np.ndarray, disagree: float) -> None:
     log.append({"k": k, "fold": fold, "fit_rows": fit_rows,
@@ -156,12 +176,7 @@ def ls_backward(cache: RouteCache, B: float, H: np.ndarray, E: np.ndarray,
         future[Va[0.5 * (pA_val + pB_val) > h]] = h
 
         if log is not None:
-            both = np.flatnonzero(alive)
-            if both.size:
-                dis = float(np.mean((netA.predict(cache, k, both) > h)
-                                    != (netB.predict(cache, k, both) > h)))
-            else:
-                dis = 0.0
+            dis = _disagreement(netA, netB, cache, k, np.flatnonzero(alive), h)
             _log_entry(log, k, "A", Aa, Ba, dis)
             _log_entry(log, k, "B", Ba, Aa, dis)
             _log_entry(log, k, "val", np.r_[Aa, Ba], Va, dis)

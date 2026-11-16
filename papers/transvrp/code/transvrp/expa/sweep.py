@@ -34,6 +34,7 @@ import os
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 import argparse  # noqa: E402
+import json  # noqa: E402
 import math  # noqa: E402
 import pickle  # noqa: E402
 import re  # noqa: E402
@@ -56,6 +57,7 @@ from .features import RouteCache, RouteStats  # noqa: E402
 from .model import MLPNet, SetNet  # noqa: E402
 from .paths import (RouteSpec, TestStreamGateError, current_commit,  # noqa: E402
                     route_pool, route_specs, verify_test_gate)
+from .measure import Stopwatch, process_peak_rss_mb, traced_peak  # noqa: E402
 from .simulate import simulate_policy, summarize  # noqa: E402
 from .train import ConstantPredictor, NetPredictor, StageConfig, fit_neural  # noqa: E402
 
@@ -70,6 +72,7 @@ BIG_RENAME = {"baton_eq": "baton_big", "dp": "dp_big"}
 ARM_POLICY = {"full": "nn_full", "scalar": "nn_scalar", "mlp": "nn_mlp",
               "boost": "boost"}
 EVAL_SETS = ("dev", "test")
+TIMING_INST, TIMING_ROUTE = "CON3-0", 3   # section 7.3: the one full-size timing route
 ROW_COLUMNS = ["inst", "route_id", "m", "stratum", "N", "rep", "policy",
                "mean_cost", "handoff_rate", "fail_rate", "gap_closed", "n_eval",
                "eval_set", "fit_seconds", "fit_commit", "eval_commit"]
@@ -151,10 +154,15 @@ class Ctx:
     stage: str
     cfg: StageConfig
     commit: str
+    chunk_dir: Path | None = None   # on-disk chunk cache; default <results_dir>/chunks
 
     @property
     def models_dir(self) -> Path:
         return self.results_dir / "models" / self.stage
+
+    @property
+    def chunks_dir(self) -> Path:
+        return chunk_cache_dir(self)
 
     @property
     def rows_dir(self) -> Path:
@@ -270,6 +278,14 @@ def _atomic_pickle(obj, path: Path) -> None:
     os.replace(tmp, path)
 
 
+def chunk_cache_dir(ctx: Ctx) -> Path:
+    """On-disk chunk cache (section 5, M1). Keys include the instance, purpose,
+    replicate, chunk and seed, so one cache serves every route of an instance
+    and every stage. The default is ``<results_dir>/chunks``; ``--chunk-dir``
+    places it elsewhere. Chunk files are large: keep them out of version control."""
+    return Path(ctx.chunk_dir) if ctx.chunk_dir is not None else Path(ctx.results_dir) / "chunks"
+
+
 def _spec_of(inst: str, route_id: int) -> RouteSpec:
     for s in route_specs(inst):
         if s.route_id == route_id:
@@ -289,7 +305,8 @@ def run_fit_job(job: Job, ctx: Ctx) -> str:
         return "skip"
     torch.set_num_threads(1)
     spec = _spec_of(job.inst, job.route_id)
-    paths = route_pool(job.inst, "train", job.rep, job.N)[job.route_id]
+    paths = route_pool(job.inst, "train", job.rep, job.N, cache_dir=chunk_cache_dir(ctx),
+                       routes=[job.route_id])[job.route_id]
     t0 = time.perf_counter()
     if job.kind in ("ladder", "big"):
         stats = RouteStats.fit(paths)
@@ -346,7 +363,8 @@ def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
                         f"not at the frozen commit")
     job: Job = payload["job"]
     spec = _spec_of(job.inst, job.route_id)
-    pool = route_pool(job.inst, eval_set, 0, frozen=frozen)[job.route_id]
+    pool = route_pool(job.inst, eval_set, 0, frozen=frozen,
+                      routes=[job.route_id])[job.route_id]
     n_eval = int(pool.p.shape[0])
     if payload["kind"] in ("ladder", "big"):
         res = eval_classical(spec, payload["models"], pool.g)
@@ -385,10 +403,11 @@ def _run_all(fn, items: list, jobs: int) -> list:
 
 
 def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
-            jobs: int = 1, commit: str | None = None) -> dict:
+            jobs: int = 1, commit: str | None = None,
+            chunk_dir: Path | None = None) -> dict:
     spec = stage_spec(stage)
     ctx = Ctx(Path(results_dir), stage, spec.cfg,
-              current_commit() if commit is None else commit)
+              current_commit() if commit is None else commit, chunk_dir)
     planned = plan_stage(stage, elig)
     done = _run_all(partial(run_fit_job, ctx=ctx), planned, jobs)
     return {"planned": len(planned), "fitted": done.count("fit"),
@@ -452,6 +471,63 @@ def merge_stage(stage: str, eval_set: str = "dev",
     return df
 
 
+# ---------------------------------------------------------------- timing (section 7.3)
+
+def run_timing(results_dir: Path = DEFAULT_RESULTS, *, stage: str = "pilot",
+               n_rows: int = 10 ** 6, model_N: int = 10 ** 5, arm: str = "full",
+               rep: int = 0, inst: str = TIMING_INST, route_id: int = TIMING_ROUTE,
+               chunk_dir: Path | None = None) -> dict:
+    """Pilot 10^6 timing pass (section 7.3): generate the training pool of one route
+    at ``n_rows`` paths, then apply the stop updates of the fitted nets from the
+    ``model_N`` cell (the pilot's full-size cell by default). Data generation is
+    timed without the chunk cache (``chunk_dir`` None), so it measures generation.
+
+    Writes ``<results_dir>/<stage>/timing_<arm>_N<n_rows>.json`` and returns the
+    record. Peak memory is the traced peak of the generation step and of the
+    cache-plus-stop step, and the process high-water mark at the end.
+    """
+    results_dir = Path(results_dir)
+    key = Job("neural", inst, route_id, model_N, rep, arm=arm).key
+    model_path = results_dir / "models" / stage / f"{key}.pkl"
+    if not model_path.exists():
+        raise FileNotFoundError(f"timing needs the fitted model {model_path}")
+    with open(model_path, "rb") as fh:
+        payload = pickle.load(fh)
+    spec = _spec_of(inst, route_id)
+    stats = payload["stats"]
+    preds = _unpack(payload["models"])
+    sw = Stopwatch()
+    with sw.lap("generate"), traced_peak() as gen_mem:
+        pool = route_pool(inst, "train", rep, int(n_rows), cache_dir=chunk_dir,
+                          routes=[route_id])[route_id]
+    with sw.lap("cache"), traced_peak() as stop_mem:
+        cache = RouteCache(spec, pool, stats)
+        del pool
+    with sw.lap("stop_updates"):
+        costs, act = simulate_policy(cache, spec.B, spec.H, spec.E, preds,
+                                     H_bill=spec.H)
+    rec = dict(stage=stage, inst=inst, route_id=route_id, m=spec.m, arm=arm,
+               rep=rep, model_N=int(model_N), n_rows=int(n_rows),
+               generate_seconds=sw.seconds["generate"],
+               cache_seconds=sw.seconds["cache"],
+               stop_seconds=sw.seconds["stop_updates"],
+               total_seconds=sum(sw.seconds.values()),
+               mean_cost=float(costs.mean()),
+               handoff_rate=float((act == 1).mean()),
+               fail_rate=float((act == 2).mean()),
+               peak_generate_mb=gen_mem["peak_mb"],
+               peak_cache_stop_mb=stop_mem["peak_mb"],
+               retained_cache_mb=stop_mem["retained_mb"],
+               process_peak_rss_mb=process_peak_rss_mb(),
+               chunk_cache=chunk_dir is not None)
+    out = results_dir / stage / f"timing_{arm}_N{int(n_rows)}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_name(out.name + ".tmp")
+    tmp.write_text(json.dumps(rec, indent=2, sort_keys=True))
+    os.replace(tmp, out)
+    return rec
+
+
 # ---------------------------------------------------------------- CLI
 
 def main(argv: list[str] | None = None) -> int:
@@ -464,16 +540,33 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS)
         if name == "fit":
             p.add_argument("--eligibility", type=Path, default=None)
+            p.add_argument("--chunk-dir", type=Path, default=None,
+                           help="chunk cache directory (default <results-dir>/chunks)")
         if name == "eval":
             p.add_argument("--eval", dest="eval_set", required=True, choices=EVAL_SETS)
             p.add_argument("--frozen-commit", default=None)
         if name == "merge":
             p.add_argument("--eval", dest="eval_set", default="dev", choices=EVAL_SETS)
+    tp = sub.add_parser("timing", help="pilot 10^6 timing pass (section 7.3)")
+    tp.add_argument("--stage", default="pilot", choices=tuple(STAGE_SPECS))
+    tp.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS)
+    tp.add_argument("--n-rows", type=int, default=10 ** 6)
+    tp.add_argument("--model-n", type=int, default=10 ** 5)
+    tp.add_argument("--arm", default="full", choices=("full", "scalar", "mlp"))
+    tp.add_argument("--chunk-dir", type=Path, default=None)
     args = ap.parse_args(argv)
     try:
+        if args.cmd == "timing":
+            info = run_timing(args.results_dir, stage=args.stage, n_rows=args.n_rows,
+                              model_N=args.model_n, arm=args.arm,
+                              chunk_dir=args.chunk_dir)
+            print({k: info[k] for k in ("generate_seconds", "stop_seconds",
+                                        "peak_generate_mb", "peak_cache_stop_mb")})
+            return 0
         if args.cmd == "fit":
             elig = stage_eligibility(args.stage, args.eligibility)
-            info = run_fit(args.stage, elig, args.results_dir, args.jobs)
+            info = run_fit(args.stage, elig, args.results_dir, args.jobs,
+                           chunk_dir=args.chunk_dir)
         elif args.cmd == "eval":
             info = run_eval(args.stage, args.eval_set, args.results_dir,
                             args.frozen_commit, args.jobs)
