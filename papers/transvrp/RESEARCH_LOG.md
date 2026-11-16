@@ -33,3 +33,15 @@ hash appears, under a heading "FROZEN COMMIT".
 ### Environment for the pilot
 - 4 CPU cores, 15 GB RAM, about 27 GB free disk (fixed session allowance),
   Python 3.13, torch 2.15 CPU. The chunk cache goes outside the repository.
+
+### 2026-11-16 — pilot started on the DEV stream (commit e5fb8da)
+- Fix batch C committed (207 tests green). Pilot = spec section 7.3, stage `pilot`,
+  CON3-0 (4 routes), dev stream only; test stream stays closed.
+- Order: eligibility table on the 20 instances (dev) -> fit (4 workers) -> eval dev ->
+  merge -> 10^6 timing pass (FULL, 10^5 nets) -> pilot report with P1-P6.
+- Chunk cache outside the repository (session scratch); results under
+  `code/results/expA/` (chunks and models git-ignored).
+- P2 (rerun reproducibility) is not run in this first pass; it will be reported as
+  missing rather than assumed.
+- The P5 extrapolation rule was fixed in code before any pilot timing existed
+  (plan_cells docstring); MLP cost is a prior (0.2 x FULL), not measured.
