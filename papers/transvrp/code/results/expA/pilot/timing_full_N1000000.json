@@ -1,0 +1,22 @@
+{
+  "arm": "full",
+  "cache_seconds": 1.1036653820001447,
+  "chunk_cache": false,
+  "fail_rate": 0.390303,
+  "generate_seconds": 62.10295512999983,
+  "handoff_rate": 0.191676,
+  "inst": "CON3-0",
+  "m": 17,
+  "mean_cost": 62.210043988042,
+  "model_N": 100000,
+  "n_rows": 1000000,
+  "process_peak_rss_mb": 1788.64453125,
+  "rep": 0,
+  "route_id": 3,
+  "stage": "pilot",
+  "stop_seconds": 1168.3261108699999,
+  "total_seconds": 1231.5327313819998,
+  "traced_cache_stop_peak_mb": 1167.299874305725,
+  "traced_cache_stop_retained_mb": 786.7868804931641,
+  "traced_generate_peak_mb": 549.839186668396
+}
