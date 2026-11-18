@@ -296,3 +296,124 @@ def test_gpu_training_smoke_keeps_a_cpu_model():
     q = models[1][0].predict(cache, 1, np.arange(10))
     assert np.all(np.isfinite(q))
     assert next(models[1][0].net.parameters()).device.type == "cpu"
+
+
+# ------------------------------------------------- fast update path equals the old path
+
+def _update_reference(net, target, opt, table, buf, rng, cfg, H_t, E0, m):
+    """The update as implemented before the launch-overhead optimisation (verbatim): two
+    table gathers, per-array host-to-device copies, a host sync for the loss."""
+    net.train()
+    pos, ks, cs, dn = buf.sample(rng, cfg.batch)
+    glob, tok, pad = table.batch(pos, ks)
+    q_now = net(glob, tok, pad)
+    k_next = np.minimum(ks + 1, m - 1)
+    gn, tn, pn = table.batch(pos, k_next)
+    dev = q_now.device
+    with torch.no_grad():
+        q_on = E0 * net(gn, tn, pn)
+        q_tg = E0 * target(gn, tn, pn)
+        c_t = torch.as_tensor(cs, dtype=torch.float32, device=dev)
+        d_t = torch.as_tensor(dn.astype(np.float32), device=dev)
+        h_next = H_t[torch.as_tensor(ks, device=dev)]
+        y_u = double_q_target(c_t, d_t, q_on, q_tg, h_next) / E0
+    loss = torch.nn.functional.huber_loss(q_now, y_u, delta=cfg.huber)
+    opt.zero_grad()
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(net.parameters(), cfg.clip)
+    opt.step()
+    return float(loss.detach())
+
+
+def _toy_training_state(device, m=5, n=90, seed=31, capturable_opt=False, lr=1e-3):
+    """Identical initial net/target/optimiser/buffer/rng for two update implementations."""
+    import copy
+    spec, paths, cache, stats = make_setup(N=n, m=m, seed=seed, B=3.0)
+    dev = torch.device(device)
+    table = PaddedTables(cache, np.arange(n), device=dev)
+    cfg = tiny_cfg(batch=32, device=device, lr=lr)
+    torch.manual_seed(7)
+    net = masked_net().to(dev)
+    target = copy.deepcopy(net)
+    target.eval()
+    opt = dqn.make_optimizer(net, cfg.lr, dev) if capturable_opt else \
+        torch.optim.Adam(net.parameters(), lr=cfg.lr)
+    pos, ks, cs, dn = collect_transitions(cache.W, np.arange(n), spec.B, spec.E, m, 16)[:4]
+    buf = ReplayBuffer(5000)
+    buf.add(pos, ks, cs, dn)
+    H_t = torch.as_tensor(spec.H, dtype=torch.float32, device=dev)
+    return net, target, opt, table, buf, np.random.default_rng(5), cfg, H_t, spec.E0, m
+
+
+def _flat(net):
+    return torch.cat([p.detach().cpu().reshape(-1) for p in net.parameters()])
+
+
+def test_fast_update_equals_reference_bitwise_on_cpu():
+    a = _toy_training_state("cpu")
+    b = _toy_training_state("cpu")
+    for step in range(60):
+        la = _update_reference(*a)
+        lb = dqn._update(*b)
+        assert la == float(lb)
+        if step == 29:                               # a target copy in the middle
+            a[1].load_state_dict(a[0].state_dict())
+            b[1].load_state_dict(b[0].state_dict())
+    assert torch.equal(_flat(a[0]), _flat(b[0]))
+    assert a[5].integers(0, 10 ** 9) == b[5].integers(0, 10 ** 9)   # same rng consumption
+
+
+def test_train_loop_with_fast_path_equals_the_reference_loop_bitwise_on_cpu(monkeypatch):
+    spec, paths, cache, stats = make_setup(N=150, m=4, seed=33, B=2.5)
+    cfg = tiny_cfg(passes=2, target_every_tr=200)
+    new = train_dqn_record(spec, paths, 150, 0, cfg, keep_states=True)
+
+    def reference_step(net, target, opt, table, cfg_, H_t, E0, m):
+        return (lambda buf, rng: _update_reference(net, target, opt, table, buf, rng,
+                                                   cfg_, H_t, E0, m)), "eager"
+    monkeypatch.setattr(dqn, "make_step", reference_step)
+    old = train_dqn_record(spec, paths, 150, 0, cfg, keep_states=True)
+    assert new["updates"] == old["updates"] > 0
+    assert [c["sha"] for c in new["checkpoints"]] == [c["sha"] for c in old["checkpoints"]]
+    assert new["chosen_index"] == old["chosen_index"]
+
+
+@pytest.fixture
+def deterministic_cuda():
+    prev = torch.are_deterministic_algorithms_enabled()
+    torch.use_deterministic_algorithms(True)
+    yield
+    torch.use_deterministic_algorithms(prev)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="no CUDA device")
+def test_graph_update_matches_reference_on_gpu_within_1e5(deterministic_cuda):
+    """Reference (stock Adam, eager) vs the CUDA-graph path (fused Adam): relative L2
+    parameter error <= 1e-5 after 200 updates with a target copy (measured ~1e-6); the graph replay itself
+    is bitwise equal to the same update run eagerly (only the fused Adam kernel differs)."""
+    ref = _toy_training_state("cuda", lr=1e-4)       # the spec's learning rate
+    eag = _toy_training_state("cuda", capturable_opt=True, lr=1e-4)
+    new = _toy_training_state("cuda", capturable_opt=True, lr=1e-4)
+    gu = dqn.GraphUpdater(*[new[i] for i in (0, 1, 2, 3, 6, 7, 8, 9)])
+    p0 = _flat(new[0]).clone()
+    assert torch.equal(p0, _flat(ref[0]))            # capture left the initial state intact
+    for step in range(200):
+        _update_reference(*ref)
+        dqn._update(*eag)
+        gu.update(new[4], new[5])
+        if step == 99:
+            for st in (ref, eag, new):
+                st[1].load_state_dict(st[0].state_dict())
+    torch.cuda.synchronize()
+    a, b, e = _flat(ref[0]), _flat(new[0]), _flat(eag[0])
+    assert not torch.equal(b, p0)                    # it did train
+    assert torch.equal(b, e)                         # graph replay == eager, bitwise
+    rel = (torch.linalg.norm(a - b) / torch.linalg.norm(a)).item()
+    assert rel <= 1e-5
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="no CUDA device")
+def test_gpu_training_uses_the_graph_path():
+    spec, paths, cache, stats = make_setup(N=100, m=4, seed=19, B=2.5)
+    rec = train_dqn_record(spec, paths, 100, 0, tiny_cfg(passes=1, device="cuda"))
+    assert rec["update_path"] == "cuda_graph" and rec["updates"] > 0

@@ -46,6 +46,7 @@ from .padded import PaddedTables, SetNetMasked, masked_net
 os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 PRED_CHUNK = 8192
+_RING = 4
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,19 @@ def resolve_device(name: str) -> torch.device:
     if dev.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("device 'cuda' requested but CUDA is not available")
     return dev
+
+
+def _no_nan_fill() -> None:
+    """Deterministic mode would fill every ``torch.empty`` with NaN (one kernel launch each);
+    only uninitialised memory is affected, never a computed value."""
+    torch.utils.deterministic.fill_uninitialized_memory = False
+
+
+def make_optimizer(net: nn.Module, lr: float, device: torch.device) -> torch.optim.Adam:
+    """Adam; the fused capturable CUDA kernel on the GPU (one launch for all parameters),
+    the stock single-tensor implementation on the CPU (bitwise equal to the reference)."""
+    cuda = device.type == "cuda"
+    return torch.optim.Adam(net.parameters(), lr=lr, fused=cuda, capturable=cuda)
 
 
 def always_continue(pos: np.ndarray, k: int) -> np.ndarray:
@@ -234,29 +248,132 @@ def _policy_cost(net: nn.Module, val_cache: RouteCache, spec: RouteSpec, E0: flo
     return float(costs.mean())
 
 
-def _update(net, target, opt, table: PaddedTables, buf: ReplayBuffer,
-            rng: np.random.Generator, cfg: DQNConfig, H_t: torch.Tensor, E0: float,
-            m: int) -> float:
-    net.train()
-    pos, ks, cs, dn = buf.sample(rng, cfg.batch)
-    glob, tok, pad = table.batch(pos, ks)
+def make_step(net, target, opt, table, cfg, H_t, E0, m):
+    """(step(buf, rng), name): the CUDA-graph update on a GPU, the eager one otherwise or
+    when capture fails (the eager path computes the same update)."""
+    if table.device.type == "cuda":
+        try:
+            gu = GraphUpdater(net, target, opt, table, cfg, H_t, E0, m)
+            return gu.update, "cuda_graph"
+        except RuntimeError:
+            pass
+    return (lambda buf, rng: _update(net, target, opt, table, buf, rng, cfg, H_t, E0, m),
+            "eager")
+
+
+def _pad_table(table: PaddedTables) -> torch.Tensor:
+    """(L, L) bool: row k-1 marks tokens t >= m-k as padding. Cached on the table."""
+    pt = getattr(table, "_dqn_pad_tab", None)
+    if pt is None:
+        stage_real = table.m - torch.arange(1, table.L + 1, device=table.device)
+        slots = torch.arange(table.L, device=table.device)
+        pt = slots.unsqueeze(0) >= stage_real.unsqueeze(1)
+        table._dqn_pad_tab = pt
+    return pt
+
+
+def _pack_batch(buf: ReplayBuffer, rng: np.random.Generator, n: int,
+                out: np.ndarray | None = None) -> np.ndarray:
+    """Sample ``n`` transitions (same draw as ``ReplayBuffer.sample``) into one (4, n)
+    float64 array [pos, k, c, done] so that a single host-to-device copy carries a batch
+    (integers up to 2^53 are exact)."""
+    i = rng.integers(0, buf.size, size=n)
+    out = np.empty((4, n), dtype=np.float64) if out is None else out
+    out[0], out[1], out[2], out[3] = buf.pos[i], buf.k[i], buf.c[i], buf.done[i]
+    return out
+
+
+def _update_core(net, target, opt, table: PaddedTables, pk: torch.Tensor,
+                 cfg: DQNConfig, H_t: torch.Tensor, E0: float, m: int) -> torch.Tensor:
+    """The update on a device-resident packed batch ``pk``; no host synchronisation and
+    no allocation that depends on the data, so it can be captured in a CUDA graph."""
+    n = cfg.batch
+    pos = pk[0].long()
+    ks = pk[1].long()
+    c_t = pk[2].float()
+    d_t = pk[3].float()
+    k_next = torch.clamp(ks + 1, max=m - 1)
+    si = torch.cat([ks, k_next]) - 1
+    pos2 = torch.cat([pos, pos])
+    glob2 = table.glob[si, pos2]
+    tok2 = table.tok[si, pos2]
+    pad2 = _pad_table(table)[si]
+    glob, gn = glob2[:n], glob2[n:]
+    tok, tn = tok2[:n], tok2[n:]
+    pad, pn = pad2[:n], pad2[n:]
     q_now = net(glob, tok, pad)
-    k_next = np.minimum(ks + 1, m - 1)
-    gn, tn, pn = table.batch(pos, k_next)
-    dev = q_now.device
     with torch.no_grad():
         q_on = E0 * net(gn, tn, pn)
         q_tg = E0 * target(gn, tn, pn)
-        c_t = torch.as_tensor(cs, dtype=torch.float32, device=dev)
-        d_t = torch.as_tensor(dn.astype(np.float32), device=dev)
-        h_next = H_t[torch.as_tensor(ks, device=dev)]
-        y_u = double_q_target(c_t, d_t, q_on, q_tg, h_next) / E0
+        y_u = double_q_target(c_t, d_t, q_on, q_tg, H_t[ks]) / E0
     loss = nn.functional.huber_loss(q_now, y_u, delta=cfg.huber)
     opt.zero_grad()
     loss.backward()
     nn.utils.clip_grad_norm_(net.parameters(), cfg.clip)
     opt.step()
-    return float(loss.detach())
+    return loss.detach()
+
+
+def _update(net, target, opt, table: PaddedTables, buf: ReplayBuffer,
+            rng: np.random.Generator, cfg: DQNConfig, H_t: torch.Tensor, E0: float,
+            m: int) -> torch.Tensor:
+    """One double-Q update (eager). Same algorithm and RNG use as ``_update_reference`` in
+    tests/test_expb_dqn.py; the detached loss is returned as a device tensor (no sync)."""
+    net.train()
+    pk = torch.from_numpy(_pack_batch(buf, rng, cfg.batch)).to(table.device)
+    return _update_core(net, target, opt, table, pk, cfg, H_t, E0, m)
+
+
+class GraphUpdater:
+    """The same update replayed from a CUDA graph (one launch per update instead of
+    about 600). Capture runs warm-up steps on a dummy batch, then restores the parameters
+    and zeroes the optimiser state in place, so training starts from the untouched
+    initial state; ``opt`` must be created with ``capturable=True``."""
+
+    def __init__(self, net, target, opt, table, cfg, H_t, E0, m):
+        self.n, self.dev = cfg.batch, table.device
+        # ring of pinned host buffers: a buffer is rewritten only after the copy that read
+        # it (4 updates earlier) has completed
+        self.hosts = [torch.zeros((4, self.n), dtype=torch.float64).pin_memory()
+                      for _ in range(_RING)]
+        self.copied = [torch.cuda.Event() for _ in range(_RING)]
+        self.calls = 0
+        self.pk = torch.zeros((4, self.n), dtype=torch.float64, device=self.dev)
+        self.pk[0], self.pk[1] = 0.0, 1.0                  # a valid (row 0, stage 1) batch
+        net.train()
+        saved = [p.detach().clone() for p in net.parameters()]
+        step = lambda: _update_core(net, target, opt, table, self.pk, cfg, H_t, E0, m)
+        try:
+            side = torch.cuda.Stream()
+            side.wait_stream(torch.cuda.current_stream())
+            with torch.cuda.stream(side):
+                for _ in range(3):
+                    step()
+            torch.cuda.current_stream().wait_stream(side)
+            opt.zero_grad(set_to_none=True)
+            self.graph = torch.cuda.CUDAGraph()
+            with torch.cuda.graph(self.graph):
+                self.loss = step()
+        finally:                                  # also on failure: untouched initial state
+            with torch.no_grad():
+                for p, q in zip(net.parameters(), saved):
+                    p.copy_(q)
+                for st in opt.state.values():
+                    for v in st.values():
+                        v.zero_()
+        self.net = net
+
+    def update(self, buf: ReplayBuffer, rng: np.random.Generator) -> torch.Tensor:
+        self.net.train()
+        j = self.calls % _RING
+        self.calls += 1
+        if self.calls > _RING:
+            self.copied[j].synchronize()
+        _pack_batch(buf, rng, self.n, out=self.hosts[j].numpy())
+        self.pk.copy_(self.hosts[j], non_blocking=True)
+        self.copied[j].record()
+        self.graph.replay()
+        return self.loss
 
 
 class _Run:
@@ -299,6 +416,7 @@ def train_dqn_record(spec: RouteSpec, paths: Paths, N: int, rep: int, cfg: DQNCo
     device = resolve_device(cfg.device)
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
+    _no_nan_fill()
 
     folds, val = split_80_20(N)
     fit_rows = np.sort(np.concatenate(folds))
@@ -316,9 +434,11 @@ def train_dqn_record(spec: RouteSpec, paths: Paths, N: int, rep: int, cfg: DQNCo
     net = masked_net().to(device)
     target = copy.deepcopy(net)
     target.eval()
-    opt = torch.optim.Adam(net.parameters(), lr=cfg.lr)
+    opt = make_optimizer(net, cfg.lr, device)
     H_t = torch.as_tensor(spec.H, dtype=torch.float32, device=device)
     rng = np.random.default_rng(_seed(seed_key, "sample"))
+
+    step_fn, update_path = make_step(net, target, opt, table, cfg, H_t, E0, m)
 
     counts = stage_counts(W_fit, spec.B, m)
     updates_per_pass = int(counts.sum()) // cfg.per_update
@@ -351,7 +471,7 @@ def train_dqn_record(spec: RouteSpec, paths: Paths, N: int, rep: int, cfg: DQNCo
             if buf.size < cfg.learn_start:
                 since = 0
             while since >= cfg.per_update:
-                _update(net, target, opt, table, buf, rng, cfg, H_t, E0, m)
+                step_fn(buf, rng)
                 since -= cfg.per_update
                 n_updates += 1
                 if n_updates % ckpt_every == 0:
@@ -370,7 +490,7 @@ def train_dqn_record(spec: RouteSpec, paths: Paths, N: int, rep: int, cfg: DQNCo
         transitions_per_stage=[int(x) for x in per_stage], env_steps=int(env_steps),
         env_rows=fit_rows[visited], updates=int(n_updates), target_copies=target_copies,
         ckpt_every=int(ckpt_every), n_params=int(sum(q.numel() for q in net.parameters())),
-        n_val=int(val.size), device=device.type, feature_seconds=feature_seconds,
+        n_val=int(val.size), device=device.type, update_path=update_path, feature_seconds=feature_seconds,
         train_seconds=train_seconds - run.val_seconds, val_seconds=run.val_seconds,
         total_seconds=time.perf_counter() - t_start,
     )

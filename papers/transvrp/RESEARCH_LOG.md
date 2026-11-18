@@ -224,3 +224,15 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
   allowed before the freeze.
 - Not yet implemented: M19 PPO, M20 codecs/registry, M21 sweep integration (records
   `libraries` in payloads, family/model/library columns), M22 fidelity, M23 analysis_b.
+
+### 2026-11-18 22:18 GMT+7 — experiment B: M19 PPO, M20 codecs/registry, DQN update speed-up
+- M19 PPO and M20 codecs/registry implemented with tests and mutation checks
+  (`code/MUTATION_B.md`). The DQN update (M18) was optimised before any fit without
+  changing the algorithm (host syncs removed, packed copies, fused Adam, CUDA graph):
+  17.9 ms to 2.15 ms per update; CPU path bitwise equal to the old path, GPU parameter
+  difference about 1e-6 relative (fused Adam), tested with a kept reference path.
+- Full suite: 461 passed in the first run; one test-isolation failure (a `reload` in
+  test_expb_padded left a second class object for later isinstance checks) fixed in the
+  test, not in the code.
+- Open for M21: top-level `payload["libraries"]` for the gate; `dos.init_net` ignores
+  `cfg.width` (defect, fix with a test); per-pass checkpoint selection for PPO (spec 6.3).

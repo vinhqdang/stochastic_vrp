@@ -164,3 +164,75 @@ byte-for-byte afterwards (sha1 before and after). "killed" = at least one test f
   the `RouteStats` split, and the budget bookkeeping. The checkpoint tie rule (`<` ->
   `<=`) was not mutated: no test forces an exact tie; the earliest-tie property is asserted
   only on the random toy and holds there, so a tie-breaking mutant could survive.
+
+## M18 fast update path (launch-overhead optimisation, pre-freeze)
+
+Same procedure: one single-line mutation of the new fast path in `expb/dqn.py` at a time,
+`pytest tests/test_expb_dqn.py -x`, original bytes restored in a `finally` block, sha1 of
+the file verified equal before and after (restored: True). The equality tests compare the
+fast path with `_update_reference` (the old update, verbatim) in `tests/test_expb_dqn.py`:
+CPU bitwise (60 updates incl. a target copy; and a full `train_dqn_record` run, identical
+checkpoint hashes), GPU CUDA-graph vs reference relative L2 parameter error <= 1e-5 after
+200 updates at lr 1e-4 (measured about 1e-6; fused Adam is the only numerical difference;
+graph replay equals the same update run eagerly bitwise).
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| F1 | expb/dqn.py | next stage `clamp(ks + 1, max=m - 1)` -> `clamp(ks, ...)` | killed | test_expb_dqn::test_fast_update_equals_reference_bitwise_on_cpu |
+| F2 | expb/dqn.py | packed batch swaps cost and done columns | killed | test_expb_dqn::test_one_stage_route_converges_to_the_breach_cost_within_two_percent |
+| F3 | expb/dqn.py | fused gather stage index `cat([ks, k_next]) - 1` -> no `- 1` | killed | test_expb_dqn::test_always_continue_visits_every_stage_with_alive_rows |
+| F4 | expb/dqn.py | cached pad table `>=` -> `>` | killed | test_expb_dqn::test_fast_update_equals_reference_bitwise_on_cpu |
+| F5 | expb/dqn.py | graph capture restore `p.copy_(q)` -> `p.add_(0.0)` (warm-up leaks into training) | killed | test_expb_dqn::test_graph_update_matches_reference_on_gpu_within_1e5 |
+| F6 | expb/dqn.py | graph capture does not zero optimiser state `v.zero_()` -> `v.add_(0.0)` | killed | test_expb_dqn::test_graph_update_matches_reference_on_gpu_within_1e5 |
+
+Not mutated: the pinned-buffer ring synchronisation (a race, not deterministically
+detectable by a test; reviewed by reading).
+
+# MUTATION_B: mutation checks for M19 (PPO), M20 (codecs, registry)
+
+Same procedure as above: one single-line mutation at a time, the targeted tests run with
+`pytest -x -k <selector>`, original bytes restored and verified by sha1 before and after.
+Every mutant was restored byte-for-byte (`restored: true` in the run log).
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| P1 | expb/ppo.py | clipped term `clamp(ratio, 1-clip, 1+clip) * adv` -> `ratio * adv` (no ratio clipping) | killed | test_expb_ppo::test_clipped_loss_matches_hand_computation |
+| P2 | expb/ppo.py | advantage `returns - values_old` -> `values_old - returns` (sign flipped) | killed | test_expb_ppo::test_policy_learns_the_optimal_threshold_on_the_one_stage_toy |
+| P3 | expb/ppo.py | handoff reward `-H/E0` -> `-H` (not scaled by E0) | killed | test_expb_ppo::test_step_reward_is_scaled_by_E0_and_follows_the_breach_convention |
+| P4 | expb/ppo.py | recomputed GRU state uses zero hidden at each stage (state not carried) | killed | test_expb_ppo::test_gru_state_is_carried_across_decision_stages |
+| P5 | expb/ppo.py | handoff masked only for `k < m` -> `k <= m` (handoff allowed at stage m) | killed | test_expb_ppo::test_masked_logits_give_zero_handoff_probability_at_stage_m |
+| P6 | expb/ppo.py | initial policy bias `logit(init_p)` -> `0` (initial handoff 0.5) | killed | test_expb_ppo::test_initial_handoff_probability_is_five_percent_at_every_state |
+| P7 | expb/ppo.py | return recursion `r + gamma*acc` -> `r + acc` (gamma ignored) | killed | test_expb_ppo::test_discounted_returns_match_hand_computation_for_gamma_half_and_one |
+| P8 | expb/ppo.py | empty-episode skip `if ep.ks.size == 0` -> `if False` (update on no decisions) | killed (by a raised error in the update, not an assertion) | test_expb_ppo::test_episodes_without_decisions_make_no_update |
+| C1 | expb/codecs.py | unpack builds an untrained network (`load_state_dict` removed) | killed | test_expb_codecs::test_round_trip_predictions_are_identical_for_every_arm[dqn] and test_unpacked_network_carries_the_trained_weights |
+| C2 | expb/codecs.py | shared-network index check `id(net) not in index` -> `True` (one copy per predictor) | killed | test_expb_codecs::test_shared_network_is_stored_once_per_job (3 networks, expected 1) |
+| C3 | expb/codecs.py | grid tie tolerance dropped on pack (`tie_tol` -> 0.0) | killed | test_expb_codecs::test_round_trip_predictions_are_identical_for_every_arm[thr] |
+| C4 | expb/codecs.py | DOS input dimension on pack `in_features` -> 14 | killed | test_expb_codecs::test_round_trip_predictions_are_identical_for_every_arm[dos] (load error) |
+| C5 | expb/codecs.py | `libraries` not recorded (`library_versions()` -> `{}`) | killed | test_expb_codecs::test_blob_records_the_library_versions_of_the_running_process |
+| C6 | expb/codecs.py | PPO predictor E0 doubled on unpack | killed | test_expb_codecs::test_round_trip_predictions_are_identical_for_every_arm[ppo] |
+| C7 | expb/codecs.py | constant predictor value dropped on unpack (`value` -> 0.0) | killed | test_expb_codecs::test_constant_fallback_predictors_round_trip |
+| R1 | expb/registry.py | ALP-Z bound to the THR fit function | killed | test_expb_registry::test_alpz_budget_reports_the_lp_size_and_thr_budget_the_grid |
+| R2 | expb/registry.py | THR `split=False` -> `True` | killed | test_expb_registry::test_split_and_predictor_kind_follow_section_3 |
+| R3 | expb/registry.py | PPO predictor kind "surrogate" -> "cost" | killed | test_expb_registry::test_split_and_predictor_kind_follow_section_3 |
+| R4 | expb/registry.py | config class check `elif not isinstance(...)` -> `elif False` | killed | test_expb_registry::test_fit_arm_refuses_a_config_of_the_wrong_class |
+| R5 | expb/registry.py | `ARM_POLICY_B` not identity (ppo dropped) | killed | test_expb_registry::test_b_arms_and_policy_map_are_the_six_named_arms |
+| R6 | expb/registry.py | unknown-arm check `if arm not in ARM_SPECS` -> `if False` | killed | test_expb_registry::test_fit_arm_refuses_an_unknown_arm |
+
+## Survivors and how they were closed
+
+- **C4 as first written (DOS `width` -> 55) survived.** The mutant is equivalent under the
+  current fit: `dos.init_net` always builds `DOSNet()` (width 55) and ignores `cfg.width`
+  (dos.py:82), so the packed width is 55 whichever config was passed. This is a defect in
+  M16, not in the codec, and is reported rather than fixed here (dos.py is out of scope).
+  C4 was replaced by the input-dimension mutant above, which is not equivalent.
+- **C5 first run selected no test** (`-k libraries` matches no test name; exit code 5).
+  Re-run with `-k library_versions`: killed.
+
+## Limits of the check
+
+- Single-line mutants, each checked against the named tests. A kill shows a test detects
+  the mutant, not that it is the only detectable fault.
+- P8 is killed by an exception inside the update, not by an assertion; it is recorded as such.
+- Not mutated: the entropy term (coefficient 0 in every spec config), the GRU cache
+  bookkeeping in `PolicyPredictor._reusable` (covered only by the cached/recomputed and
+  out-of-order tests), the pass-level checkpoint bookkeeping, and the budget counters.

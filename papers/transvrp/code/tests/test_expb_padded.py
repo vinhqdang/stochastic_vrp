@@ -239,8 +239,14 @@ def test_importing_expb_leaves_setnet_outputs_and_fast_path_flag_unchanged():
     flag = torch.backends.mha.get_fastpath_enabled()
     with torch.no_grad():
         before = net(glob, tok).numpy().copy()
-    importlib.reload(padded)
-    with torch.no_grad():
-        after = net(glob, tok).numpy()
+    saved = dict(vars(padded))
+    try:
+        importlib.reload(padded)
+        with torch.no_grad():
+            after = net(glob, tok).numpy()
+    finally:
+        # reload rebinds the module's classes; put the originals back so that
+        # isinstance checks in other test modules keep seeing one class
+        vars(padded).update(saved)
     assert torch.backends.mha.get_fastpath_enabled() == flag
     assert np.array_equal(before, after)
