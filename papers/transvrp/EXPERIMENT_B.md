@@ -1,7 +1,7 @@
 # EXPERIMENT B — FULL against published algorithms on the two-action handoff
 
-Status: pre-registration, **revision 3 (after REVIEW_B2), 3.1 (source verification)**, 2026-11-18, **before any B
-code or run**. Revision 1 was reviewed in `REVIEW_B.md`, revision 2 in `REVIEW_B2.md`
+Status: pre-registration, **revision 3.4 (2026-11-19, before the pilot; 3.1 source verification, 3.2 gate definitions, 3.3 after CODE_REVIEW_B)**,
+2026-11-19. Revision 1 was reviewed in `REVIEW_B.md`, revision 2 in `REVIEW_B2.md`
 (both: accept with required changes); response tables are appended there and the changes
 are listed in section 15. The two sources revision 1 could not read are read in full:
 `METHODS_ALP_PPO.md`.
@@ -54,10 +54,10 @@ Values chosen without pilot evidence. Each is frozen after the pilot unless chan
 | T1 | tie tolerance, THR and ALP-Z | hand off iff Ĉ ≥ H − 1e-6·E0 | Zhu eq. 29.1 gives ties to the preventive action; LP vertices are tight exactly at handoff states | larger: more handoffs near the threshold; smaller: LP round-off flips decisions |
 | T2 | ALP-Z lattice | n_w = 401 | LP ≈ 6.4k variables, ≤ 2.6M nonzeros, minutes in HiGHS | finer: ALP-Z closer to THR, LP slower; coarser: discretisation loss |
 | T3 | THR grid | 2,001 points | interpolation error ≪ per-day SE; 4,001 check reported | changes thresholds by < 1 grid step |
-| T4 | B-THR | within 3 SE on ≥ 99% of route-reps | 3 SE passes 99.7% by chance if exact | lower share: weaker bug detection |
+| T4 | B-THR | within **4 SE** (per route, on the replicate mean) on ≥ 99% of routes | 4 SE passes 99.994% of exact routes per route; with 62 routes and no failure allowed, a correct THR is falsely dropped about 0.4% of the time (3 SE: about 15%) (revision 3.4) | lower share or fewer SE: more false drops; weaker bug detection the other way |
 | T5 | B-ALPZ | identities within 1e-6·E0; deployed decisions = lattice DP on ≥ 99.9% of visited dev states | exact up to float and interpolation edges | looser: masks assembly bugs |
 | T6 | P1 | dev cost ≤ best trivial policy + 2 SE | "never hand off" is in every arm's class | tighter: more arms leave the family |
-| T7 | bug detectors RLSM / DOS | 90% / 95% of stages with ≥ 100 rows | catch gross errors only | none on claims |
+| T7 | bug detectors RLSM / DOS | 90% / 95% of stages with ≥ 100 rows; DOS objective within a **relative** tolerance 0.02·\|always-stop − never-stop objective\| of min(always, never) (revision 3.4) | catch gross errors only; a correct DOS at 400 steps passes (investigation: worst gap 5.4e-3 of the always/never gap) | none on claims |
 | T8 | tuning tie window | 0.10 points | about one per-day SE of the dev score | wider: cheaper configs win more often |
 | T9 | learning curve | P_max = 3; budget-limited if gain > 0.5 points in pass 3 | 3 passes ≥ Kadyrov's 200k episodes | other margin moves the label |
 | T10 | DQN update shape | batch 256, 1 update / 32 transitions, target every {8k, 32k} transitions | source replay ratio 8 at feasible cost | more updates: about 8× GPU time |
@@ -78,8 +78,8 @@ Values chosen without pilot evidence. Each is frozen after the pilot unless chan
   same 10^5 paths.
 - **RE-EVAL** (outside the family; renamed from "REP", which was not a replication).
   FULL vs baton_eq at 10^5 on the fresh stream test_b. It re-samples **test days only**:
-  the models are refits that pilot Q3 shows to be bitwise A's (or A's own files under
-  cut (i)), so it says nothing about training-draw variance. Training variance comes
+  the models are refits that pilot Q3 checks against A's (A's own files are never reused:
+  cut (i) was struck in revision 3.3), so it says nothing about training-draw variance. Training variance comes
   from the three training replicates only. A training replication (new reps 3–5) is
   out of scope.
 
@@ -132,7 +132,7 @@ every sentence about it; no sentence "FULL beats ⟨arm⟩" is written without i
 - **Descriptive test_b rows** for every arm outside F: gate-dropped and P1-failing
   arms. test_b is B's own stream; evaluating them costs minutes and removes no
   information, the family being already fixed.
-- **ALP-Z vs THR agreement**: share of identical test_b decisions and the paired cost
+- **ALP-Z vs THR agreement**: share of route-reps with identical test_b mean cost (the rows hold costs, not decisions) and the paired cost
   difference; if decisions agree on > 99% of dev states the paper adds "ALP-Z coincides
   with THR on a fixed route" (descriptive; F unchanged).
 - **Independence world** (section 3.8): ladder, THR, ALP-Z and FULL on an
@@ -302,8 +302,8 @@ paper's depth notation would give one hidden layer for I = 2, but it names two w
 as two hidden layers], ReLU hidden activations [SRC p.5], logistic (sigmoid) output
 [SRC p.6], batch normalisation, Xavier init and Adam [SRC p.9; placement of batch
 normalisation not stated]; batch 8,192 [SRC p.14, fresh paths per step; 2,048 in the
-fractional-Brownian example, p.19]; learning rate not stated in the source; steps S_k = clip(⌈20·n_k/8192⌉, 50,
-400); warm start from the same fold's stage-(k+1) net, **cold start when that predictor
+fractional-Brownian example, p.19]; learning rate not stated in the source; steps S_k = clip(⌈20·n_k/8192⌉, 400,
+400), i.e. **400 steps per stage** (revision 3.4: `s_min = s_max = 400`, `epochs_factor` 20 unchanged; about 13% of the source's per-date budget); warm start from the same fold's stage-(k+1) net, **cold start when that predictor
 is a `ConstantPredictor`** (as `neural_fit_fn`, train.py:222-224); checkpoints as A §4.3
 selected by L on validation rows. **Adaptation stated in the paper: trained on a fixed
 sample** (the source resamples fresh paths every step). Tuning grid: lr ∈ {1e-3, 3e-4}.
@@ -410,7 +410,7 @@ and is not expected to be chosen.
 ### 3.7 Reference arms
 
 - `nn_full` @ 10^5, reps 0–2: A's `fit_neural(..., "full", ...)`, A's `StageConfig()`;
-  no B tuning of FULL. Under cut (i): A's own model files (section 9.2).
+  no B tuning of FULL. Always refitted by B (A's model files are not reused, 9.2).
 - Ladder @ 10^5, reps 0–2, `ladder_labels = ("none", "baton_eq", "oracle")` (no
   `tuned_tau`).
 
@@ -424,8 +424,11 @@ To separate method from mis-specification, on the **12 subset routes, rep 0**:
   marginals unchanged, dependence removed. They are fitted at F and listed in the FROZEN
   line and in the FAMILY line's `independence=[...]` list like every other stage, so the
   gate covers them (5.3).
-- THR and ALP-Z use only marginals, so `b_thr_ind` and `b_alpz_ind` models must equal
-  `b_thr` and `b_alpz` models of the same jobs (sha256 of the tables; bug check).
+- THR and ALP-Z use only marginals, so `b_thr_ind` and `b_alpz_ind` decisions must agree
+  with `b_thr` and `b_alpz` of the same jobs within the interpolation tolerance (bug
+  check). The tables themselves are not byte-equal: the grid bounds use min_k W_k, a joint
+  quantity that changes under column permutation (revision 3.3; revisions 3 to 3.2
+  required sha256 equality, which cannot hold and was never implemented).
 - In this world THR is the exact optimum up to grid error, so FULL − THR measures FULL's
   approximation loss where THR's assumption holds.
 Reported only as: "THR's realised cost on the real stream exceeds its own-model DP value
@@ -523,7 +526,7 @@ replaces HEAD equality by hash equality of everything the evaluation depends on.
 - **Model manifest** per stage: `code/results/expB/<stage>/models.sha256`, one sorted line
   per model file `"<sha256 of raw bytes> <key>.pkl <fit_commit> <fit_tree_clean>"`,
   written by `sweep manifest --stage <s>`. Model pickles stay git-ignored; the manifests
-  are committed. Reuse stages (cut (i)) get the same manifest over A's files.
+  are committed. There are no reuse stages (cut (i) was struck in revision 3.3).
 - **Family derivation**: `fidelity.py` ends `fidelity_dev.md` with a fenced block
   ```` ```family-derivation ```` holding JSON: per arm every gate value and verdict, and
   the lists `family`, `descriptive`, `dropped` (`arm:gate`), `references`,
@@ -557,9 +560,7 @@ replaces HEAD equality by hash equality of everything the evaluation depends on.
    contains no FAMILY line and no FROZEN (test_b) line naming `stage`.
 5. **Code.** tree_hash(HEAD, CODE) == `code_sha256` (nothing in CODE changed since M), and
    tree_hash(F, CODE∖EXCL(stage)) == tree_hash(HEAD, CODE∖EXCL(stage)) (evaluated code =
-   fitted code, file by file, after CRLF normalisation). Reuse stages: the second
-   equality is over `data.py, baton/, expa/{features,model,backward,simulate,train,
-   baselines}.py` with F = c37ad7c, plus cut (i) condition 3.
+   fitted code, file by file, after CRLF normalisation).
 6. **Models.** The manifests at HEAD hash to `manifests_sha256`; every model file of the
    stage exists, hashes to its manifest line, the line's fit commit is F and
    `fit_tree_clean` is True, and the file count equals the stage's planned job count.
@@ -584,22 +585,26 @@ with a reason; the paper reports every patch).
 
 **Numbered sequence** (bash, repository root; `S` = every B stage to evaluate on test_b:
 `b_ladder b_full b_thr b_alpz b_rlsm b_dos b_dqn b_ppo b_ladder_ind b_thr_ind b_alpz_ind
-b_full_ind`, with `b_full_reuse b_ladder_reuse` replacing `b_full b_ladder` under cut (i);
+b_full_ind`; under cut (i) `b_dos` is absent and the FAMILY `dropped` list carries `dos:cut`;
 `C=papers/transvrp/code`):
 1. `git pull origin main`; all B code and tests committed; `python -m pytest tests -q`
    green (in `$C`); the clean check of gate item 1 passes.
 2. `F=$(git rev-parse HEAD)` — the **fit commit**. Nothing in CODE changes from here on,
    except a repair (step 5).
 3. `for s in $S; do python -m transvrp.expa.sweep fit --stage $s --jobs 12
-   --eligibility results/expA/eligibility_dev.csv; done` (in `$C`; DQN stages run on the
-   GPU process). Payloads record `fit_commit=$F`, `fit_tree_clean=True`, library
+   --eligibility results/expA/eligibility_dev.csv; done` (in `$C`). B stages read and write `results/expB` by default (`--results-dir`
+   overrides it, `sweep manifest` included), the tree the gate reads. `--jobs 12` is capped
+   to one process for a stage whose arm resolves to CUDA (`MAX_GPU_JOBS = 1`: DQN and its
+   tuning stages); CPU arms keep 12 workers. Payloads record `fit_commit=$F`, `fit_tree_clean=True`, library
    versions; a dirty tree aborts.
 4. `for s in $S; do sweep eval --stage $s --eval dev --jobs 12; sweep merge --stage $s
    --eval dev; sweep manifest --stage $s; done`; then `python -m transvrp.expb.fidelity
    --out results/expB/fidelity_dev.md` (bug gates, P1, budget labels, family-derivation
    block).
 5. Repair (only if a bug gate fails; section 7): fix in that arm's OWN file + test,
-   commit → `F2`; refit only that stage at `F2`; redo step 4 for it. A fix needing any
+   commit → `F2`; delete that stage's `results/expB/models/<stage>` and
+   `results/expB/<stage>/rows` (fit and eval skip existing files, so stale models and dev
+   rows would otherwise survive); refit only that stage at `F2`; redo step 4 for it. A fix needing any
    other CODE file means every stage is refitted at the new commit.
 6. **Per-stage code check**: `for s in $S; do git diff --quiet $F_s HEAD --
    $C/transvrp $(for a in <other arms of s>; do echo ":(exclude)$C/transvrp/expb/$a.py";
@@ -636,7 +641,7 @@ break check 5 and show in history. The paper says both.
 ### 6.1 Routes, score, rule
 
 - **Tuning routes:** the 12 subset routes, replicate 0, N = 10^5, dev stream. Under cut
-  (iii): the 3 medium and 3 long subset routes with the smallest (inst, route_id) in
+  (ii): the 3 medium and 3 long subset routes with the smallest (inst, route_id) in
   `eligibility_dev.csv` order.
 - **Grids:** THR none; ALP-Z none; RLSM 6; DOS 2; DQN 4 × P; PPO 4 × P. Each config is
   one stage `b_tune_<arm>_c<i>` (dev only, own models dir; `Job.key` carries no config,
@@ -646,7 +651,11 @@ break check 5 and show in history. The paper says both.
 - **Rule:** lowest score; configs within 0.10 points count as tied; among tied, fewer
   passes, then lower total fit seconds, then lower index. Chosen configs and all scores
   are logged before the main fit. A config that crashes or gives a non-finite cost is
-  excluded and logged.
+  excluded and logged. Implemented by `expb/choose.py` (`choose_config`); the chosen
+  configs enter `stages.CHOSEN_ARM_CFG` only through the committed
+  `results/expB/tuning_record.json` (every score, fit seconds, hashes of the tuning CSVs;
+  the loader re-derives the choice and refuses a hand-edited record). Seconds are a
+  config's summed tuning-job fit seconds, so they separate configs at equal pass counts.
 
 ### 6.2 What is not tuned
 
@@ -664,7 +673,7 @@ config; (config, P) is chosen jointly by 6.1. These curves survive every cut.
   setting depends on the total number of passes (constant lr, constant target period, no
   ε schedule, no lr schedule); a test checks this on the toy route.
 - **Budget-limited label** (pre-registered): the arm is labelled budget-limited if, for the
-  chosen config, score(P=2) − score(P=3) > 0.5 points (still improving), or if cut (v)
+  chosen config, score(P=2) − score(P=3) > 0.5 points (still improving), or if cut (iv)
   forces the main fit to P_main < P* and score(P_main) − score(P*) > 0.5. Otherwise the
   paper writes "not labelled budget-limited", never "converged": the label rests on rep 0
   and the tuning routes and detects only improvement between passes 2 and 3.
@@ -685,10 +694,10 @@ detect a broken implementation; **P1** is a performance bound.
 | id | arm(s) | type | gate |
 |---|---|---|---|
 | B0 | all | bug | 100% of jobs fitted; all dev costs finite; C ≥ C_oracle on every route-rep. |
-| B-THR | THR | bug, exact under own model | (a) On independence-resampled dev days, simulated THR cost within 3 per-day SE (SE of the 5,000 permuted days) of its DP value E_{g1}[1{g1 > B}E[0] + 1{g1 ≤ B}V_1(g1)] on ≥ **99%** of route-reps. (b) C_k nondecreasing in w on the grid for every k and job (tolerance 1e-9·E0): exact under independence (cf. Zhu et al. Prop. 1, monotone penalty). (c) 4,001-point refinement: thresholds reported, not gated. |
+| B-THR | THR | bug, exact under own model | (a) On independence-resampled dev days, simulated THR cost within **4** per-day SE (SE of the 5,000 permuted days; per route, on the mean over the route's replicates) of its DP value E_{g1}[1{g1 > B}E[0] + 1{g1 ≤ B}V_1(g1)] on ≥ **99%** of route-reps. (b) C_k nondecreasing in w on the grid for every k and job (tolerance 1e-9·E0): exact under independence (cf. Zhu et al. Prop. 1, monotone penalty). (c) 4,001-point refinement: thresholds on a 4,001-point grid against the 2,001-point grid, max difference relative to E0 on the G2 route-reps, reported by `fidelity.py` (`info.thr_refinement`); never gated and never in the family/dropped lists. |
 | B-ALPZ | ALP-Z | bug, exact | (a) LP status optimal on 100% of jobs. (b) LP objective equals the lattice-DP initial value (same lattice and binned pmfs, computed by backward recursion) within 1e-6·E0 on 100% of jobs: the basis is exact on a fixed route, so the LP optimum is V*(s_0). (c) Uniform-weight variant of the same LP equals the lattice DP at every lattice point within 1e-6·E0 on the G2 route-reps (detects constraint-assembly errors off the optimal path). (d) **Deployed decisions**: on every dev state the deployed ALP-Z policy visits, its decision (rule T1) equals the lattice-DP decision (same formula with V* in place of f) except where |L^DP − H| ≤ 1e-6·E0, on ≥ 99.9% of visited states (exceptions listed). Off-path vertex differences of the published objective are reported (share of lattice states with f < V* − 1e-6·E0). |
 | B-RLSM | RLSM | bug detector only | Ridge normal-equation residual ≤ 1e-8 relative; validation MSE ≤ constant-predictor MSE on ≥ 90% of stages with ≥ 100 alive validation rows. Not presented as fidelity. |
-| B-DOS | DOS | bug detector only | Stage objective on validation rows ≤ min(always stop, never stop) + 1e-6 on ≥ 95% of stages with ≥ 100 alive validation rows. Not presented as fidelity. |
+| B-DOS | DOS | bug detector only | Stage objective on validation rows ≤ min(always stop, never stop) + **0.02·\|always-stop objective − never-stop objective\|** (relative tolerance, revision 3.4; `ctx.dos_tol` / `--dos-tol` = 0.02) on ≥ 95% of stages with ≥ 100 alive validation rows. Not presented as fidelity. |
 | B-DQN | DQN | bug, exact | Stored transitions per stage = alive fitting (row, k) pairs × passes on 100% of jobs; kept checkpoint finite. |
 | B-PPO | PPO | bug, exact | Zero actions at k = m; cached and recomputed `PolicyPredictor` outputs equal on 1,000 dev rows per job; finite. |
 | P1 | all | performance | Pooled dev cost (sum over routes, mean over reps) ≤ min(C_none, C_h1) + 2·SE, C_h1 = "hand off at k = 1" (cost E[0] if W_1 > B else H[0]), SE from per-day paired SEs summed in quadrature over routes. Every arm's policy class contains "never hand off", so an arm worse than it beyond noise has not found a policy its own class contains. |
@@ -702,8 +711,10 @@ Consequences:
   only (with a test; a hyper-parameter change is not a repair, grids are section 6),
   logged with its dev evidence, re-fitting only that arm's stage at a new commit, paid
   from the headroom of section 9 (if the refit does not fit, no repair). Still failing:
-  `dropped=[arm: gate]`, evaluated on test_b descriptively.
-- **P1 failure**: out of F, evaluated on test_b descriptively, no repair. For PPO this is
+  `dropped=[arm:gate]`, evaluated on test_b descriptively.
+- **P1 failure**: out of F, evaluated on test_b descriptively, no repair. The derivation
+  lists the arm in `descriptive` and records `arm:p1` in `dropped` (revision 3.3 aligns the
+  wording with `derive_family`; an arm can therefore sit in both lists). For PPO this is
   consistent with the source (METHODS_ALP_PPO §2.4) and reported that way.
 - The family-derivation block of `fidelity_dev.md` (5.3) is computed from these results only.
 
@@ -761,7 +772,7 @@ Priors per job, contention included:
 |---|---|---|
 | ladder @ 10^5, 186 jobs (CPU) | 1.7 | 0.2 h |
 | nn_full @ 10^5 refit, 186 (CPU) | 120 | 10.0 h |
-| THR 2 + ALP-Z 5 + RLSM 3 + DOS 10 min, 186 each (CPU) | 62 | 5.2 h |
+| THR 2 + ALP-Z 5 + RLSM 3 + DOS 2.8 min (400 steps, revision 3.4), 186 each (CPU) | 39.6 | 3.3 h (DOS ≈ 0.7 h) |
 | DQN main, 186 jobs, P = 1 / 3 (GPU, serial) | 27.9 / 46.5 | 27.9 / 46.5 h |
 | PPO main, 186 jobs, P = 1 / 3 (CPU) | 214 / 642 | 17.8 / 53.5 h |
 | tuning tables cache, 12 routes (CPU) + DQN tuning 4 × 12 runs (GPU) | 1.0 + 8.0 | 9.0 h |
@@ -769,7 +780,7 @@ Priors per job, contention included:
 | tuning RLSM 6 × 12, DOS 2 × 12 (CPU) | 7.6 | 0.6 h |
 | independence world: `b_full_ind` + `b_ladder_ind`, `b_thr_ind`, `b_alpz_ind` (12 jobs each) | 9.2 | 0.8 h |
 | dev + test_b evaluation of all stages, merges, manifests, gates | — | 4 h |
-| **total, sequential sum, P = 1 / P = 3** | | **≈ 89 h / ≈ 144 h** |
+| **total, sequential sum, P = 1 / P = 3** | | **≈ 87.4 h / ≈ 142 h** (revision 3.4: DOS 400 steps, −1.9 h; the cut arithmetic below is as of revision 3.3 and is superseded by this row, the pilot measures it) |
 
 Reconciliation with REVIEW_B2 §4 (≈ 139 h): revision 2's 134.9 h plus the reviewer's
 +4 h for per-config tables gives 138.9 h. Revision 3 instead caches the tuning tables
@@ -777,40 +788,37 @@ Reconciliation with REVIEW_B2 §4 (≈ 139 h): revision 2's 134.9 h plus the rev
 job-hours (+3.1 h), runs PPO one episode at a time as the source does (+3.7 h main,
 +1.0 h tuning), and adds the three gated independence stages (+0.1 h): 143.6 h.
 
-**Trigger outcome under these priors: cut (i) is expected to apply.** 143.6 h > 134.4 h;
-after cut (i) (−10.0 h) the projection is 133.6 h ≤ 134.4 h, leaving 34.4 h of headroom
-for repairs. The margin is 0.8 h, so a pilot measurement about 1% slower also triggers
-cut (ii) (drop DOS, −2.9 h → 130.7 h). With GPU and CPU work overlapped (GPU 54.5 h; CPU
+**Trigger outcome under these priors: cuts apply.** 143.6 h > 134.4 h. Cut (i) (drop DOS,
+−2.9 h) gives 140.7 h; cut (ii) (6 tuning routes, half of the 23.4 h of tuning, −11.7 h)
+gives 129.0 h ≤ 134.4 h, leaving 39.0 h of headroom for repairs (revision 3.2 relied on
+reusing A's models, −10 h, which is struck). The pilot replaces every prior, including the
+DQN update speed-up of M19, which is measured there and not assumed. With GPU and CPU work overlapped (GPU 54.5 h; CPU
 89.1 h on 11 workers ≈ 97 h) the real wall is about 97 h, but the sequential sum is the
 binding number. If CUDA fails in the pilot, DQN falls back to the CPU (≈ 3.2 h per pass
-and job, ≈ 271 h before cuts) and all five cuts apply (≈ 76 h).
+and job, ≈ 271 h before cuts) and all four cuts apply (≈ 86 h; revision 3.2's ≈ 76 h
+included the struck reuse cut, −10 h).
 
 ### 9.2 Ordered cuts (least harm to the competitors first; each logged)
 
-(i) **Reuse A's FULL and ladder models (accepted with the reviewer's conditions).**
-nn_full and ladder @ 10^5, reps 0–2, are A's `main`-stage model files (fit commit c37ad7c,
-`fit_tree_clean == True`), not refits. Allowed only if all hold:
-1. Pilot Q3 on ≥ 6 jobs (one short, one medium, one long route; CON3 and SCA3; reps 0–2;
-   including A's slowest job): refit at the pilot commit is `np.array_equal` to A's file
-   on all 5,000 dev rows for every fold net and ladder model.
-2. `git diff --quiet c37ad7c HEAD -- data.py baton/ expa/{features,model,backward,
-   simulate,train,baselines}.py` at the pilot commit and at F (gate check 5); and the
-   train pool at B equals A's (sha256 of the first 10^5 rows per instance and rep).
-3. Re-evaluating A's 186 nn_full and ladder files on dev with B's code reproduces A's
-   committed dev rows (`results/expA/main.csv`) exactly (mean_cost bit-equal); this
-   covers the changed evaluation path in sweep.py/paths.py.
-4. The stage manifest (path, sha256, fit_commit, fit_tree_clean) of the used files is
-   committed in M, before the FAMILY line, and enters `manifests_sha256`; the gate
-   verifies each file (5.3 check 6).
-5. RE-EVAL is then computed with A's own models and the paper says so.
-Saves ≈ 10 h; touches no competitor. If the refit fits the budget, refit (fewer special
-cases).
-(ii) **Drop DOS** (`dropped=[dos: compute cut]`); saves ≈ 3 h. Counted before stop rule 2.
-(iii) **Tune on 6 routes** (3 medium + 3 long, 6.1); halves tuning.
-(iv) **Replicates 3 → 2 for every arm, FULL and the ladder included** (reps 0, 1), so all
-contrasts stay paired in training reps.
-(v) **Main fit of DQN and PPO at P = 1** regardless of P*; the 3-pass tuning curves are
-kept and the budget-limited rule of 6.3 applies.
+Cut (i) of revisions 1 to 3.2 (reuse A's FULL and ladder models) is **struck** (revision
+3.3): A's payloads carry no `libraries` record, so gate item 8 cannot pass for them; the
+DQN update is fast enough that its ≈ 10 h saving is not needed; and refitting leaves fewer
+special cases. `b_full_reuse` and `b_ladder_reuse` stay in `stages.py` as disabled stages:
+every entry point (`sweep fit/eval/merge/manifest`, the gate) refuses them.
+
+The cuts are a pre-committed configuration, `stages.Cuts` in `stages.ACTIVE_CUTS`, edited
+before the fit commit F. The active set is part of `code_sha256` and is written into every
+B fit payload (`cuts`).
+
+(i) **Drop DOS** (`Cuts(drop_dos=True)`): removes `b_dos` and `b_tune_dos_*`; the FAMILY
+line carries `dropped=[dos:cut]` (no space: the list class is `[a-z0-9_:,]`); saves ≈ 1 h (revision 3.4).
+Counted before stop rule 2.
+(ii) **Tune on 6 routes** (`Cuts(tune_routes="subset6")`: 3 medium + 3 long, 6.1); halves
+tuning.
+(iii) **Replicates 3 → 2 for every arm, FULL and the ladder included**
+(`Cuts(reps=(0, 1))`), so all contrasts stay paired in training reps. `analysis_b` takes the replicate count from the cut recorded in the payloads (`--models`; else `stages.ACTIVE_CUTS`); `--n-reps` must agree with that record or the analysis refuses.
+(iv) **Main fit of DQN and PPO at P = 1** (`Cuts(p_main=1)`) regardless of P*; the 3-pass
+tuning curves are kept and the budget-limited rule of 6.3 applies.
 If the projection still exceeds 134.4 h: stop rule 4.
 
 ### 9.3 Pilot (dev only; CON3-0's eligible routes)
@@ -823,7 +831,9 @@ concurrent processes) and PPO for one full pass on CPU.
   required to be bitwise reproducible (seed-level replicates, as in A): its rerun
   difference is reported beside the between-rep SD, and its evaluation (CPU, hashed model
   file) must be bit-identical.
-- **Q3** cut (i) condition 1 (6 jobs); a failure disables cut (i) and is logged.
+- **Q3** (diagnostic; was cut (i) condition 1) a refit of 6 FULL and ladder jobs (one
+  short, one medium, one long route; CON3 and SCA3) equals A's file on the 5,000 dev rows;
+  a failure is logged and changes nothing else.
 - **Q4** C_oracle ≤ C ≤ 1.005·C_none on every pilot cell, or the violations listed with a
   diagnosis (not a gate).
 - **Q5** measured per-pass times **of the real update loop including feature tables and
@@ -880,7 +890,7 @@ def thresholds(w_grid, C, H) -> dict[int, float]
 def permute_columns(g: np.ndarray, key: str) -> np.ndarray
 ```
 Tests: toy 2-stop route vs hand computation (1e-12); with truly independent increments
-THR's simulated cost equals the DP value within 3 SE; `thresholds` matches the first
+THR's simulated cost equals the DP value within 4 SE; `thresholds` matches the first
 crossing; permutation preserves column marginals exactly; C_k monotone.
 Mutations: E[k−1] for E[k]; V_m = H; no clipping at w_lo.
 
@@ -906,7 +916,7 @@ test ≥ instead of >; strict `L > H` deploy rule (must fail test c).
 `rlsm_fit_fn(seed_key, cfg) -> FitFn`; `fit_rlsm(...)`. Tests and mutations as rev. 1
 (OLS reduction with K = 1, slope 1; leakage log; seeds; clipping).
 
-**M16 — `expb/dos.py`.** `DOSConfig(lr, batch=8192, s_min=50, s_max=400, width=55,
+**M16 — `expb/dos.py`.** `DOSConfig(lr, batch=8192, s_min=400, s_max=400, width=55,
 n_ckpt=4, min_rows=20)`; `DOSNet`; `dos_fit_fn(seed_key, cfg, diag) -> FitFn`;
 `fit_dos(...)`. Tests as rev. 1 plus: cold start when `warm` is a `ConstantPredictor`.
 Mutations: swap H and y; surrogate sign; no warm start.
@@ -981,9 +991,9 @@ Mutation: unpack builds an untrained net.
 - `StageSpec.independent` permutes train and evaluation pools (3.8).
 - Stages: `b_smoke` (1 route, N = 2,000, every arm, tiny configs, dev only), `b_pilot`,
   `b_tune_<arm>_c<i>`, `b_ladder`, `b_full`, `b_<arm>` per arm (eligible routes, reps
-  0–2, N = 10^5, chosen config, test_stream "test_b"), `b_full_ind`; under cut (i)
-  `b_full_reuse`, `b_ladder_reuse` reading A's files through the manifest. Results under
-  `code/results/expB/`.
+  0–2, N = 10^5, chosen config, test_stream "test_b"), `b_full_ind`; `b_full_reuse`,
+  `b_ladder_reuse` exist only as disabled stages (revision 3.3). Results under
+  `code/results/expB/`, the default `--results-dir` of every `b_*` stage.
 Tests: `b_smoke` fit + eval + merge gives exactly {none, baton_eq, oracle, nn_full, thr,
 alpz, rlsm, dos, dqn, ppo}; eval reruns leave model mtimes unchanged; A's sweep tests
 pass; A and boost stages' job lists unchanged (snapshot of `plan_stage` keys).
@@ -1050,7 +1060,7 @@ hash mismatch. Mutations: raw p for Holm; 12 wins accepted.
 
 **Stop and redesign if:**
 1. Any M12 gate test fails, or RE-EVAL cannot be computed.
-2. Fewer than 3 published arms in F after gates, repairs and cut (ii) (the comparison is
+2. Fewer than 3 published arms in F after gates, repairs and cut (i) (the comparison is
    then too thin to be called "published methods"; reported as such).
 3. Any policy below the oracle on any dev or test_b route.
 4. The projection exceeds 134.4 h after all cuts.
@@ -1070,8 +1080,8 @@ code beyond M12 and M21; a training replication with new reps.
 ## 14. Open items for the author
 
 - Sign off the design thresholds of section 0 (no pilot evidence; frozen after the pilot).
-- Cut (i) is accepted with conditions and is **expected to apply** under the priors
-  (9.1); the pilot decides, and a slower pilot also triggers cut (ii).
+- Cut (i) of revisions 1 to 3.2 (reuse of A's models) is struck. Under the priors
+  cuts (i) drop DOS and (ii) 6 tuning routes apply (9.1); the pilot decides.
 - Source verification (revision 3.1) found departures that are design questions, not
   numbers, and were therefore **not** changed: (a) DQN: the source network is an MLP on a
   hand-engineered fixed-size observation, not a graph-attention encoder (3.5's "stands in
@@ -1081,7 +1091,7 @@ code beyond M12 and M21; a training replication with new reps.
   of [38] has no value network (baseline = episode-mean return), uses an entropy bonus
   0.01, and its GRU state does not reach the policy output, against the paper's value
   network, no entropy term and GRU memory (3.6 follows the paper). (c) DOS: the source
-  trains 3,000 + d steps per date on fresh batches; ours ≤ 400 steps on a fixed sample.
+  trains 3,000 + d steps per date on fresh batches; ours 400 steps per stage on a fixed sample (about 13% of the source's per-date budget; revision 3.4).
   (d) RLSM: the source regularises by limiting K, not by ridge (3.3's grid note).
 
 ## 15. Changelog
@@ -1171,3 +1181,46 @@ Step 2 of section 11; details, page and line references in `VERIFY_CITATIONS.md`
   bootstrap seed 20261119; wording rule; stop rule 2 counts cut (ii); seed-reuse mutation.
 
 - **Revision 3.2 (2026-11-18, before the pilot):** defined "G2 route-reps" (section 7); `dos.py` records the never-stop validation objective that gate B-DOS reads (previously missing, which would have dropped DOS for a defect of ours). No threshold of section 0 changed.
+
+- **Revision 3.4 (2026-11-19, before the pilot): approved by the author 2026-11-19.**
+  Two thresholds of section 0 change, both gates that only decide which arm is dropped for a
+  defect of ours and never compare with FULL; the old values could not be met by a correct
+  implementation (`DOS_GATE_INVESTIGATION.md`, `code/dos_gate_investigation.py`, `CODE_REVIEW_B.md`).
+  - **T4 / B-THR (a): 3 SE becomes 4 SE** per route on the replicate mean. At 3 SE a correct
+    THR is falsely dropped about 15% of the time (62 routes, no failure allowed), at 4 SE
+    about 0.4%.
+  - **B-DOS (T7): tolerance becomes relative**, 0.02·|always-stop − never-stop objective|
+    (was an absolute 1e-6·E0), and DOS trains **400 steps per stage** (`s_min = 400`; was
+    ⌈20 n/8192⌉ clipped to [50, 400], about 98 at n = 40,000): a correct DOS missed 1e-6 in
+    about a quarter of stages. Share 95% unchanged; a stuck or inverted network still fails.
+    Compute: DOS ≈ 0.7 h for the 186 jobs (section 9.1 row); 14(c) discloses 13% of the
+    source budget.
+  - **Report items closed:** the 4,001-point THR refinement (T3, 7(c)) is implemented as a
+    report in `fidelity.py` (never gated); cut (iii) takes `analysis_b`'s replicate count from
+    the payload cut record or a checked `--n-reps`; `peak_rss_mb` is recorded in the fit
+    `budget` of B stages; the ALP-Z vs THR statement is worded as the cost-based report
+    `analysis_b` implements (identical route-rep costs), not decisions.
+
+- **Revision 3.3 (2026-11-19, after CODE_REVIEW_B, before the pilot):** no threshold of
+  section 0 changed.
+  - **Cut (i) struck** (C2): reuse of A's models cannot pass gate item 8 (A's payloads have
+    no `libraries`) and the DQN is now fast enough that the saving is not needed. The
+    reuse stages are kept disabled and refuse everywhere. Ordered cuts renumbered: (i)
+    drop DOS, (ii) 6 tuning routes, (iii) reps 3 → 2, (iv) P = 1; every cross-reference
+    (6.1, 6.3, 9.1, 9.2, 9.3 Q3, stop rule 2, section 14) updated; 9.1's trigger outcome
+    recomputed (cuts (i) and (ii) apply under the priors).
+  - **Results directory** (C1): B stages default to `results/expB`, `sweep manifest` takes
+    `--results-dir`, the 5.3 step 3 text states it; an end-to-end test runs `b_smoke`
+    fit, manifest and the gate's model and library checks in a temporary repository.
+  - **`dos:cut`** (M2): the FAMILY spelling has no space; cuts (ii) to (iv) are
+    configuration switches (`stages.Cuts`).
+  - **One GPU process** (M3): `MAX_GPU_JOBS = 1` for any stage whose arm resolves to CUDA.
+  - **Analysis identity** (M4, gate side): `gatecheck.check_analysis_clean` (clean tree,
+    working files equal the committed blobs, each ANALYSIS PATCH line added once in its own
+    commit below the pinning commit).
+  - **Selection rule** (M8): `expb/choose.py` implements 6.1; chosen configs come from the
+    committed `tuning_record.json`.
+  - **Wording:** 3.8 sha256 equality replaced by decision agreement (it cannot hold); P1
+    failures are `arm:p1` in `dropped` as the code writes them; 5.3 step 5 deletes the
+    repaired stage's models and rows before the refit.
+

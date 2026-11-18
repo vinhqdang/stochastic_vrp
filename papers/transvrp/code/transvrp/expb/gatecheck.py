@@ -247,8 +247,7 @@ def check_pin_commit(root: Path, head: str, family_line: str) -> None:
     FAMILY line must equal HEAD's byte for byte."""
     # -m: a merge is diffed against each parent, so a merge resolution that edits a
     # pinned line is seen (review F5); each hash is kept once
-    out = _git(root, "log", "-m", "--format=%H", "-G", PIN_PATTERN, "--", LOG_REL)
-    commits = list(dict.fromkeys(out.decode("utf-8").split()))
+    commits = _pin_commits(root)
     if len(commits) != 1:
         raise GateRefused(f"{len(commits)} commits touched the pinned lines; exactly one "
                           "(the pinning commit) is allowed")
@@ -256,6 +255,30 @@ def check_pin_commit(root: Path, head: str, family_line: str) -> None:
               if x.startswith(FAMILY_PREFIX)]
     if pinned != [family_line]:
         raise GateRefused("the FAMILY line at HEAD differs from the one pinned in its commit")
+
+
+def _pin_commits(root: Path) -> list[str]:
+    out = _git(root, "log", "-m", "--format=%H", "-G", PIN_PATTERN, "--", LOG_REL)
+    return list(dict.fromkeys(out.decode("utf-8").split()))
+
+
+def check_patch_commit(root: Path, line: str, pin: str) -> None:
+    """Spec 5.3: an ANALYSIS PATCH line is added once, in its own commit (a descendant
+    of the pinning commit that changes nothing but that one added line)."""
+    out = _git(root, "log", "-m", "--format=%H", f"-S{line}", "--", LOG_REL)
+    commits = list(dict.fromkeys(out.decode("utf-8").split()))
+    if len(commits) != 1:
+        raise GateRefused("an ANALYSIS PATCH line was not added once, in its own commit "
+                          f"({len(commits)} commits touch it)")
+    commit = commits[0]
+    below = subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor", pin, commit],
+                           capture_output=True, check=False).returncode == 0
+    if commit == pin or not below:
+        raise GateRefused("an ANALYSIS PATCH line is not in a commit below the pinning commit")
+    stat = _git(root, "show", "--format=", "--numstat", commit).decode("utf-8").splitlines()
+    stat = [x.split(chr(9)) for x in stat if x.strip()]
+    if len(stat) != 1 or stat[0][:2] != ["1", "0"] or stat[0][2] != LOG_REL:
+        raise GateRefused("an ANALYSIS PATCH line must be the only change of its own commit")
 
 
 def frozen_commit_for(pinned: PinnedLog, stage: str) -> str:
@@ -400,6 +423,33 @@ def check_libraries(root: Path, stage: str) -> None:
                               f"process: {recorded}")
 
 
+def check_analysis_clean(commit: str | None = None, repo: Path | None = None) -> str:
+    """Gate for ``analysis_b`` (review M4): the analysis files that run are the committed
+    ones, nothing else under CODE is dirty, and every ANALYSIS PATCH line was added once in
+    its own commit. Returns the accepted analysis_sha256 (pinned, or the last patch's)."""
+    root = _root(repo)
+    check_clean(root)
+    head = _git(root, "rev-parse", "HEAD").decode("utf-8").strip()
+    if commit is not None and commit != head:
+        raise GateRefused(f"the analysis runs at HEAD {head}, not at {commit}")
+    pinned = pinned_log(root, head)
+    for rel in ANALYSIS_RELS:
+        blob = norm(_git(root, "show", f"{head}:{rel}"))
+        if norm((root / rel).read_bytes()) != blob:
+            raise GateRefused(f"{rel} in the working tree differs from its committed blob")
+    pin = _pin_commits(root)[0]
+    patches = [x for x in _log_lines(log_text(head, root)) if x.startswith(PATCH_PREFIX)]
+    for line in patches:
+        check_patch_commit(root, line, pin)
+    expected = pinned.hashes["analysis_sha256"]
+    if patches:
+        expected = PATCH_LINE.fullmatch(patches[-1]).group(1)
+    if tree_hash(head, list(ANALYSIS_RELS), root) != expected:
+        raise GateRefused("analysis_sha256 of the analysis files differs from the pinned "
+                          "(or last patched) value")
+    return expected
+
+
 def planned_job_count(stage: str, root: Path | None = None) -> int:
     """Planned fit jobs of a stage (sweep's plan on the committed eligibility table)."""
     from ..expa import sweep     # noqa: PLC0415
@@ -411,6 +461,9 @@ def planned_job_count(stage: str, root: Path | None = None) -> int:
 
 def verify_stage(stage: str, fit_commit: str, repo: Path | None = None) -> tuple[str, str]:
     """Runs gate items 1 to 8. Returns (HEAD, sha256 of the FAMILY line)."""
+    if stage.endswith("_reuse"):
+        raise GateRefused(f"stage {stage!r} is disabled (EXPERIMENT_B 9.2: cut (i) struck, "
+                          "revision 3.3)")
     root = _root(repo)
     try:
         return _verify(root, stage, fit_commit)
@@ -437,18 +490,21 @@ def _verify(root: Path, stage: str, fit_commit: str) -> tuple[str, str]:
 
 # ---------------------------------------------------------------- producer side
 
-def write_manifest(stage: str, repo: Path | None = None) -> Path:
+def write_manifest(stage: str, repo: Path | None = None,
+                   results_dir: Path | None = None) -> Path:
     """Writes models.sha256 for the stage's model files (sorted lines
-    "<sha256> <key>.pkl <fit_commit> <fit_tree_clean>")."""
+    "<sha256> <key>.pkl <fit_commit> <fit_tree_clean>"). ``results_dir`` (default the
+    gate's ``results/expB``) holds ``models/<stage>`` and receives ``<stage>/models.sha256``."""
     from ..expa import sweep     # noqa: PLC0415
     root = _root(repo)
+    base = root / RESULTS_REL if results_dir is None else Path(results_dir)
     lines = []
-    for path in sorted(model_dir(stage, root).glob("*.pkl")):
+    for path in sorted((base / "models" / stage).glob("*.pkl")):
         payload = sweep.load_payload(path)
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         lines.append(f"{digest} {path.name} {payload['fit_commit']} "
                      f"{payload['fit_tree_clean']}\n")
-    out = root / manifest_rel(stage)
+    out = base / stage / "models.sha256"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("".join(sorted(lines)), encoding="utf-8", newline="\n")
     return out
@@ -493,12 +549,13 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     mp = sub.add_parser("manifest", help="write models.sha256 for one stage")
     mp.add_argument("--stage", required=True)
+    mp.add_argument("--results-dir", type=Path, default=None)
     fp = sub.add_parser("family-line", help="print FROZEN lines and the FAMILY line at a commit")
     fp.add_argument("--commit", required=True)
     args = ap.parse_args(argv)
     try:
         if args.cmd == "manifest":
-            print(write_manifest(args.stage))
+            print(write_manifest(args.stage, results_dir=args.results_dir))
         else:
             print(family_report(args.commit))
     except (GateRefused, ValueError) as exc:

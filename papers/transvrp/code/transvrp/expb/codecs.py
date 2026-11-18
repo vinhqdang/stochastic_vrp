@@ -82,7 +82,7 @@ def _build_net(entry: dict) -> torch.nn.Module:
     return net
 
 
-def _unpack_one(item: dict, nets: list) -> Any:
+def _unpack_one(item: dict, nets: list, ppo: dict) -> Any:
     kind = item["kind"]
     if kind == "grid":
         return GridPredictor(item["w_grid"], item["c"], item["tie_tol"])
@@ -103,7 +103,11 @@ def _unpack_one(item: dict, nets: list) -> Any:
             raise ValueError("a PPO predictor must reference a PPO network")
         if kind == "q":
             return QPredictor(net, item["E0"])
-        return PolicyPredictor(net, item["E0"])
+        # one predictor per net: the GRU cache then serves every stage (M6)
+        key = (item["net"], item["E0"])
+        if key not in ppo:
+            ppo[key] = PolicyPredictor(net, item["E0"])
+        return ppo[key]
     raise ValueError(f"unknown predictor kind {kind!r}")
 
 
@@ -112,5 +116,6 @@ def unpack_models(blob: dict) -> dict:
     if blob.get("arm") not in B_ARMS:
         raise ValueError(f"payload arm must be one of {B_ARMS}, got {blob.get('arm')!r}")
     nets = [_build_net(entry) for entry in blob["nets"]]
-    return {int(k): [_unpack_one(it, nets) for it in items]
+    ppo: dict = {}
+    return {int(k): [_unpack_one(it, nets, ppo) for it in items]
             for k, items in blob["states"].items()}

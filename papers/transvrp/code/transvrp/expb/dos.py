@@ -36,8 +36,9 @@ PRED_CHUNK = 8192
 class DOSConfig:
     lr: float = 1e-3         # grid {1e-3, 3e-4} (3.4)
     batch: int = 8192
-    s_min: int = 50
+    s_min: int = 400         # revision 3.4: 400 steps per stage (floor = cap)
     s_max: int = 400
+    epochs_factor: float = EPOCHS_FACTOR   # S_k = clip(ceil(f n_k / batch), s_min, s_max)
     width: int = 55
     n_ckpt: int = 4
     min_rows: int = 20
@@ -69,7 +70,7 @@ def dos_loss(F: torch.Tensor, u: torch.Tensor, Hs: float) -> torch.Tensor:
 
 
 def stage_steps(n: int, cfg: DOSConfig) -> int:
-    raw = math.ceil(EPOCHS_FACTOR * n / cfg.batch)
+    raw = math.ceil(cfg.epochs_factor * n / cfg.batch)
     return int(min(cfg.s_max, max(cfg.s_min, raw)))
 
 

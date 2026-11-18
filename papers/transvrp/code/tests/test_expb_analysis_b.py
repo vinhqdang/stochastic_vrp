@@ -39,7 +39,8 @@ def _rows(stage, policy, cost, routes, reps, **over):
                 eval_commit=EVAL, family_sha256=SHA, gap_closed=0.5, fit_seconds=1.0)
     base.update(over)
     return [dict(base, stage=stage, inst=i, route_id=r, rep=rep, policy=policy,
-                 mean_cost=cost[i]) for i, r in routes for rep in reps]
+                 mean_cost=cost[i], stratum="medium" if r == 0 else "long", m=10 + 10 * r,
+                 handoff_rate=0.1) for i, r in routes for rep in reps]
 
 
 def _cost_from_delta(d_by_inst):
@@ -486,3 +487,301 @@ def test_compute_table_reads_payloads_and_summarises(tmp_path):
     assert summ.loc["thr", "fit_max_s"] == pytest.approx(30.0)
     assert summ.loc["thr", "path_stop_reads_median"] == pytest.approx(200.0)
     assert summ.loc["thr", "devices"] == "cpu"
+
+
+# ---------------------------------------------------------------- cut arms (M2)
+
+def _cut_df(arm="dos"):
+    df = _main_frame(_tie({"thr": 2 + 0.1 * L}))
+    return df[df["stage"] != f"b_{arm}"]
+
+
+def _cut_lists(arm="dos"):
+    fam = [a for a in ARMS6 if a != arm]
+    return dict(family=fam, descriptive=[], dropped=[f"{arm}:cut"],
+                references=["full", "ladder"], independence=[])
+
+
+def test_cut_arm_without_rows_is_accepted_and_reported_as_cut():
+    rep = B.build_report(_cut_df(), _cut_lists(), n_routes=NR)
+    assert list(rep["family"]["arm"]) == ["thr", "alpz", "rlsm", "dqn", "ppo"]
+    assert list(rep["outside"]["arm"]) == []
+    assert rep["cut"] == ["dos"]
+    text = B.render_summary(rep, family_line=FAMILY_LINE, eval_commit=EVAL)
+    assert "dos" in text and "compute cut" in text
+
+
+def test_cut_arm_does_not_hide_a_missing_other_arm():
+    df = _cut_df()
+    df = df[df["stage"] != "b_ppo"]
+    with pytest.raises(B.AnalysisRefused, match="ppo"):
+        B.build_report(df, _cut_lists(), n_routes=NR)
+
+
+def test_a_dropped_arm_that_is_not_a_cut_still_needs_rows():
+    lists = dict(_cut_lists(), dropped=["dos:b_dos"])
+    with pytest.raises(B.AnalysisRefused, match="no test_b rows"):
+        B.build_report(_cut_df(), lists, n_routes=NR)
+
+
+def test_cut_arm_with_rows_is_refused():
+    lists = _cut_lists()
+    with pytest.raises(B.AnalysisRefused, match="cut"):
+        B.build_report(_main_frame(_tie()), lists, n_routes=NR)
+
+
+def test_cut_family_line_end_to_end_through_the_cli_tables(tmp_path):
+    rep = B.build_report(_cut_df(), _cut_lists(), n_routes=NR)
+    out = B.write_outputs(rep, tmp_path, family_line=FAMILY_LINE, eval_commit=EVAL)
+    assert len(pd.read_csv(tmp_path / "family.csv")) == 5 and out.exists()
+
+
+# ---------------------------------------------------------------- code identity (M4)
+
+def _fake_repo(monkeypatch, tmp_path, clean):
+    calls = []
+
+    def check(commit):
+        calls.append(commit)
+        clean(commit)
+
+    pinned = SimpleNamespace(hashes={"analysis_sha256": "1" * 64}, family_line=FAMILY_LINE,
+                             lists=LISTS6,
+                             frozen=[(FIT, ["b_full", "b_ladder", *[f"b_{a}" for a in ARMS6]])])
+    monkeypatch.setattr(B.G, "check_analysis_clean", check, raising=False)
+    monkeypatch.setattr(B.G, "_root", lambda repo: tmp_path)
+    monkeypatch.setattr(B, "_head", lambda root: "h" * 40)
+    monkeypatch.setattr(B.G, "pinned_log", lambda root, head: pinned)
+    monkeypatch.setattr(B.G, "tree_hash", lambda *a, **k: "1" * 64)
+    monkeypatch.setattr(B.G, "log_text", lambda *a, **k: "")
+    return calls
+
+
+def test_main_calls_check_analysis_clean_with_head_before_any_table(monkeypatch, tmp_path,
+                                                                    capsys):
+    def dirty(commit):
+        raise B.G.GateRefused("working tree differs from the hashed blobs")
+    calls = _fake_repo(monkeypatch, tmp_path, dirty)
+    monkeypatch.setattr(B, "load_stage_tables",
+                        lambda *a, **k: pytest.fail("tables read before the identity check"))
+    rc = B.main(["--merged", str(tmp_path / "b_thr.test_b.csv"), "--eval", "test_b",
+                 "--out", str(tmp_path / "o")])
+    assert rc == 2 and calls == ["h" * 40]
+    assert "refused" in capsys.readouterr().err
+
+
+def test_main_proceeds_to_the_tables_when_the_check_passes(monkeypatch, tmp_path, capsys):
+    calls = _fake_repo(monkeypatch, tmp_path, lambda commit: None)
+
+    def sentinel(*a, **k):
+        raise B.AnalysisRefused("sentinel: reached the tables")
+    monkeypatch.setattr(B, "load_stage_tables", sentinel)
+    rc = B.main(["--merged", str(tmp_path / "b_thr.test_b.csv"), "--eval", "test_b",
+                 "--out", str(tmp_path / "o")])
+    assert rc == 2 and calls == ["h" * 40]
+    assert "sentinel" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------- reports of 1.3, 1.4, 3.8, 8 (M7)
+
+def test_da_table_is_each_arm_against_baton_eq_with_a_unadjusted_branch():
+    d_arm = -2 + 0.1 * L                     # thr cheaper than FULL by 2 %; baton_eq = FULL
+    df = _main_frame(_tie({"thr": d_arm}))
+    out = B.da_table(df, ARMS6, n_routes=NR).set_index("arm")
+    assert list(out.index) == list(ARMS6)
+    c_arm = 100.0 / (1.0 - d_arm / 100.0)
+    expected = 100.0 * (100.0 - c_arm) / 100.0
+    assert out.loc["thr", "mean"] == pytest.approx(expected.mean(), abs=1e-9)
+    assert out.loc["thr", "branch"] == "WIN" and out.loc["alpz", "branch"] == "TIE_STRONG"
+    assert out.loc["thr", "n_better"] == 20
+    assert out.loc["thr", "branch"] == A.go_no_go(expected)["branch"]
+
+
+def test_da_table_uses_the_baseline_rows_not_full():
+    base = 1.0 + 0.1 * L                     # baton_eq is 1% cheaper than FULL (cost 100)
+    df = _main_frame(_tie({"thr": 3 + 0.1 * L}), baseline=base)
+    out = B.da_table(df, ["thr"], n_routes=NR).set_index("arm")
+    assert out.loc["thr", "mean"] == pytest.approx(
+        np.mean([100 * ((100 / (1 - b / 100)) - (100 / (1 - a / 100))) / (100 / (1 - b / 100))
+                 for a, b in zip(3 + 0.1 * L, base)]), abs=1e-9)
+
+
+def test_alpz_vs_thr_reports_paired_difference_and_identical_share():
+    df = _main_frame(_tie({"thr": 1 + 0.1 * L, "alpz": 1 + 0.1 * L}))
+    out = B.alpz_vs_thr(df, n_routes=NR)
+    assert out["mean"] == pytest.approx(0.0, abs=1e-9)
+    assert out["identical_share"] == pytest.approx(1.0)
+    assert out["n"] == 20
+    df2 = _main_frame(_tie({"thr": 1 + 0.1 * L, "alpz": 2 + 0.1 * L}))
+    out2 = B.alpz_vs_thr(df2, n_routes=NR)
+    c_thr, c_alpz = 100 / (1 - (1 + 0.1 * L) / 100), 100 / (1 - (2 + 0.1 * L) / 100)
+    assert out2["mean"] == pytest.approx(np.mean(100 * (c_thr - c_alpz) / c_thr), abs=1e-9)
+    assert out2["identical_share"] == pytest.approx(0.0)
+
+
+def test_alpz_vs_thr_is_none_when_either_arm_is_absent():
+    df = _main_frame(_tie({"thr": 0.1 * L}))
+    assert B.alpz_vs_thr(df[df["stage"] != "b_alpz"], n_routes=NR) is None
+
+
+def test_strata_table_splits_instance_deltas_by_stratum():
+    # medium routes (route_id 0) 2 % cheaper than FULL, long routes (route_id 1) 0
+    insts = INST
+    rows = _rows("b_full", "nn_full", {i: 100.0 for i in insts}, ROUTES, REPS)
+    arm = []
+    for i, r in ROUTES:
+        cost = 100.0 / (1 - 0.02) if r == 0 else 100.0
+        arm += _rows("b_thr", "thr", {i: cost}, [(i, r)], REPS)
+    df = pd.DataFrame(rows + arm)
+    out = B.strata_table(df, ["thr"]).set_index(["arm", "stratum"])
+    assert out.loc[("thr", "medium"), "mean"] == pytest.approx(2.0, abs=1e-9)
+    assert out.loc[("thr", "long"), "mean"] == pytest.approx(0.0, abs=1e-9)
+    assert out.loc[("thr", "medium"), "n"] == 20
+
+
+def test_replicate_sd_is_the_between_replicate_sd_in_percent_of_the_route_mean():
+    df = _main_frame(_tie())
+    mask = (df["stage"] == "b_thr") & (df["rep"] == 1)
+    df.loc[mask, "mean_cost"] = df.loc[mask, "mean_cost"] * 1.01      # rep 1 is 1% dearer
+    out = B.replicate_sd(df).set_index("arm")
+    # per route values c, 1.01 c, c: sample SD = 0.01 c / sqrt(3), mean = c (1 + 0.01/3)
+    expected = 100 * (0.01 / np.sqrt(3)) / (1 + 0.01 / 3)
+    assert out.loc["thr", "mean_sd_pct"] == pytest.approx(expected, rel=1e-9)
+    assert out.loc["alpz", "mean_sd_pct"] == pytest.approx(0.0, abs=1e-9)
+    assert out.loc["thr", "max_sd_pct"] == pytest.approx(expected, rel=1e-9)
+
+
+def test_budget_limited_label_is_in_every_claim_sentence_of_the_arm():
+    row = pd.Series(dict(arm="dqn", mean=2.0, ci95_lo=1.0, ci95_hi=3.0, holm_lo=0.9,
+                         holm_hi=3.1, ci90_lo=1.2, ci90_hi=2.8, n_better=20, n=20,
+                         p_holm=0.001, branch="WIN"))
+    assert "budget-limited" not in B.arm_claim(row)
+    for branch in ("WIN", "LOSE", "TIE_STRONG", "TIE_WEAK"):
+        r = row.copy()
+        r["branch"] = branch
+        r["p_holm"] = 0.9
+        assert "dqn (budget-limited)" in B.arm_claim(r, budget_limited=True), branch
+
+
+def test_summary_labels_budget_limited_arms_and_lists_the_reports(tmp_path):
+    df = _main_frame(_tie({"thr": 2 + 0.1 * L, "alpz": 2 + 0.1 * L}))
+    rep = B.build_report(df, LISTS6, n_routes=NR, labels={"dqn": True, "ppo": False})
+    text = B.render_summary(rep, family_line=FAMILY_LINE, eval_commit=EVAL)
+    assert "dqn (budget-limited)" in text and "ppo (budget-limited)" not in text
+    for heading in ("D_a", "ALP-Z vs THR", "Strata", "Between-replicate SD"):
+        assert heading in text
+    B.write_outputs(rep, tmp_path, family_line=FAMILY_LINE, eval_commit=EVAL)
+    for name in ("da.csv", "strata.csv", "replicate_sd.csv"):
+        assert (tmp_path / name).exists()
+
+
+def test_thr_over_dp_is_the_pooled_percentage_above_the_model_value():
+    df = _main_frame(_tie())
+    thr_rows = df[df["stage"] == "b_thr"]
+    dp = {f"{r.inst}|{r.route_id}|{r.rep}": float(r.mean_cost) / 1.05
+          for r in thr_rows.itertuples()}
+    out = B.thr_over_dp(df, dp)
+    assert out["excess_pct"] == pytest.approx(5.0, abs=1e-9)
+    assert out["route_reps"] == len(thr_rows)
+    assert B.thr_over_dp(df, {}) is None
+
+
+def test_thr_over_dp_refuses_a_partial_dp_table():
+    df = _main_frame(_tie())
+    first = df[df["stage"] == "b_thr"].iloc[0]
+    with pytest.raises(B.AnalysisRefused, match="DP"):
+        B.thr_over_dp(df, {f"{first.inst}|{first.route_id}|{first.rep}": 1.0})
+
+
+def test_budget_limited_label_is_carried_into_the_outside_reason():
+    df = _main_frame(_tie())
+    rep = B.build_report(df, _mixed_lists(), n_routes=NR, labels={"dos": True, "ppo": False})
+    reasons = rep["outside"].set_index("arm")["reason"]
+    assert reasons["dos"] == "descriptive; budget-limited"
+    assert reasons["ppo"] == "dropped=ppo:B-bug"
+
+
+def test_da_and_strata_cover_descriptive_and_dropped_arms_but_not_cut_ones():
+    rep = B.build_report(_main_frame(_tie()), _mixed_lists(), n_routes=NR)
+    assert list(rep["da"]["arm"]) == ["thr", "alpz", "rlsm", "dos", "dqn", "ppo"]
+    assert set(rep["strata"]["arm"]) == set(ARMS6)
+    assert set(rep["strata"]["stratum"]) == {"medium", "long"}
+    cut = B.build_report(_cut_df(), _cut_lists(), n_routes=NR)
+    assert "dos" not in set(cut["da"]["arm"])
+
+
+def test_main_end_to_end_reads_labels_and_dp_values_from_the_derivation_block(
+        monkeypatch, tmp_path):
+    _fake_repo(monkeypatch, tmp_path, lambda commit: None)
+    df = _main_frame(_tie())
+    thr = df[df["stage"] == "b_thr"]
+    dp = {f"{r.inst}|{r.route_id}|{r.rep}": float(r.mean_cost) / 1.05 for r in thr.itertuples()}
+    block = dict(LISTS6, budget_limited={"dqn": True, "ppo": False}, thr_dp=dp)
+    monkeypatch.setattr(B.G, "read_derivation", lambda commit, root: block)
+    paths = _csv_dir(tmp_path, df)
+    out = tmp_path / "out"
+    rc = B.main(["--merged", *map(str, paths), "--eval", "test_b", "--out", str(out),
+                 "--n-routes", str(NR)])
+    assert rc == 0
+    text = (out / "summary.md").read_text(encoding="utf-8")
+    assert "dqn (budget-limited)" in text and "ppo (budget-limited)" not in text
+    assert "+5.00%" in text                        # THR over its DP value
+
+
+def test_cli_cut_four_reps_argument_reaches_the_coverage_check(monkeypatch, tmp_path, capsys):
+    _fake_repo(monkeypatch, tmp_path, lambda commit: None)
+    monkeypatch.setattr(B.G, "read_derivation", lambda commit, root: dict(LISTS6))
+    paths = _csv_dir(tmp_path, _main_frame(_tie()))
+    rc = B.main(["--merged", *map(str, paths), "--eval", "test_b", "--out",
+                 str(tmp_path / "o"), "--n-routes", str(NR), "--n-reps", "2"])
+    assert rc == 2 and "replicates" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------- N_REPS follows the cut (3.3 cut iii)
+
+def _cut_payloads(tmp_path, reps, name="b_thr"):
+    d = tmp_path / name
+    d.mkdir(parents=True, exist_ok=True)
+    for rep in range(len(reps)):
+        payload = {"job": SimpleNamespace(arm="thr", rep=rep), "fit_seconds": 1.0, "budget": {},
+                   "cuts": {"drop_dos": False, "tune_routes": "subset", "reps": list(reps),
+                            "p_main": None}}
+        with open(d / f"thr__I00__r0__N100000__rep{rep}.pkl", "wb") as fh:
+            pickle.dump(payload, fh)
+    return d
+
+
+def test_n_reps_defaults_to_the_active_cut_without_payloads_or_option():
+    assert B.resolve_n_reps(None, []) == len(B.stages.ACTIVE_CUTS.reps) == 3
+
+
+def test_n_reps_follows_the_cut_recorded_in_the_payloads(tmp_path):
+    assert B.resolve_n_reps(None, [_cut_payloads(tmp_path, (0, 1))]) == 2
+    assert B.resolve_n_reps(2, [_cut_payloads(tmp_path, (0, 1))]) == 2
+
+
+def test_n_reps_option_must_match_the_payload_cut(tmp_path):
+    with pytest.raises(B.AnalysisRefused, match="cut"):
+        B.resolve_n_reps(3, [_cut_payloads(tmp_path, (0, 1))])
+    with pytest.raises(B.AnalysisRefused, match="cut"):
+        B.resolve_n_reps(2, [_cut_payloads(tmp_path, (0, 1, 2))])
+
+
+def test_n_reps_refuses_payloads_recording_different_cuts(tmp_path):
+    dirs = [_cut_payloads(tmp_path, (0, 1), "b_thr"), _cut_payloads(tmp_path, (0, 1, 2), "b_alpz")]
+    with pytest.raises(B.AnalysisRefused, match="different"):
+        B.resolve_n_reps(None, dirs)
+
+
+def test_main_takes_n_reps_from_the_payload_cut(monkeypatch, tmp_path, capsys):
+    _fake_repo(monkeypatch, tmp_path, lambda commit: None)
+    monkeypatch.setattr(B.G, "read_derivation", lambda commit, root: dict(LISTS6))
+    paths = _csv_dir(tmp_path, _main_frame(_tie()))
+    models = _cut_payloads(tmp_path, (0, 1))
+    rc = B.main(["--merged", *map(str, paths), "--eval", "test_b", "--out",
+                 str(tmp_path / "o"), "--n-routes", str(NR), "--models", str(models)])
+    assert rc == 2 and "replicates" in capsys.readouterr().err      # 2 reps expected, 3 present
+    rc = B.main(["--merged", *map(str, paths), "--eval", "test_b", "--out",
+                 str(tmp_path / "o2"), "--n-routes", str(NR), "--n-reps", "3",
+                 "--models", str(models)])
+    assert rc == 2 and "cut" in capsys.readouterr().err

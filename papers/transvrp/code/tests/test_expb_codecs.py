@@ -153,3 +153,37 @@ def test_unpacked_network_carries_the_trained_weights_not_a_fresh_init(fitted):
     assert set(orig) == set(new)
     for name in orig:
         assert torch.equal(orig[name], new[name])
+
+
+def test_unpacked_ppo_stages_share_one_predictor(fitted):
+    """M6: one predictor per net, so the GRU cache is shared across stages."""
+    models, spec, _ = fitted["ppo"]
+    back = codecs.unpack_models(codecs.pack_models(models, "ppo", spec.E0))
+    assert all(back[k][0] is back[1][0] for k in back)
+
+
+def test_unpacked_ppo_evaluation_uses_the_gru_cache_and_keeps_decisions(fitted):
+    """M6: simulate_policy after a round trip runs m - 1 stage forwards, not m(m-1)/2, and
+    the costs equal the old one-predictor-per-stage path bitwise."""
+    from transvrp.expa.simulate import simulate_policy
+
+    models, spec, cache = fitted["ppo"]
+    blob = codecs.pack_models(models, "ppo", spec.E0)
+    shared = codecs.unpack_models(blob)
+    calls = {"n": 0}
+    pred = shared[1][0]
+    orig = PolicyPredictor._step_stage
+
+    def counting(self, *a, **kw):
+        calls["n"] += 1
+        return orig(self, *a, **kw)
+
+    PolicyPredictor._step_stage = counting
+    try:
+        c_new, _ = simulate_policy(cache, spec.B, spec.H, spec.E, shared, H_bill=spec.H)
+    finally:
+        PolicyPredictor._step_stage = orig
+    assert calls["n"] <= spec.m - 1           # one forward per visited stage
+    old = {k: [PolicyPredictor(pred.net, spec.E0)] for k in shared}   # fresh per stage
+    c_old, _ = simulate_policy(cache, spec.B, spec.H, spec.E, old, H_bill=spec.H)
+    assert np.array_equal(c_new, c_old)

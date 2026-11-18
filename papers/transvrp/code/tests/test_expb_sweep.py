@@ -151,7 +151,8 @@ def test_world_is_identity_for_a_non_independent_stage():
 # ---------------------------------------------------------------- reuse, gate refusals
 
 def test_reuse_stage_has_no_fit(tmp_path):
-    with pytest.raises(ValueError, match="reads A's model files"):
+    # cut (i) is struck (revision 3.3): the stage refuses before anything else
+    with pytest.raises(ValueError, match="disabled"):
         sweep.run_fit("b_full_reuse", pd.DataFrame(), results_dir=tmp_path)
 
 
@@ -274,6 +275,21 @@ def test_b_smoke_dqn_and_ppo_passes_and_budget_are_recorded(tmp_path, clean_tree
         payload = sweep.load_payload(ctx.models_dir / f"{job.key}.pkl")
         assert payload["budget"]["path_stop_reads"] > 0
         assert payload["budget"]["unique_paths"] == job.N
+
+
+def test_b_fit_payload_budget_records_peak_rss(monkeypatch):
+    monkeypatch.setattr(sweep, "process_peak_rss_mb", lambda: 1234.5)
+    spec = _toy_spec()
+    for stage in ("b_thr", "b_tune_ppo_c0"):
+        sspec = sweep.stage_spec(stage)
+        job = sweep.Job("neural", "TOY", 0, 96, 0, arm="thr" if stage == "b_thr" else "ppo")
+        if sspec.pass_curve:
+            sspec = sweep.StageSpec(reps=sspec.reps, neural=sspec.neural, routes=sspec.routes,
+                                    test_stream=sspec.test_stream, pass_curve=1,
+                                    arm_cfg=(("ppo", (("passes", 1), ("epochs", 1),
+                                                      ("ckpt_per_pass", 2))),))
+        payload = sweep._fit_b_payload(job, sspec, spec, _toy_paths(96))
+        assert payload["budget"]["peak_rss_mb"] == 1234.5, stage
 
 
 def test_tuning_stage_refuses_a_configuration_with_another_pass_count():

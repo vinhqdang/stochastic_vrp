@@ -22,6 +22,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import torch
 
 from ..expa import sweep
 from ..expa.backward import split_80_20
@@ -33,15 +34,15 @@ from .alp import (ALPZConfig, build_lp, continuation_table, initial_value_dp,
 from .codecs import unpack_models
 from .dqn import stage_counts
 from .gatecheck import core_of_stage
-from .grid import lin_interp
-from .ppo import PolicyPredictor
+from .grid import lin_interp, tie_tolerance
+from .ppo import GRU_HIDDEN, HANDOFF, PolicyPredictor, mask_logits
 from .registry import B_ARMS
-from .thr import permute_columns
+from .thr import THRConfig, independent_dp, permute_columns, thresholds
 
 T1_TOL = 1e-6          # T1 tie window and LP identity tolerance, in units of E0
 EXACT_TOL = 1e-9       # relative tolerance of exact identities (monotone, C >= C_oracle)
-T4_SE = 3.0            # B-THR: per-day standard errors
-T4_SHARE = 0.99        # B-THR: share of route-reps within T4_SE
+T4_SE = 4.0            # B-THR: per-day standard errors of the route statistic (see thr_route_within)
+T4_SHARE = 0.99        # B-THR: share of routes within T4_SE
 T5_SHARE = 0.999       # B-ALPZ (d): share of visited states with equal decisions
 T6_SE = 2.0            # P1: standard errors above the best trivial policy
 T7_SHARE = {"rlsm": 0.90, "dos": 0.95}   # bug-detector shares of stages
@@ -50,8 +51,9 @@ T9_PMAX = 3            # passes of every DQN and PPO run
 T15_SHARE = 0.99       # "coincides with THR" wording, descriptive only
 MIN_VAL_ROWS = 100     # stages with fewer alive validation rows are not counted
 RLSM_RESIDUAL = 1e-8   # B-RLSM: relative ridge normal-equation residual
-DOS_TOL = 1e-6         # B-DOS: slack over min(always stop, never stop), units of E0
+DOS_TOL = 0.02         # B-DOS: relative slack, tau * |always stop - never stop| (revision 3.4)
 PPO_ROWS = 1000        # B-PPO: dev rows per job for the cached-versus-recomputed check
+CUT_SUFFIX = ":cut"      # dropped entry of a compute-cut arm (9.2 (ii)); no space allowed
 REFERENCES = ("full", "ladder")   # section 3.7 reference stages (not gated, not family)
 INDEPENDENCE_STAGES = ("b_ladder_ind", "b_thr_ind", "b_alpz_ind", "b_full_ind")  # 3.8
 
@@ -100,6 +102,8 @@ class _Ctx:
     g2_keys: frozenset | None      # route-reps of the uniform-LP identity (default rep 0)
     thr_dir: Path | None = None    # THR models, for the descriptive ALP-Z vs THR wording
     info: dict = field(default_factory=dict)
+    dos_tol: float = DOS_TOL       # B-DOS relative slack tau; a parameter, not a constant
+    passes: int | None = None      # B-DQN: passes of the main fit (None: any of 1..T9_PMAX)
 
 
 # ---------------------------------------------------------------- small helpers
@@ -140,9 +144,29 @@ def _meets(share: float, threshold: float) -> bool:
     return share >= threshold
 
 
-def _within_band(mean: float, dp: float, se: float) -> bool:
-    """B-THR (a): |simulated - DP| within T4_SE per-day standard errors (boundary in)."""
-    return abs(mean - dp) <= T4_SE * se
+def _within_band(mean: float, dp: float, se: float, width: float | None = None) -> bool:
+    """B-THR (a): |simulated - DP| within ``width`` (default T4_SE) per-day standard errors
+    (boundary in)."""
+    return abs(mean - dp) <= (T4_SE if width is None else width) * se
+
+
+def thr_route_within(day_costs, dps, width: float | None = None) -> bool:
+    """B-THR (a) statistic of ONE route. ``day_costs`` holds the per-day dev cost series of
+    each replicate (the same permuted dev days: the dev stream does not depend on the
+    replicate), ``dps`` the replicates' own-model DP values. The statistic compares the
+    replicate mean of the simulated costs with the replicate mean of the DP values, with
+    the SE of the replicate-averaged per-day series.
+
+    Why per route and not per job (review M6/M5): the replicates of a route share their
+    dev days, so their errors are almost perfectly correlated and fail together; counting
+    them as three independent tests inflated the false-drop probability. Averaging over
+    replicates before taking the SE accounts for the sharing exactly (no independence
+    assumed), and the share is then taken over routes, which are independent (distinct
+    seeds and days). With the share rule at 99% over 62 routes no failure is allowed, so the
+    band must make P(some of 62 exact routes outside) <= 1%: 1 - (1 - 2 Phi(-4))^62 = 0.4%
+    at 4 SE, against 15% at 3 SE."""
+    mean_days = np.mean([np.asarray(c, dtype=float) for c in day_costs], axis=0)
+    return _within_band(float(mean_days.mean()), float(np.mean(dps)), _se(mean_days), width)
 
 
 def _monotone(c: np.ndarray, E0: float) -> bool:
@@ -292,8 +316,19 @@ def _gate_p1(ctx: _Ctx) -> Gate:
 
 # ---------------------------------------------------------------- arm bug gates
 
+def _refinement_report(ctx: _Ctx) -> dict:
+    """4,001-point THR refinement on the G2 route-reps (descriptive; not part of any gate)."""
+    items = [thr_grid_refinement(ctx.source.spec(p["job"].inst, p["job"].route_id),
+                                 _train(ctx, p["job"]).g)
+             for p in ctx.jobs if _key(p["job"]) in ctx.g2_keys]
+    return {"route_reps": len(items),
+            "max_rel_diff": max((i["max_rel_diff"] for i in items), default=0.0),
+            "inf_mismatch": sum(i["inf_mismatch"] for i in items), "n_fine": THR_FINE_GRID}
+
+
 def _gate_thr(ctx: _Ctx) -> Gate:
-    within, total, mono, dp_by_key = 0, 0, True, {}
+    mono, dp_by_key = True, {}
+    by_route: dict = {}
     for p in ctx.jobs:
         job = p["job"]
         spec = ctx.source.spec(job.inst, job.route_id)
@@ -303,15 +338,41 @@ def _gate_thr(ctx: _Ctx) -> Gate:
                           spec.E[0], spec.B)
         costs = simulate_policy(_cache(spec, _dev(ctx, job, always=True), p), spec.B,
                                 spec.H, spec.E, models, H_bill=spec.H)[0]
-        total += 1
-        within += _within_band(float(costs.mean()), dp, _se(costs))
+        by_route.setdefault((str(job.inst), int(job.route_id)), []).append((costs, dp))
         dp_by_key[_key(job)] = dp
+    total = len(by_route)
+    within = sum(thr_route_within([c for c, _ in reps], [d for _, d in reps])
+                 for reps in by_route.values())
     share = _share(within, total)
     ok = mono and _meets(share, T4_SHARE)
     ctx.info["thr_dp"] = dp_by_key
+    ctx.info["thr_refinement"] = _refinement_report(ctx)
     return Gate("b_thr", ok, share,
-                f"within {T4_SE:g} SE on >= {T4_SHARE:.0%}; C_k nondecreasing",
-                f"{within}/{total} route-reps within band; monotone={mono}")
+                f"routes (replicate mean) within {T4_SE:g} SE on >= {T4_SHARE:.0%}; "
+                "C_k nondecreasing",
+                f"{within}/{total} routes within band; monotone={mono}")
+
+
+THR_FINE_GRID = 4001   # T3: refinement reported on the G2 route-reps, never gated
+
+
+def thr_grid_refinement(spec: RouteSpec, g: np.ndarray, n_fine: int = THR_FINE_GRID,
+                        n_base: int | None = None) -> dict:
+    """Report item (T3, 7(c)): the THR thresholds on an ``n_fine``-point grid against the
+    base grid (default 2,001), as max over stops of |W*_fine - W*_base| / E0. Stops whose
+    threshold is infinite on exactly one of the grids are counted in ``inf_mismatch``."""
+    n_base = THRConfig().n_grid if n_base is None else n_base
+    tie = tie_tolerance(spec.E0)
+    thr = {}
+    for n in (n_base, n_fine):
+        w_grid, C, _ = independent_dp(spec, g, n)
+        thr[n] = thresholds(w_grid, C, spec.H, tie)
+    diffs = [abs(thr[n_fine][k] - thr[n_base][k]) / float(spec.E0) for k in thr[n_base]
+             if math.isfinite(thr[n_base][k]) and math.isfinite(thr[n_fine][k])]
+    mismatch = sum(math.isfinite(thr[n_base][k]) != math.isfinite(thr[n_fine][k])
+                   for k in thr[n_base])
+    return {"n_base": int(n_base), "n_fine": int(n_fine),
+            "max_rel_diff": max(diffs) if diffs else 0.0, "inf_mismatch": int(mismatch)}
 
 
 def _gate_alpz(ctx: _Ctx) -> Gate:
@@ -440,11 +501,12 @@ def _gate_dos(ctx: _Ctx) -> Gate:
                 missing += 1
                 continue
             always = spec.H[d["k"] - 1] / spec.E0      # F = 1 everywhere: loss = H / E0
-            passing += obj <= min(always, float(d["never_val"])) + DOS_TOL
+            never = float(d["never_val"])
+            passing += obj <= min(always, never) + ctx.dos_tol * abs(always - never)
     share = _share(passing, total)
     ok = total > 0 and missing == 0 and _meets(share, T7_SHARE["dos"])
     return Gate("b_dos", ok, share,
-                f"validation objective <= min(always, never) + 1e-6 on >= "
+                f"validation objective <= min(always, never) + {ctx.dos_tol:g} |always - never| on >= "
                 f"{T7_SHARE['dos']:.0%} of stages with >= {MIN_VAL_ROWS} val rows",
                 f"{passing}/{total} stages; {missing} without recorded never/objective")
 
@@ -468,8 +530,8 @@ def _gate_dqn(ctx: _Ctx) -> Gate:
         W = np.cumsum(_train(ctx, job).g[fit], axis=1)
         counts = stage_counts(W, spec.B, spec.m)[1:]
         trans = np.asarray(p["budget"]["transitions_per_stage"], dtype=np.int64)
-        counts_ok = counts_ok and any(np.array_equal(trans, counts * P)
-                                      for P in range(1, T9_PMAX + 1))
+        allowed = range(1, T9_PMAX + 1) if ctx.passes is None else (ctx.passes,)
+        counts_ok = counts_ok and any(np.array_equal(trans, counts * P) for P in allowed)
         finite_ok = finite_ok and all(np.all(np.isfinite(np.asarray(v, dtype=float)))
                                       for net in p["models"]["nets"]
                                       for v in net["state"].values())
@@ -480,13 +542,23 @@ def _gate_dqn(ctx: _Ctx) -> Gate:
                 f"transitions ok={counts_ok}; finite={finite_ok}; jobs {n}")
 
 
+def _ppo_masks_last_stage(net, m: int) -> bool:
+    """B-PPO: the deployed head, after the stage mask, hands off with probability exactly 0
+    at k = m (the head is run on a zero hidden state; the mask must not depend on it)."""
+    with torch.no_grad():
+        logits, _ = net.heads(torch.zeros(3, GRU_HIDDEN))
+        probs = torch.softmax(mask_logits(logits, np.full(3, m), m), dim=1)
+    return bool(torch.all(probs[:, HANDOFF] == 0.0))
+
+
 def _gate_ppo(ctx: _Ctx) -> Gate:
     zero_ok, same_ok, finite_ok = True, True, True
     for p in ctx.jobs:
         job = p["job"]
         spec = ctx.source.spec(job.inst, job.route_id)
         models, pred = _pred(p)
-        zero_ok = zero_ok and set(models) == set(range(1, spec.m))
+        zero_ok = (zero_ok and set(models) == set(range(1, spec.m))
+                   and _ppo_masks_last_stage(pred.net, spec.m))
         cache = _cache(spec, _dev(ctx, job), p)
         rows = np.arange(min(PPO_ROWS, cache.W.shape[0]))
         cached = [pred.predict(cache, k, rows) for k in range(1, spec.m)]
@@ -507,7 +579,8 @@ ARM_GATE = {"thr": _gate_thr, "alpz": _gate_alpz, "rlsm": _gate_rlsm, "dos": _ga
 # ---------------------------------------------------------------- reports
 
 def gate_report(stage: str, arm: str, dev_df: pd.DataFrame, models_dir, rows_dir, *,
-                source: DevSource | None = None, g2_keys=None, thr_models_dir=None) -> dict:
+                source: DevSource | None = None, g2_keys=None, thr_models_dir=None,
+                dos_tol: float = DOS_TOL, passes: int | None = None) -> dict:
     """Section-7 gates of one arm on dev, for its main-fit stage. ``dev_df`` holds the
     stage's arm rows and the ladder rows (none, oracle, baton_eq) of the same route-reps.
     ``passed`` is the family condition (1.3); ``dropped`` lists the failing gates as
@@ -524,7 +597,8 @@ def gate_report(stage: str, arm: str, dev_df: pd.DataFrame, models_dir, rows_dir
     ctx = _Ctx(stage=stage, arm=arm, jobs=jobs, source=source or DevSource(),
                rows_dir=Path(rows_dir), independent=stage.endswith("_ind"),
                g2_keys=frozenset(g2_keys),
-               thr_dir=None if thr_models_dir is None else Path(thr_models_dir))
+               thr_dir=None if thr_models_dir is None else Path(thr_models_dir),
+               dos_tol=float(dos_tol), passes=passes)
     arm_df = dev_df[dev_df["policy"] == arm]
     oracle_df = dev_df[dev_df["policy"] == "oracle"]
     gates = [_b0(ctx, arm_df, oracle_df), ARM_GATE[arm](ctx), _gate_p1(ctx)]
@@ -571,27 +645,62 @@ def independence_items(ind_df: pd.DataFrame) -> dict:
     return {"full_vs_thr_pct": 100.0 * (c_full - c_thr) / c_thr, "routes": len(keys)}
 
 
+def cut_arms(lists: dict) -> list:
+    """Arms removed by a compute cut (section 9.2 (ii)): ``arm:cut`` entries of ``dropped``."""
+    return [item.split(":")[0] for item in lists["dropped"] if item.endswith(CUT_SUFFIX)]
+
+
 def derive_family(reports: dict, independence=INDEPENDENCE_STAGES,
-                  references=REFERENCES) -> dict:
+                  references=REFERENCES, cut=()) -> dict:
     """The five FAMILY lists (1.3, 5.3). family = arms passing every bug gate and P1;
-    descriptive = arms outside the family; dropped = failing gates as ``arm:gate``."""
-    missing = [a for a in B_ARMS if a not in reports]
+    descriptive = arms outside the family that were evaluated; dropped = failing gates as
+    ``arm:gate``. An arm in ``cut`` (a compute cut, 9.2 (ii)) has no report: it is not
+    fitted, not evaluated, and appears only as ``arm:cut`` in ``dropped``."""
+    cut = tuple(cut)
+    unknown = [a for a in cut if a not in B_ARMS]
+    if unknown:
+        raise ValueError(f"cut arms {unknown} are not B arms")
+    reported = [a for a in cut if a in reports]
+    if reported:
+        raise ValueError(f"cut arms {reported} have a gate report; a cut arm is not fitted")
+    missing = [a for a in B_ARMS if a not in reports and a not in cut]
     if missing:
         raise ValueError(f"no gate report for arms {missing}")
-    family = [a for a in B_ARMS if reports[a]["passed"]]
+    family = [a for a in B_ARMS if a not in cut and reports[a]["passed"]]
+    dropped = []
+    for a in B_ARMS:
+        if a in cut:
+            dropped.append(f"{a}{CUT_SUFFIX}")
+        else:
+            dropped += [f"{a}:{g['id']}" for g in reports[a]["gates"] if not g["passed"]]
     return {"family": family,
-            "descriptive": [a for a in B_ARMS if a not in family],
-            "dropped": [f"{a}:{g['id']}" for a in B_ARMS for g in reports[a]["gates"]
-                        if not g["passed"]],
+            "descriptive": [a for a in B_ARMS if a not in family and a not in cut],
+            "dropped": dropped,
             "references": list(references),
             "independence": sorted(independence)}
 
 
-def _derivation_block(reports: dict, lists: dict) -> dict:
-    arms = {a: {"passed": bool(reports[a]["passed"]),
-                "gates": {g["id"]: {"passed": g["passed"], "value": g["value"]}
-                          for g in reports[a]["gates"]}} for a in B_ARMS}
-    return {**lists, "arms": arms}
+def dp_block(thr_dp: dict) -> dict:
+    """THR's own-model DP values keyed ``inst|route|rep`` for the derivation block (3.8)."""
+    return {f"{i}|{r}|{rep}": float(v) for (i, r, rep), v in sorted(thr_dp.items())}
+
+
+def _derivation_block(reports: dict, lists: dict, labels: dict | None = None,
+                      thr_dp: dict | None = None) -> dict:
+    arms = {}
+    for a in B_ARMS:
+        if a in reports:
+            arms[a] = {"passed": bool(reports[a]["passed"]),
+                       "gates": {g["id"]: {"passed": g["passed"], "value": g["value"]}
+                                 for g in reports[a]["gates"]}}
+        else:
+            arms[a] = {"cut": True, "passed": False, "gates": {}}
+    block = {**lists, "arms": arms}
+    if labels:
+        block["budget_limited"] = {a: bool(v) for a, v in sorted(labels.items())}
+    if thr_dp:
+        block["thr_dp"] = dict(thr_dp)
+    return block
 
 
 def _fmt(x) -> str:
@@ -602,7 +711,8 @@ def _cell(text: str) -> str:
     return str(text).replace("|", "/").replace("`", "'")
 
 
-def render_report(reports: dict, lists: dict, *, extra: dict | None = None) -> str:
+def render_report(reports: dict, lists: dict, *, extra: dict | None = None,
+                  labels: dict | None = None, thr_dp: dict | None = None) -> str:
     """fidelity_dev.md: the gate table, the budget labels and descriptive items, and the
     family-derivation JSON block parsed by gatecheck (EXPERIMENT_B 5.3). Deterministic."""
     lines = ["# Fidelity on dev (EXPERIMENT_B.md section 7)", "",
@@ -610,7 +720,7 @@ def render_report(reports: dict, lists: dict, *, extra: dict | None = None) -> s
              "", "| arm | gate | verdict | value | threshold | detail |",
              "|---|---|---|---|---|---|"]
     for a in B_ARMS:
-        for g in reports[a]["gates"]:
+        for g in reports.get(a, {"gates": []})["gates"]:
             verdict = "pass" if g["passed"] else "FAIL"
             lines.append(f"| {a} | {g['id']} | {verdict} | {_fmt(g['value'])} | "
                          f"{_cell(g['threshold'])} | {_cell(g['detail'])} |")
@@ -620,7 +730,7 @@ def render_report(reports: dict, lists: dict, *, extra: dict | None = None) -> s
               f"independence={lists['independence']}", ""]
     for name, value in sorted((extra or {}).items()):
         lines.append(f"- {name}: {json.dumps(value, sort_keys=True)}")
-    block = json.dumps(_derivation_block(reports, lists), sort_keys=True, indent=1)
+    block = json.dumps(_derivation_block(reports, lists, labels, thr_dp), sort_keys=True, indent=1)
     lines += ["", "```family-derivation", block, "```", ""]
     return "\n".join(lines)
 
@@ -645,23 +755,33 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--results", default=str(RESULTS_DIR))
     ap.add_argument("--out", default=None)
     ap.add_argument("--chosen", default="", help="arm=config index, e.g. dqn=2,ppo=0")
-    ap.add_argument("--p-main", type=int, default=T9_PMAX)
+    ap.add_argument("--p-main", type=int, default=T9_PMAX,
+                    help="passes of the DQN main fit (B-DQN checks exactly this count)")
+    ap.add_argument("--dos-tol", type=float, default=DOS_TOL,
+                    help="B-DOS relative slack tau: obj <= min + tau |always - never|")
+    ap.add_argument("--cut", default="", help="comma list of arms removed by a compute cut")
     args = ap.parse_args(argv)
     results = Path(args.results)
     ladder = pd.read_csv(results / "b_ladder.csv")
+    cut = tuple(a for a in args.cut.split(",") if a)
     reports = {}
-    for arm in B_ARMS:
+    for arm in (a for a in B_ARMS if a not in cut):
         stage = GATE_OF_ARM[arm]
         dev_df = pd.concat([pd.read_csv(results / f"{stage}.csv"), ladder], ignore_index=True)
         reports[arm] = gate_report(stage, arm, dev_df, results / "models" / stage,
                                    results / stage / "rows",
-                                   thr_models_dir=results / "models" / "b_thr")
-    lists = derive_family(reports)
-    extra = {}
+                                   thr_models_dir=results / "models" / "b_thr",
+                                   dos_tol=args.dos_tol,
+                                   passes=args.p_main if arm == "dqn" else None)
+    lists = derive_family(reports, cut=cut)
+    extra, labels = {}, {}
     for arm, idx in _parse_pairs(args.chosen).items():
         tune = pd.read_csv(results / f"b_tune_{arm}_c{idx}.csv")
         extra[f"budget_{arm}"] = budget_label(tuning_scores(tune, arm), p_main=args.p_main)
-    out = write_report(render_report(reports, lists, extra=extra),
+        labels[arm] = extra[f"budget_{arm}"]["budget_limited"]
+    thr_dp = dp_block(reports["thr"].get("info", {}).get("thr_dp", {})) if "thr" in reports else None
+    out = write_report(render_report(reports, lists, extra=extra, labels=labels,
+                                     thr_dp=thr_dp),
                        Path(args.out) if args.out else results / "fidelity_dev.md")
     print(out)
     return 0

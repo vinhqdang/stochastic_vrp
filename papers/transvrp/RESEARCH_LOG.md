@@ -259,3 +259,24 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
 - Full suite: 582 passed. All of M12–M23 are implemented; no fit, pilot or dev run of B
   has been made, and test_b has never been read.
 - Next: independent review of the whole B code, then the pilot (spec 9.3).
+
+### 2026-11-19 05:45 GMT+7 — experiment B: whole-code review and fixes; spec revision 3.4
+- Independent whole-code review (`CODE_REVIEW_B.md`, accept with required changes): 2 critical,
+  8 major. No path to test_b without the gate, no future-information leak, no hidden
+  handicap on THR, ALP-Z, RLSM, DQN or PPO were found. All findings fixed (mutation-checked):
+  results directory of B stages (expB), manifest CLI, one GPU process, per-stage cut switches
+  and `dos:cut` spelling, gate-side analysis cleanliness check, committed tuning record and
+  the section 6.1 selection rule, `derive_family` for cut arms, per-route B-THR statistic,
+  shared PPO predictor (evaluation about 11x faster), additional analysis reports.
+- **Decisions by the author (2026-11-19), made before any pilot or fit; they only decide
+  which arm is dropped for a defect of ours and never compare with FULL:**
+  (1) T4: 3 SE becomes 4 SE (a correct THR was falsely dropped about 15% of the time at 3 SE,
+  about 0.4% at 4 SE). (2) B-DOS: absolute tolerance 1e-6 replaced by relative
+  0.02 x |always-stop - never-stop|, 400 steps per stage (the absolute tolerance is unreachable
+  with a sigmoid output: best 94.9% of stages against the 95% rule). Evidence:
+  `DOS_GATE_INVESTIGATION.md` (dev data only).
+- Decision by the lead: cut (i) (reuse of A's models) struck; it cannot pass gate item 8 and
+  is not needed with the faster DQN update. Cuts renumbered (i) drop DOS, (ii) 6 tuning
+  routes, (iii) reps 3 to 2, (iv) P = 1.
+- Spec is now revision 3.4 (changelog inside). Full suite: 682 passed. No pilot, tuning, fit
+  or evaluation of B has been run; test_b has never been read.

@@ -372,3 +372,161 @@ Procedure as above, `tests/test_expb_dos.py` with `-x`; restoration checked by s
 
 Result: 5/5 killed; the file is restored byte-for-byte. Also fixed in the test file: the carry
 test of M16 used stage k=3 on a 3-route (outside [1, m-1]); now k=2.
+
+
+## CODE_REVIEW_B follow-up (expb/fidelity.py, analysis_b.py, codecs.py, dos.py)
+
+Procedure as above: single-line mutants, tests of the touched module with `-x`, file restored
+byte-for-byte after the run (sha256 compared with the pre-mutation hash: identical, True for
+every file). Test files: `test_expb_fidelity.py`, `test_expb_analysis_b.py`,
+`test_expb_codecs.py`, `test_expb_dos.py`.
+
+### M6 (expb/codecs.py): one PolicyPredictor per network after unpack
+
+| id | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|
+| C1 | `if key not in ppo:` -> `if True:` (fresh predictor per stage again) | killed | test_expb_codecs::test_unpacked_ppo_stages_share_one_predictor |
+| C2 | cache key gains `len(ppo)` (never a hit) | killed | test_expb_codecs::test_unpacked_ppo_stages_share_one_predictor |
+
+2/2 killed. Costs after a round trip equal the old one-predictor-per-stage path bitwise
+(`test_unpacked_ppo_evaluation_uses_the_gru_cache_and_keeps_decisions`).
+
+### M2 and M5 and parameters (expb/fidelity.py, expb/dos.py)
+
+| id | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|
+| F1 | `if reported:` -> `if False:` (cut arm with a report accepted) | killed | test_cut_arm_with_a_report_is_refused_and_unknown_cut_arm_too |
+| F2 | cut entry `arm:cut` -> `arm:b_arm` | killed | test_cut_arm_needs_no_report_and_appears_as_dropped_cut |
+| F3 | family rule inverted for reported arms | killed | test_family_lists_follow_gate_verdicts |
+| F4 | cut arm left in `descriptive` | killed | test_cut_arm_needs_no_report_and_appears_as_dropped_cut |
+| F5 | missing-report check only for cut arms | killed | test_family_derivation_requires_every_arm |
+| F6 | `if unknown:` -> `if False:` | killed | test_cut_arm_with_a_report_is_refused_and_unknown_cut_arm_too |
+| F7 | CLI loops over every arm (reads the cut arm's file) | killed | test_cli_skips_cut_arm_files |
+| F8 | `T4_SE = 4.0` -> `3.0` | killed | test_thr_gate_false_drop_rate_of_a_correct_thr_is_at_most_one_percent |
+| F9 | DP replicate mean -> `max` | killed | test_thr_route_statistic_uses_the_rep_mean_and_its_own_per_day_se |
+| F10 | replicate-mean day series -> first replicate | killed | test_thr_route_statistic_uses_the_rep_mean_and_its_own_per_day_se |
+| F11 | route total counted per job | killed | test_thr_gate_passes_on_constructed_independent_world |
+| F12 | routes keyed per (route, rep) | killed (after adding the pooling test) | test_thr_gate_pools_the_replicates_of_a_route_before_testing |
+| F13 | gate slack `ctx.dos_tol` -> constant `DOS_TOL` | killed | test_dos_tolerance_is_a_parameter_of_the_gate_and_defaults_to_the_spec_value |
+| F14 | THR DP values dropped from the derivation block | killed | test_thr_dp_values_and_budget_labels_enter_the_derivation_block |
+| F15 | budget labels dropped from the derivation block | killed | test_thr_dp_values_and_budget_labels_enter_the_derivation_block |
+| F16 | cut arm block `passed: False` -> `True` | killed | test_cut_family_line_round_trips_through_gatecheck |
+| F17 | DP block keeps rep 0 only | killed | test_thr_dp_values_and_budget_labels_enter_the_derivation_block |
+| F18 | B-DQN ignores the chosen pass count | killed | test_dqn_gate_checks_the_chosen_pass_count_when_given |
+| F19 | CLI does not pass `--p-main` to the DQN gate | killed | test_cli_passes_the_main_fit_pass_count_to_the_dqn_gate_only |
+| F20 | B-PPO mask check returns True | killed | test_ppo_gate_refuses_a_head_that_can_hand_off_at_the_last_stage |
+| F21 | B-PPO gate ignores the mask check | killed | test_ppo_gate_passes_on_a_real_fit_and_uses_the_mask_check |
+| D1 | `stage_steps` reads the module constant, not `cfg.epochs_factor` | killed | test_epochs_factor_is_a_config_parameter_with_the_documented_default |
+| D2 | `epochs_factor` default 20 -> 10 | killed | test_stage_steps_follow_the_formula_and_its_floor_and_cap |
+
+23/23 killed.
+
+### M4, M2, M7 (expb/analysis_b.py)
+
+| id | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|
+| A1 | `G.check_analysis_clean(head)` -> `pass` | killed | test_main_calls_check_analysis_clean_with_head_before_any_table |
+| A2 | `cut_arms` returns `[]` | killed | test_cut_arm_without_rows_is_accepted_and_reported_as_cut |
+| A3 | cut arm with rows accepted | killed | test_cut_arm_with_rows_is_refused |
+| A4 | cut arm required to have rows | killed | test_cut_arm_without_rows_is_accepted_and_reported_as_cut |
+| A5 | D_a contrast swapped (baton_eq vs arm) | killed | test_da_table_is_each_arm_against_baton_eq_with_a_unadjusted_branch |
+| A6 | identical share inverted | killed | test_alpz_vs_thr_reports_paired_difference_and_identical_share |
+| A7 | ALP-Z vs THR `or` -> `and` | killed | test_alpz_vs_thr_is_none_when_either_arm_is_absent |
+| A8 | strata not filtered | killed | test_strata_table_splits_instance_deltas_by_stratum |
+| A9 | replicate SD `ddof=1` -> `0` | killed | test_replicate_sd_is_the_between_replicate_sd_in_percent_of_the_route_mean |
+| A10 | budget-limited label never applied | killed | test_budget_limited_label_is_in_every_claim_sentence_of_the_arm |
+| A11 | THR excess over cost instead of DP | killed | test_thr_over_dp_is_the_pooled_percentage_above_the_model_value |
+| A12 | partial DP table accepted | killed | test_thr_over_dp_refuses_a_partial_dp_table |
+| A13 | outside reason label inverted | killed | test_build_report_covers_every_listed_arm_and_keeps_dropped_ones |
+| A14 | labels from the derivation block ignored in `main` | killed (after adding the end-to-end test) | test_main_end_to_end_reads_labels_and_dp_values_from_the_derivation_block |
+| A15 | DP values from the derivation block ignored in `main` | killed | same |
+| A16 | cut entries listed as dropped arms | killed | test_cut_arm_without_rows_is_accepted_and_reported_as_cut |
+| A17 | D_a and strata only over family arms | killed (after adding the test) | test_da_and_strata_cover_descriptive_and_dropped_arms_but_not_cut_ones |
+| A18 | `da.csv` not written | killed | test_summary_labels_budget_limited_arms_and_lists_the_reports |
+| A19 | `--n-reps` ignored | killed | test_cli_cut_four_reps_argument_reaches_the_coverage_check |
+| A20 | `--n-routes` ignored | killed | test_main_end_to_end_reads_labels_and_dp_values_from_the_derivation_block |
+
+20/20 killed.
+
+## Review fixes C1, C2, M2 (cuts, dos:cut), M3, M4 (gate side), M8 (sweep.py, gatecheck.py, stages.py, choose.py)
+
+Single-line mutants applied one at a time by script, each run against the tests named in the
+last column's file (`-x`), file restored byte-for-byte and its sha256 compared afterwards
+(identical: True for sweep.py, gatecheck.py, choose.py, stages.py). Five survivors of the
+first pass (G7, G23, G24, C3, C13) got new tests and were re-run: all killed.
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| G1 | sweep.py | B default results dir -> `DEFAULT_RESULTS` (A's) | killed | test_expb_results_dir::test_default_results_dir_of_b_stages_is_where_the_gate_reads |
+| G2 | sweep.py | `MAX_GPU_JOBS = 1` -> 2 | killed | ::test_gpu_semantics_is_one_process |
+| G3 | sweep.py | `effective_jobs` returns `jobs` | killed | ::test_cuda_stages_are_capped_and_cpu_stages_are_not |
+| G4 | sweep.py | CUDA resolution `== "cuda"` -> `if False` | killed | ::test_cuda_stages_are_capped_and_cpu_stages_are_not |
+| G5 | sweep.py | `require_enabled` never refuses | killed | ::test_reuse_stages_are_marked_disabled_and_refuse_every_entry_point |
+| G6 | sweep.py | `run_eval` dev path skips the disabled check | killed | ::test_reuse_stages_are_marked_disabled_and_refuse_every_entry_point |
+| G7 | sweep.py | `check_test_gate` skips the disabled check | killed (after new test) | ::test_stage_level_gate_refuses_a_disabled_stage_without_the_commit_checks |
+| G8 | sweep.py | `run_fit` drops `jobs = effective_jobs(...)` | killed | ::test_run_fit_hands_the_capped_job_count_to_the_pool |
+| G9 | sweep.py | `subset6` takes 2 per stratum | killed | test_expb_cuts::test_cut_two_tunes_on_the_six_routes_3_medium_3_long |
+| G10 | sweep.py | payload `cuts` = `{}` | killed | test_expb_results_dir::test_b_smoke_fit_manifest_and_gate_model_checks_agree_in_a_tmp_repo |
+| G11 | sweep.py | CLI default results dir -> A's | killed | ::test_cli_without_results_dir_resolves_per_stage |
+| G12 | sweep.py | `manifest` ignores `--results-dir` | killed | ::test_cli_without_results_dir_resolves_per_stage |
+| G13 | gatecheck.py | `write_manifest` ignores `results_dir` | killed | ::test_write_manifest_honours_an_explicit_results_dir |
+| G14 | gatecheck.py | `verify_stage` does not refuse `_reuse` | killed | ::test_reuse_stages_are_marked_disabled_and_refuse_every_entry_point |
+| G15 | gatecheck.py | analysis check accepts a non-HEAD commit | killed | test_expb_gate::test_analysis_clean_refuses_a_working_tree_edit_or_a_non_head_commit |
+| G16 | gatecheck.py | working bytes vs blob comparison off | killed | ::test_analysis_clean_compares_working_bytes_with_the_blob_even_without_status |
+| G17 | gatecheck.py | "added once" count check off | killed | ::test_analysis_clean_refuses_a_patch_line_added_removed_and_added_again |
+| G18 | gatecheck.py | "below the pinning commit" check off | killed | ::test_analysis_clean_refuses_a_patch_line_from_a_commit_that_is_not_below_the_pin |
+| G19 | gatecheck.py | numstat file-count check off | killed | ::test_analysis_clean_refuses_a_patch_line_that_shares_its_commit_with_code |
+| G20 | gatecheck.py | numstat `1 0` check off | killed | ::test_analysis_clean_refuses_two_patch_lines_in_one_commit |
+| G21 | gatecheck.py | last patch hash not used | killed | ::test_analysis_clean_accepts_one_patch_line_in_its_own_commit |
+| G22 | gatecheck.py | final analysis hash comparison off | killed | ::test_analysis_clean_refuses_a_committed_edit_without_a_patch_line |
+| G23 | gatecheck.py | first patch hash used instead of last | killed (after new test) | ::test_analysis_clean_accepts_a_second_patch_and_uses_the_last_hash |
+| G24 | gatecheck.py | only the last patch line checked | killed (after new test) | ::test_analysis_clean_checks_every_patch_line_not_only_the_last |
+| G25 | gatecheck.py | FAMILY regex `dropped` class loses `:` | killed | ::test_dos_cut_spelling_is_accepted_by_the_family_regex_and_the_gate |
+| S1 | stages.py | cut (iv) passes 1 -> 2 | killed | test_expb_cuts::test_cut_four_fixes_one_pass_for_dqn_and_ppo_only |
+| S2 | stages.py | cut (iii) reps ignored | killed | ::test_cut_three_uses_two_replicates_for_every_main_stage_but_not_the_rest |
+| S3 | stages.py | cut (i) drops ppo instead of dos | killed | ::test_cut_one_drops_dos_everywhere_and_labels_it |
+| S4 | stages.py | cut (ii) tuning routes ignored | killed | ::test_cut_two_tunes_on_the_six_routes_3_medium_3_long |
+| S5 | stages.py | label `dos:cut` -> `dos: cut` | killed | ::test_cut_one_drops_dos_everywhere_and_labels_it |
+| S6 | stages.py | cut (iv) skips PPO | killed | ::test_cut_four_fixes_one_pass_for_dqn_and_ppo_only |
+| S7 | stages.py | `chosen_arm_cfg` ignores the record | killed | test_expb_choose::test_chosen_arm_cfg_is_generated_from_the_record_not_typed |
+| S8 | stages.py | `cut_record` reps constant | killed | test_expb_cuts::test_cut_record_is_json_able_and_lists_active_cuts |
+| C1 | choose.py | tie window 0.10 -> 0.20 | killed | test_expb_choose::test_tie_window_is_a_tenth_of_a_point |
+| C2 | choose.py | no tie window | killed | ::test_tie_goes_to_fewer_passes_then_fewer_seconds_then_lower_index |
+| C3 | choose.py | seconds before passes | killed (after new test) | ::test_fewer_passes_beat_fewer_seconds_inside_the_tie_window |
+| C4 | choose.py | index before seconds | killed | ::test_tie_goes_to_fewer_passes_then_fewer_seconds_then_lower_index |
+| C5 | choose.py | higher index wins | killed | ::test_tie_goes_to_fewer_passes_then_fewer_seconds_then_lower_index |
+| C6 | choose.py | score not in percent | killed | ::test_score_is_mean_percent_gap_to_baton_eq |
+| C7 | choose.py | non-finite costs admitted | killed | ::test_non_finite_cost_and_missing_routes_exclude_a_config |
+| C8 | choose.py | missing routes admitted | killed | ::test_non_finite_cost_and_missing_routes_exclude_a_config |
+| C9 | choose.py | highest score wins | killed | ::test_lowest_score_wins_outside_the_tie_window |
+| C10 | choose.py | record pairs not compared with the grid | killed | ::test_record_with_hand_edited_pairs_or_choice_is_refused |
+| C11 | choose.py | record choice not re-derived | killed | ::test_record_with_hand_edited_pairs_or_choice_is_refused |
+| C12 | choose.py | source CSV hash not compared | killed | ::test_source_hash_mismatch_is_refused |
+| C13 | choose.py | stored seconds set to 0 | killed (after new test) | ::test_record_keeps_the_seconds_that_decided_a_tie |
+| C14 | choose.py | curve arm needs only 2 passes | killed | ::test_curve_arm_requires_all_three_passes |
+
+Result: 47/47 killed (5 after adding a test). Not mutated: the redundant `check_clean` call in
+`check_analysis_clean` is covered by G15 and the monkeypatched-status test of G16.
+
+## Revision 3.4 changes (2026-11-19)
+
+Single-line mutants, each restored byte for byte after its run (checked by the final test run).
+
+| id | file | mutant | result | test |
+|---|---|---|---|---|
+| F14 | expb/fidelity.py | B-DOS tolerance absolute (drops `abs(always - never)`) | killed | test_expb_fidelity::test_dos_gate_uses_min_of_always_and_never_with_relative_tolerance |
+| F15 | expb/fidelity.py | B-DOS gap signed (no `abs`) | killed | ::test_dos_gate_uses_min_of_always_and_never_with_relative_tolerance |
+| F16 | expb/fidelity.py | B-DOS `min` -> `max` | killed | ::test_dos_gate_uses_min_of_always_and_never_with_relative_tolerance |
+| F17 | expb/fidelity.py | `DOS_TOL` 0.02 -> 0.2 | killed | ::test_dos_tolerance_scales_with_the_gap_between_always_and_never |
+| F18 | expb/fidelity.py | `T4_SE` 4 -> 3 | killed | ::test_thr_gate_false_drop_rate_of_a_correct_thr_is_at_most_one_percent |
+| F19 | expb/fidelity.py | `THR_FINE_GRID` 4001 -> 2001 | killed | ::test_thr_grid_refinement_is_bounded_by_the_base_grid_step |
+| F20 | expb/fidelity.py | refinement over every job, not only G2 | killed | ::test_refinement_is_reported_for_g2_and_never_changes_the_verdict |
+| D1 | expb/dos.py | `s_min` 400 -> 50 | killed | test_expb_dos::test_stage_steps_follow_the_formula_and_its_floor_and_cap |
+| A1 | expb/analysis_b.py | `--n-reps` vs payload cut check off | killed | test_expb_analysis_b::test_n_reps_option_must_match_the_payload_cut |
+| A2 | expb/analysis_b.py | payload cut ignored (default always from ACTIVE_CUTS) | killed | ::test_n_reps_follows_the_cut_recorded_in_the_payloads |
+| A3 | expb/analysis_b.py | differing payload cuts accepted | killed | ::test_n_reps_refuses_payloads_recording_different_cuts |
+| A4 | expb/analysis_b.py | `main` ignores the resolver | killed | ::test_main_takes_n_reps_from_the_payload_cut |
+| W1 | expa/sweep.py | `peak_rss_mb` missing in the main B budget | killed | test_expb_sweep::test_b_fit_payload_budget_records_peak_rss |
+| W2 | expa/sweep.py | `peak_rss_mb` missing in the pass-curve budget | killed | ::test_b_fit_payload_budget_records_peak_rss |
+
+Result: 14/14 killed.

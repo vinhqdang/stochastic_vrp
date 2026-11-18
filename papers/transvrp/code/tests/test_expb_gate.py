@@ -653,3 +653,180 @@ def test_allow_list_mutant_guard_every_code_file_is_hashed(project):
     # default-deny: a file outside the old expb-only allow-list (pilot.py) still counts
     files = gc.code_files(project.F, project.root)
     assert f"{gc.CODE_REL}/pilot.py" in files
+
+
+# ---------------------------------------------------------------- M2 spelling, M4 helper
+
+@needs_git
+def test_dos_cut_spelling_is_accepted_by_the_family_regex_and_the_gate(
+        tmp_path, monkeypatch, mock_env):
+    monkeypatch.setitem(FAMILY_BLOCK, "dropped", ["dos:cut"])
+    p = build_project(tmp_path / "repo", monkeypatch)
+    line = [x for x in gc._log_lines(gc.log_text(p.L, p.root))
+            if x.startswith(gc.FAMILY_PREFIX)][0]
+    assert "dropped=[dos:cut]" in line
+    assert gc.FAMILY_LINE.fullmatch(line)
+    assert gc.verify_stage("b_thr", p.F, p.root)[0] == p.L
+    assert gc.FAMILY_LINE.fullmatch(line.replace("dos:cut", "dos: compute cut")) is None
+
+
+def _patch_line(root, commit):
+    return ("TEST_B ANALYSIS PATCH: analysis_sha256="
+            + gc.tree_hash(commit, list(gc.ANALYSIS_RELS), root)
+            + " date=2026-12-01 reason=fix a label")
+
+
+def _edit_analysis(root):
+    path = root / gc.CODE_REL / "expb" / "analysis_b.py"
+    with open(path, "a", encoding="utf-8", newline="\n") as fh:
+        fh.write("PATCHED = 1\n")
+    return _commit(root, "edit analysis")
+
+
+def _append_log(root, line, message="patch line"):
+    text = gc.log_text(_head(root), root)
+    _write(root, gc.LOG_REL, text + line + "\n")
+    return _commit(root, message)
+
+
+@needs_git
+def test_analysis_clean_accepts_the_pinned_tree_and_returns_its_hash(project):
+    expected = gc.tree_hash(project.M, list(gc.ANALYSIS_RELS), project.root)
+    assert gc.check_analysis_clean(project.L, project.root) == expected
+
+
+@needs_git
+def test_analysis_clean_refuses_a_working_tree_edit_or_a_non_head_commit(project):
+    with pytest.raises(gc.GateRefused, match="HEAD"):
+        gc.check_analysis_clean(project.F, project.root)
+    path = project.root / gc.CODE_REL / "expb" / "analysis_b.py"
+    with open(path, "a", encoding="utf-8", newline="\n") as fh:
+        fh.write("EDITED = 1\n")
+    with pytest.raises(gc.GateRefused, match="tracked change"):
+        gc.check_analysis_clean(project.L, project.root)
+
+
+@needs_git
+def test_analysis_clean_refuses_a_committed_edit_without_a_patch_line(project):
+    _edit_analysis(project.root)
+    with pytest.raises(gc.GateRefused, match="analysis_sha256"):
+        gc.check_analysis_clean(_head(project.root), project.root)
+
+
+@needs_git
+def test_analysis_clean_accepts_one_patch_line_in_its_own_commit(project):
+    code = _edit_analysis(project.root)
+    patch = _append_log(project.root, _patch_line(project.root, code))
+    want = gc.tree_hash(patch, list(gc.ANALYSIS_RELS), project.root)
+    assert gc.check_analysis_clean(patch, project.root) == want
+
+
+@needs_git
+def test_analysis_clean_refuses_a_patch_line_that_shares_its_commit_with_code(project):
+    code = _edit_analysis(project.root)
+    line = _patch_line(project.root, code)
+    _git(project.root, "reset", "-q", "--soft", "HEAD~1")
+    _write(project.root, gc.LOG_REL, gc.log_text(project.L, project.root) + line + "\n")
+    head = _commit(project.root, "code and patch together")
+    with pytest.raises(gc.GateRefused, match="own commit"):
+        gc.check_analysis_clean(head, project.root)
+
+
+@needs_git
+def test_analysis_clean_refuses_two_patch_lines_in_one_commit(project):
+    code = _edit_analysis(project.root)
+    line = _patch_line(project.root, code)
+    other = line.replace("fix a label", "fix another")
+    text = gc.log_text(_head(project.root), project.root)
+    _write(project.root, gc.LOG_REL, text + line + "\n" + other + "\n")
+    head = _commit(project.root, "two patches")
+    with pytest.raises(gc.GateRefused, match="own commit"):
+        gc.check_analysis_clean(head, project.root)
+
+
+@needs_git
+def test_analysis_clean_refuses_a_patch_line_rewritten_later(project):
+    code = _edit_analysis(project.root)
+    _append_log(project.root, _patch_line(project.root, code))
+    text = gc.log_text(_head(project.root), project.root)
+    _write(project.root, gc.LOG_REL, text.replace("fix a label", "fix a better label"))
+    head = _commit(project.root, "rewrite the patch reason")
+    with pytest.raises(gc.GateRefused, match="own commit|added once"):
+        gc.check_analysis_clean(head, project.root)
+
+
+@needs_git
+def test_analysis_clean_refuses_a_patch_hash_that_is_not_the_current_tree(project):
+    code = _edit_analysis(project.root)
+    line = _patch_line(project.root, code).replace(
+        gc.tree_hash(code, list(gc.ANALYSIS_RELS), project.root), "0" * 64)
+    head = _append_log(project.root, line)
+    with pytest.raises(gc.GateRefused, match="analysis_sha256"):
+        gc.check_analysis_clean(head, project.root)
+
+
+@needs_git
+def test_analysis_clean_compares_working_bytes_with_the_blob_even_without_status(
+        project, monkeypatch):
+    monkeypatch.setattr(gc, "check_clean", lambda root: None)     # status says nothing
+    path = project.root / gc.CODE_REL / "expb" / "analysis_b.py"
+    with open(path, "a", encoding="utf-8", newline="\n") as fh:
+        fh.write("EDITED = 1\n")
+    with pytest.raises(gc.GateRefused, match="working tree differs"):
+        gc.check_analysis_clean(project.L, project.root)
+
+
+@needs_git
+def test_analysis_clean_refuses_a_patch_line_added_removed_and_added_again(project):
+    code = _edit_analysis(project.root)
+    line = _patch_line(project.root, code)
+    base = gc.log_text(_head(project.root), project.root)
+    _write(project.root, gc.LOG_REL, base + line + "\n")
+    _commit(project.root, "add patch")
+    _write(project.root, gc.LOG_REL, base)
+    _commit(project.root, "remove patch")
+    _write(project.root, gc.LOG_REL, base + line + "\n")
+    head = _commit(project.root, "add patch again")
+    with pytest.raises(gc.GateRefused, match="added once"):
+        gc.check_analysis_clean(head, project.root)
+
+
+@needs_git
+def test_analysis_clean_refuses_a_patch_line_from_a_commit_that_is_not_below_the_pin(project):
+    root = project.root
+    family = [x for x in gc._log_lines(gc.log_text(project.L, root))
+              if x.startswith(("FROZEN", gc.FAMILY_PREFIX))]
+    _git(root, "checkout", "-q", project.M)
+    line = _patch_line(root, project.M)
+    _write(root, gc.LOG_REL, "# research log\n" + line + "\n")
+    _commit(root, "patch line before the pin")
+    _write(root, gc.LOG_REL, "# research log\n" + "\n".join(family) + "\n" + line + "\n")
+    head = _commit(root, "pin")
+    with pytest.raises(gc.GateRefused, match="below the pinning commit"):
+        gc.check_analysis_clean(head, root)
+
+
+@needs_git
+def test_analysis_clean_accepts_a_second_patch_and_uses_the_last_hash(project):
+    root = project.root
+    code1 = _edit_analysis(root)
+    _append_log(root, _patch_line(root, code1))
+    code2 = _edit_analysis(root)
+    patch2 = _append_log(root, _patch_line(root, code2).replace("fix a label", "second fix"))
+    assert gc.check_analysis_clean(patch2, root) == gc.tree_hash(
+        patch2, list(gc.ANALYSIS_RELS), root)
+
+
+@needs_git
+def test_analysis_clean_checks_every_patch_line_not_only_the_last(project):
+    root = project.root
+    code1 = _edit_analysis(root)
+    line1 = _patch_line(root, code1)
+    base = gc.log_text(_head(root), root)
+    for text in (base + line1 + "\n", base, base + line1 + "\n"):
+        _write(root, gc.LOG_REL, text)
+        _commit(root, "patch 1 added, removed, added again")
+    code2 = _edit_analysis(root)
+    head = _append_log(root, _patch_line(root, code2).replace("fix a label", "second fix"))
+    with pytest.raises(gc.GateRefused, match="added once"):
+        gc.check_analysis_clean(head, root)

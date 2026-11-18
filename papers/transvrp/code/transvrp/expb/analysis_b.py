@@ -28,6 +28,7 @@ import pandas as pd
 from ..expa import analysis as A
 from ..expa.paths import TEST_B_N
 from . import gatecheck as G
+from . import stages
 
 DELTA = A.DELTA
 TOL = A.TOL
@@ -38,7 +39,7 @@ TEST_B_SUFFIX = f".{STREAM}.csv"
 N_PATHS = 100_000                        # section 4.1: every arm at 10^5 paths
 N_INSTANCES = 20                         # section 1.2: unit = instance
 N_ROUTES = 62                            # section 1.1: eligible routes
-N_REPS = 3                               # section 4.1: replicates 0-2
+N_REPS = 3                               # section 4.1: replicates 0-2 (no-cut default; main() follows the cut)
 IND_INSTANCES = 10                       # section 3.8: 12 subset routes from 10 instances
 IND_ROUTES = 12
 IND_REPS = 1                             # section 3.8: rep 0 only
@@ -48,7 +49,15 @@ FULL = "nn_full"
 BASELINE = "baton_eq"
 LADDER_POLICIES = ("none", BASELINE, "oracle")
 REQUIRED_COLUMNS = ("inst", "route_id", "N", "rep", "policy", "mean_cost", "gap_closed",
-                    "eval_set", "n_eval", "fit_commit", "eval_commit", "family_sha256")
+                    "eval_set", "n_eval", "fit_commit", "eval_commit", "family_sha256",
+                    "stratum")
+CUT_SUFFIX = ":cut"                      # dropped entry of a compute-cut arm (9.2 (ii))
+SAME_COST_TOL = 1e-9                     # relative: two route-rep costs count as identical
+DA_COLUMNS = ("arm", "stage", "n", "mean", "median", "ci95_lo", "ci95_hi", "ci90_lo",
+              "ci90_hi", "n_better", "p_greater", "p_less", "branch")
+STRATA_COLUMNS = ("arm", "stratum", "n", "mean", "ci95_lo", "ci95_hi", "n_better")
+REPLICATE_COLUMNS = ("arm", "routes", "mean_sd_pct", "max_sd_pct")
+BUDGET_LABEL = "budget-limited"          # section 1.3 arm-level qualifier
 # independence world (section 3.8): (label, arm core, policy), each compared with FULL
 IND_COMPARISONS = (("none", "ladder", "none"), (BASELINE, "ladder", BASELINE),
                    ("oracle", "ladder", "oracle"), ("THR", "thr", "thr"),
@@ -141,17 +150,27 @@ def load_stage_tables(paths, *, family_sha256: str, frozen: dict | None = None) 
     return df
 
 
+def cut_arms(lists: dict) -> list:
+    """Arms removed by a compute cut: ``arm:cut`` entries of the FAMILY line's ``dropped``.
+    They have no fit and no rows; they are reported as cut and nothing else."""
+    return [item.split(":")[0] for item in lists["dropped"] if item.endswith(CUT_SUFFIX)]
+
+
 def check_membership(df: pd.DataFrame, lists: dict) -> None:
     """Every stage is an arm of the FAMILY line; every listed arm and independence stage
     has rows; each stage writes only its own policies. ``lists`` is the FAMILY line's
     lists (gatecheck.PinnedLog.lists)."""
     family, descriptive = set(lists["family"]), set(lists["descriptive"])
-    dropped = {item.split(":")[0] for item in lists["dropped"]}
+    cut = cut_arms(lists)
+    dropped = {item.split(":")[0] for item in lists["dropped"]} - set(cut)
     references, independence = set(lists["references"]), set(lists["independence"])
     if family & dropped:
         _refuse(f"arms both in the family and dropped: {sorted(family & dropped)}")
     allowed = family | descriptive | dropped | references
     stages = set(df["stage"])
+    cut_with_rows = sorted(set(cut) & {G.core_of_stage(s) for s in stages})
+    if cut_with_rows:
+        _refuse(f"arm(s) {cut_with_rows} are listed as cut (dropped=[arm:cut]) but have rows")
     for stage in sorted(stages):
         core = G.core_of_stage(stage)
         if stage in independence:
@@ -303,6 +322,107 @@ def independence_table(df: pd.DataFrame, delta: float = DELTA, *,
     return pd.DataFrame(out)
 
 
+def _arm_stages(df: pd.DataFrame, arms) -> list:
+    return [(arm, main_stage(df, arm)) for arm in arms]
+
+
+def da_table(df: pd.DataFrame, arms, delta: float = DELTA, *, n_instances: int = N_INSTANCES,
+             n_routes: int = N_ROUTES, n_reps: int = N_REPS) -> pd.DataFrame:
+    """D_a (section 1.4): each evaluated arm against baton_eq at 10^5 on test_b, classified
+    by A's unadjusted go/no-go. Outside F; no Holm; ``arms`` lists every arm with rows."""
+    ladder = main_stage(df, "ladder")
+    out = []
+    for arm, stage in _arm_stages(df, arms):
+        pair = _pair(df, (stage, arm), (ladder, BASELINE))
+        try:
+            A.check_coverage(pair, (f"D_{arm}", "A", N_PATHS, "B", N_PATHS), n_instances,
+                             n_routes, n_reps)
+        except ValueError as exc:
+            _refuse(str(exc))
+        d = A.instance_deltas(pair, "A", "B", N_PATHS).to_numpy()
+        res = A.go_no_go(d, delta)
+        out.append(dict(arm=arm, stage=stage, n=res["n"], mean=res["mean"],
+                        median=res["median"], ci95_lo=res["ci95"][0], ci95_hi=res["ci95"][1],
+                        ci90_lo=res["ci90"][0], ci90_hi=res["ci90"][1], n_better=res["n_pos"],
+                        p_greater=res["p_greater"], p_less=res["p_less"],
+                        branch=res["branch"]))
+    return pd.DataFrame(out, columns=DA_COLUMNS)
+
+
+def alpz_vs_thr(df: pd.DataFrame, delta: float = DELTA, *, n_instances: int = N_INSTANCES,
+                n_routes: int = N_ROUTES, n_reps: int = N_REPS) -> dict | None:
+    """ALP-Z against THR on test_b (section 1.4, descriptive): the paired cost difference
+    (positive: ALP-Z cheaper) and the share of route-reps with identical mean cost (the rows
+    hold costs, not decisions: identical per-route costs are the test_b counterpart of
+    identical decisions). None if either arm has no rows (cut or dropped away)."""
+    stages = {c: [s for s in set(df["stage"]) if G.core_of_stage(s) == c]
+              for c in ("alpz", "thr")}
+    if not stages["alpz"] or not stages["thr"]:
+        return None
+    a_stage, t_stage = main_stage(df, "alpz"), main_stage(df, "thr")
+    res = _checked_contrast(df, "ALPZ_THR", (a_stage, "alpz"), (t_stage, "thr"), delta=delta,
+                            n_instances=n_instances, n_routes=n_routes, n_reps=n_reps)
+    key = ["inst", "route_id", "rep"]
+    a = df[(df["stage"] == a_stage) & (df["policy"] == "alpz")].set_index(key)
+    t = df[(df["stage"] == t_stage) & (df["policy"] == "thr")].set_index(key)
+    both = a.index.intersection(t.index)
+    ca, ct = a.loc[both, "mean_cost"], t.loc[both, "mean_cost"]
+    same = (ca - ct).abs() <= SAME_COST_TOL * ct.abs().clip(lower=1.0)
+    out = dict(n=res["n"], mean=res["mean"], ci95=res["ci95"], n_better=res["n_better"],
+               identical_share=float(same.mean()), route_reps=int(len(both)))
+    if "handoff_rate" in df.columns:
+        out["handoff_rate_gap"] = float((a.loc[both, "handoff_rate"]
+                                         - t.loc[both, "handoff_rate"]).abs().mean())
+    return out
+
+
+def strata_table(df: pd.DataFrame, arms, delta: float = DELTA) -> pd.DataFrame:
+    """Section 8 item 5, descriptive: FULL against each arm by stratum (medium, long). The
+    instance deltas are taken over the routes of the stratum; no coverage rule is applied."""
+    full = main_stage(df, "full")
+    out = []
+    for arm, stage in _arm_stages(df, arms):
+        pair = _pair(df, (full, FULL), (stage, arm))
+        for stratum in sorted(set(pair["stratum"].astype(str))):
+            sub = pair[pair["stratum"].astype(str) == stratum]
+            d = A.instance_deltas(sub, "A", "B", N_PATHS).to_numpy()
+            lo, hi = A._ci(d, 0.975) if d.size > 1 else (float("nan"), float("nan"))
+            out.append(dict(arm=arm, stratum=stratum, n=int(d.size), mean=float(d.mean()),
+                            ci95_lo=lo, ci95_hi=hi, n_better=int((d > 0).sum())))
+    return pd.DataFrame(out, columns=STRATA_COLUMNS)
+
+
+def replicate_sd(df: pd.DataFrame) -> pd.DataFrame:
+    """Section 8 item 4: between-replicate SD of the route mean cost, per policy, in percent
+    of the route's replicate mean (sample SD over the replicates; mean and maximum over the
+    routes). Needs at least two replicates per route."""
+    key = ["policy", "inst", "route_id"]
+    grp = df.groupby(key)["mean_cost"]
+    sd = 100.0 * grp.std(ddof=1) / grp.mean().abs()
+    out = []
+    for policy, vals in sd.groupby(level="policy", sort=True):
+        out.append(dict(arm=policy, routes=int(vals.size), mean_sd_pct=float(vals.mean()),
+                        max_sd_pct=float(vals.max())))
+    return pd.DataFrame(out, columns=REPLICATE_COLUMNS)
+
+
+def thr_over_dp(df: pd.DataFrame, dp: dict) -> dict | None:
+    """Section 3.8: THR's realised test_b cost against its own-model DP value, pooled over
+    route-reps, in percent of the DP value. ``dp`` maps ``inst|route|rep`` to the DP value
+    (written into fidelity_dev.md by fidelity). None without DP values or THR rows."""
+    stages = [s for s in set(df["stage"]) if G.core_of_stage(s) == "thr"]
+    if not dp or not stages:
+        return None
+    rows = df[(df["stage"] == main_stage(df, "thr")) & (df["policy"] == "thr")]
+    keys = [f"{r.inst}|{r.route_id}|{r.rep}" for r in rows.itertuples()]
+    missing = [k for k in keys if k not in dp]
+    if missing:
+        _refuse(f"DP value missing for {len(missing)} THR route-reps (first: {missing[0]})")
+    cost = float(rows["mean_cost"].sum())
+    model = float(sum(dp[k] for k in keys))
+    return dict(excess_pct=100.0 * (cost - model) / model, route_reps=len(keys))
+
+
 def re_eval(df: pd.DataFrame, delta: float = DELTA, *, n_instances: int = N_INSTANCES,
             n_routes: int = N_ROUTES, n_reps: int = N_REPS) -> dict:
     """RE-EVAL (section 1.1, outside F): A's unadjusted go/no-go (one-sided 0.025 per
@@ -321,22 +441,36 @@ def re_eval(df: pd.DataFrame, delta: float = DELTA, *, n_instances: int = N_INST
 
 def build_report(df: pd.DataFrame, lists: dict, *, delta: float = DELTA,
                  n_instances: int = N_INSTANCES, n_routes: int = N_ROUTES,
-                 n_reps: int = N_REPS) -> dict:
-    """Membership checks, then every table. Nothing is omitted because of its result."""
+                 n_reps: int = N_REPS, labels: dict | None = None,
+                 thr_dp: dict | None = None) -> dict:
+    """Membership checks, then every table. Nothing is omitted because of its result.
+    ``labels`` maps arm -> budget-limited (section 6.3), ``thr_dp`` the DP values of 3.8."""
     check_membership(df, lists)
     independence = set(lists["independence"])
     main = df[~df["stage"].isin(independence)]
     ind = df[df["stage"].isin(independence)]
+    cut = cut_arms(lists)
+    labels = dict(labels or {})
     reasons = {arm: "descriptive" for arm in lists["descriptive"]}
     for item in lists["dropped"]:
-        reasons[item.split(":")[0]] = f"dropped={item}"
+        if not item.endswith(CUT_SUFFIX):
+            reasons[item.split(":")[0]] = f"dropped={item}"
+    for arm in reasons:
+        if labels.get(arm):
+            reasons[arm] += f"; {BUDGET_LABEL}"
+    evaluated = [a for a in B_ARMS if a in set(lists["family"]) | set(reasons)]
     cover = dict(delta=delta, n_instances=n_instances, n_routes=n_routes, n_reps=n_reps)
     return dict(
-        lists=lists,
+        lists=lists, labels=labels, cut=cut,
         family=family_table(main, lists["family"], **cover),
         outside=outside_table(main, reasons, **cover),
         independence=independence_table(ind, delta) if independence else None,
         re_eval=re_eval(main, **cover),
+        da=da_table(main, evaluated, **cover),
+        alpz_thr=alpz_vs_thr(main, **cover),
+        thr_dp=thr_over_dp(main, thr_dp or {}),
+        strata=strata_table(main, evaluated, delta),
+        rep_sd=replicate_sd(main),
     )
 
 
@@ -357,6 +491,32 @@ def compute_table(models_dirs) -> pd.DataFrame:
             row.update({k: budget.get(k) for k in COMPUTE_FIELDS})
             rows.append(row)
     return pd.DataFrame(rows, columns=COMPUTE_COLUMNS)
+
+
+def payload_cut_reps(models_dirs) -> set:
+    """Replicate counts of the cut (iii) record carried by the B payloads (``cuts``)."""
+    from ..expa import sweep     # noqa: PLC0415
+    found = set()
+    for models_dir in models_dirs:
+        for path in sorted(Path(models_dir).glob("*.pkl")):
+            cuts = sweep.load_payload(path).get("cuts")
+            if cuts is not None:
+                found.add(len(cuts["reps"]))
+    return found
+
+
+def resolve_n_reps(requested: int | None, models_dirs) -> int:
+    """Replicates per route: the cut recorded in the payloads, else ``stages.ACTIVE_CUTS``;
+    an explicit ``--n-reps`` must agree with the payload record (section 9.2 (iii))."""
+    recorded = payload_cut_reps(models_dirs or [])
+    if len(recorded) > 1:
+        _refuse(f"payloads record different cut (iii) replicate counts {sorted(recorded)}")
+    if requested is None:
+        return recorded.pop() if recorded else len(stages.ACTIVE_CUTS.reps)
+    if recorded and requested not in recorded:
+        _refuse(f"--n-reps {requested} contradicts the cut recorded in the payloads "
+                f"({sorted(recorded)[0]} replicates)")
+    return int(requested)
 
 
 def _float_or_nan(value) -> float:
@@ -402,9 +562,12 @@ def _ci(lo: float, hi: float) -> str:
     return f"[{lo:+.2f}, {hi:+.2f}]"
 
 
-def arm_claim(row: pd.Series, delta: float = DELTA) -> str:
-    """The claim template of section 1.3 for one family row. Never 'FULL = arm'."""
+def arm_claim(row: pd.Series, delta: float = DELTA, budget_limited: bool = False) -> str:
+    """The claim template of section 1.3 for one family row. Never 'FULL = arm'. A
+    budget-limited arm carries the label in the sentence (arm-level qualifier of 1.3)."""
     arm, branch = row["arm"], row["branch"]
+    if budget_limited:
+        arm = f"{arm} ({BUDGET_LABEL})"
     mean = float(row["mean"])
     ci95 = _ci(row["ci95_lo"], row["ci95_hi"])
     holm = _ci(row["holm_lo"], row["holm_hi"])
@@ -453,8 +616,13 @@ def render_summary(report: dict, *, family_line: str, eval_commit: str,
         "any table because of its result.**", "",
         f"## 1. Primary family (FULL vs each arm at 10^5, Holm over |F| = {len(fam)})", "",
         _md(_family_display(fam)), "", "Claims (section 1.3 templates):", ""]
-    lines += [f"- **{row['arm']}** [{row['branch']}]: {arm_claim(row, delta)}"
+    labels = report.get("labels", {})
+    lines += [f"- **{row['arm']}** [{row['branch']}]: "
+              f"{arm_claim(row, delta, bool(labels.get(row['arm'])))}"
               for _, row in fam.iterrows()]
+    if report.get("cut"):
+        lines += ["", f"Arms removed by a compute cut (9.2 (ii)), not fitted and not "
+                      f"evaluated: {report['cut']}."]
     lines += ["", "## 2. Descriptive and dropped arms (outside F; unadjusted; no branch)", "",
               _md(outside), ""]
     lines += ["## 3. Independence world (section 3.8; descriptive; no Holm; 12 routes, rep 0)",
@@ -467,7 +635,27 @@ def render_summary(report: dict, *, family_line: str, eval_commit: str,
               f"{_ci(*re['ci95'])} (CI95), {re['n_pos']}/{re['n']} instances better; A's "
               f"unadjusted rule gives **{re['branch']}** (one-sided p: greater "
               f"{re['p_greater']:.3g}, less {re['p_less']:.3g}).", "",
-              "## 5. Wall-clock and budget", ""]
+              "## 5. D_a: each evaluated arm vs baton_eq at 10^5 (outside F; A's unadjusted "
+              "rule)", "", _md(report["da"]), "",
+              "## 6. ALP-Z vs THR on test_b (descriptive)", ""]
+    av = report["alpz_thr"]
+    lines += ["_(an arm is absent)_" if av is None else
+              f"Paired difference (positive: ALP-Z cheaper) {av['mean']:+.3f}% "
+              f"{_ci(*av['ci95'])}, ALP-Z better on {av['n_better']}/{av['n']} instances; "
+              f"identical mean cost on {av['identical_share']:.1%} of {av['route_reps']} "
+              "route-reps (rows hold costs, not decisions)"
+              + (f"; mean |handoff-rate gap| {av['handoff_rate_gap']:.4f}"
+                 if "handoff_rate_gap" in av else "") + ".", "",
+              "## 7. THR realised cost over its own-model DP value (section 3.8)", ""]
+    td = report["thr_dp"]
+    lines += ["_(no DP values in the derivation block)_" if td is None else
+              f"THR's realised test_b cost exceeds its own-model DP value by "
+              f"{td['excess_pct']:+.2f}% (pooled over {td['route_reps']} route-reps).", "",
+              "## 8. Strata (descriptive; FULL vs arm, positive: FULL cheaper)", "",
+              _md(report["strata"]), "",
+              "## 9. Between-replicate SD of the route mean cost (percent)", "",
+              _md(report["rep_sd"]), "",
+              "## 10. Wall-clock and budget", ""]
     if compute is None:
         lines += ["_(no payload directories given with --models)_", ""]
     else:
@@ -488,6 +676,9 @@ def write_outputs(report: dict, out_dir, *, family_line: str, eval_commit: str,
     report["outside"].to_csv(out / "outside.csv", index=False)
     if report["independence"] is not None:
         report["independence"].to_csv(out / "independence.csv", index=False)
+    report["da"].to_csv(out / "da.csv", index=False)
+    report["strata"].to_csv(out / "strata.csv", index=False)
+    report["rep_sd"].to_csv(out / "replicate_sd.csv", index=False)
     if compute is not None:
         compute.to_csv(out / "compute.csv", index=False)
         compute_summary(compute).to_csv(out / "compute_summary.csv", index=False)
@@ -534,10 +725,16 @@ def main(argv: list[str] | None = None) -> int:
                     help="a models/<stage> directory of payloads (wall-clock and budget)")
     ap.add_argument("--repo", type=Path, default=None,
                     help="repository root (default: the checkout this module lives in)")
+    ap.add_argument("--n-routes", type=int, default=N_ROUTES,
+                    help="eligible routes covered (62; fewer only by a pre-committed cut)")
+    ap.add_argument("--n-reps", type=int, default=None,
+                    help="replicates per route; default: the cut recorded in the --models "
+                         "payloads, else the active cut (3; 2 under cut (iii), section 9.2)")
     args = ap.parse_args(argv)
     try:
         root = G._root(args.repo)
         head = _head(root)
+        G.check_analysis_clean(head)          # working tree == hashed blobs (review M4)
         pinned = G.pinned_log(root, head)
         check_analysis_pin(G.tree_hash(head, list(G.ANALYSIS_RELS), root),
                            pinned.hashes["analysis_sha256"],
@@ -545,7 +742,11 @@ def main(argv: list[str] | None = None) -> int:
         frozen = {stage: commit for commit, stages in pinned.frozen for stage in stages}
         df = load_stage_tables(args.merged, family_sha256=family_hash(pinned.family_line),
                                frozen=frozen)
-        report = build_report(df, pinned.lists)
+        block = G.read_derivation(head, root)
+        n_reps = resolve_n_reps(args.n_reps, args.models)
+        report = build_report(df, pinned.lists, labels=block.get("budget_limited"),
+                              thr_dp=block.get("thr_dp"), n_routes=args.n_routes,
+                              n_reps=n_reps)
         compute = compute_table(args.models) if args.models else None
         path = write_outputs(report, args.out, family_line=pinned.family_line,
                              eval_commit=str(df["eval_commit"].iloc[0]), compute=compute)

@@ -67,13 +67,22 @@ from .train import ConstantPredictor, NetPredictor, StageConfig, fit_neural  # n
 from ..expb import codecs  # noqa: E402
 from ..expb.curves import CURVE_ARMS, fit_pass_curves  # noqa: E402
 from ..expb.gatecheck import library_versions, write_manifest  # noqa: E402
+from ..expb.dqn import resolve_device  # noqa: E402
 from ..expb.registry import ARM_POLICY_B, ARM_SPECS, B_ARMS, fit_arm  # noqa: E402
-from ..expb.stages import b_stage_defs  # noqa: E402
+from ..expb.stages import ACTIVE_CUTS, b_stage_defs, cut_record  # noqa: E402
 from ..expb.thr import permute_columns  # noqa: E402
 
 EXPA_DIR = Path(__file__).resolve().parent
 CODE_DIR = EXPA_DIR.parents[1]
 DEFAULT_RESULTS = CODE_DIR / "results" / "expA"
+DEFAULT_RESULTS_B = CODE_DIR / "results" / "expB"     # where gatecheck reads B models (C1)
+MAX_GPU_JOBS = 1          # EXPERIMENT_B 9: one GPU process; CPU arms keep every worker
+
+
+def default_results_dir(stage: str) -> Path:
+    """B stages write models, rows and manifests under ``results/expB``, the tree the
+    test_b gate reads (EXPERIMENT_B 5.3); A stages keep ``results/expA``."""
+    return DEFAULT_RESULTS_B if stage.startswith("b_") else DEFAULT_RESULTS
 SMOKE_INSTANCE = "CON3-0"
 OTR21_MIN_N = 10_000
 LADDER_LABELS = ("none", "tuned_tau", "baton_eq", "oracle")
@@ -133,6 +142,7 @@ class StageSpec:
     independent: bool = False     # EXPERIMENT_B 3.8: stop columns permuted
     pass_curve: int = 0           # B tuning: passes of one DQN/PPO run, each scored (6.3)
     reuse_models: str = ""        # B cut (i): A's model directory, relative to results_dir's parent
+    disabled: str = ""            # non-empty: every entry point refuses with this reason
 
 
 STAGE_SPECS: dict[str, StageSpec] = {
@@ -170,6 +180,37 @@ def stage_spec(stage: str) -> StageSpec:
     return STAGE_SPECS[stage]
 
 
+def require_enabled(stage: str) -> StageSpec:
+    """``stage_spec`` that refuses a disabled stage (cut (i), EXPERIMENT_B 9.2 rev 3.3)."""
+    spec = stage_spec(stage)
+    if spec.disabled:
+        raise ValueError(f"stage {stage!r} is disabled: {spec.disabled}")
+    return spec
+
+
+def stage_uses_gpu(stage: str) -> bool:
+    """True when a fit of the stage trains a B arm whose configuration resolves to CUDA."""
+    spec = stage_spec(stage)
+    for arm, _ in spec.neural:
+        if arm not in B_ARMS:
+            continue
+        pairs = next((p for a, p in spec.arm_cfg if a == arm), ())
+        device = getattr(ARM_SPECS[arm].config_cls(**dict(pairs)), "device", None)
+        if device is None:
+            continue
+        try:
+            if resolve_device(device).type == "cuda":
+                return True
+        except RuntimeError:       # explicit cuda without a device: the worker will fail
+            return True
+    return False
+
+
+def effective_jobs(stage: str, jobs: int) -> int:
+    """Worker count of a fit: at most ``MAX_GPU_JOBS`` for a stage that uses the GPU."""
+    return min(jobs, MAX_GPU_JOBS) if stage_uses_gpu(stage) else jobs
+
+
 @dataclass(frozen=True)
 class Ctx:
     results_dir: Path
@@ -204,6 +245,10 @@ def _route_rows(routes: str, elig: pd.DataFrame) -> list[tuple[str, int]]:
         el = elig[elig["eligible"].astype(bool)]
     elif routes == "subset":
         el = elig[elig["in_1e6_subset"].astype(bool)]
+    elif routes == "subset6":         # cut (ii), 6.1: 3 medium + 3 long of the subset
+        sub = elig[elig["in_1e6_subset"].astype(bool)].sort_values(["inst", "route_id"])
+        el = pd.concat([sub[sub["stratum"] == s].head(3) for s in ("medium", "long")])
+        return [(str(r.inst), int(r.route_id)) for r in el.itertuples()]
     else:
         raise ValueError(f"unknown route selection {routes!r}")
     el = el.sort_values(["inst", "route_id"])
@@ -319,6 +364,8 @@ def check_test_gate(stage: str, eval_set: str, frozen_commit: str | None) -> Non
     evaluation is allowed; the commit checks are ``paths.verify_test_gate``."""
     if eval_set not in EVAL_SETS:
         raise GateError(f"eval set must be one of {EVAL_SETS}")
+    if stage_spec(stage).disabled:
+        raise GateError(f"stage {stage!r} is disabled: {stage_spec(stage).disabled}")
     if eval_set not in TEST_STREAMS:
         return
     check_stream_for_stage(stage, eval_set)
@@ -453,12 +500,13 @@ def _fit_b_payload(job: Job, sspec: StageSpec, spec: RouteSpec, paths: Paths) ->
                              f"configuration has {cfg.passes}")
         curves, stats, diag, budget = fit_pass_curves(job.arm, spec, paths, job.N, job.rep, cfg)
         return {"kind": "neural", "arm": job.arm, "stats": stats, "diag": diag,
-                "budget": budget,
+                "budget": dict(budget, peak_rss_mb=process_peak_rss_mb()),
                 "pass_models": {p: codecs.pack_models(m, job.arm, spec.E0)
                                 for p, m in curves.items()}}
     models, stats, diag, budget = fit_arm(job.arm, spec, paths, job.N, job.rep, cfg)
     return {"kind": "neural", "models": codecs.pack_models(models, job.arm, spec.E0),
-            "stats": stats, "diag": diag, "budget": budget}
+            "stats": stats, "diag": diag,
+            "budget": dict(budget, peak_rss_mb=process_peak_rss_mb())}
 
 
 # ---------------------------------------------------------------- fit
@@ -493,6 +541,7 @@ def run_fit_job(job: Job, ctx: Ctx) -> str:
     if sspec.test_stream == "test_b":
         # EXPERIMENT_B 5.3 item 8: the gate compares these with the running process
         payload["libraries"] = library_versions()
+        payload["cuts"] = cut_record(ACTIVE_CUTS)     # 9.2: the cut set the fit ran under
     # the commit alone does not prove the code that was fitted: record whether the
     # tree was clean when the fit ran (run_eval_job refuses test use otherwise)
     payload.update(job=job, fit_seconds=time.perf_counter() - t0,
@@ -615,10 +664,11 @@ def _run_all(fn, items: list, jobs: int) -> list:
         return list(ex.map(fn, items, chunksize=1))
 
 
-def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
+def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path | None = None,
             jobs: int = 1, commit: str | None = None,
             chunk_dir: Path | None = None, only: dict | None = None) -> dict:
-    spec = stage_spec(stage)
+    spec = require_enabled(stage)
+    results_dir = default_results_dir(stage) if results_dir is None else results_dir
     if spec.reuse_models:
         raise ValueError(f"stage {stage!r} reads A's model files ({spec.reuse_models}); "
                          "it has no fit")
@@ -630,6 +680,7 @@ def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
     planned = plan_stage(stage, elig, only)
     if only is not None and not planned:
         raise ValueError(f"--only {only} matches no planned job of stage {stage!r}")
+    jobs = effective_jobs(stage, jobs)
     done = _run_all(partial(run_fit_job, ctx=ctx), planned, jobs)
     return {"planned": len(planned), "fitted": done.count("fit"),
             "skipped": done.count("skip")}
@@ -641,10 +692,13 @@ def planned_keys(stage: str, results_dir: Path) -> set[str]:
     return {j.key for j in plan_stage(stage, elig)}
 
 
-def run_eval(stage: str, eval_set: str, results_dir: Path = DEFAULT_RESULTS,
+def run_eval(stage: str, eval_set: str, results_dir: Path | None = None,
              frozen_commit: str | None = None, jobs: int = 1,
              only: dict | None = None) -> dict:
     spec = stage_spec(stage)
+    if spec.disabled and eval_set not in TEST_STREAMS:
+        require_enabled(stage)
+    results_dir = default_results_dir(stage) if results_dir is None else results_dir
     check_test_gate(stage, eval_set, frozen_commit)
     ctx = Ctx(Path(results_dir), stage, spec.cfg, current_commit())
     model_files = [p for p in sorted(ctx.models_dir.glob("*.pkl"))
@@ -686,10 +740,12 @@ def add_gap_closed(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def merge_stage(stage: str, eval_set: str = "dev",
-                results_dir: Path = DEFAULT_RESULTS, only: dict | None = None) -> pd.DataFrame:
+                results_dir: Path | None = None, only: dict | None = None) -> pd.DataFrame:
     """Concatenates the row files of a stage into ``<results_dir>/<stage>.csv`` (dev) or
     ``<stage>.test.csv``. With ``only`` (see ``parse_only``) just the files of the jobs
     that match; the layout is the same, so a filtered merge can be passed to pilot --rerun."""
+    require_enabled(stage)
+    results_dir = default_results_dir(stage) if results_dir is None else results_dir
     rows_dir = Path(results_dir) / stage / "rows"
     suffix = f".{eval_set}.csv"
     files = sorted(f for f in rows_dir.glob(f"*{suffix}")
@@ -712,7 +768,7 @@ def merge_stage(stage: str, eval_set: str = "dev",
 
 # ---------------------------------------------------------------- timing (section 7.3)
 
-def run_timing(results_dir: Path = DEFAULT_RESULTS, *, stage: str = "pilot",
+def run_timing(results_dir: Path | None = None, *, stage: str = "pilot",
                n_rows: int = 10 ** 6, model_N: int = 10 ** 5, arm: str = "full",
                rep: int = 0, inst: str = TIMING_INST, route_id: int = TIMING_ROUTE,
                chunk_dir: Path | None = None) -> dict:
@@ -725,7 +781,7 @@ def run_timing(results_dir: Path = DEFAULT_RESULTS, *, stage: str = "pilot",
     record. Peak memory is the traced peak of the generation step and of the
     cache-plus-stop step, and the process high-water mark at the end.
     """
-    results_dir = Path(results_dir)
+    results_dir = Path(default_results_dir(stage) if results_dir is None else results_dir)
     key = Job("neural", inst, route_id, model_N, rep, arm=arm).key
     model_path = results_dir / "models" / stage / f"{key}.pkl"
     if not model_path.exists():
@@ -780,7 +836,8 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name)
         p.add_argument("--stage", required=True, choices=tuple(STAGE_SPECS))
         p.add_argument("--jobs", type=int, default=1)
-        p.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS)
+        p.add_argument("--results-dir", type=Path, default=None,
+                       help="default results/expB for b_* stages, results/expA otherwise")
         p.add_argument("--only", default=None, metavar="FIELD=VALUE[,...]",
                        help="restrict to jobs matching these Job fields exactly, e.g. "
                             "arm=full,inst=CON3-0,route=0,N=10000,rep=0 (fields: "
@@ -796,9 +853,10 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--eval", dest="eval_set", default="dev", choices=EVAL_SETS)
     mp = sub.add_parser("manifest", help="model manifest of a B stage (EXPERIMENT_B 5.3)")
     mp.add_argument("--stage", required=True, choices=tuple(STAGE_SPECS))
+    mp.add_argument("--results-dir", type=Path, default=None)
     tp = sub.add_parser("timing", help="pilot 10^6 timing pass (section 7.3)")
     tp.add_argument("--stage", default="pilot", choices=tuple(STAGE_SPECS))
-    tp.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS)
+    tp.add_argument("--results-dir", type=Path, default=None)
     tp.add_argument("--n-rows", type=int, default=10 ** 6)
     tp.add_argument("--model-n", type=int, default=10 ** 5)
     tp.add_argument("--arm", default="full", choices=("full", "scalar", "mlp"))
@@ -806,6 +864,8 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     try:
         only = parse_only(getattr(args, "only", None))
+        if getattr(args, "results_dir", None) is None:
+            args.results_dir = default_results_dir(args.stage)
         if args.cmd == "timing":
             info = run_timing(args.results_dir, stage=args.stage, n_rows=args.n_rows,
                               model_N=args.model_n, arm=args.arm,
@@ -815,7 +875,8 @@ def main(argv: list[str] | None = None) -> int:
                                         "traced_cache_stop_peak_mb")})
             return 0
         if args.cmd == "manifest":
-            info = {"manifest": str(write_manifest(args.stage))}
+            require_enabled(args.stage)
+            info = {"manifest": str(write_manifest(args.stage, results_dir=args.results_dir))}
         elif args.cmd == "fit":
             elig = stage_eligibility(args.stage, args.eligibility)
             info = run_fit(args.stage, elig, args.results_dir, args.jobs,

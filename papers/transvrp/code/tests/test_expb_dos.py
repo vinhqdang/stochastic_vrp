@@ -93,8 +93,10 @@ def test_loss_is_the_stop_or_continue_cost_on_the_E0_scale():
 
 def test_stage_steps_follow_the_formula_and_its_floor_and_cap():
     cfg = DOSConfig()
-    assert stage_steps(10_000, cfg) == 50                # ceil(20*10000/8192) = 25 -> floor
-    assert stage_steps(100_000, cfg) == 245              # ceil(244.14) = 245
+    assert cfg.s_min == 400 == cfg.s_max                 # revision 3.4: 400 steps per stage
+    assert stage_steps(10_000, cfg) == 400               # ceil(20*10000/8192) = 25 -> floor
+    assert stage_steps(100_000, cfg) == 400              # ceil(244.14) = 245 -> floor
+    assert stage_steps(100_000, DOSConfig(s_min=50)) == 245
     assert stage_steps(1_000_000, cfg) == 400            # capped
 
 
@@ -459,3 +461,13 @@ def test_smoke_fit_with_every_stage_held_records_an_objective_for_each_stage_wit
     big = [d for d in stages if int(d["n_val"]) >= 100]
     assert big                                            # the 100-row regime is exercised
     assert all(fd._dos_objective(d) is not None for d in big)
+
+
+def test_epochs_factor_is_a_config_parameter_with_the_documented_default():
+    cfg = DOSConfig()
+    assert cfg.epochs_factor == 20
+    assert stage_steps(40_000, cfg) == 400                        # floor 400 over ceil(...) = 98
+    assert stage_steps(40_000, DOSConfig(s_min=50)) == 98          # ceil(20 * 40000 / 8192)
+    assert stage_steps(40_000, DOSConfig(epochs_factor=60, s_min=50, s_max=1000)) == 293
+    assert stage_steps(40_000, DOSConfig(epochs_factor=60, s_min=50)) == 293    # under the cap of 400
+    assert stage_steps(40_000, DOSConfig(epochs_factor=200, s_min=50, s_max=400)) == 400   # cap
