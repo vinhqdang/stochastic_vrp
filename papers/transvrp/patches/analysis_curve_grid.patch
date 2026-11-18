@@ -1,0 +1,79 @@
+diff --git a/papers/transvrp/code/tests/test_expa_analysis.py b/papers/transvrp/code/tests/test_expa_analysis.py
+index 885fd71..c7674ce 100644
+--- a/papers/transvrp/code/tests/test_expa_analysis.py
++++ b/papers/transvrp/code/tests/test_expa_analysis.py
+@@ -249,6 +249,36 @@ def test_big_stage_rows_shared_with_main_are_not_double_counted(tmp_path):
+     assert res["family"]["S11"]["n"] == 20
+ 
+ 
++def test_curve_grid_excludes_N_where_baton_eq_has_no_rows(tmp_path):
++    """nn_full has 10^6 rows (descriptive subset, big stage) but baton_eq does not.
++    The curve grid is the intersection of N where both policies have rows, so the
++    summary must not raise and the curve must equal the main ladder."""
++    df = _synthetic_rows()
++    main = df[df["N"] != 1000000]
++    src = df[df["N"] == 1000000]
++    big = src[src["policy"].isin(["baton_big", "dp_big", "none", "oracle"])]
++    # nn_full and nn_scalar at 10^6 on a route subset only (rep 0 of route 0),
++    # relabelled from 10^5 rows
++    sub_1e6 = df[df["policy"].isin(["nn_full", "nn_scalar"]) & (df["N"] == 100000)
++                 & (df["route_id"] == 0) & (df["rep"] == 0)].copy()
++    sub_1e6["N"] = 1000000
++    big = pd.concat([big, sub_1e6], ignore_index=True)
++    res = analysis.write_summary(main, tmp_path, big_df=big, n_routes=SYN_ROUTES, eval_set="dev")
++    assert res["family"]["S10"]["n"] == 20
++    cur = pd.read_csv(tmp_path / "curve.csv")
++    assert list(cur["N"]) == [100, 500, 2000, 10000, 100000]
++    assert 1000000 not in set(cur["N"])
++
++
++def test_curve_refuses_missing_baton_eq_rows_at_a_ladder_n():
++    """A baton_eq gap at a ladder N (not the descriptive 10^6) must raise, not be
++    silently dropped from the curve grid."""
++    df = _synthetic_rows()
++    gap = df[~((df["policy"] == "baton_eq") & (df["N"] == 500))]
++    with pytest.raises(ValueError, match="500"):
++        analysis.curve(gap)
++
++
+ def test_big_stage_disagreeing_with_main_is_refused(tmp_path):
+     df = _synthetic_rows()
+     big = df[(df["N"] == 1000000) & (df["rep"] == 0)].copy()
+diff --git a/papers/transvrp/code/transvrp/expa/analysis.py b/papers/transvrp/code/transvrp/expa/analysis.py
+index 14b72c8..107a87f 100644
+--- a/papers/transvrp/code/transvrp/expa/analysis.py
++++ b/papers/transvrp/code/transvrp/expa/analysis.py
+@@ -60,6 +60,7 @@ assert len(FAMILY) == FAMILY_SIZE
+ PRIMARY = ("PRIMARY", "nn_full", 100000, "baton_eq", 100000)
+ M11 = ("M11", "nn_full", 100000, "boost", 100000)
+ CURVE_POLICIES = ("nn_full", "baton_eq")
++DESCRIPTIVE_BIG_N = 1_000_000  # nn_full subset rows at 10^6 (contrast S10); exempt from curve grid
+ 
+ 
+ # ---------------------------------------------------------------- statistics
+@@ -361,9 +362,23 @@ def contrast(df: pd.DataFrame, cid: str, a: str, N_a: int, b: str, N_b: int,
+ 
+ 
+ def curve(df: pd.DataFrame, delta: float = DELTA) -> pd.DataFrame:
+-    """Delta-bar (FULL vs BATON-eq) with CI95 against log10 N over the grid."""
++    """Delta-bar (FULL vs BATON-eq) with CI95 against log10 N over the grid.
++
++    The grid is the set of N at which BOTH nn_full and baton_eq have rows
++    (intersection), sorted. The only N allowed to exist for one policy alone is
++    DESCRIPTIVE_BIG_N (nn_full on a 12-route subset, compared in contrast S10);
++    a guard raises ValueError naming any other N where only one of the two
++    policies has rows, so a missing baton_eq row is never silently skipped."""
+     sub = df[df["policy"].isin(CURVE_POLICIES)]
+-    grid = sorted(set(sub.loc[sub["policy"] == "nn_full", "N"].astype(int)))
++    n_full = set(sub.loc[sub["policy"] == "nn_full", "N"].astype(int))
++    n_base = set(sub.loc[sub["policy"] == "baton_eq", "N"].astype(int))
++    extra = (n_full ^ n_base) - {DESCRIPTIVE_BIG_N}
++    if extra:
++        details = "; ".join(
++            f"N = {N}: baton_eq missing" if N in n_full else f"N = {N}: nn_full missing"
++            for N in sorted(extra))
++        raise ValueError(f"curve grid: policies without matching rows ({details})")
++    grid = sorted(n_full & n_base)
+     rows = []
+     for N in grid:
+         c = contrast(df, f"curve@{N}", "nn_full", N, "baton_eq", N, delta)

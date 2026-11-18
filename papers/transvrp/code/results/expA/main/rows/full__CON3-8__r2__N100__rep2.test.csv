@@ -1,0 +1,2 @@
+inst,route_id,m,stratum,N,rep,policy,mean_cost,handoff_rate,fail_rate,gap_closed,n_eval,eval_set,fit_seconds,fit_commit,eval_commit
+CON3-8,2,18,long,100,2,nn_full,30.985441563049996,0.47295,0.05255,,20000,test,305.9257119000031,c37ad7c4685714b0991b5c4b0f857ee00c0ddb55,c37ad7c4685714b0991b5c4b0f857ee00c0ddb55

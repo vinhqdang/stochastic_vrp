@@ -60,6 +60,7 @@ assert len(FAMILY) == FAMILY_SIZE
 PRIMARY = ("PRIMARY", "nn_full", 100000, "baton_eq", 100000)
 M11 = ("M11", "nn_full", 100000, "boost", 100000)
 CURVE_POLICIES = ("nn_full", "baton_eq")
+DESCRIPTIVE_BIG_N = 1_000_000  # nn_full subset rows at 10^6 (contrast S10); exempt from curve grid
 
 
 # ---------------------------------------------------------------- statistics
@@ -361,9 +362,23 @@ def contrast(df: pd.DataFrame, cid: str, a: str, N_a: int, b: str, N_b: int,
 
 
 def curve(df: pd.DataFrame, delta: float = DELTA) -> pd.DataFrame:
-    """Delta-bar (FULL vs BATON-eq) with CI95 against log10 N over the grid."""
+    """Delta-bar (FULL vs BATON-eq) with CI95 against log10 N over the grid.
+
+    The grid is the set of N at which BOTH nn_full and baton_eq have rows
+    (intersection), sorted. The only N allowed to exist for one policy alone is
+    DESCRIPTIVE_BIG_N (nn_full on a 12-route subset, compared in contrast S10);
+    a guard raises ValueError naming any other N where only one of the two
+    policies has rows, so a missing baton_eq row is never silently skipped."""
     sub = df[df["policy"].isin(CURVE_POLICIES)]
-    grid = sorted(set(sub.loc[sub["policy"] == "nn_full", "N"].astype(int)))
+    n_full = set(sub.loc[sub["policy"] == "nn_full", "N"].astype(int))
+    n_base = set(sub.loc[sub["policy"] == "baton_eq", "N"].astype(int))
+    extra = (n_full ^ n_base) - {DESCRIPTIVE_BIG_N}
+    if extra:
+        details = "; ".join(
+            f"N = {N}: baton_eq missing" if N in n_full else f"N = {N}: nn_full missing"
+            for N in sorted(extra))
+        raise ValueError(f"curve grid: policies without matching rows ({details})")
+    grid = sorted(n_full & n_base)
     rows = []
     for N in grid:
         c = contrast(df, f"curve@{N}", "nn_full", N, "baton_eq", N, delta)

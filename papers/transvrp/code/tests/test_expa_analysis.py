@@ -249,6 +249,36 @@ def test_big_stage_rows_shared_with_main_are_not_double_counted(tmp_path):
     assert res["family"]["S11"]["n"] == 20
 
 
+def test_curve_grid_excludes_N_where_baton_eq_has_no_rows(tmp_path):
+    """nn_full has 10^6 rows (descriptive subset, big stage) but baton_eq does not.
+    The curve grid is the intersection of N where both policies have rows, so the
+    summary must not raise and the curve must equal the main ladder."""
+    df = _synthetic_rows()
+    main = df[df["N"] != 1000000]
+    src = df[df["N"] == 1000000]
+    big = src[src["policy"].isin(["baton_big", "dp_big", "none", "oracle"])]
+    # nn_full and nn_scalar at 10^6 on a route subset only (rep 0 of route 0),
+    # relabelled from 10^5 rows
+    sub_1e6 = df[df["policy"].isin(["nn_full", "nn_scalar"]) & (df["N"] == 100000)
+                 & (df["route_id"] == 0) & (df["rep"] == 0)].copy()
+    sub_1e6["N"] = 1000000
+    big = pd.concat([big, sub_1e6], ignore_index=True)
+    res = analysis.write_summary(main, tmp_path, big_df=big, n_routes=SYN_ROUTES, eval_set="dev")
+    assert res["family"]["S10"]["n"] == 20
+    cur = pd.read_csv(tmp_path / "curve.csv")
+    assert list(cur["N"]) == [100, 500, 2000, 10000, 100000]
+    assert 1000000 not in set(cur["N"])
+
+
+def test_curve_refuses_missing_baton_eq_rows_at_a_ladder_n():
+    """A baton_eq gap at a ladder N (not the descriptive 10^6) must raise, not be
+    silently dropped from the curve grid."""
+    df = _synthetic_rows()
+    gap = df[~((df["policy"] == "baton_eq") & (df["N"] == 500))]
+    with pytest.raises(ValueError, match="500"):
+        analysis.curve(gap)
+
+
 def test_big_stage_disagreeing_with_main_is_refused(tmp_path):
     df = _synthetic_rows()
     big = df[(df["N"] == 1000000) & (df["rep"] == 0)].copy()

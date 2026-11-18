@@ -88,3 +88,68 @@ hash appears, under a heading "FROZEN COMMIT".
   published the deterministic chunk, else retry). Implemented with mutation-checked
   tests, independently reviewed (no blocker; residual rare lock risks covered by
   resumable fitting, run under a restart loop). 235 tests pass on this machine.
+
+### 2026-11-16 14:56 GMT+7 — full sweep started at commit c37ad7c
+- Fit stages `main` then `big`, `--jobs 12`, chunk cache outside the repository
+  (C:/work/transvrp_chunks), eligibility `results/expA/eligibility_dev.csv` (frozen on
+  dev in the pilot). Machine as in the previous entry. Restart-on-crash loop (fitting is
+  resumable). No code change until the test evaluation is done.
+
+### 2026-11-17/18 — fit complete (commit c37ad7c)
+- `main`: 2,604/2,604 models, 2026-11-16 14:56 -> 2026-11-17 19:07 GMT+7 (28.2 h, 12
+  workers, one try, no restart). `big`: 36/36, 19:07 -> 23:03 (3.9 h). Total 32.1 h,
+  well under the 7-day ceiling; no cut of section 7.2 applied. Chunk cache 32+ GB.
+- An unrelated job of the author briefly took ~24 GB RAM on 2026-11-17 ~10:15; the
+  sweep was not affected (no failed job).
+
+### 2026-11-18 07:14 GMT+7 — dev evaluation and sanity (dev only; nothing changed because of it)
+- eval + merge (main, big) on dev at c37ad7c. Coverage 20 instances / 62 routes /
+  3 reps; every row fitted at c37ad7c on a clean tree.
+- 0 rows below the oracle for every policy. 7 cells above 1.005 x none, all at
+  N = 100 (5 tuned_tau, 2 nn_full): small-data overfitting, plausible. All costs finite.
+- **Analysis bug found (dev):** `analysis.curve()` built its grid from every N of
+  nn_full; with the big stage combined, nn_full has N = 10^6 (descriptive 12-route
+  subset, contrast S10) but baton_eq has no 10^6 rows, so `write_summary` raised
+  "no rows for policy 'baton_eq' at N = 1000000". Spec section 8 item 5 defines the
+  curve on the ladder grid only. Fix: grid = N where both nn_full and baton_eq have
+  rows; any N other than 10^6 present for only one of them raises (guard). Tests
+  added and mutation-checked; independent review: acceptable, guard added on its
+  advice. Fitting, evaluation, contrasts, Holm and the primary are unchanged.
+- **Procedure (author's decision, deviation from handoff "fix then refit"):** the
+  models were fitted at c37ad7c and the fitting code is unchanged, so no refit. The
+  patch is pre-registered here BEFORE the test stream is opened:
+  `papers/transvrp/patches/analysis_curve_grid.patch`,
+  sha256 8cef74f5fc11de6544b321326d822c313a42ab1ce280d431898d4fed4db3a183.
+  It is stashed, test eval + merge run at the frozen commit on a clean tree (gate
+  enforced), then the identical patch is restored and only the analysis step runs
+  with it. The patch is committed afterwards; its hash can be checked against the
+  commit diff of analysis.py and the test.
+- Dev analysis with the patch: completes (output in results/expA/analysis_dev).
+- Disclosure: the dev analysis CLI printed its dev branch (WIN, crossover N = 500 on
+  dev). It is a dev sanity output only and changed nothing.
+
+FROZEN COMMIT: c37ad7c4685714b0991b5c4b0f857ee00c0ddb55
+
+### 2026-11-18 08:48 GMT+7 — test evaluation at the frozen commit; primary decision WIN
+- Test eval + merge (main, big) at c37ad7c4685714b0991b5c4b0f857ee00c0ddb55 on a clean
+  tree, gate enforced (`--frozen-commit`): 07:15 to 08:47 (1 h 32 min, 12 workers).
+  main: 2604 models evaluated, 0 skipped, 6324 rows; big: 36 models, 72 rows.
+- The pre-registered analysis patch was then restored from the stash; the restored
+  diff of `papers/transvrp/code` hashes to 8cef74f5…a183, identical to the value
+  logged above before the test stream was opened. Analysis ran with it at 08:48.
+- **Primary (section 1.4): WIN.** FULL vs BATON-eq at N = 10^5: mean Δ̄ = +0.823%,
+  CI95 [+0.65, +0.99], s = 0.365, exact one-sided Wilcoxon p = 1.9e-06, 19/20
+  instances better (δ = 0.70%). All four WIN conditions hold.
+- Attribution (1.5): H2 FULL vs SCALAR @ 10^5 better (+0.83%, 20/20; the gain is
+  information); H3 SCALAR @ 10^5 vs DP @ 10^6 equivalent; ARCH FULL vs MLP @ 10^5
+  equivalent by the δ margin (+0.31%, CI95 [+0.21, +0.40], 20/20 better), so the paper
+  says "neural regressor" only; M11 (boost) pending, run next because of WIN.
+- Secondary family (Holm S1–S11) as in `results/expA/analysis_test/summary.md`.
+  Notable: S1 (N = 100) FULL worse than BATON-eq (−1.34%, Holm p = 0.043); S10, S11
+  FULL @ 10^5 better than BATON and DP at 10^6 paths. Data-size curve crosses at
+  N = 500 (same crossover as the dev sanity output).
+- Nothing else unexpected. Test suite with the patch: 237 passed.
+- Results storage (author's decision): CSVs, merged tables and analysis outputs are
+  committed; the 5353 per-day `.npz` arrays (1.2 GB, variance item 2(b)) stay local
+  and are git-ignored; their sha256 list is committed as
+  `code/results/expA/npz_manifest.sha256`.

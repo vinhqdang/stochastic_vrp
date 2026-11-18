@@ -3,16 +3,19 @@
 - **Working title:** open (placeholder `TRANSVRP`). Transformer / LLM methods
   for stochastic VRP (SVRPSPD) optimisation.
 - **Venue:** not chosen.
-- **State:** **ACTIVE — study phase (opened 2026-11-15).** No manuscript, no
-  experiment results yet. `EXPERIMENT_A.md` (revision 2, reviewed in `REVIEW_A.md`) is
-  implemented as modules M0-M11 in `code/transvrp/expa/` (175 tests pass after code review `CODE_REVIEW_A.md` and two fix batches); **nothing has
-  been run beyond smoke/unit tests, the test stream is untouched by any neural code,
-  and the pilot has not been run.** Remaining: memory at 10^6 is reduced but not measured; stop rules 1 and 4 are
-  process checks, not code; `RESEARCH_LOG.md` does not exist, so the test-stream
-  gate (now in the data layer) refuses all test evaluation until a frozen commit hash
-  is recorded there. Pass `--chunk-dir` or rely on the .gitignore rule for the chunk
-  cache. Next: re-review of the fixes, then the pilot on the dev stream. `PROJECT.md` holds the reading of the seed paper,
-  the literature map, and candidate directions with go/no-go tests.
+- **State:** **ACTIVE — experiment A primary result in (2026-11-18).** Full sweep
+  fitted at commit `c37ad7c` on a local CPU machine (32.1 h, no cuts), dev sanity
+  passed, test stream opened once at `FROZEN COMMIT: c37ad7c…` (see `RESEARCH_LOG.md`).
+  **Primary decision: WIN** — at 10^5 paths FULL lowers recourse cost by 0.82%
+  [CI95 +0.65, +0.99] versus BATON at equal paths (n = 20 instances; 19/20 better).
+  H2 better (gain is information), H3 equivalent, ARCH equivalent (say "neural
+  regressor"); crossover N = 500, FULL worse at N = 100. Report:
+  `code/results/expA/analysis_test/summary.md`. One analysis-only patch (curve grid)
+  was pre-registered by hash before the test stream opened. Per-day `.npz` rows stay
+  local (sha256 manifest committed). **Next:** boost arm M11 (WIN branch) under the
+  same frozen-commit discipline, then plan the manuscript with the author.
+  `PROJECT.md` holds the reading of the seed paper, the literature map, and candidate
+  directions.
 - **Freeze policy:** open for edits.
 - **Seed paper:** Liu et al., OR-Transformer, arXiv 2609.01933v2 (full text
   read). Local copy in `refs_local/`.
