@@ -184,3 +184,20 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
   the paper's claim is about the state (information), not about neural networks:
   "trees on the same state suffice". FULL is consistently but immaterially cheaper.
 - Experiment A is complete. Next: plan the manuscript with the author.
+
+### 2026-11-18 19:37 GMT+7 — experiment B adopted (spec revision 3)
+- Reason: BATON is under review and cannot be cited; the paper needs comparisons with
+  published 2023–2026 algorithms. In the paper A's `baton_eq` is presented as
+  Longstaff–Schwartz isotonic regression on (k, W). Literature: `LIT_2025_2026.md`
+  (DOIs checked in Crossref); methods of Zhu et al. (Networks 2026) and Kadyrov et al.
+  (ORP 2025) read from the PDFs: `METHODS_ALP_PPO.md` (PDFs local, git-ignored).
+- Spec `EXPERIMENT_B.md` revision 3 after two independent reviews (`REVIEW_B.md`,
+  `REVIEW_B2.md`, both "accept with required changes", all items addressed).
+  Arms: THR, ALP-Z, RLSM, DOS, DQN (GPU), PPO; fresh stream test_b; A's test streams are
+  never read by B.
+- The author asked to implement every arm and keep the "good" ones; told that arm
+  selection after test_b is forbidden. Arms leave the family only by the dev gates of
+  section 7, decided before the FAMILY line; every arm in the family is reported.
+- The author signed off all design thresholds T1–T15 of section 0 as written.
+- Platform: DQN on RTX 5000 Ada (torch 2.6.0+cu124, CUDA checked), other arms CPU,
+  12 workers.

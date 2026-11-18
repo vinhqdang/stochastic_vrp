@@ -14,7 +14,7 @@
   was pre-registered by hash before the test stream opened. Per-day `.npz` rows stay
   local (sha256 manifest committed). Boost arm M11 (test, frozen 9f2a29b): **equivalent** (FULL vs BOOST +0.25%,
   CI90 [+0.19, +0.32] inside ±0.70%), so the claim is about the state, not networks:
-  trees on the same state suffice. Experiment A complete. **Next:** plan the
+  trees on the same state suffice. Experiment A complete. **Next:** experiment B (published baselines, spec `EXPERIMENT_B.md` rev. 3, signed off 2026-11-18) — implementation; then plan the
   manuscript with the author.
   `PROJECT.md` holds the reading of the seed paper, the literature map, and candidate
   directions.
