@@ -236,3 +236,13 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
   test, not in the code.
 - Open for M21: top-level `payload["libraries"]` for the gate; `dos.init_net` ignores
   `cfg.width` (defect, fix with a test); per-pass checkpoint selection for PPO (spec 6.3).
+
+### 2026-11-18 23:06 GMT+7 — experiment B: M21 sweep integration
+- B stages, per-pass curves for DQN/PPO, test_b row columns (family_sha256, model_sha256,
+  library versions), top-level payload `libraries`, `manifest` CLI, DOS width fix.
+  `b_smoke` fit + eval + merge on dev yields exactly the ten policies. A's stage job
+  lists are unchanged (snapshot test). Full suite: 492 passed. test_b was never read.
+- Note for cut (i) (reuse of A's FULL/ladder models): A's payloads do not record
+  `libraries`, so gate item 8 refuses reuse stages; cut (i) cannot apply unless a
+  provenance note for A's models is added first. With the faster DQN update it may not be
+  needed; the pilot decides.

@@ -236,3 +236,33 @@ Every mutant was restored byte-for-byte (`restored: true` in the run log).
 - Not mutated: the entropy term (coefficient 0 in every spec config), the GRU cache
   bookkeeping in `PolicyPredictor._reusable` (covered only by the cached/recomputed and
   out-of-order tests), the pass-level checkpoint bookkeeping, and the budget counters.
+
+## M21 (sweep integration), single-line mutants of the new sweep logic
+
+Procedure as above: one single-line mutation of `expa/sweep.py` at a time, the targeted
+node ids run with `pytest -x`, original bytes restored and verified by sha256 afterwards
+(final check: restored, `if False:` absent). Driver: scratchpad script, not committed.
+Node ids are in `tests/test_expb_sweep.py` unless stated.
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| M1 | expa/sweep.py | `stage_paths`: `if not sspec.independent:` -> `if False:` (independence world on every stage) | killed; the independence test alone survived, the identity test for non-independent stages kills it | test_world_is_identity_for_a_non_independent_stage |
+| M2 | expa/sweep.py | `stage_paths`: `d=permute_columns(paths.d, key)` -> `d=paths.d` (increments not moved together) | killed | test_independent_world_permutation_is_deterministic_and_keeps_marginals |
+| M3 | expa/sweep.py | `stage_paths`: purpose dropped from the seed key (`train` for every purpose) | killed | test_independent_world_permutation_is_deterministic_and_keeps_marginals |
+| M4 | expa/sweep.py | `arm_config`: `len(entries) != 1` -> `> 1` (missing arm configuration not refused) | killed | test_arm_config_lookup_builds_the_configuration_class |
+| M5 | expa/sweep.py | `_fit_b_payload`: `cfg.passes != sspec.pass_curve` -> `False` (pass count not checked) | killed | test_tuning_stage_refuses_a_configuration_with_another_pass_count |
+| M6 | expa/sweep.py | `_curve_results`: policy `@p{p}` -> `@p{p - 1}` | killed | test_curve_results_name_one_policy_per_pass |
+| M7 | expa/sweep.py | `check_stream_for_stage`: `eval_set != spec.test_stream` -> `False` (stream mismatch accepted) | killed | test_dev_stream_refusal_names_the_declared_stream |
+| M8 | expa/sweep.py | `Ctx.models_dir`: reuse branch -> `False` (reads the stage's own, empty, directory) | killed | test_reuse_stage_reads_a_main_models_directory |
+| M9 | expa/sweep.py | `merge_stage`: `[columns]` -> `[ROW_COLUMNS]` (test_b columns dropped) | killed | test_test_b_rows_carry_family_model_and_library_columns |
+| M10 | expa/sweep.py | `run_fit`: reuse refusal -> `False` | killed (first run NOT APPLIED: driver matched LF on CRLF text; rerun after fix) | test_reuse_stage_has_no_fit |
+| M11 | expa/sweep.py | `run_fit_job`: `libraries` only for test_b stages -> `False` | killed | test_b_smoke_fit_eval_merge_gives_exactly_the_ten_policies |
+| M12 | expa/sweep.py | `stage_eligibility`: `SMOKE_LIKE` -> `("smoke", "pilot")` | killed | test_b_dev_stages_use_the_in_memory_con3_eligibility |
+
+Limits: single-line mutants of the M21 logic only. Not mutated and not tested: the
+ladder-label filter of reuse evaluation, `planned_keys`, and the CLI `manifest` branch.
+The test_b evaluation path of `run_eval_job` (`_test_b_columns`, the family hash from the
+gate token) has no test: a test_b payload cannot be produced without a pinned FAMILY line,
+so it is left to the family run and to the M23 row checks.
+Also fixed in M21 (not a mutant): `dos.init_net` now honours `cfg.width` (the defect
+reported in the earlier MUTATION_B entry C4 is closed by tests in test_expb_dos.py).

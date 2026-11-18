@@ -456,6 +456,8 @@ def train_dqn_record(spec: RouteSpec, paths: Paths, N: int, rep: int, cfg: DQNCo
     per_stage = np.zeros(m, dtype=np.int64)
     visited = np.zeros(fit_rows.size, dtype=bool)
     train_seconds = 0.0
+    pass_best: list[dict] = []
+    pass_states: list[dict] = []
     for p in range(cfg.passes):
         t_pass = time.perf_counter()
         order = np.random.default_rng(_seed(seed_key, f"order{p}")).permutation(fit_rows.size)
@@ -481,12 +483,18 @@ def train_dqn_record(spec: RouteSpec, paths: Paths, N: int, rep: int, cfg: DQNCo
                 target_copies.append(next_target)
                 next_target += cfg.target_every_tr
         run.record(net, val_cache, spec, E0, p + 1, True, n_updates)
+        # per-pass accessor (EXPERIMENT_B 6.3): selection restricted to checkpoints up to
+        # this pass; read-only, the update path above is unchanged
+        pass_best.append(dict(**{"pass": p + 1}, index=run.best_idx, val_cost=run.best_cost))
+        if keep_states:
+            pass_states.append(copy.deepcopy(run.best_state))
         train_seconds += time.perf_counter() - t_pass
     chosen = run.best_idx
     return dict(
         stats=stats, checkpoints=run.checkpoints, chosen_index=chosen,
         best_state=run.best_state,
         last_state=run.states[-1] if keep_states else None,
+        pass_best=pass_best, pass_states=pass_states if keep_states else None,
         transitions_per_stage=[int(x) for x in per_stage], env_steps=int(env_steps),
         env_rows=fit_rows[visited], updates=int(n_updates), target_copies=target_copies,
         ckpt_every=int(ckpt_every), n_params=int(sum(q.numel() for q in net.parameters())),

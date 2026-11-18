@@ -36,6 +36,7 @@ import os
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 import argparse  # noqa: E402
+import hashlib  # noqa: E402
 import json  # noqa: E402
 import math  # noqa: E402
 import pickle  # noqa: E402
@@ -57,12 +58,18 @@ from .boost import BoostPredictor, fit_boost  # noqa: E402
 from .eligibility import build_eligibility, stratum_of  # noqa: E402
 from .features import RouteCache, RouteStats  # noqa: E402
 from .model import MLPNet, SetNet  # noqa: E402
-from .paths import (TEST_STREAMS, RouteSpec, TestStreamGateError,  # noqa: E402
+from .paths import (TEST_STREAMS, Paths, RouteSpec, TestStreamGateError,  # noqa: E402
                     current_commit, route_pool, route_specs, tree_is_clean,
                     verify_stream_gate, verify_test_gate)
 from .measure import Stopwatch, process_peak_rss_mb, traced_peak  # noqa: E402
 from .simulate import simulate_policy, summarize  # noqa: E402
 from .train import ConstantPredictor, NetPredictor, StageConfig, fit_neural  # noqa: E402
+from ..expb import codecs  # noqa: E402
+from ..expb.curves import CURVE_ARMS, fit_pass_curves  # noqa: E402
+from ..expb.gatecheck import library_versions, write_manifest  # noqa: E402
+from ..expb.registry import ARM_POLICY_B, ARM_SPECS, B_ARMS, fit_arm  # noqa: E402
+from ..expb.stages import b_stage_defs  # noqa: E402
+from ..expb.thr import permute_columns  # noqa: E402
 
 EXPA_DIR = Path(__file__).resolve().parent
 CODE_DIR = EXPA_DIR.parents[1]
@@ -74,12 +81,18 @@ BIG_LABELS = ("baton_eq", "dp", "none", "oracle")
 BIG_RENAME = {"baton_eq": "baton_big", "dp": "dp_big"}
 ARM_POLICY = {"full": "nn_full", "scalar": "nn_scalar", "mlp": "nn_mlp",
               "boost": "boost"}
+ARM_POLICY.update(ARM_POLICY_B)
 EVAL_SETS = ("dev", "test", "test_b")
 TIMING_INST, TIMING_ROUTE = "CON3-0", 3   # section 7.3: the one full-size timing route
 ROW_COLUMNS = ["inst", "route_id", "m", "stratum", "N", "rep", "policy",
                "mean_cost", "handoff_rate", "fail_rate", "gap_closed", "n_eval",
                "eval_set", "fit_seconds", "fit_commit", "eval_commit"]
 KEY_COLUMNS = ["inst", "route_id", "N", "rep", "policy", "eval_set"]
+# EXPERIMENT_B 5.3: every test_b row also carries the family hash, the model hash and the
+# library versions of its fit (dev and A rows keep ROW_COLUMNS).
+TEST_B_COLUMNS = ROW_COLUMNS + ["family_sha256", "model_sha256", "python", "numpy",
+                                "scipy", "torch"]
+SMOKE_LIKE = ("smoke", "pilot", "b_smoke", "b_pilot")   # in-memory CON3-0 eligibility
 
 
 GateError = TestStreamGateError     # refusals of the test-stream gate
@@ -116,8 +129,10 @@ class StageSpec:
     cfg: StageConfig = field(default_factory=StageConfig)
     test_allowed: bool = True
     test_stream: str = "test"     # the one gated stream this stage may evaluate on
-    arm_cfg: tuple = ()           # EXPERIMENT_B: chosen arm configuration (M21)
+    arm_cfg: tuple = ()           # EXPERIMENT_B (M21): ((arm, ((field, value), ...)), ...)
     independent: bool = False     # EXPERIMENT_B 3.8: stop columns permuted
+    pass_curve: int = 0           # B tuning: passes of one DQN/PPO run, each scored (6.3)
+    reuse_models: str = ""        # B cut (i): A's model directory, relative to results_dir's parent
 
 
 STAGE_SPECS: dict[str, StageSpec] = {
@@ -146,6 +161,7 @@ STAGE_SPECS: dict[str, StageSpec] = {
     "boost": StageSpec(reps=(0, 1, 2), neural=(("boost", 100000),),
                        routes="eligible"),
 }
+STAGE_SPECS.update({name: StageSpec(**kw) for name, kw in b_stage_defs().items()})
 
 
 def stage_spec(stage: str) -> StageSpec:
@@ -164,6 +180,9 @@ class Ctx:
 
     @property
     def models_dir(self) -> Path:
+        reuse = STAGE_SPECS[self.stage].reuse_models if self.stage in STAGE_SPECS else ""
+        if reuse:
+            return self.results_dir.parent / reuse
         return self.results_dir / "models" / self.stage
 
     @property
@@ -267,7 +286,7 @@ def plan_stage(stage: str, elig: pd.DataFrame, only: dict | None = None) -> list
 def stage_eligibility(stage: str, path: Path | None) -> pd.DataFrame:
     """Smoke and pilot use CON3-0 computed on dev in memory. Other stages read the
     eligibility file written by M8."""
-    if stage in ("smoke", "pilot"):
+    if stage in SMOKE_LIKE:
         return build_eligibility([SMOKE_INSTANCE])
     if path is None:
         raise ValueError(f"stage {stage!r} needs --eligibility (the M8 table)")
@@ -310,6 +329,8 @@ def check_test_gate(stage: str, eval_set: str, frozen_commit: str | None) -> Non
 
 def _pack(models: dict, arm: str, E0: float) -> dict:
     """Neural predictors -> plain state dicts (section 5: neural state dicts per fold and k)."""
+    if arm in B_ARMS:
+        return codecs.pack_models(models, arm, E0)
     states: dict[int, list] = {}
     for k, preds in models.items():
         packed = []
@@ -329,6 +350,8 @@ def _pack(models: dict, arm: str, E0: float) -> dict:
 
 
 def _unpack(blob: dict) -> dict:
+    if blob["arm"] in B_ARMS:
+        return codecs.unpack_models(blob)
     out: dict[int, list] = {}
     for k, items in blob["states"].items():
         preds = []
@@ -397,21 +420,66 @@ def _policy(kind: str, label: str) -> str:
     return BIG_RENAME.get(label, label) if kind == "big" else label
 
 
+def arm_config(sspec: StageSpec, arm: str):
+    """Configuration object of one B arm in a stage (EXPERIMENT_B 6.1). A main stage whose
+    arm has no chosen configuration yet has no entry and refuses."""
+    entries = [pairs for a, pairs in sspec.arm_cfg if a == arm]
+    if len(entries) != 1:
+        raise ValueError(f"stage has no configuration for arm {arm!r} "
+                         "(a main stage needs the chosen configuration first)")
+    return ARM_SPECS[arm].config_cls(**dict(entries[0]))
+
+
+def stage_paths(sspec: StageSpec, paths: Paths, inst: str, route_id: int, purpose: str) -> Paths:
+    """Independence world (EXPERIMENT_B 3.8): every stop column of the pool is permuted by
+    its own seeded permutation (``permute_columns``, the same permutation for p and d, so
+    the increments g = p - d move together and column marginals are kept). Identity unless
+    the stage is independent. Applied to training and evaluation pools alike."""
+    if not sspec.independent:
+        return paths
+    key = f"{inst}|{route_id}|{purpose}"
+    return Paths(p=permute_columns(paths.p, key), d=permute_columns(paths.d, key))
+
+
+def _fit_b_payload(job: Job, sspec: StageSpec, spec: RouteSpec, paths: Paths) -> dict:
+    """Payload of one B arm fit. A tuning stage (``pass_curve``) trains one run and keeps a
+    packed predictor set per pass; any other B stage packs the single fitted set."""
+    cfg = arm_config(sspec, job.arm)
+    if sspec.pass_curve:
+        if job.arm not in CURVE_ARMS:
+            raise ValueError(f"pass curves exist for {CURVE_ARMS}, not for {job.arm!r}")
+        if cfg.passes != sspec.pass_curve:
+            raise ValueError(f"the tuning stage trains {sspec.pass_curve} passes, the "
+                             f"configuration has {cfg.passes}")
+        curves, stats, diag, budget = fit_pass_curves(job.arm, spec, paths, job.N, job.rep, cfg)
+        return {"kind": "neural", "arm": job.arm, "stats": stats, "diag": diag,
+                "budget": budget,
+                "pass_models": {p: codecs.pack_models(m, job.arm, spec.E0)
+                                for p, m in curves.items()}}
+    models, stats, diag, budget = fit_arm(job.arm, spec, paths, job.N, job.rep, cfg)
+    return {"kind": "neural", "models": codecs.pack_models(models, job.arm, spec.E0),
+            "stats": stats, "diag": diag, "budget": budget}
+
+
 # ---------------------------------------------------------------- fit
 
 def run_fit_job(job: Job, ctx: Ctx) -> str:
     path = ctx.models_dir / f"{job.key}.pkl"
     if path.exists():
         return "skip"
+    sspec = stage_spec(ctx.stage)
     torch.set_num_threads(1)
     spec = _spec_of(job.inst, job.route_id)
     paths = route_pool(job.inst, "train", job.rep, job.N, cache_dir=chunk_cache_dir(ctx),
                        routes=[job.route_id])[job.route_id]
+    paths = stage_paths(sspec, paths, job.inst, job.route_id, "train")
     t0 = time.perf_counter()
     if job.kind in ("ladder", "big"):
         stats = RouteStats.fit(paths)
         models = classical_ladder(spec, paths.g, job.labels, stats=stats)
         payload = {"kind": job.kind, "models": models, "stats": stats, "diag": []}
+    elif job.kind == "neural" and job.arm in B_ARMS:
+        payload = _fit_b_payload(job, sspec, spec, paths)
     elif job.kind == "neural" and job.arm == "boost":
         models, stats, diag = fit_boost(spec, paths, job.N, job.rep)
         payload = {"kind": "neural", "models": _pack(models, job.arm, spec.E0),
@@ -422,6 +490,9 @@ def run_fit_job(job: Job, ctx: Ctx) -> str:
                    "stats": stats, "diag": diag}
     else:
         raise ValueError(f"unknown job kind {job.kind!r}")
+    if sspec.test_stream == "test_b":
+        # EXPERIMENT_B 5.3 item 8: the gate compares these with the running process
+        payload["libraries"] = library_versions()
     # the commit alone does not prove the code that was fitted: record whether the
     # tree was clean when the fit ran (run_eval_job refuses test use otherwise)
     payload.update(job=job, fit_seconds=time.perf_counter() - t0,
@@ -434,7 +505,8 @@ def run_fit_job(job: Job, ctx: Ctx) -> str:
 # ---------------------------------------------------------------- eval
 
 def _rows_for(payload: dict, results: dict, spec: RouteSpec, eval_set: str,
-              n_eval: int, eval_commit: str) -> tuple[list[dict], dict]:
+              n_eval: int, eval_commit: str, extra: dict | None = None
+              ) -> tuple[list[dict], dict]:
     job: Job = payload["job"]
     rows, arrays = [], {}
     for pol, res in results.items():
@@ -446,22 +518,45 @@ def _rows_for(payload: dict, results: dict, spec: RouteSpec, eval_set: str,
                          n_eval=n_eval, eval_set=eval_set,
                          fit_seconds=payload["fit_seconds"],
                          fit_commit=payload["fit_commit"],
-                         eval_commit=eval_commit))
+                         eval_commit=eval_commit, **(extra or {})))
         arrays[pol] = np.asarray(res["costs"], dtype=np.float64)
     return rows, arrays
+
+
+def _test_b_columns(payload: dict, gate, model_path: Path) -> dict:
+    """The per-row columns of a test_b evaluation (EXPERIMENT_B 5.3)."""
+    libs = payload.get("libraries") or {}
+    out = {"family_sha256": gate.family_sha256,
+           "model_sha256": hashlib.sha256(model_path.read_bytes()).hexdigest()}
+    out.update({name: libs.get(name) for name in ("python", "numpy", "scipy", "torch")})
+    return out
+
+
+def _curve_results(job: Job, payload: dict, spec: RouteSpec, pool: Paths) -> dict:
+    """One policy per pass of a tuning run, named ``<arm>@p<pass>`` (EXPERIMENT_B 6.3)."""
+    out = {}
+    for p in sorted(payload["pass_models"]):
+        cache = RouteCache(spec, pool, payload["stats"])
+        costs, act = simulate_policy(cache, spec.B, spec.H, spec.E,
+                                     _unpack(payload["pass_models"][p]), H_bill=spec.H)
+        out[f"{ARM_POLICY[job.arm]}@p{p}"] = summarize(costs, act)
+    return out
 
 
 def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
                  frozen: str | None = None) -> str:
     job_key = model_path.stem
-    gated = eval_set in TEST_STREAMS
-    if gated:
+    sspec = stage_spec(ctx.stage)
+    gate = None
+    if eval_set in TEST_STREAMS:
         check_stream_for_stage(ctx.stage, eval_set)
         owner = model_owner_stage(model_path)
-        if owner is not None and owner != ctx.stage:
-            raise GateError(f"model {job_key} belongs to stage {owner!r}, not {ctx.stage!r}; "
+        expected = sspec.reuse_models.rsplit("/", 1)[-1] if sspec.reuse_models else ctx.stage
+        if owner is not None and owner != expected:
+            raise GateError(f"model {job_key} belongs to stage {owner!r}, not {expected!r}; "
                             "it is never evaluated under another stage's gate or stream")
-        verify_stream_gate(eval_set, frozen, ctx.stage)
+        gate = verify_stream_gate(eval_set, frozen, ctx.stage)
+    gated = gate is not None
     rows_csv = ctx.rows_dir / f"{job_key}.{eval_set}.csv"
     if rows_csv.exists():
         return "skip"
@@ -476,24 +571,31 @@ def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
     spec = _spec_of(job.inst, job.route_id)
     pool = route_pool(job.inst, eval_set, 0, frozen=frozen,
                       routes=[job.route_id], stage=ctx.stage)[job.route_id]
+    pool = stage_paths(sspec, pool, job.inst, job.route_id, eval_set)
     n_eval = int(pool.p.shape[0])
     if payload["kind"] in ("ladder", "big"):
         res = eval_classical(spec, payload["models"], pool.g)
         results = {_policy(job.kind, lab): r for lab, r in res.items()}
+        if sspec.reuse_models:       # cut (i): only the chosen ladder labels of section 3.7
+            results = {pol: r for pol, r in results.items() if pol in sspec.ladder_labels}
+    elif "pass_models" in payload:
+        results = _curve_results(job, payload, spec, pool)
     else:
         preds = _unpack(payload["models"])
         cache = RouteCache(spec, pool, payload["stats"])
         costs, act = simulate_policy(cache, spec.B, spec.H, spec.E, preds,
                                      H_bill=spec.H)
         results = {ARM_POLICY[job.arm]: summarize(costs, act)}
-    rows, arrays = _rows_for(payload, results, spec, eval_set, n_eval, ctx.commit)
+    extra = _test_b_columns(payload, gate, model_path) if eval_set == "test_b" else None
+    rows, arrays = _rows_for(payload, results, spec, eval_set, n_eval, ctx.commit, extra)
     ctx.rows_dir.mkdir(parents=True, exist_ok=True)
     npz_path = ctx.rows_dir / f"{job_key}.{eval_set}.npz"
     tmp_npz = npz_path.with_name(npz_path.name + ".tmp.npz")
     np.savez(tmp_npz, **arrays)
     os.replace(tmp_npz, npz_path)
     tmp_csv = rows_csv.with_name(rows_csv.name + ".tmp")
-    pd.DataFrame(rows, columns=ROW_COLUMNS).to_csv(tmp_csv, index=False)
+    columns = TEST_B_COLUMNS if eval_set == "test_b" else ROW_COLUMNS
+    pd.DataFrame(rows, columns=columns).to_csv(tmp_csv, index=False)
     os.replace(tmp_csv, rows_csv)
     return "eval"
 
@@ -517,6 +619,9 @@ def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
             jobs: int = 1, commit: str | None = None,
             chunk_dir: Path | None = None, only: dict | None = None) -> dict:
     spec = stage_spec(stage)
+    if spec.reuse_models:
+        raise ValueError(f"stage {stage!r} reads A's model files ({spec.reuse_models}); "
+                         "it has no fit")
     if spec.test_stream == "test_b" and not tree_is_clean():
         raise GateError(f"stage {stage!r} is fitted only on a clean code tree; "
                         "commit or remove uncommitted .py changes first")
@@ -530,6 +635,12 @@ def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
             "skipped": done.count("skip")}
 
 
+def planned_keys(stage: str, results_dir: Path) -> set[str]:
+    """Keys of a reuse stage's planned jobs, on A's eligibility table (cut (i))."""
+    elig = pd.read_csv(Path(results_dir).parent / "expA" / "eligibility_dev.csv")
+    return {j.key for j in plan_stage(stage, elig)}
+
+
 def run_eval(stage: str, eval_set: str, results_dir: Path = DEFAULT_RESULTS,
              frozen_commit: str | None = None, jobs: int = 1,
              only: dict | None = None) -> dict:
@@ -538,6 +649,9 @@ def run_eval(stage: str, eval_set: str, results_dir: Path = DEFAULT_RESULTS,
     ctx = Ctx(Path(results_dir), stage, spec.cfg, current_commit())
     model_files = [p for p in sorted(ctx.models_dir.glob("*.pkl"))
                    if _selected(fields_from_key(p.stem), only)]
+    if spec.reuse_models:
+        keys = planned_keys(stage, results_dir)
+        model_files = [p for p in model_files if p.stem in keys]
     if not model_files:
         raise FileNotFoundError(f"no fitted models for stage {stage!r} in {ctx.models_dir}")
     done = _run_all(partial(_eval_one, eval_set=eval_set, ctx=ctx, frozen=frozen_commit),
@@ -587,7 +701,8 @@ def merge_stage(stage: str, eval_set: str = "dev",
     dup = df.duplicated(subset=KEY_COLUMNS, keep=False)
     if dup.any():
         raise ValueError(f"duplicate rows for {int(dup.sum())} keys in stage {stage!r}")
-    df = add_gap_closed(df)[ROW_COLUMNS]
+    columns = TEST_B_COLUMNS if eval_set == "test_b" else ROW_COLUMNS
+    df = add_gap_closed(df)[columns]
     name = f"{stage}.csv" if eval_set == "dev" else f"{stage}.{eval_set}.csv"
     out = Path(results_dir) / name
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -679,6 +794,8 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--frozen-commit", default=None)
         if name == "merge":
             p.add_argument("--eval", dest="eval_set", default="dev", choices=EVAL_SETS)
+    mp = sub.add_parser("manifest", help="model manifest of a B stage (EXPERIMENT_B 5.3)")
+    mp.add_argument("--stage", required=True, choices=tuple(STAGE_SPECS))
     tp = sub.add_parser("timing", help="pilot 10^6 timing pass (section 7.3)")
     tp.add_argument("--stage", default="pilot", choices=tuple(STAGE_SPECS))
     tp.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS)
@@ -697,7 +814,9 @@ def main(argv: list[str] | None = None) -> int:
                                         "process_peak_rss_mb",
                                         "traced_cache_stop_peak_mb")})
             return 0
-        if args.cmd == "fit":
+        if args.cmd == "manifest":
+            info = {"manifest": str(write_manifest(args.stage))}
+        elif args.cmd == "fit":
             elig = stage_eligibility(args.stage, args.eligibility)
             info = run_fit(args.stage, elig, args.results_dir, args.jobs,
                            chunk_dir=args.chunk_dir, only=only)

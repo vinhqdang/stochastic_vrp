@@ -9,6 +9,7 @@ import torch
 from transvrp.expa.features import MLP_DIM, RouteCache, RouteStats, mlp_batch
 from transvrp.expa.paths import Paths, RouteSpec
 from transvrp.expa.train import ConstantPredictor
+from transvrp.expa.backward import split_80_20
 from transvrp.expb.dos import (DOSConfig, DOSNet, DOSPredictor, dos_fit_fn, dos_loss,
                                fit_dos, init_net, stage_steps)
 
@@ -275,3 +276,26 @@ def test_fit_dos_refuses_a_wrong_path_count():
     spec, paths, _ = make_cache(N=50, m=3, seed=21)
     with pytest.raises(ValueError, match="expected 60"):
         fit_dos(spec, paths, 60, 0, fast_cfg())
+
+
+# ---------------------------------------------------------------- width (M21 fix 1)
+
+def test_init_net_honours_the_configured_width():
+    # REVIEW_B / M21: init_net used to build DOSNet() (width 55) whatever cfg.width was,
+    # so n_params in the budget was wrong for every other width.
+    net = init_net(None, seed=3, width=20)
+    assert net.out.in_features == 20
+    assert sum(p.numel() for p in net.parameters()) == sum(
+        p.numel() for p in DOSNet(width=20).parameters())
+
+
+def test_fit_fn_builds_networks_of_the_configured_width():
+    spec, paths, cache = make_cache(N=200, m=4)
+    cfg = DOSConfig(width=20, min_rows=5, s_min=2, s_max=3, n_ckpt=1)
+    fit = dos_fit_fn("w|0|200|0|dos", cfg, diag=[])
+    folds, val = split_80_20(200)
+    idx = folds[0]                       # one fold per call (_fold_label)
+    y = np.full(200, 0.5)
+    pred = fit(1, cache, idx, y[idx], val, y[val], None)
+    assert isinstance(pred, DOSPredictor)
+    assert pred.net.out.in_features == 20

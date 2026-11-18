@@ -73,13 +73,13 @@ def stage_steps(n: int, cfg: DOSConfig) -> int:
     return int(min(cfg.s_max, max(cfg.s_min, raw)))
 
 
-def init_net(warm, seed: int) -> DOSNet:
+def init_net(warm, seed: int, width: int = 55) -> DOSNet:
     """Warm start: a copy of the same fold's stage-(k+1) network. Otherwise (no warm net,
-    or a ConstantPredictor) a fresh network seeded by ``seed``."""
+    or a ConstantPredictor) a fresh network of hidden ``width`` seeded by ``seed``."""
     if isinstance(warm, DOSPredictor):
         return copy.deepcopy(warm.net)
     torch.manual_seed(seed)
-    return DOSNet()
+    return DOSNet(width=width)
 
 
 class DOSPredictor:
@@ -197,7 +197,7 @@ def dos_fit_fn(seed_key: str, cfg: DOSConfig, diag: list) -> FitFn:
         torch.set_num_threads(1)
         torch.use_deterministic_algorithms(True)
         seed = _seed(seed_key, fold, k)
-        net = init_net(warm, seed)
+        net = init_net(warm, seed, width=cfg.width)
         x = torch.from_numpy(mlp_batch(cache, k, fit_idx))
         u = torch.from_numpy((y_fit / E0).astype(np.float32))
         if val_idx.size:

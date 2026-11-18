@@ -417,3 +417,25 @@ def test_gpu_training_uses_the_graph_path():
     spec, paths, cache, stats = make_setup(N=100, m=4, seed=19, B=2.5)
     rec = train_dqn_record(spec, paths, 100, 0, tiny_cfg(passes=1, device="cuda"))
     assert rec["update_path"] == "cuda_graph" and rec["updates"] > 0
+
+
+# ---------------------------------------------------------------- per-pass selection (M21 fix 2)
+
+def test_pass_states_are_the_cumulative_selection_at_each_pass_end():
+    # EXPERIMENT_B 6.3: the record exposes, like PPO, the in-run selection restricted to
+    # checkpoints up to each pass; a 2-pass run's first pass equals a 1-pass run exactly.
+    spec, paths, _cache, _stats = make_setup(N=120, m=4)
+    r1 = train_dqn_record(spec, paths, 120, 0, tiny_cfg(passes=1), keep_states=True)
+    r2 = train_dqn_record(spec, paths, 120, 0, tiny_cfg(passes=2), keep_states=True)
+    assert [b["pass"] for b in r2["pass_best"]] == [1, 2]
+    assert len(r2["pass_states"]) == 2
+    assert r2["pass_best"][0]["index"] == r1["pass_best"][0]["index"]
+    for a, b in zip(r1["pass_states"][0].values(), r2["pass_states"][0].values()):
+        assert torch.equal(a, b)
+    assert r2["pass_best"][1]["val_cost"] <= r2["pass_best"][0]["val_cost"]
+
+
+def test_pass_states_are_none_without_keep_states():
+    spec, paths, _cache, _stats = make_setup(N=120, m=4)
+    rec = train_dqn_record(spec, paths, 120, 0, tiny_cfg(passes=1))
+    assert rec["pass_states"] is None
