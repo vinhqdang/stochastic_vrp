@@ -1,0 +1,2 @@
+inst,route_id,m,stratum,N,rep,policy,mean_cost,handoff_rate,fail_rate,gap_closed,n_eval,eval_set,fit_seconds,fit_commit,eval_commit
+SCA3-6,3,16,long,100000,1,boost,20.266360595250003,0.40925,0.03045,,20000,test,48.451071499992395,9f2a29bff90081251a60302d0af5e9f0258377fd,9f2a29bff90081251a60302d0af5e9f0258377fd

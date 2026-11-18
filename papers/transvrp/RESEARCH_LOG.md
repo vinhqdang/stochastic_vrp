@@ -153,3 +153,34 @@ FROZEN COMMIT: c37ad7c4685714b0991b5c4b0f857ee00c0ddb55
   committed; the 5353 per-day `.npz` arrays (1.2 GB, variance item 2(b)) stay local
   and are git-ignored; their sha256 list is committed as
   `code/results/expA/npz_manifest.sha256`.
+
+### 2026-11-18 09:10 GMT+7 — boost arm M11 (WIN branch) started at commit 9f2a29b
+- Same machine, CPU, 12 workers, same chunk cache. `sweep fit --stage boost`
+  (HistGradientBoostingRegressor on the FULL globals, 10^5, reps 0-2, eligible routes),
+  then dev eval + merge for sanity, then a second `FROZEN COMMIT` line for this arm,
+  then test eval + merge with `--frozen-commit`.
+- M11 analysis procedure, fixed now before any boost result: the analysis CLI has no
+  boost input; M11 is computed when the merged table holds policy `boost`. So
+  `main.test.csv` and `boost.test.csv` are concatenated row-wise (no code change)
+  into `main_boost.test.csv`, and the analysis is run on it into
+  `results/expA/analysis_test_m11`. The primary and S1-S11 there must equal
+  `analysis_test` exactly (checked); only the M11 line is new. M11 has its own
+  alpha = 0.05, outside Holm (section 1.5).
+- Boost fit 09:11 to 09:23 (186/186 models, 0 skipped); dev eval + merge 09:23 to
+  09:25. Dev sanity: 20 instances / 62 routes / 3 reps, every row fitted at 9f2a29b,
+  0 rows below the oracle, 0 above 1.005 x none, all finite. No dev contrast with
+  nn_full was computed.
+
+FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
+
+### 2026-11-18 09:31 GMT+7 — boost arm M11 test result: equivalent
+- Test eval + merge (boost) at frozen commit 9f2a29b, gate enforced: 09:25 to 09:29,
+  186 models, 186 rows. Concatenation and analysis as fixed above, into
+  `results/expA/analysis_test_m11`. Its summary equals `analysis_test` line for line
+  except the M11 line, and curve.csv is byte-identical (checked).
+- **M11 (FULL vs BOOST @ 10^5, alpha 0.05, outside Holm): equivalent.** Δ̄ = +0.254%,
+  median +0.189%, CI95 [+0.17, +0.34], CI90 [+0.19, +0.32], 20/20 instances FULL
+  cheaper, two-sided p = 1.9e-06. The CI90 lies inside ±δ (0.70%), so by section 1.5
+  the paper's claim is about the state (information), not about neural networks:
+  "trees on the same state suffice". FULL is consistently but immaterially cheaper.
+- Experiment A is complete. Next: plan the manuscript with the author.
