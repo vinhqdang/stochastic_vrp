@@ -680,6 +680,8 @@ Computed on dev for the main-fit models (62 routes × reps, chosen configs). Non
 an arm with FULL. Thresholds are [DC] unless the gate is an exact identity. **Bug gates**
 detect a broken implementation; **P1** is a performance bound.
 
+**Definition (revision 3.2).** *G2 route-reps* are replicate 0 of every eligible route, i.e. the 62 route-reps (rep = 0) of the main fit. The name "G2" was used in revision 3.1 without a definition; the implementation (`expb/fidelity.py`) already used this set. It is a superset of what any identity needs, and is fixed here before the pilot.
+
 | id | arm(s) | type | gate |
 |---|---|---|---|
 | B0 | all | bug | 100% of jobs fitted; all dev costs finite; C ≥ C_oracle on every route-rep. |
@@ -1167,3 +1169,5 @@ Step 2 of section 11; details, page and line references in `VERIFY_CITATIONS.md`
   mixed-k `padded_batch`, analysis_b never calls `write_summary`, ladder labels.
 - **Minor (REVIEW_B 10):** 4,001-point refinement reported; actual steps counted;
   bootstrap seed 20261119; wording rule; stop rule 2 counts cut (ii); seed-reuse mutation.
+
+- **Revision 3.2 (2026-11-18, before the pilot):** defined "G2 route-reps" (section 7); `dos.py` records the never-stop validation objective that gate B-DOS reads (previously missing, which would have dropped DOS for a defect of ours). No threshold of section 0 changed.

@@ -266,3 +266,109 @@ gate token) has no test: a test_b payload cannot be produced without a pinned FA
 so it is left to the family run and to the M23 row checks.
 Also fixed in M21 (not a mutant): `dos.init_net` now honours `cfg.width` (the defect
 reported in the earlier MUTATION_B entry C4 is closed by tests in test_expb_dos.py).
+
+# MUTATION_B: mutation checks for M23 (expb/analysis_b.py)
+
+Procedure as above: one single-line mutation at a time, `tests/test_expb_analysis_b.py`
+run with `pytest -x`, the original bytes restored in a `finally` block and verified by
+sha256 (restored byte-identical after the full run). "killed" = at least one test fails.
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| A1 | expb/analysis_b.py | `adjusted = A.holm(raw)` -> `adjusted = list(raw)` (no Holm) | killed | test_family_table_known_answers_and_branches |
+| A2 | expb/analysis_b.py | branch on `p_adj` -> branch on raw two-sided p | killed | test_family_table_applies_holm_over_the_six_arms |
+| A3 | expb/analysis_b.py | `WIN_MIN_COUNT = A.WIN_MIN_COUNT` -> `12` | killed | test_win_count_thirteen_is_win_and_twelve_is_tie_weak |
+| A4 | expb/analysis_b.py | WIN lower bound `lo95 > 0` -> `lo90 > 0` (CI90 for CI95) | killed | test_win_needs_ci95_lower_bound_positive_not_ci90 |
+| A5 | expb/analysis_b.py | family hash check `not (...).all()` -> `if False` (mismatched family_sha256 accepted) | killed | test_load_refuses_family_hash_mismatch |
+| A6 | expb/analysis_b.py | `for arm in family:` -> `for arm in list(family)[1:]` (first arm skipped) | killed | test_family_table_known_answers_and_branches |
+| A7 | expb/analysis_b.py | Holm-level CI quantile `2.0 * size` -> `1.0 * size` (CI90 level) | killed | test_holm_ci_size_one_is_ci95 |
+| A8 | expb/analysis_b.py | family contrast sides swapped (arm as A, FULL as B) | killed | test_family_table_known_answers_and_branches |
+| A9 | expb/analysis_b.py | WIN boundary `mean >= delta - TOL` -> `delta + TOL` | killed | test_delta_boundary_is_included_in_win_and_just_below_is_not |
+| A10 | expb/analysis_b.py | coverage check call made a no-op (19 instances accepted) | killed | test_family_table_refuses_instance_coverage_below_twenty |
+| A11 | expb/analysis_b.py | day-count check `n_eval == TEST_B_N` -> `if False` | killed | test_load_refuses_wrong_day_count |
+| A12 | expb/analysis_b.py | one eval commit `!= 1` -> `< 1` (mixed commits accepted) | killed | test_load_refuses_mixed_eval_commits |
+| A13 | expb/analysis_b.py | `if absent:` (listed arm without rows) -> `if False` | killed | test_family_arm_with_no_rows_is_refused |
+| A14 | expb/analysis_b.py | FROZEN fit-commit check -> `if False` | killed | test_load_refuses_fit_commit_not_frozen_for_the_stage |
+| A15 | expb/analysis_b.py | TIE_STRONG on CI95 instead of CI90 | killed | test_tie_strong_is_decided_by_ci90_not_ci95 |
+| A16 | expb/analysis_b.py | LOSE sign flipped (`hi95 < 0` -> `hi95 > 0`) | killed | test_go_no_go_holm_reproduces_a_vectors_with_raw_p |
+
+Survivors found on the first run and closed by tests: A4 (no test distinguished CI90 from
+CI95 in the WIN bound; added test_win_needs_ci95_lower_bound_positive_not_ci90), A13 (the
+refusal was tested without its message; the message is now asserted, since `main_stage`
+would also refuse, only less clearly), A8 (the first anchor matched two lines and was not
+applied; the anchor is now unique and the mutant applied and killed). A15 was added as a
+new test before its run.
+
+Limits: each row is one single-line change checked by the named tests only. The CLI
+(`main`) is exercised only for argument refusal and through the pinned-log helpers of
+gatecheck (not run end to end on a git repository); M23's own row checks are covered
+by the constructed-table tests above.
+
+## M22 (expb/fidelity.py): dev gates, family derivation
+
+Procedure as above, with `tests/test_expb_fidelity.py` (36 tests). Mutants are applied by a
+script that replaces one unique line fragment, runs the file with `-x`, and restores the
+original bytes (restoration checked by sha256; `True` in the run). The share comparisons
+were moved into `_meets(share, threshold)` so that the boundary is tested directly.
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| F1 | expb/fidelity.py | B-THR band `<=` -> `<` (boundary at 3 SE) | killed | test_expb_fidelity::test_within_band_boundary_is_inclusive_at_three_se |
+| F2 | expb/fidelity.py | `T4_SE = 3.0` -> `2.0` (wrong SE multiplier) | killed | test_expb_fidelity::test_within_band_boundary_is_inclusive_at_three_se |
+| F3 | expb/fidelity.py | `_meets`: `>=` -> `>` (share threshold strict) | killed | test_expb_fidelity::test_share_helper_is_inclusive_at_the_threshold |
+| F4 | expb/fidelity.py | THR DP breach `g1 > B` -> `g1 >= B` | killed | test_expb_fidelity::test_thr_dp_breach_is_strict_at_the_load_limit |
+| F5 | expb/fidelity.py | per-day SE with ddof 0 | killed | test_expb_fidelity::test_per_day_standard_error_uses_the_sample_variance |
+| F6 | expb/fidelity.py | P1 bound `2 SE` -> `1 SE` | killed | test_expb_fidelity::test_p1_boundary_is_two_standard_errors_and_the_competitor_is_the_minimum |
+| F7 | expb/fidelity.py | P1 competitor always H1 (minimum dropped) | killed | test_expb_fidelity::test_p1_boundary_is_two_standard_errors_and_the_competitor_is_the_minimum |
+| F8 | expb/fidelity.py | `derive_family` skips the last arm (ppo) | killed | test_expb_fidelity::test_family_includes_every_arm_that_passes |
+| F9 | expb/fidelity.py | DQN pass range `1..P_max` -> `1..P_max-1` | killed | test_expb_fidelity::test_dqn_gate_accepts_three_passes |
+| F10 | expb/fidelity.py | B-RLSM threshold 0.90 -> 1.0 | killed | test_expb_fidelity::test_rlsm_gate_pass_and_share_boundary_at_ninety_percent |
+| F11 | expb/fidelity.py | RLSM 100-row minimum `<` -> `<=` | killed | test_expb_fidelity::test_rlsm_gate_pass_and_share_boundary_at_ninety_percent |
+| F12 | expb/fidelity.py | RLSM residual 1e-8 -> 1e-7 | killed | test_expb_fidelity::test_rlsm_stages_below_100_val_rows_are_not_counted_and_residual_is_gated |
+| F13 | expb/fidelity.py | B-DOS tolerance 1e-6 dropped | killed | test_expb_fidelity::test_dos_gate_uses_min_of_always_and_never_with_tolerance |
+| F14 | expb/fidelity.py | B-DOS always-stop not divided by E0 | killed | test_expb_fidelity::test_dos_gate_uses_min_of_always_and_never_with_tolerance |
+| F15 | expb/fidelity.py | B-DOS unrecorded objectives ignored | killed | test_expb_fidelity::test_dos_unrecorded_objective_fails_even_when_the_share_passes |
+| F16 | expb/fidelity.py | B0 oracle comparison `arm < oracle` -> `arm > oracle` | killed | test_expb_fidelity::test_b0_fails_when_an_arm_row_beats_the_oracle |
+
+Survivors and closures: the first run had 7 survivors (F3, F4, F5, F6, F7, F8, F9, F15) and
+one unmatched pattern (F16). Each closed by a test added for it (boundary of the share helper,
+the THR breach at exactly B, the sample SE, the P1 2-SE boundary with `none` as the minimum
+competitor, PPO inside the family, three DQN passes, one unrecorded DOS objective with share
+0.95). Re-run: all 16 killed.
+
+## M16 (expb/dos.py): never-stop objective recorded in the stage diag
+
+Added `_never_val` and a `never_val` key on all three stage diag entries (trained, constant,
+carry). Fit output is unchanged: the fitted state_dicts and surrogate values on all rows
+hash to the reference digest recorded before the change (`test_fitted_models_are_bitwise_unchanged_on_a_fixed_seed`).
+Procedure as above, `tests/test_expb_dos.py` with `-x`; the mutated file was restored and its
+sha256 compared with the pre-mutation hash (identical: True).
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| N1 | expb/dos.py | `if y_val.size == 0:` -> `if False:` (empty validation gives NaN, not None) | killed | test_expb_dos::test_never_val_is_none_without_validation_rows |
+| N2 | expb/dos.py | `float(np.mean(y_val) / E0)` -> `float(np.mean(y_val))` (no E0 scale) | killed | test_expb_dos::test_never_val_is_the_loss_of_the_constant_continue_decision_on_val_rows |
+| N3 | expb/dos.py | `_never_val(y_val, E0)` -> `_never_val(y_fit, E0)` (fitting rows used) | killed | test_expb_dos::test_never_val_is_the_loss_of_the_constant_continue_decision_on_val_rows |
+| N4 | expb/dos.py | constant-branch entry drops `never_val=never` | killed | test_expb_dos::test_never_val_is_recorded_for_every_stage_including_constant_and_carry_branches |
+
+Result: 4/4 killed; the file is restored byte-for-byte.
+
+## M16b (expb/dos.py): held-stage objective (constant and carry stages)
+
+Constant and carry stages now record `val_loss_per_ckpt=[(0, loss)]` and `chosen_ckpt=0`
+(the loss of the decision deployed at that stage on its validation rows, E0 scale; `None`
+and `[]` without validation rows). The carried network is evaluated on a deep copy, so the
+carried predictor is not modified. The fitted-model digest (`REFERENCE_DIGEST`) is unchanged.
+Procedure as above, `tests/test_expb_dos.py` with `-x`; restoration checked by sha256
+(identical: True).
+
+| id | module | mutation (original -> mutant) | result | first failing test |
+|---|---|---|---|---|
+| R1 | expb/dos.py | constant held decision `float(pi)` -> `1.0 - float(pi)` (stop/continue swapped) | killed | test_expb_dos::test_constant_stage_objective_is_the_loss_of_the_deployed_constant_decision |
+| R2 | expb/dos.py | carry evaluated on `warm.net` (no copy; mutates eval mode) | killed | test_expb_dos::test_carry_objective_leaves_the_carried_network_untouched |
+| R3 | expb/dos.py | no-validation return `None` -> recorded `0.0` at step 0 | killed | test_expb_dos::test_held_stage_without_validation_rows_has_no_objective |
+| R4 | expb/dos.py | `chosen_ckpt=0` -> `chosen_ckpt=1` (objective not found by the gate) | killed | test_expb_dos::test_constant_stage_objective_is_the_loss_of_the_deployed_constant_decision |
+| R5 | expb/dos.py | loss uses `F * Hk` (unscaled stop cost) | killed | test_expb_dos::test_constant_stage_objective_is_the_loss_of_the_deployed_constant_decision |
+
+Result: 5/5 killed; the file is restored byte-for-byte. Also fixed in the test file: the carry
+test of M16 used stage k=3 on a 3-route (outside [1, m-1]); now k=2.

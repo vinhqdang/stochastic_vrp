@@ -122,12 +122,33 @@ def _seed(seed_key: str, fold: str, k: int) -> int:
     return zlib.crc32(f"{seed_key}|{fold}|{k}".encode("utf-8"))
 
 
-def _constant_surrogate(y_fit: np.ndarray, Hk: float, E0: float, fallback: float
-                        ) -> ConstantPredictor:
+def _constant_pi(y_fit: np.ndarray, Hk: float, fallback: float) -> float:
     """Constant decision with the lower empirical loss: stop (pi = 1) iff H < mean y."""
     cont = float(y_fit.mean()) if y_fit.size else fallback
-    pi = 1.0 if Hk < cont else 0.0
-    return ConstantPredictor(Hk + E0 * (pi - 0.5))
+    return 1.0 if Hk < cont else 0.0
+
+
+def _held_objective(action: str, pi, warm, cache, k: int, val_idx: np.ndarray,
+                    y_val: np.ndarray, Hk: float, E0: float) -> dict:
+    """Validation objective of the decision deployed at a held stage (constant or carry), in
+    the shape B-DOS reads: one checkpoint at step 0, chosen. The carried network is evaluated
+    on a copy, so the carried predictor is not touched."""
+    if val_idx.size == 0:
+        return dict(val_loss_per_ckpt=[], chosen_ckpt=None)
+    if action == "constant":
+        F = np.full(val_idx.size, float(pi))
+    else:
+        F = DOSPredictor(copy.deepcopy(warm.net), E0).pi(cache, k, val_idx)
+    loss = float(np.mean(F * (Hk / E0) + (1.0 - F) * (y_val / E0)))
+    return dict(val_loss_per_ckpt=[(0, loss)], chosen_ckpt=0)
+
+
+def _never_val(y_val: np.ndarray, E0: float) -> float | None:
+    """Validation objective of the never-stop decision (continue everywhere, F = 0), on the
+    E0 scale: mean of y / E0 over the validation rows (the B-DOS comparison). None if none."""
+    if y_val.size == 0:
+        return None
+    return float(np.mean(y_val) / E0)
 
 
 def _train(net: nn.Module, x: torch.Tensor, u: torch.Tensor, Hs: float,
@@ -181,17 +202,22 @@ def dos_fit_fn(seed_key: str, cfg: DOSConfig, diag: list) -> FitFn:
         val_idx = np.asarray(val_idx, dtype=np.int64)
         y_fit = np.asarray(y_fit, dtype=float)
         y_val = np.asarray(y_val, dtype=float)
+        never = _never_val(y_val, E0)
         if y_fit.size and (y_fit.max() > E0 + 1e-9 or y_fit.min() < -1e-9):
             raise ValueError("fitting targets must lie in [0, E0]")
         n = int(fit_idx.size)
         fold = _fold_label(fit_idx)
         if n < cfg.min_rows:
             action = "carry" if isinstance(warm, DOSPredictor) else "constant"
-            pred = warm if action == "carry" else _constant_surrogate(
-                y_fit, Hk, E0, float(spec.E[min(k, m - 1)]))
+            pi = None
+            pred = warm
+            if action == "constant":
+                pi = _constant_pi(y_fit, Hk, float(spec.E[min(k, m - 1)]))
+                pred = ConstantPredictor(Hk + E0 * (pi - 0.5))
+            held = _held_objective(action, pi, warm, cache, k, val_idx, y_val, Hk, E0)
             diag.append(dict(kind="stage", arm="dos", k=k, fold=fold, n_fit=n,
                              n_val=int(val_idx.size), action=action, steps=0,
-                             seconds=time.perf_counter() - t0))
+                             never_val=never, **held, seconds=time.perf_counter() - t0))
             return pred
 
         torch.set_num_threads(1)
@@ -210,7 +236,8 @@ def dos_fit_fn(seed_key: str, cfg: DOSConfig, diag: list) -> FitFn:
         diag.append(dict(kind="stage", arm="dos", k=k, fold=fold, n_fit=n,
                          n_val=int(val_idx.size),
                          action="warm" if isinstance(warm, DOSPredictor) else "cold",
-                         steps=steps, lr0=cfg.lr, seconds=time.perf_counter() - t0, **info))
+                         steps=steps, lr0=cfg.lr, never_val=never,
+                         seconds=time.perf_counter() - t0, **info))
         return DOSPredictor(net, E0)
 
     return fit

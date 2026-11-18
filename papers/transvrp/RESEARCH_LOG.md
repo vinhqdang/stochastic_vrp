@@ -246,3 +246,16 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
   `libraries`, so gate item 8 refuses reuse stages; cut (i) cannot apply unless a
   provenance note for A's models is added first. With the faster DQN update it may not be
   needed; the pilot decides.
+
+### 2026-11-18 23:58 GMT+7 — experiment B: M22 fidelity, M23 analysis_b, DOS diag; spec 3.2
+- M22 `expb/fidelity.py` (dev gates, FAMILY derivation, `fidelity_dev.md` machine-parsed
+  back by the gate) and M23 `expb/analysis_b.py` (refuses mismatched family hash,
+  missing or extra arms, non-test_b rows, coverage != 20) implemented with tests and
+  mutation checks. DOS now records the never-stop validation objective (and objectives
+  for constant and carry stages), which gate B-DOS reads; without it DOS would have been
+  dropped for a defect of ours. Fitted models are bitwise unchanged (digest test).
+- Spec revision 3.2 (before any pilot): "G2 route-reps" defined as rep 0 of every
+  eligible route (62 route-reps). No threshold of section 0 changed.
+- Full suite: 582 passed. All of M12–M23 are implemented; no fit, pilot or dev run of B
+  has been made, and test_b has never been read.
+- Next: independent review of the whole B code, then the pilot (spec 9.3).

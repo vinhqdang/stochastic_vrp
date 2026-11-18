@@ -1,5 +1,6 @@
 """DOS: deep optimal stopping (EXPERIMENT_B.md 3.4, 10 M16). Shapes, batch norm, the
 decision surrogate, cold/warm starts, and no leakage of validation rows into training."""
+import copy
 import math
 
 import numpy as np
@@ -10,6 +11,7 @@ from transvrp.expa.features import MLP_DIM, RouteCache, RouteStats, mlp_batch
 from transvrp.expa.paths import Paths, RouteSpec
 from transvrp.expa.train import ConstantPredictor
 from transvrp.expa.backward import split_80_20
+from transvrp.expb import fidelity as fd
 from transvrp.expb.dos import (DOSConfig, DOSNet, DOSPredictor, dos_fit_fn, dos_loss,
                                fit_dos, init_net, stage_steps)
 
@@ -299,3 +301,161 @@ def test_fit_fn_builds_networks_of_the_configured_width():
     pred = fit(1, cache, idx, y[idx], val, y[val], None)
     assert isinstance(pred, DOSPredictor)
     assert pred.net.out.in_features == 20
+
+
+# ---------------------------------------------------------------- never-stop record (M22 B-DOS)
+
+def _model_digest(models, spec, paths) -> str:
+    """SHA-256 over every fitted state_dict and the surrogate values on all rows (fixed seed)."""
+    import hashlib
+    h = hashlib.sha256()
+    cache = RouteCache(spec, paths, RouteStats.fit(paths))
+    idx = np.arange(paths.p.shape[0])
+    for k in sorted(models):
+        for pred in models[k]:
+            for name, tensor in pred.net.state_dict().items():
+                h.update(name.encode())
+                h.update(tensor.detach().cpu().numpy().tobytes())
+            h.update(np.ascontiguousarray(pred.predict(cache, k, idx)).tobytes())
+    return h.hexdigest()
+
+
+# Digest of fit_dos(make_cache(N=160, m=3, seed=22), rep 0, fast_cfg()) under the code that
+# did not yet record never_val (M16 fix). Any change to what DOS learns changes it.
+REFERENCE_DIGEST = "4b4ae7164ebec2d3ef3da89df20ed3e512b79f6689d1e9e1a4053250d03ccca0"
+
+
+def _E0_two_cache(N=200, m=3, seed=23):
+    spec = make_spec(4.0, [0.6] * m, [2.0] * m, m)
+    rng = np.random.default_rng(seed)
+    paths = Paths(p=rng.uniform(0.5, 2.0, (N, m)), d=rng.uniform(0.5, 2.0, (N, m)))
+    return spec, paths, RouteCache(spec, paths, RouteStats.fit(paths))
+
+
+def test_never_val_is_the_loss_of_the_constant_continue_decision_on_val_rows():
+    spec, paths, cache = _E0_two_cache()
+    fit_idx = np.arange(0, 120, 2)
+    val_idx = np.arange(120, 160)
+    y_fit = np.random.default_rng(31).uniform(0.0, 2.0, fit_idx.size)
+    y_val = np.random.default_rng(32).uniform(0.0, 2.0, val_idx.size)
+    diag = []
+    dos_fit_fn("never|0|200|0", fast_cfg(), diag)(1, cache, fit_idx, y_fit, val_idx, y_val, None)
+    continue_everywhere = torch.zeros(val_idx.size)          # F = 0: continue on every row
+    expected = float(dos_loss(continue_everywhere,
+                              torch.from_numpy(y_val / spec.E0), spec.H[0] / spec.E0))
+    assert diag[-1]["never_val"] == pytest.approx(expected, rel=1e-6, abs=1e-7)
+    assert diag[-1]["never_val"] == pytest.approx(float(y_val.mean()) / spec.E0, rel=1e-6)
+
+
+def test_never_val_is_recorded_for_every_stage_including_constant_and_carry_branches():
+    spec, paths, cache = _E0_two_cache()
+    y_val = np.full(40, 1.0)
+    val_idx = np.arange(120, 160)
+    diag = []
+    fn = dos_fit_fn("every|0|200|0", fast_cfg(min_rows=20), diag)
+    fn(1, cache, np.arange(0, 120, 2), np.full(60, 0.5), val_idx, y_val, None)   # trained
+    fn(2, cache, np.arange(0, 10, 2), np.full(5, 0.5), val_idx, y_val, None)     # constant
+    fn(2, cache, np.arange(0, 10, 2), np.full(5, 0.5), val_idx, y_val, DOSPredictor(DOSNet(), 2.0))
+    assert [d["action"] for d in diag] == ["cold", "constant", "carry"]
+    assert all(d["never_val"] == pytest.approx(0.5) for d in diag)
+
+
+def test_never_val_is_none_without_validation_rows():
+    spec, paths, cache = _E0_two_cache()
+    diag = []
+    dos_fit_fn("noval|0|200|0", fast_cfg(), diag)(
+        1, cache, np.arange(0, 120, 2), np.full(60, 1.0), np.zeros(0, np.int64),
+        np.zeros(0), None)
+    assert "never_val" in diag[-1] and diag[-1]["never_val"] is None
+    assert diag[-1]["n_val"] == 0
+
+
+def test_fit_dos_stage_entries_all_carry_never_val_and_match_the_gate_key():
+    spec, paths, _ = make_cache(N=160, m=3, seed=22)
+    _, _, diag, _ = fit_dos(spec, paths, 160, 0, fast_cfg())
+    stages = [d for d in diag if d.get("kind") == "stage"]
+    assert stages and all("never_val" in d for d in stages)
+    assert all(isinstance(d["never_val"], float) for d in stages if d["n_val"] > 0)
+
+
+def test_fitted_models_are_bitwise_unchanged_on_a_fixed_seed():
+    spec, paths, _ = make_cache(N=160, m=3, seed=22)
+    models, _, _, _ = fit_dos(spec, paths, 160, 0, fast_cfg())
+    assert _model_digest(models, spec, paths) == REFERENCE_DIGEST
+
+
+# ---------------------------------------------------------------- held stages (B-DOS objective)
+
+def test_constant_stage_objective_is_the_loss_of_the_deployed_constant_decision():
+    spec, paths, cache = _E0_two_cache()
+    val_idx = np.arange(120, 160)
+    y_val = np.random.default_rng(41).uniform(0.0, 2.0, val_idx.size)
+    stop_diag, cont_diag = [], []
+    # Hk = 0.6 < mean(y_fit) = 1.5: the constant decision is stop (pi = 1)
+    dos_fit_fn("cs|0|200|0", fast_cfg(min_rows=20), stop_diag)(
+        1, cache, np.arange(0, 10, 2), np.full(5, 1.5), val_idx, y_val, None)
+    # mean(y_fit) = 0.1 < Hk: continue (pi = 0)
+    dos_fit_fn("cc|0|200|0", fast_cfg(min_rows=20), cont_diag)(
+        1, cache, np.arange(0, 10, 2), np.full(5, 0.1), val_idx, y_val, None)
+    assert fd._dos_objective(stop_diag[-1]) == pytest.approx(spec.H[0] / spec.E0, rel=1e-6)
+    assert fd._dos_objective(cont_diag[-1]) == pytest.approx(
+        float(y_val.mean()) / spec.E0, rel=1e-6)
+    assert stop_diag[-1]["chosen_ckpt"] == 0
+
+
+def test_carry_stage_objective_is_the_loss_of_the_carried_network_on_val_rows():
+    spec, paths, cache = _E0_two_cache()
+    val_idx = np.arange(120, 160)
+    y_val = np.random.default_rng(42).uniform(0.0, 2.0, val_idx.size)
+    # carried network that always continues (pi = 0): its objective is the never-stop value
+    never_warm = DOSPredictor(constant_pi_net(1e-9), spec.E0)
+    diag = []
+    dos_fit_fn("kc|0|200|0", fast_cfg(min_rows=20), diag)(
+        1, cache, np.arange(0, 10, 2), np.full(5, 0.5), val_idx, y_val, never_warm)
+    assert diag[-1]["action"] == "carry"
+    assert fd._dos_objective(diag[-1]) == pytest.approx(float(y_val.mean()) / spec.E0, abs=1e-6)
+    # a generic carried network: the loss of its own surrogate F on the validation rows
+    warm = DOSPredictor(DOSNet(), spec.E0)
+    F = DOSPredictor(copy.deepcopy(warm.net), spec.E0).pi(cache, 1, val_idx)
+    u = y_val / spec.E0
+    expected = float(np.mean(F * (spec.H[0] / spec.E0) + (1.0 - F) * u))
+    diag2 = []
+    dos_fit_fn("kc2|0|200|0", fast_cfg(min_rows=20), diag2)(
+        1, cache, np.arange(0, 10, 2), np.full(5, 0.5), val_idx, y_val, warm)
+    assert fd._dos_objective(diag2[-1]) == pytest.approx(expected, rel=1e-5, abs=1e-7)
+
+
+def test_carry_objective_leaves_the_carried_network_untouched():
+    spec, paths, cache = _E0_two_cache()
+    warm = DOSPredictor(DOSNet(), spec.E0)
+    before = {k: v.clone() for k, v in warm.net.state_dict().items()}
+    training_flag = warm.net.training
+    y_val = np.random.default_rng(43).uniform(0.0, 2.0, 40)
+    pred = dos_fit_fn("untouched|0|200|0", fast_cfg(min_rows=20), [])(
+        1, cache, np.arange(0, 10, 2), np.full(5, 0.5), np.arange(120, 160), y_val, warm)
+    assert pred is warm
+    assert warm.net.training == training_flag
+    after = warm.net.state_dict()
+    assert all(torch.equal(before[k], after[k]) for k in before)
+
+
+def test_held_stage_without_validation_rows_has_no_objective():
+    spec, paths, cache = _E0_two_cache()
+    for warm in (None, DOSPredictor(DOSNet(), spec.E0)):
+        diag = []
+        dos_fit_fn("nov|0|200|0", fast_cfg(min_rows=20), diag)(
+            1, cache, np.arange(0, 10, 2), np.full(5, 0.5), np.zeros(0, np.int64),
+            np.zeros(0), warm)
+        assert diag[-1]["n_val"] == 0
+        assert fd._dos_objective(diag[-1]) is None
+
+
+def test_smoke_fit_with_every_stage_held_records_an_objective_for_each_stage_with_val_rows():
+    spec, paths, _ = make_cache(N=600, m=3, seed=44)
+    cfg = fast_cfg(min_rows=10 ** 9)                      # every stage is a constant stage
+    _, _, diag, _ = fit_dos(spec, paths, 600, 0, cfg)
+    stages = [d for d in diag if d.get("kind") == "stage"]
+    assert stages and all(d["action"] == "constant" for d in stages)
+    big = [d for d in stages if int(d["n_val"]) >= 100]
+    assert big                                            # the 100-row regime is exercised
+    assert all(fd._dos_objective(d) is not None for d in big)
