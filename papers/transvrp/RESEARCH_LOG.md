@@ -201,3 +201,26 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
 - The author signed off all design thresholds T1–T15 of section 0 as written.
 - Platform: DQN on RTX 5000 Ada (torch 2.6.0+cu124, CUDA checked), other arms CPU,
   12 workers.
+
+### 2026-11-18 21:34 GMT+7 — experiment B implementation progress (M12–M18)
+- Source verification of DQN, RLSM, DOS and the PPO code done (`VERIFY_CITATIONS.md`,
+  spec revision 3.1). DQN code is `moda707/vrpvcsd_of` (the `vrp-sdo` link in the draft
+  was the 2026 paper's instances). Material differences from the sources are listed in
+  spec 3.0/12: the DQN source trains 3 to 5 million trials with an MLP on hand-built
+  features (ours at most 240k transitions per pass with the set encoder); the PPO code has
+  no value net (the paper does; the spec follows the paper); DOS source trains 3,000+d
+  steps per date (ours at most 400); RLSM source regularises by K, not ridge.
+  Reporting rule: the paper states the budget ratio plainly.
+- Implemented with tests and mutation checks (`code/MUTATION_B.md`): M12 gate and test_b
+  stream (reviewed independently: `CODE_REVIEW_B_M12_M13.md`; the review's required
+  changes were applied), M13 THR, M14 ALP-Z, M15 RLSM, M16 DOS, M17 padded set encoder,
+  M18 DQN. The edit to A's gate fixtures only changes the log line form to the anchored
+  `FROZEN COMMIT: <hash>`; A's gate accepts a subset of what it accepted before. Full
+  suite: 396 passed.
+- Measured on the RTX 5000 Ada: one DQN update (batch 256, m = 17) takes 22.8 ms against
+  the 5 ms prior of spec 9.1. The pilot (spec 9.3) replaces all priors; if the
+  projection exceeds the trigger the ordered cuts apply, and launch-overhead
+  optimisation of the DQN update (no change of the algorithm, equality tested) is
+  allowed before the freeze.
+- Not yet implemented: M19 PPO, M20 codecs/registry, M21 sweep integration (records
+  `libraries` in payloads, family/model/library columns), M22 fidelity, M23 analysis_b.

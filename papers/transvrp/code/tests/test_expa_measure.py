@@ -31,7 +31,7 @@ def test_process_peak_rss_is_positive_and_monotone():
 
 def test_gate_reads_research_log_as_utf8(tmp_path, monkeypatch):
     # 'Á' is c3 81 in UTF-8 and 0x81 is undefined in cp1252, so a non-UTF-8 read fails here.
-    text = f"≤ é Á frozen {GOOD_HASH}\n"
+    text = f"≤ é Á\nFROZEN COMMIT: {GOOD_HASH}\n"
     log = tmp_path / "RESEARCH_LOG.md"
     log.write_bytes(text.encode("utf-8"))
     monkeypatch.setattr(paths, "RESEARCH_LOG", log)

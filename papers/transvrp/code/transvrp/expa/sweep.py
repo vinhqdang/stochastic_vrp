@@ -57,8 +57,9 @@ from .boost import BoostPredictor, fit_boost  # noqa: E402
 from .eligibility import build_eligibility, stratum_of  # noqa: E402
 from .features import RouteCache, RouteStats  # noqa: E402
 from .model import MLPNet, SetNet  # noqa: E402
-from .paths import (RouteSpec, TestStreamGateError, current_commit,  # noqa: E402
-                    route_pool, route_specs, tree_is_clean, verify_test_gate)
+from .paths import (TEST_STREAMS, RouteSpec, TestStreamGateError,  # noqa: E402
+                    current_commit, route_pool, route_specs, tree_is_clean,
+                    verify_stream_gate, verify_test_gate)
 from .measure import Stopwatch, process_peak_rss_mb, traced_peak  # noqa: E402
 from .simulate import simulate_policy, summarize  # noqa: E402
 from .train import ConstantPredictor, NetPredictor, StageConfig, fit_neural  # noqa: E402
@@ -73,7 +74,7 @@ BIG_LABELS = ("baton_eq", "dp", "none", "oracle")
 BIG_RENAME = {"baton_eq": "baton_big", "dp": "dp_big"}
 ARM_POLICY = {"full": "nn_full", "scalar": "nn_scalar", "mlp": "nn_mlp",
               "boost": "boost"}
-EVAL_SETS = ("dev", "test")
+EVAL_SETS = ("dev", "test", "test_b")
 TIMING_INST, TIMING_ROUTE = "CON3-0", 3   # section 7.3: the one full-size timing route
 ROW_COLUMNS = ["inst", "route_id", "m", "stratum", "N", "rep", "policy",
                "mean_cost", "handoff_rate", "fail_rate", "gap_closed", "n_eval",
@@ -114,6 +115,9 @@ class StageSpec:
     routes: str = "eligible"  # eligible | subset | smoke
     cfg: StageConfig = field(default_factory=StageConfig)
     test_allowed: bool = True
+    test_stream: str = "test"     # the one gated stream this stage may evaluate on
+    arm_cfg: tuple = ()           # EXPERIMENT_B: chosen arm configuration (M21)
+    independent: bool = False     # EXPERIMENT_B 3.8: stop columns permuted
 
 
 STAGE_SPECS: dict[str, StageSpec] = {
@@ -272,16 +276,34 @@ def stage_eligibility(stage: str, path: Path | None) -> pd.DataFrame:
 
 # ---------------------------------------------------------------- gate
 
+def check_stream_for_stage(stage: str, eval_set: str) -> None:
+    """Shared by ``check_test_gate`` and ``run_eval_job``: a gated stream is read only by
+    the stage that declares it (EXPERIMENT_B.md 5.2). Dev is never gated."""
+    if eval_set not in TEST_STREAMS:
+        return
+    spec = stage_spec(stage)
+    if eval_set != spec.test_stream:
+        raise GateError(f"stage {stage!r} evaluates on {spec.test_stream!r}, "
+                        f"not on {eval_set!r}")
+    if not spec.test_allowed:
+        raise GateError(f"stage {stage!r} is dev-only; test evaluation is refused")
+
+
+def model_owner_stage(model_path: Path) -> str | None:
+    """The stage that owns a model file stored as ``models/<stage>/<key>.pkl`` (the layout
+    ``run_fit_job`` writes); None for a file outside that layout."""
+    return model_path.parent.name if model_path.parent.parent.name == "models" else None
+
+
 def check_test_gate(stage: str, eval_set: str, frozen_commit: str | None) -> None:
     """Stage-level part of the gate (section 5). Raises GateError unless test
     evaluation is allowed; the commit checks are ``paths.verify_test_gate``."""
     if eval_set not in EVAL_SETS:
         raise GateError(f"eval set must be one of {EVAL_SETS}")
-    if eval_set != "test":
+    if eval_set not in TEST_STREAMS:
         return
-    if not stage_spec(stage).test_allowed:
-        raise GateError(f"stage {stage!r} is dev-only; test evaluation is refused")
-    verify_test_gate(frozen_commit)
+    check_stream_for_stage(stage, eval_set)
+    verify_stream_gate(eval_set, frozen_commit, stage)
 
 
 # ---------------------------------------------------------------- packing
@@ -432,22 +454,28 @@ def _rows_for(payload: dict, results: dict, spec: RouteSpec, eval_set: str,
 def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
                  frozen: str | None = None) -> str:
     job_key = model_path.stem
-    if eval_set == "test":
-        verify_test_gate(frozen)
+    gated = eval_set in TEST_STREAMS
+    if gated:
+        check_stream_for_stage(ctx.stage, eval_set)
+        owner = model_owner_stage(model_path)
+        if owner is not None and owner != ctx.stage:
+            raise GateError(f"model {job_key} belongs to stage {owner!r}, not {ctx.stage!r}; "
+                            "it is never evaluated under another stage's gate or stream")
+        verify_stream_gate(eval_set, frozen, ctx.stage)
     rows_csv = ctx.rows_dir / f"{job_key}.{eval_set}.csv"
     if rows_csv.exists():
         return "skip"
     payload = load_payload(model_path)
-    if eval_set == "test" and payload.get("fit_commit") != frozen:
+    if gated and payload.get("fit_commit") != frozen:
         raise GateError(f"model {job_key} was fitted at {payload.get('fit_commit')}, "
                         f"not at the frozen commit")
-    if eval_set == "test" and payload.get("fit_tree_clean") is not True:
+    if gated and payload.get("fit_tree_clean") is not True:
         raise GateError(f"model {job_key} was fitted on a tree with uncommitted or untracked "
                         f".py changes (or before the flag existed); refusing test evaluation")
     job: Job = payload["job"]
     spec = _spec_of(job.inst, job.route_id)
     pool = route_pool(job.inst, eval_set, 0, frozen=frozen,
-                      routes=[job.route_id])[job.route_id]
+                      routes=[job.route_id], stage=ctx.stage)[job.route_id]
     n_eval = int(pool.p.shape[0])
     if payload["kind"] in ("ladder", "big"):
         res = eval_classical(spec, payload["models"], pool.g)
@@ -489,6 +517,9 @@ def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path = DEFAULT_RESULTS,
             jobs: int = 1, commit: str | None = None,
             chunk_dir: Path | None = None, only: dict | None = None) -> dict:
     spec = stage_spec(stage)
+    if spec.test_stream == "test_b" and not tree_is_clean():
+        raise GateError(f"stage {stage!r} is fitted only on a clean code tree; "
+                        "commit or remove uncommitted .py changes first")
     ctx = Ctx(Path(results_dir), stage, spec.cfg,
               current_commit() if commit is None else commit, chunk_dir)
     planned = plan_stage(stage, elig, only)

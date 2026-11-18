@@ -42,11 +42,15 @@ FROZEN_HASH_RE = re.compile(r"[0-9a-f]{40}")
 
 CHUNK = 100_000
 N_CHUNKS = 10
-PURPOSES = ("train", "dev", "test", "test_std")
+PURPOSES = ("train", "dev", "test", "test_std", "test_b")
 DEV_N = 5_000
 TEST_N = 20_000
 TEST_STD_N = 2_000
+TEST_B_N = 20_000
 TRAIN_REPS = (0, 1, 2)
+TEST_STREAMS = ("test", "test_b")      # gated streams (EXPERIMENT_B.md 5.2)
+TEST_B_SEED_TAG = 20261118
+FROZEN_LINE_RE = re.compile(r"^FROZEN COMMIT: ([0-9a-f]{40})\r?$", re.MULTILINE)
 
 
 class TestStreamGateError(RuntimeError):
@@ -124,9 +128,13 @@ def tree_is_clean(path: Path = CODE_DIR) -> bool:
 
 @dataclass(frozen=True)
 class GateToken:
-    """Proof that ``verify_test_gate`` passed for ``commit``. Only that function
-    creates one; private loaders accept a test-purpose request only with a token."""
+    """Proof that a stream verifier passed for ``commit``. Only the verifiers in this
+    module create one; private loaders accept a test-purpose request only with a token
+    whose ``stream`` equals the requested purpose."""
     commit: str
+    stream: str = "test"
+    stage: str | None = None
+    family_sha256: str | None = None
     _issuer: object = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -149,22 +157,50 @@ def verify_test_gate(frozen: str | None) -> GateToken:
         raise TestStreamGateError("the frozen commit must be a full 40-character lowercase hash")
     if not Path(RESEARCH_LOG).exists():
         raise TestStreamGateError(f"research log not found: {RESEARCH_LOG}")
-    if frozen not in Path(RESEARCH_LOG).read_text(encoding="utf-8"):
-        raise TestStreamGateError("the frozen hash is not recorded in RESEARCH_LOG.md")
+    recorded = {m.group(1) for m in FROZEN_LINE_RE.finditer(
+        Path(RESEARCH_LOG).read_text(encoding="utf-8"))}
+    if frozen not in recorded:
+        raise TestStreamGateError("the frozen hash is not recorded as a 'FROZEN COMMIT: <hash>' "
+                                  "line in RESEARCH_LOG.md")
     head = current_commit()
     if head != frozen:
         raise TestStreamGateError(f"running checkout is at {head}, not at the frozen commit")
     if not tree_is_clean():
         raise TestStreamGateError("uncommitted or untracked .py changes under papers/transvrp/code; "
                                   "refusing test stream")
-    return GateToken(commit=frozen, _issuer=_GATE_ISSUER)
+    return GateToken(commit=frozen, stream="test", _issuer=_GATE_ISSUER)
+
+
+def verify_test_b_gate(stage: str | None, fit_commit: str | None) -> GateToken:
+    """Gate for the test_b stream (EXPERIMENT_B.md 5.3). The checks live in
+    ``expb.gatecheck`` (imported lazily: that module imports this one)."""
+    from ..expb import gatecheck     # noqa: PLC0415 (cycle: gatecheck imports paths)
+    if not stage:
+        raise TestStreamGateError("test_b data need the name of the stage that requests them")
+    if not fit_commit:
+        raise TestStreamGateError("test_b data need the stage's fit commit")
+    head, family_sha = gatecheck.verify_stage(stage, fit_commit)
+    return GateToken(commit=head, stream="test_b", stage=stage, family_sha256=family_sha,
+                     _issuer=_GATE_ISSUER)
+
+
+def verify_stream_gate(purpose: str, frozen: str | None, stage: str | None = None) -> GateToken:
+    """Dispatches a gated purpose to its own verifier."""
+    if purpose == "test":
+        return verify_test_gate(frozen)
+    if purpose == "test_b":
+        return verify_test_b_gate(stage, frozen)
+    raise ValueError(f"purpose {purpose!r} is not a gated stream")
 
 
 def _require_gate(purpose: str, gate: GateToken | None) -> None:
-    """Refuses test-purpose data unless ``gate`` is a token from verify_test_gate."""
-    if purpose == "test" and not (isinstance(gate, GateToken)
-                                  and gate._issuer is _GATE_ISSUER):
-        raise TestStreamGateError("test-stream chunks need a GateToken from verify_test_gate")
+    """Refuses gated-purpose data unless ``gate`` is a token from that stream's verifier."""
+    if purpose not in TEST_STREAMS:
+        return
+    if not (isinstance(gate, GateToken) and gate._issuer is _GATE_ISSUER):
+        raise TestStreamGateError(f"{purpose}-stream chunks need a GateToken from its verifier")
+    if gate.stream != purpose:
+        raise TestStreamGateError(f"a {gate.stream!r} token does not unlock the {purpose!r} stream")
 
 
 @dataclass(frozen=True)
@@ -224,6 +260,8 @@ def _stream(inst: str, purpose: str, rep: int, c: int,
         return base + 99_991, TEST_N
     if purpose == "test_std":
         return base + 99_991, TEST_STD_N
+    if purpose == "test_b":
+        return [base, TEST_B_SEED_TAG], TEST_B_N
     raise ValueError(f"unknown purpose {purpose!r}")
 
 
@@ -299,18 +337,20 @@ def _discard_quietly(path: Path) -> None:
 def route_pool(inst: str, purpose: str, rep: int = 0,
                N: int | None = None, *, frozen: str | None = None,
                cache_dir: Path | None = None,
-               routes: Iterable[int] | None = None) -> dict[int, Paths]:
+               routes: Iterable[int] | None = None,
+               stage: str | None = None) -> dict[int, Paths]:
     """route_id -> Paths for the non-empty routes of the 'Det' plan (or only
     ``routes`` when given).
 
     purpose 'test' is refused (TestStreamGateError) unless ``frozen`` passes
-    ``verify_test_gate``; nothing is generated in that case. ``rep`` is ignored
-    (fixed to 0) for every purpose except 'train', so dev and test pools do not
-    depend on it. ``cache_dir`` enables the on-disk chunk cache (see
+    ``verify_test_gate``; purpose 'test_b' needs ``stage`` and passes
+    ``verify_test_b_gate(stage, frozen)``. Nothing is generated when refused. ``rep``
+    is ignored (fixed to 0) for every purpose except 'train', so dev and test pools
+    do not depend on it. ``cache_dir`` enables the on-disk chunk cache (see
     ``_chunk_arrays``); it must be a run directory, never the repository."""
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
-    gate = verify_test_gate(frozen) if purpose == "test" else None
+    gate = verify_stream_gate(purpose, frozen, stage) if purpose in TEST_STREAMS else None
     if purpose != "train":
         rep = 0
     specs = route_specs(inst)
@@ -328,7 +368,8 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
         chunks = [(c, min(CHUNK, n_total - c * CHUNK))
                   for c in range(-(-n_total // CHUNK))]
     else:
-        size = {"dev": DEV_N, "test": TEST_N, "test_std": TEST_STD_N}[purpose]
+        size = {"dev": DEV_N, "test": TEST_N, "test_std": TEST_STD_N,
+                "test_b": TEST_B_N}[purpose]
         if N is not None and int(N) != size:
             raise ValueError(f"{purpose} has a fixed size of {size}")
         chunks = [(0, size)]

@@ -123,7 +123,7 @@ def gate(tmp_path, monkeypatch):
     """Gate inputs under test control: a research log in tmp_path, the running
     commit and the tree state. The real repository state is never read."""
     log = tmp_path / "RESEARCH_LOG.md"
-    log.write_text(f"frozen {GOOD_HASH}\n")
+    log.write_text(f"FROZEN COMMIT: {GOOD_HASH}\n")
     monkeypatch.setattr(paths, "RESEARCH_LOG", log)
     monkeypatch.setattr(paths, "current_commit", lambda *a, **k: GOOD_HASH)
     monkeypatch.setattr(paths, "tree_is_clean", lambda *a, **k: True)

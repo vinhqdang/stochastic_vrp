@@ -1,6 +1,6 @@
 # EXPERIMENT B — FULL against published algorithms on the two-action handoff
 
-Status: pre-registration, **revision 3 (after REVIEW_B2)**, 2026-11-18, **before any B
+Status: pre-registration, **revision 3 (after REVIEW_B2), 3.1 (source verification)**, 2026-11-18, **before any B
 code or run**. Revision 1 was reviewed in `REVIEW_B.md`, revision 2 in `REVIEW_B2.md`
 (both: accept with required changes); response tables are appended there and the changes
 are listed in section 15. The two sources revision 1 could not read are read in full:
@@ -62,7 +62,7 @@ Values chosen without pilot evidence. Each is frozen after the pilot unless chan
 | T9 | learning curve | P_max = 3; budget-limited if gain > 0.5 points in pass 3 | 3 passes ≥ Kadyrov's 200k episodes | other margin moves the label |
 | T10 | DQN update shape | batch 256, 1 update / 32 transitions, target every {8k, 32k} transitions | source replay ratio 8 at feasible cost | more updates: about 8× GPU time |
 | T11 | PPO start | initial handoff probability 0.05 | late stages reached (0.95^16 = 44%) | 0.5: stages > 6 starve |
-| T12 | PPO unstated items | value coef 0.5, ReLU in value net, no advantage normalisation | not stated by Kadyrov et al.; replaced if their code states them | small |
+| T12 | PPO unstated items | value coef 0.5, ReLU in value net, no advantage normalisation | not stated in the paper; their code (rev. 3.1) confirms no normalisation and has no value net, so the other two stay [DC] | small |
 | T13 | repairs | 1 per arm, bug fixes only | equal budgets | more repairs: tuning by gate |
 | T14 | trigger | cuts until projection ≤ 0.8 × 168 h | 20% headroom for repairs | less headroom: no repairs |
 | T15 | "coincides with THR" wording | ALP-Z and THR decisions agree on > 99% of dev states | descriptive only | wording only |
@@ -175,10 +175,12 @@ job's fitting rows (A §3.1), stored in the payload.
 ### 3.0 Source-verification rule (before tuning)
 
 Read sources: ALP-Z and PPO (**done**, `METHODS_ALP_PPO.md`), THR (Yang, Mathur &
-Ballou 2000; Venkateshan & Mathur 2026). Still to read before the pilot: Dastpak,
-Errico & Jabali (C&OR 2023) and github.com/moda707/vrp-sdo (DQN); Herrera et al. 2024
-(RLSM); Becker et al. 2019 (DOS); github.com/shiralikadyrov/CVRP_uncertainty (PPO items
-"not stated" in the paper). The implementer fills `VERIFY_CITATIONS.md` with each
+Ballou 2000; Venkateshan & Mathur 2026). Read in revision 3.1 (2026-11-18,
+`VERIFY_CITATIONS.md`): Dastpak, Errico & Jabali (GERAD G-2021-53 / arXiv 2109.10200v2;
+the C&OR version was not accessible) and github.com/moda707/vrpvcsd_of (DQN); Herrera et
+al. 2024 (arXiv 2104.13669v4) and github.com/HeKrRuTe/OptStopRandNN (RLSM); Becker et al.
+2019 (DOS); github.com/shiralikadyrov/CVRP_uncertainty (PPO items "not stated" in the
+paper). The implementer fills `VERIFY_CITATIONS.md` with each
 [VERIFY] value as stated there or "not stated"; a stated value replaces the default, "not
 stated" keeps it. Committed and logged before the pilot; nothing in section 3 changes
 after the pilot starts except through the grids of section 6.
@@ -279,8 +281,14 @@ and discretisation, not by a method difference). The cost is at most a Holm fact
 A `FitFn` for A's `ls_backward` with A's folds, exactly as M11 (boost) plugs in.
 Signature `(k, cache, fit_idx, y_fit, val_idx, y_val, warm)` (backward.py:34-36). At
 stage k and fold f: x = `mlp_batch(cache, k, idx)` (15 inputs, float64); random layer
-A_kf ∈ R^{15×K}, b_kf ∈ R^K, i.i.d. N(0, 1) [VERIFY distribution; shared over k or
-not]; h = LeakyReLU(xA + b), slope 0.01 [VERIFY]; θ = argmin ‖[h, 1]θ − y‖² + λ‖θ‖²;
+A_kf ∈ R^{15×K}, b_kf ∈ R^K, i.i.d. N(0, 1) [SRC p.5, p.15: standard Gaussian for A
+and b; code `Reservoir2` normal(0, 1)]. Drawn per stage (and fold): the paper's Algorithm 1
+draws one layer shared by all dates [SRC p.6], and its "RLSMreinit" variant redraws per date
+to average out the draw [SRC p.30; code `reinit=True`]; ours is the per-date variant [DC].
+h = LeakyReLU(xA + b), slope 0.5 [code: `LeakyReLU(factors[0]/2)` with default factors
+(1, 1, 1), RLSM.py:43, configs.py:58; the paper names Leaky ReLU without a slope, SRC p.15];
+θ = argmin ‖[h, 1]θ − y‖² + λ‖θ‖² (the source uses plain least squares, no ridge
+[SRC p.5; code `np.linalg.lstsq`, regression.py:115]);
 prediction clipped to [0, E0]. Fewer than 20 alive rows: A's constant fallback.
 Tuning grid: K ∈ {20, 100, 400} × λ ∈ {1e-6·n, 1e-3·n} (6 configs; the ridge axis
 gives the regularisation the published method tunes).
@@ -289,14 +297,20 @@ gives the regularisation the published method tunes).
 
 A `FitFn` in `ls_backward` with A's folds. Network F_θ(x) ∈ (0, 1) on `mlp_batch`
 inputs minimises L(θ) = mean over alive fitting rows of [F·H[k−1] + (1 − F)·y]/E0.
-Two hidden layers of width 15 + 40 = 55, ReLU, batch normalisation, Xavier init, sigmoid
-output [VERIFY each]; Adam, batch 8,192 [VERIFY]; steps S_k = clip(⌈20·n_k/8192⌉, 50,
+Two hidden layers of width 15 + 40 = 55 [SRC p.14: "I = 2 and q1 = q2 = d + 40"; the
+paper's depth notation would give one hidden layer for I = 2, but it names two widths, read
+as two hidden layers], ReLU hidden activations [SRC p.5], logistic (sigmoid) output
+[SRC p.6], batch normalisation, Xavier init and Adam [SRC p.9; placement of batch
+normalisation not stated]; batch 8,192 [SRC p.14, fresh paths per step; 2,048 in the
+fractional-Brownian example, p.19]; learning rate not stated in the source; steps S_k = clip(⌈20·n_k/8192⌉, 50,
 400); warm start from the same fold's stage-(k+1) net, **cold start when that predictor
 is a `ConstantPredictor`** (as `neural_fit_fn`, train.py:222-224); checkpoints as A §4.3
 selected by L on validation rows. **Adaptation stated in the paper: trained on a fixed
 sample** (the source resamples fresh paths every step). Tuning grid: lr ∈ {1e-3, 3e-4}.
 
-### 3.5 DQN — double deep Q-learning with a set encoder (Dastpak, Errico & Jabali, C&OR 159:106338, 2023, doi 10.1016/j.cor.2023.106338; code github.com/moda707/vrp-sdo)
+### 3.5 DQN — double deep Q-learning with a set encoder (Dastpak, Errico & Jabali, C&OR 159:106338, 2023, doi 10.1016/j.cor.2023.106338; code github.com/moda707/vrpvcsd_of — revision 3.1:
+github.com/moda707/vrp-sdo holds only the instances of the 2026 VRP-SDO paper, see
+`VERIFY_CITATIONS.md`)
 
 One network for all stages of a route on FULL features: stage-k globals (12) and tokens
 (11 features per remaining stop) from precomputed padded tables (M17), tokens padded to
@@ -315,27 +329,37 @@ Adaptations (stated in the paper):
   for stage k equals the number of alive fitting (row, k) pairs per pass (exact; bug
   gate B-DQN). ε-greedy is therefore not used. The greedy policy is used only in the
   checkpoint rollouts on validation rows.
-- **Minibatch 256 with one update per 32 stored transitions** instead of the source's
-  32 per 4 [VERIFY source values]: same replay ratio (8 samples per stored transition),
-  8× fewer, larger updates, so the arm fits the compute budget (section 9). Target
-  period expressed in stored transitions so it matches the source's data spacing.
+- **Minibatch 256 with one update per 32 stored transitions** (T10; replay ratio 8
+  samples per stored transition). Source values (revision 3.1): the paper samples a
+  minibatch of 32 with probability 0.05 at every decision epoch [SRC p.16, p.32], i.e.
+  about one update per 20 transitions, ratio ≈ 1.6; the released code uses batch 128 with
+  probability 0.04 (config.ini; vrpsd_solver.py:181), ratio ≈ 5.1. T10's ratio 8 is
+  therefore above both, not equal to the source's (open item 14). Target period
+  expressed in stored transitions.
 
 Training (environment = the job's fitting rows):
 - A pass shuffles the fitting rows (seeded) and runs them in lockstep batches of n_env =
   64 through k = 1..m−1 with the emergency check of `simulate_policy` first at every
   stop. Replay stores (row, k, c, done): done with c = E[k] if W_{k+1} > B; done with
-  c = 0 if k+1 = m; else c = 0, not done. Capacity 50,000 [VERIFY]; learning starts
-  after 1,000 transitions [VERIFY].
+  c = 0 if k+1 = m; else c = 0, not done. Capacity 50,000 [SRC p.32; FIFO, p.16; the
+  released code uses 100,000]; learning starts after 1,000 transitions [code: updates
+  only while the buffer holds > 1,000, vrpsd_solver.py:181; not stated in the paper].
 - Double-Q target y = c + (1 − done)·V′, V′ = H[k] if Q_online(s′) > H[k] else
-  Q_target(s′). Huber loss (δ = 1 on the E0 scale), Adam, gradient-norm clip 10, hard
-  target update every T stored transitions [VERIFY each].
+  Q_target(s′). Huber loss (δ = 1 on the E0 scale) [paper δ = 5 on its reward scale,
+  SRC p.16; code δ = 1 decayed linearly to 0.25 on demand/50, vrpsd_solver.py:76-77],
+  Adam [SRC p.16], gradient-norm clip 10 [DC; neither paper nor code clips], hard
+  target update every T stored transitions [SRC p.16, p.32: hard copy every d trials].
+  Double Q confirmed in code (online argmax, target evaluation, rl.py:249-253; the paper's
+  Algorithm 2, p.30, writes a single-network max).
 - Trained on the GPU (header); the kept model is saved to the CPU and evaluated there.
 - Checkpoints at update 0, every 1/8 pass and at every pass end; within a job the kept
   checkpoint is the one with the lowest greedy policy cost on the validation rows (ties to
   the earlier). Per-stage transition counts are written into the payload.
 
-Tuning grid: lr ∈ {1e-4, 3e-4} × T ∈ {8,000, 32,000} stored transitions (source-
-equivalent period 2,000 updates × 4 = 8,000 [VERIFY]); passes P ∈ {1, 2, 3} from the
+Tuning grid: lr ∈ {1e-4, 3e-4} × T ∈ {8,000, 32,000} stored transitions (source period:
+d = 1,000 trials [SRC p.32], one trial = one path here, ≤ m−1 ≤ 16 stored transitions,
+so ≤ 16,000 transitions, inside the grid's range; the code's 10,000 trials, config.ini,
+would be ≤ 160,000); passes P ∈ {1, 2, 3} from the
 learning curve (section 6.3).
 
 ### 3.6 PPO — Kadyrov et al.'s PPO on the two-action problem (Kadyrov, Azamov, Abdumajitov & Turan, OR Perspectives 15:100351, 2025, doi 10.1016/j.orp.2025.100351)
@@ -365,8 +389,11 @@ next node; reward −H[k−1]/E0 on handoff, −E[k]/E0 on breach at k+1, 0 othe
 coverage shaping +5 per visit and −0.5 per step is not carried over: it would change the
 optimal stopping rule); policy-head bias initialised so that the initial handoff
 probability is 0.05 (their actions never end an episode early; ours do); episodes replay
-the fitting rows; value-loss coefficient 0.5 and advantage normalisation off unless the
-code [38] states otherwise (section 3.0).
+the fitting rows; value-loss coefficient 0.5 [DC] and advantage normalisation off. The
+code [38] (read in revision 3.1, commit d088960) centres returns by their episode mean
+without dividing by a standard deviation, so "off" is confirmed; it has no value network,
+so it states neither a value coefficient nor a value activation (the paper/code
+differences are listed in `VERIFY_CITATIONS.md` and open item 14).
 
 Deployment: `PolicyPredictor` returns the surrogate H[k−1] + E0·(π − 0.5) with π the
 greedy handoff probability. It caches h_k per row between consecutive calls k−1 → k on
@@ -873,7 +900,7 @@ equals the layout count; status 0; (e) deterministic given options. Mutations: m
 minimise; drop the handoff rows; next-stage value evaluated at i instead of i + r; breach
 test ≥ instead of >; strict `L > H` deploy rule (must fail test c).
 
-**M15 — `expb/rlsm.py`.** `RLSMConfig(K=100, slope=0.01, ridge=1e-6, min_rows=20)`;
+**M15 — `expb/rlsm.py`.** `RLSMConfig(K=100, slope=0.5, ridge=1e-6, min_rows=20)`;
 `rlsm_fit_fn(seed_key, cfg) -> FitFn`; `fit_rlsm(...)`. Tests and mutations as rev. 1
 (OLS reduction with K = 1, slope 1; leakage log; seeds; clipping).
 
@@ -1000,8 +1027,9 @@ hash mismatch. Mutations: raw p for Holm; 12 wins accepted.
 - **Our adaptation may be weaker than the authors' own.** Mitigations: sources read
   (ALP-Z, PPO) or to be verified (3.0); grids per arm with learning curves (6); bug gates
   that are exact where possible (7); every adaptation listed (3.2, 3.5, 3.6). Residual:
-  DQN, RLSM and DOS rest on [VERIFY] values until 3.0 is done; PPO items "not stated"
-  rest on our defaults unless the code states them.
+  sources verified in revision 3.1; the remaining departures from them (DQN replay ratio,
+  encoder, lr schedule and episode count; PPO paper/code differences; DOS step count) are
+  listed in item 14 and `VERIFY_CITATIONS.md`.
 - **ALP-Z is near-identical to THR on a fixed route** (exact basis). It stays in F by
   rule (cost: at most a Holm factor 6/5); agreement is reported and the paper says it
   plainly.
@@ -1042,9 +1070,39 @@ code beyond M12 and M21; a training replication with new reps.
 - Sign off the design thresholds of section 0 (no pilot evidence; frozen after the pilot).
 - Cut (i) is accepted with conditions and is **expected to apply** under the priors
   (9.1); the pilot decides, and a slower pilot also triggers cut (ii).
-- DQN, RLSM, DOS sources still unread (3.0).
+- Source verification (revision 3.1) found departures that are design questions, not
+  numbers, and were therefore **not** changed: (a) DQN: the source network is an MLP on a
+  hand-engineered fixed-size observation, not a graph-attention encoder (3.5's "stands in
+  for their graph-attention encoder" is inaccurate); T10's replay ratio 8 exceeds the
+  source's ≈ 1.6 (paper) / ≈ 5.1 (code); the source decays lr 1e-3 → 1e-4 and trains 3–5
+  million trials, against our constant {1e-4, 3e-4} and ≤ 240,000 paths. (b) PPO: the code
+  of [38] has no value network (baseline = episode-mean return), uses an entropy bonus
+  0.01, and its GRU state does not reach the policy output, against the paper's value
+  network, no entropy term and GRU memory (3.6 follows the paper). (c) DOS: the source
+  trains 3,000 + d steps per date on fresh batches; ours ≤ 400 steps on a fixed sample.
+  (d) RLSM: the source regularises by limiting K, not by ridge (3.3's grid note).
 
 ## 15. Changelog
+
+### Revision 3 → revision 3.1: source verification (2026-11-18)
+
+Step 2 of section 11; details, page and line references in `VERIFY_CITATIONS.md`. Only
+[VERIFY] values and their source notes changed; no threshold value changed.
+- **RLSM (3.3, M15):** N(0, 1) confirmed; per-stage draw recorded as the paper's
+  "reinit" variant; Leaky ReLU slope 0.01 → **0.5** (stated in the authors' code; the
+  paper gives no slope); plain least squares in the source noted.
+- **DOS (3.4):** two hidden layers of d + 40, ReLU, sigmoid output, batch norm, Xavier,
+  Adam, batch 8,192 confirmed (depth-notation ambiguity noted); lr not stated.
+- **DQN (3.5):** code URL corrected to github.com/moda707/vrpvcsd_of (vrp-sdo is the
+  instance repository of the 2026 paper); "32 per 4, same replay ratio 8" replaced by the
+  source values (paper batch 32 at probability 0.05 per epoch, code 128 at 0.04); capacity
+  50,000 confirmed (paper); learning start 1,000 confirmed (code); Huber, Adam, hard target
+  and double Q sourced; gradient clip marked [DC]; target period sourced as 1,000 trials.
+  T10 itself unchanged (open item 14).
+- **PPO (3.6, T12):** code read; advantage normalisation off confirmed; value coefficient
+  and value activation stay [DC] because the code has no value network. T12's values are
+  unchanged; its rationale text is updated.
+- Sections 3.0, 12 and 14 updated to the verified state; design departures listed in 14.
 
 ### Revision 2 → revision 3 (REVIEW_B2)
 
