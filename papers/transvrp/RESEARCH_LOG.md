@@ -330,3 +330,24 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
 - Action: `stages.ACTIVE_CUTS = Cuts(drop_dos=True, tune_routes="subset6", reps=(0, 1))`;
   FAMILY line will carry `dropped=[dos:cut]`; two tests that pinned the default are updated.
   test_b has never been read.
+
+### 2026-11-20 03:30 GMT+7 — experiment B: tuning finished, configurations chosen by the 6.1 rule
+- Tuning on dev only (rep 0, N = 10^5, the 6 routes of cut (ii) for scoring), all runs under
+  the cut set logged on 2026-11-19 17:50, code `11ad4d8` for PPO c1–c3 (PPO c0, DQN, RLSM,
+  THR, ALP-Z and DOS were fitted on the 12 subset routes before the cut; their scores are
+  taken on the 6 routes). Wall: PPO c1–c3 ran concurrently 18:24 to 03:13 (about 8.8 h).
+  DOS tuning (c0, c1) is sunk by cut (i) and is not used.
+- Selection by `expb/choose.py` (rule 6.1, tie window 0.10 points, fewer passes, lower
+  seconds, lower index), record `results/expB/tuning_record.json` (every score, fit seconds,
+  hashes of the tuning CSVs). Scores are mean 100 (C_cfg − C_baton_eq) / C_baton_eq; negative
+  means cheaper than BATON-eq on the tuning routes:
+  - DQN: config c1 (lr 1e-4, target period 32,000 transitions), **P = 1** (c1@p1 −0.857;
+    c3@p3 −0.838 is within 0.10, so the smaller pass count wins).
+  - PPO: config c1 (lr 1e-4, gamma 1.0), **P = 3** (c1@p3 +0.245; c1@p2 +0.381, the drop
+    from pass 2 to 3 is 0.14 < 0.5, so PPO is not labelled budget-limited by the 6.3 rule).
+    PPO is dearer than BATON-eq on the tuning routes for every config (+0.24 to +3.7).
+  - RLSM: config c2 (K = 100, ridge 1e-6) (−0.522; c4 and c5 are within 0.10 and slower).
+  - THR and ALP-Z have no grid. DOS is cut.
+- The DQN selection is noisy: scores of one config differ by up to 0.28 points between
+  passes. This is reported as such; nothing is re-run.
+- test_b has never been read. Next: the dev gates and the main fit (spec 5.3 and 7).
