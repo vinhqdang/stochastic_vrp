@@ -1,6 +1,7 @@
 """EXPERIMENT B sweep integration (EXPERIMENT_B.md 10 M21): stage definitions, B fit and eval
 payloads, the independence world, the reuse and test_b rows, and the per-pass curves.
 A's sweep tests stay in test_expa_sweep.py."""
+import dataclasses
 import hashlib
 import numpy as np
 import pandas as pd
@@ -184,8 +185,11 @@ def test_arm_config_lookup_builds_the_configuration_class():
     smoke = sweep.stage_spec("b_smoke")
     assert sweep.arm_config(smoke, "dqn").passes == 1
     assert sweep.arm_config(sweep.stage_spec("b_thr"), "thr") == THRConfig()
+    # the tuned RLSM configuration comes from the committed tuning record
+    assert sweep.arm_config(sweep.stage_spec("b_rlsm"), "rlsm").K == 100
+    untuned = dataclasses.replace(sweep.stage_spec("b_rlsm"), arm_cfg=())
     with pytest.raises(ValueError, match="no configuration"):
-        sweep.arm_config(sweep.stage_spec("b_rlsm"), "rlsm")
+        sweep.arm_config(untuned, "rlsm")
 
 
 # ---------------------------------------------------------------- per-pass curves (6.3)
