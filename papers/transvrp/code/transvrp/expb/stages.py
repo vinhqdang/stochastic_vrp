@@ -77,7 +77,7 @@ class Cuts:
             raise ValueError("p_main is None or 1 (cut (iv))")
 
 
-ACTIVE_CUTS = Cuts()
+ACTIVE_CUTS = Cuts(drop_dos=True, tune_routes="subset6", reps=(0, 1))   # 9.2 (i)-(iii), RESEARCH_LOG 2026-11-19 17:50
 
 # Tiny configurations for b_smoke (CPU, minutes); not a tuning result.
 SMOKE_CFG: dict[str, Pairs] = {

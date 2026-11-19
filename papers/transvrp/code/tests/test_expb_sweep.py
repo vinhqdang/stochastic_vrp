@@ -16,6 +16,9 @@ from transvrp.expb.dqn import DQNConfig
 from transvrp.expb.gatecheck import library_versions
 from transvrp.expb.ppo import PPOConfig
 from transvrp.expb.registry import ARM_POLICY_B, B_ARMS
+
+# arms still in the family under the active cut set (cut (i) removes DOS)
+LIVE_ARMS = tuple(a for a in B_ARMS if not (a == "dos" and stages.ACTIVE_CUTS.drop_dos))
 from transvrp.expb.thr import THRConfig, permute_columns
 
 ELIG_DEV = sweep.CODE_DIR / "results" / "expA" / "eligibility_dev.csv"
@@ -89,7 +92,7 @@ def test_dev_stages_are_never_test_allowed_and_test_b_stages_are_gated_to_test_b
 
 
 def test_tune_stage_per_config_names_cover_the_grid():
-    names = {f"b_tune_{a}_c{i}" for a in B_ARMS for i in range(len(stages.TUNE_GRID[a]))}
+    names = {f"b_tune_{a}_c{i}" for a in LIVE_ARMS for i in range(len(stages.TUNE_GRID[a]))}
     assert names <= set(sweep.STAGE_SPECS)
     assert len(stages.TUNE_GRID["rlsm"]) == 6
     assert len(stages.TUNE_GRID["dos"]) == 2
@@ -122,8 +125,8 @@ def test_a_smoke_and_pilot_job_lists_are_unchanged_since_before_m21():
 def test_b_smoke_job_list_covers_ladder_full_and_every_b_arm():
     elig = sweep.stage_eligibility("b_smoke", None)
     jobs = sweep.plan_stage("b_smoke", elig)
-    assert len(jobs) == 1 + 1 + len(B_ARMS)              # ladder, full, six B arms (1 route)
-    assert {j.arm for j in jobs if j.kind == "neural"} == {"full", *B_ARMS}
+    assert len(jobs) == 1 + 1 + len(LIVE_ARMS)            # ladder, full, six B arms (1 route)
+    assert {j.arm for j in jobs if j.kind == "neural"} == {"full", *LIVE_ARMS}
 
 
 # ---------------------------------------------------------------- independence world (3.8)
@@ -244,7 +247,7 @@ def test_b_smoke_fit_eval_merge_gives_exactly_the_ten_policies(tmp_path, clean_t
     elig = sweep.stage_eligibility("b_smoke", None)
     chunks = tmp_path / "chunks"
     info = sweep.run_fit("b_smoke", elig, results_dir=tmp_path, jobs=1, chunk_dir=chunks)
-    assert info["fitted"] == info["planned"] == 1 + 1 + len(B_ARMS)
+    assert info["fitted"] == info["planned"] == 1 + 1 + len(LIVE_ARMS)
     models = sorted((tmp_path / "models" / "b_smoke").glob("*.pkl"))
     for path in models:
         payload = sweep.load_payload(path)
@@ -255,7 +258,7 @@ def test_b_smoke_fit_eval_merge_gives_exactly_the_ten_policies(tmp_path, clean_t
     before = {p.name: p.stat().st_mtime_ns for p in models}
     sweep.run_eval("b_smoke", "dev", results_dir=tmp_path, jobs=1)
     df = sweep.merge_stage("b_smoke", "dev", tmp_path)
-    expected = {"none", "baton_eq", "oracle", "nn_full", *B_ARMS}
+    expected = {"none", "baton_eq", "oracle", "nn_full", *LIVE_ARMS}
     assert set(df["policy"]) == expected
     # eval reruns never write models
     for row_file in (tmp_path / "b_smoke" / "rows").glob("*.dev.csv"):

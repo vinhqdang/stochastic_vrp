@@ -307,3 +307,26 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
   (`ACTIVE_CUTS` unchanged). The DQN and tuning rows are estimates built from one timing cell
   and are checked again during tuning.
 - **Q6** coverage: all six arms plus FULL and the ladder produced rows.
+
+### 2026-11-19 17:50 GMT+7 — experiment B: tuning run times, cuts (i)–(iii) applied (compute only)
+- Tuning on dev, 12 subset routes, rep 0, no cut yet: THR, ALP-Z, RLSM c0–c5, DOS c0–c1 and
+  DQN c0–c3 finished (13:32 for DQN); PPO c0 finished 17:40 after 7.4 h wall. Measured on
+  the 12 jobs (12 concurrent CPU workers): PPO 3-pass job 6.59 h mean (5.36–7.34 h), i.e.
+  about 2.2 h per pass, three times the pilot's 0.74 h (a single timing cell with little
+  contention); DQN 3-pass job 270 s mean. The PPO c1 run (started 17:40) was stopped at
+  17:41 and discarded. **No PPO or DQN tuning score had been read when the following was
+  decided; the decision uses run times only.**
+- Projection with these measurements (sequential sum, P = 3, 3 replicates, 12-route tuning,
+  no cuts): tuning done 12.1 h + PPO c1–c3 22.2 h; main: FULL 10.0, ladder 0.2, cheap arms
+  1.1, DQN 186 x 270 s = 14.0, PPO 186 x 6.59 h / 12 = 102.1; independence world 0.8;
+  evaluation 4: **about 166 h > 134.4 h**. Trigger (spec 9) applies; cuts in the order of 9.2:
+  (i) drop DOS (-0.6 h of main; its tuning is sunk and stays on disk, not used): 165.9 h;
+  (ii) tune on 6 routes for the unfinished PPO configs c1–c3 (6 jobs each, run concurrently,
+  about 9.9 h): 153.6 h; (iii) replicates 3 to 2 for every arm including FULL and the
+  ladder: main 126 h -> 85 h: **about 112 h <= 134.4 h**. Cut (iv) (P = 1) is not needed
+  and is not applied. The scoring routes of every already tuned arm (THR, ALP-Z, RLSM, DQN,
+  PPO c0) are restricted to the same 6 routes by `choose.py` (the rows already contain them;
+  nothing is re-run).
+- Action: `stages.ACTIVE_CUTS = Cuts(drop_dos=True, tune_routes="subset6", reps=(0, 1))`;
+  FAMILY line will carry `dropped=[dos:cut]`; two tests that pinned the default are updated.
+  test_b has never been read.

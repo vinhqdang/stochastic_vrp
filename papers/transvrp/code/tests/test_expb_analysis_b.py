@@ -721,7 +721,7 @@ def test_main_end_to_end_reads_labels_and_dp_values_from_the_derivation_block(
     paths = _csv_dir(tmp_path, df)
     out = tmp_path / "out"
     rc = B.main(["--merged", *map(str, paths), "--eval", "test_b", "--out", str(out),
-                 "--n-routes", str(NR)])
+                 "--n-routes", str(NR), "--n-reps", "3"])
     assert rc == 0
     text = (out / "summary.md").read_text(encoding="utf-8")
     assert "dqn (budget-limited)" in text and "ppo (budget-limited)" not in text
@@ -752,7 +752,7 @@ def _cut_payloads(tmp_path, reps, name="b_thr"):
 
 
 def test_n_reps_defaults_to_the_active_cut_without_payloads_or_option():
-    assert B.resolve_n_reps(None, []) == len(B.stages.ACTIVE_CUTS.reps) == 3
+    assert B.resolve_n_reps(None, []) == len(B.stages.ACTIVE_CUTS.reps) == 2
 
 
 def test_n_reps_follows_the_cut_recorded_in_the_payloads(tmp_path):

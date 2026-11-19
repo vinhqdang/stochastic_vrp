@@ -13,10 +13,14 @@ CHOSEN = {"thr": (), "alpz": (), "rlsm": (("K", 20), ("ridge", 1e-6)),
           "ppo": (("lr", 1e-4), ("gamma", 0.5), ("passes", 2))}
 
 
-def test_no_cut_is_the_default_and_matches_the_registered_stages():
-    assert stages.ACTIVE_CUTS == stages.Cuts()
-    assert stages.b_stage_defs() == stages.b_stage_defs(stages.Cuts())
-    assert "b_dos" in stages.b_stage_defs()
+def test_the_default_cut_set_is_the_logged_one_and_matches_the_registered_stages():
+    """RESEARCH_LOG 2026-11-19 17:50: cuts (i)-(iii) applied, cut (iv) not."""
+    logged = stages.Cuts(drop_dos=True, tune_routes="subset6", reps=(0, 1))
+    assert stages.ACTIVE_CUTS == logged
+    assert stages.b_stage_defs() == stages.b_stage_defs(logged)
+    assert "b_dos" not in stages.b_stage_defs()
+    assert "b_dos" in stages.b_stage_defs(stages.Cuts())
+    assert stages.dropped_labels(logged) == ["dos:cut"]
     assert stages.dropped_labels(stages.Cuts()) == []
 
 
@@ -57,7 +61,7 @@ def test_cut_three_uses_two_replicates_for_every_main_stage_but_not_the_rest():
         assert defs[name]["reps"] == (0, 1), name
     assert defs["b_thr_ind"]["reps"] == (0,)
     assert defs["b_tune_dqn_c0"]["reps"] == (0,)
-    assert stages.b_stage_defs(chosen=CHOSEN)["b_full"]["reps"] == (0, 1, 2)
+    assert stages.b_stage_defs(stages.Cuts(), chosen=CHOSEN)["b_full"]["reps"] == (0, 1, 2)
 
 
 def test_cut_four_fixes_one_pass_for_dqn_and_ppo_only():
