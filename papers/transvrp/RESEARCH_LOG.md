@@ -280,3 +280,30 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
   routes, (iii) reps 3 to 2, (iv) P = 1.
 - Spec is now revision 3.4 (changelog inside). Full suite: 682 passed. No pilot, tuning, fit
   or evaluation of B has been run; test_b has never been read.
+
+### 2026-11-19 08:55 GMT+7 — experiment B pilot (spec 9.3), dev only, HEAD dda41a8
+- Run: stage `b_pilot` (CON3-0, 4 eligible routes; every arm at N = 10^4, reps 0 and 1; timing
+  cells at N = 10^5, route 3), fit 05:55–08:05, dev eval to 08:06. 70 models, 86 dev rows. No
+  code or default changed; test_b not read.
+- **Q1** done (682 passed). **Q2** pass: one cell per arm (thr, alpz, rlsm, dos, ppo, nn_full;
+  route 0, N = 10^4, rep 0) refit in a separate directory gives bit-identical dev costs.
+  The DQN rerun difference was not measured (not required to be bitwise).
+- **Q3** pass: refit of FULL and ladder on 6 routes (CON3-0 routes 0, 1, 3; SCA3-0 routes
+  0, 1, 3) at N = 10^5, rep 0, equals A's `main.csv` dev costs exactly (difference 0.0 on
+  all 24 rows).
+- **Q4** no violations: C_oracle <= C <= 1.005 C_none on every pilot cell. Observation
+  (diagnosis, not a gate): PPO at N = 10^4 equals the never-handoff cost on 2 of 8 cells
+  (no learning in one pass); tuning (spec 6) decides, nothing is changed here.
+- **Q5** measured, route 3 (m = 17), N = 10^5, one pass, contention from other jobs included:
+  DQN 53 s fit (76 s wall alone including start-up); PPO 2672 s (0.74 h, prior 1.15 h);
+  DOS 134 s; THR 126 s; RLSM 3 s; ALP-Z 0.3 s. GPU concurrency: two simultaneous DQN
+  processes took 198 s wall against 76 s for one, i.e. 0.77x throughput, below the 1.5x
+  needed, so one GPU process is kept (as in 9.1).
+- Projection with measured times, worst-case route times applied to all 186 jobs, P = 3 for
+  DQN and PPO, sequential sum: FULL refit 10.0 h (A's measurement), ladder 0.2 h, THR + ALP-Z
+  + RLSM + DOS 1.1 h, DQN main 9.4 h, PPO main 37.6 h (11 workers), tuning about 13.7 h (PPO
+  8.9 h scaled by 0.74/1.15, DQN 4.2 h, RLSM and DOS 0.6 h), independence world 0.8 h,
+  evaluation 4 h: **about 77 h <= 134.4 h. The trigger does not apply; no cut is made**
+  (`ACTIVE_CUTS` unchanged). The DQN and tuning rows are estimates built from one timing cell
+  and are checked again during tuning.
+- **Q6** coverage: all six arms plus FULL and the ladder produced rows.
