@@ -77,7 +77,7 @@ from as that this it its his her their who whom which what when where how
 did does do done "" '' s""".split())
 
 
-def load_instances(limit, family="branching", seed=0):
+def load_instances(limit, family="branching", seed=0, offset=0):
     from datasets import load_dataset
     ds = load_dataset("dgslibisey/MuSiQue", split="validation")
     want = BRANCHING if family == "branching" else {"2hop"}
@@ -102,7 +102,7 @@ def load_instances(limit, family="branching", seed=0):
             "full_a": r["answer"],
         })
     random.Random(seed).shuffle(rows)
-    rows = rows[:limit] if limit else rows
+    rows = rows[offset:offset + limit] if limit else rows[offset:]
     return rows
 
 
@@ -420,6 +420,33 @@ def p_dp(inst, per_recv=200, bins=24, sat=0.0, **_):
     return out
 
 
+def allocate(name, inst, kw, rng):
+    """Run a policy; a config may name its own relevance scorer.
+
+    `scorer` in a config (e.g. {"k": 3, "scorer": "llm"}) swaps the
+    module-level SCORER for that one allocation only, so arms with
+    different scorers can share one grid and one output file.
+    """
+    global SCORER
+    kw = dict(kw)
+    sc = kw.pop("scorer", None)
+    if sc is None:
+        return POLICIES[name](inst, rng=rng, **kw)
+    saved = SCORER
+    try:
+        if sc == "lexical":
+            SCORER = None
+        else:
+            from rebuttal_scorers import load_scorer
+            SCORER = _SCORER_CACHE.setdefault(sc, load_scorer(sc))
+        return POLICIES[name](inst, rng=rng, **kw)
+    finally:
+        SCORER = saved
+
+
+_SCORER_CACHE = {}
+
+
 POLICIES = {"broadcast": p_broadcast, "dp": p_dp, "none": p_none, "oracle": p_oracle,
             "random": p_random, "centrality": p_centrality,
             "topk": p_topk, "parcel": p_parcel}
@@ -465,6 +492,22 @@ CONFIGS_HEAD = [("broadcast", {}), ("oracle", {}), ("none", {}),
                 ("topk", {"k": 5}), ("dp", {"per_recv": 350}),
                 ("topk", {"k": 3}), ("dp", {"per_recv": 200})]
 
+# Rebuttal grid, run on instances never used by any earlier grid
+# (--offset 130: the 60-, 125- and 130-instance runs all drew from the
+# first 130 of the same seeded shuffle). k=5 and q=0.3 are FROZEN from
+# the original matched-budget grid, so this is a held-out evaluation of
+# the "tuned" settings. Scorer arms use the caches built by
+# rebuttal_scorers.py: a per-receiver policy and the seed set each get
+# the strongest scorer, so neither side is handicapped by lexical match.
+CONFIGS_REBUTTAL = (
+    [("broadcast", {}), ("oracle", {}), ("none", {})]
+    + [("centrality", {"k": 3}), ("topk", {"k": 3}), ("topk", {"k": 5}),
+       ("parcel", {"q": 0.3})]
+    + [("topk", {"k": k, "scorer": "llm"}) for k in (1, 2, 3)]
+    + [("centrality", {"k": 3, "scorer": "llm"}),
+       ("topk", {"k": 2, "scorer": "bge"})]
+)
+
 CONFIGS = CONFIGS_MIN
 
 
@@ -495,7 +538,7 @@ def dry_run(rows):
     for name, kw in CONFIGS:
         tok = rec = n = 0
         for inst in rows:
-            alloc = POLICIES[name](inst, rng=random.Random(0), **kw)
+            alloc = allocate(name, inst, kw, random.Random(0))
             by_idx = {p["idx"]: p for p in inst["paragraphs"]}
             for i, a in enumerate(inst["agents"]):
                 ids = alloc[i]
@@ -526,7 +569,11 @@ def main():
                     choices=["lexical", "embed"],
                     help="relevance signal: bag-of-words, or cached "
                          "embedding cosine (recommended)")
-    ap.add_argument("--grid", default="min", choices=["core", "min", "full", "head"],
+    ap.add_argument("--offset", type=int, default=0,
+                    help="skip the first N instances of the seeded shuffle "
+                         "(130 = held-out, unused by every earlier grid)")
+    ap.add_argument("--grid", default="min",
+                    choices=["core", "min", "full", "head", "rebuttal"],
                     help="core=4 arms (8 calls/instance -- best power per "
                          "unit of the 500/day/model allowance); min=12; "
                          "full=19")
@@ -535,8 +582,9 @@ def main():
 
     global CONFIGS
     CONFIGS = {"core": CONFIGS_CORE, "min": CONFIGS_MIN,
-               "full": CONFIGS_FULL, "head": CONFIGS_HEAD}[args.grid]
-    rows = load_instances(args.instances, args.family)
+               "full": CONFIGS_FULL, "head": CONFIGS_HEAD,
+               "rebuttal": CONFIGS_REBUTTAL}[args.grid]
+    rows = load_instances(args.instances, args.family, offset=args.offset)
     if args.composite:
         rows = add_composite_receivers(rows)
     if args.merge > 1:
@@ -564,7 +612,8 @@ def main():
     tag = args.model.replace("/", "-")
     suffix = "c" if args.composite else ""
     out = (pathlib.Path(args.out) if args.out
-           else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}_m{args.merge}{suffix}.jsonl")
+           else RESULTS / f"musique_{tag}_{args.scorer}_{args.grid}_m{args.merge}{suffix}"
+                   f"{'_off%d' % args.offset if args.offset else ''}.jsonl")
     out.parent.mkdir(parents=True, exist_ok=True)
 
     # Resume: skip work already present in the output file. Runs stop when
@@ -588,8 +637,8 @@ def main():
     for inst in rows:
         by_idx = {p["idx"]: p for p in inst["paragraphs"]}
         for name, kw in CONFIGS:
-            alloc = POLICIES[name](inst, rng=random.Random(hash(inst["id"]) % 9),
-                                   **kw)
+            alloc = allocate(name, inst, kw,
+                             random.Random(hash(inst["id"]) % 9))
             for i, a in enumerate(inst["agents"]):
                 if (inst["id"], name, json.dumps(kw), i) in done:
                     continue
