@@ -67,9 +67,11 @@ GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
               "{model}:generateContent?key={key}")
 HOP_SIZES = (2, 3, 4)
 POLICIES = ["full_history", "all_docs_answers", "per_receiver_k3",
-            "per_receiver_k5", "seed_set_k3", "oracle"]
+            "per_receiver_k5", "seed_set_k3", "oracle", "per_receiver_ce_k2"]
 PAIRS = ([(p, "full_history") for p in POLICIES if p != "full_history"]
-         + [("per_receiver_k3", "seed_set_k3"),
+         + [("per_receiver_ce_k2", "oracle"),
+            ("per_receiver_ce_k2", "per_receiver_k3"),
+            ("per_receiver_k3", "seed_set_k3"),
             ("per_receiver_k3", "all_docs_answers")])
 REF = re.compile(r"#(\d+)")
 MAX_RETRIES = 8
@@ -145,12 +147,31 @@ def seed_set(inst, k=3):
     return {p["idx"] for p in ranked[:k]}
 
 
+_CE = {"model": None, "lock": threading.Lock()}
+
+
+def ce_rank(paras, q):
+    """Rank paragraphs by the ms-marco cross-encoder on the RESOLVED
+    question (added for the rebuttal: does better relevance estimation
+    close the gap to the oracle when agents depend on each other?)."""
+    with _CE["lock"]:
+        if _CE["model"] is None:
+            from sentence_transformers import CrossEncoder
+            _CE["model"] = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+        sc = _CE["model"].predict([(q, p["title"] + ". " + p["text"])
+                                   for p in paras], show_progress_bar=False)
+    return [p for _, p in sorted(zip(sc, paras), key=lambda x: -x[0])]
+
+
 def context_for(policy, inst, j, q, gold_idx, seed):
     paras = inst["paragraphs"]
     if policy in ("full_history", "all_docs_answers"):
         chosen = paras
     elif policy == "oracle":
         chosen = [p for p in paras if p["idx"] == gold_idx]
+    elif policy.startswith("per_receiver_ce_k"):
+        k = int(policy.rsplit("k", 1)[1])
+        chosen = ce_rank(paras, q)[:k]
     elif policy.startswith("per_receiver_k"):
         k = int(policy.rsplit("k", 1)[1])
         chosen = sorted(paras, key=lambda p: _lexical(p, {"q": q}),

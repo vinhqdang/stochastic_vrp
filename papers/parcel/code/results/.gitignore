@@ -8,3 +8,4 @@ embed_cache.jsonl
 # regenerable relevance-score caches (rebuttal_scorers.py)
 scores_*.json
 llm_failures.json
+count_cache.json

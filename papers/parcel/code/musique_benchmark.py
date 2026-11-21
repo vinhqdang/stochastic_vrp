@@ -527,10 +527,9 @@ CONFIGS = CONFIGS_MIN
 # the claim-carrying arms only, to stay inside a small API budget.
 CONFIGS_REBUTTAL_X = (
     [("broadcast", {}), ("oracle", {})]
-    + [("centrality", {"k": 3}), ("topk", {"k": 3}), ("topk", {"k": 5}),
-       ("parcel", {"q": 0.3})]
-    + [("topk", {"k": 2, "scorer": "ce", "density": False}),
-       ("centrality", {"k": 3, "scorer": "ce"})]
+    + [("centrality", {"k": 3}), ("topk", {"k": 3}), ("topk", {"k": 5})]
+    + [("topk", {"k": k, "scorer": "ce", "density": False}) for k in (1, 2)]
+    + [("centrality", {"k": 3, "scorer": "ce"})]
 )
 
 

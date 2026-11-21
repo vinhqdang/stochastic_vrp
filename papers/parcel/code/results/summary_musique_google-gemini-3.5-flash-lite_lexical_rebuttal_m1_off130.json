@@ -1,0 +1,236 @@
+{
+ "source": "musique_google-gemini-3.5-flash-lite_lexical_rebuttal_m1_off130.jsonl",
+ "instances": 120,
+ "policies": [
+  {
+   "policy": "broadcast",
+   "n": 240,
+   "acc": 0.7708,
+   "d_acc_vs_broadcast": 0.0,
+   "real_tokens_per_receiver": 2618.5,
+   "ratio_vs_broadcast": 1.0
+  },
+  {
+   "policy": "parcel{\"q\": 0.3}",
+   "n": 240,
+   "acc": 0.725,
+   "d_acc_vs_broadcast": -0.0458,
+   "real_tokens_per_receiver": 999.7,
+   "ratio_vs_broadcast": 2.62
+  },
+  {
+   "policy": "topk{\"k\": 5}",
+   "n": 240,
+   "acc": 0.6917,
+   "d_acc_vs_broadcast": -0.0792,
+   "real_tokens_per_receiver": 489.6,
+   "ratio_vs_broadcast": 5.35
+  },
+  {
+   "policy": "topk{\"k\": 3, \"scorer\": \"ce\", \"density\": false}",
+   "n": 240,
+   "acc": 0.7583,
+   "d_acc_vs_broadcast": -0.0125,
+   "real_tokens_per_receiver": 393.3,
+   "ratio_vs_broadcast": 6.66
+  },
+  {
+   "policy": "centrality{\"k\": 3, \"scorer\": \"ce\"}",
+   "n": 240,
+   "acc": 0.6917,
+   "d_acc_vs_broadcast": -0.0792,
+   "real_tokens_per_receiver": 362.6,
+   "ratio_vs_broadcast": 7.22
+  },
+  {
+   "policy": "centrality{\"k\": 3}",
+   "n": 240,
+   "acc": 0.4417,
+   "d_acc_vs_broadcast": -0.3292,
+   "real_tokens_per_receiver": 302.0,
+   "ratio_vs_broadcast": 8.67
+  },
+  {
+   "policy": "topk{\"k\": 2, \"scorer\": \"bge\", \"density\": false}",
+   "n": 240,
+   "acc": 0.7208,
+   "d_acc_vs_broadcast": -0.05,
+   "real_tokens_per_receiver": 269.1,
+   "ratio_vs_broadcast": 9.73
+  },
+  {
+   "policy": "topk{\"k\": 3}",
+   "n": 240,
+   "acc": 0.6333,
+   "d_acc_vs_broadcast": -0.1375,
+   "real_tokens_per_receiver": 260.7,
+   "ratio_vs_broadcast": 10.04
+  },
+  {
+   "policy": "topk{\"k\": 2, \"scorer\": \"ce\", \"density\": false}",
+   "n": 240,
+   "acc": 0.7667,
+   "d_acc_vs_broadcast": -0.0042,
+   "real_tokens_per_receiver": 247.7,
+   "ratio_vs_broadcast": 10.57
+  },
+  {
+   "policy": "topk{\"k\": 1, \"scorer\": \"ce\", \"density\": false}",
+   "n": 240,
+   "acc": 0.7667,
+   "d_acc_vs_broadcast": -0.0042,
+   "real_tokens_per_receiver": 110.8,
+   "ratio_vs_broadcast": 23.64
+  },
+  {
+   "policy": "oracle",
+   "n": 240,
+   "acc": 0.8208,
+   "d_acc_vs_broadcast": 0.05,
+   "real_tokens_per_receiver": 109.8,
+   "ratio_vs_broadcast": 23.85
+  },
+  {
+   "policy": "none",
+   "n": 240,
+   "acc": 0.0083,
+   "d_acc_vs_broadcast": -0.7625,
+   "real_tokens_per_receiver": 0.0,
+   "ratio_vs_broadcast": null
+  }
+ ],
+ "comparisons": [
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": 0.1917,
+   "ci": [
+    0.125,
+    0.2583
+   ],
+   "p_flat_mcnemar": 0.0,
+   "p_cluster_perm": 0.0,
+   "comparison": "per-recv lex k3 vs seed lex k3"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": 0.05,
+   "ci": [
+    0.0042,
+    0.0958
+   ],
+   "p_flat_mcnemar": 0.0501,
+   "p_cluster_perm": 0.0492,
+   "comparison": "oracle vs broadcast"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": -0.0458,
+   "ci": [
+    -0.0875,
+    -0.0042
+   ],
+   "p_flat_mcnemar": 0.0614,
+   "p_cluster_perm": 0.0619,
+   "comparison": "density loose (frozen q=0.3) vs broadcast"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": -0.0792,
+   "ci": [
+    -0.1333,
+    -0.025
+   ],
+   "p_flat_mcnemar": 0.0054,
+   "p_cluster_perm": 0.0088,
+   "comparison": "uniform k5 (frozen) vs broadcast"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": -0.0042,
+   "ci": [
+    -0.0458,
+    0.0375
+   ],
+   "p_flat_mcnemar": 1.0,
+   "p_cluster_perm": 1.0,
+   "comparison": "per-recv CE k1 vs broadcast"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": -0.0042,
+   "ci": [
+    -0.0458,
+    0.0375
+   ],
+   "p_flat_mcnemar": 1.0,
+   "p_cluster_perm": 1.0,
+   "comparison": "per-recv CE k2 vs broadcast"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": -0.0125,
+   "ci": [
+    -0.05,
+    0.025
+   ],
+   "p_flat_mcnemar": 0.6636,
+   "p_cluster_perm": 0.6555,
+   "comparison": "per-recv CE k3 vs broadcast"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": 0.075,
+   "ci": [
+    0.0333,
+    0.1167
+   ],
+   "p_flat_mcnemar": 0.0014,
+   "p_cluster_perm": 0.0012,
+   "comparison": "per-recv CE k2 vs seed CE k3"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": 0.1333,
+   "ci": [
+    0.0708,
+    0.1958
+   ],
+   "p_flat_mcnemar": 0.0,
+   "p_cluster_perm": 0.0,
+   "comparison": "per-recv CE k2 vs per-recv lex k3"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": -0.0542,
+   "ci": [
+    -0.0958,
+    -0.0167
+   ],
+   "p_flat_mcnemar": 0.0106,
+   "p_cluster_perm": 0.0113,
+   "comparison": "per-recv CE k2 vs oracle"
+  },
+  {
+   "n_receivers": 240,
+   "n_instances": 120,
+   "delta": -0.0542,
+   "ci": [
+    -0.0875,
+    -0.0208
+   ],
+   "p_flat_mcnemar": 0.0072,
+   "p_cluster_perm": 0.0041,
+   "comparison": "per-recv CE k1 vs oracle"
+  }
+ ]
+}
