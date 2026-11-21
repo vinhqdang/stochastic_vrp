@@ -5,3 +5,6 @@
 embed_cache.json
 embed_cache.jsonl
 !summary_*.json
+# regenerable relevance-score caches (rebuttal_scorers.py)
+scores_*.json
+llm_failures.json
