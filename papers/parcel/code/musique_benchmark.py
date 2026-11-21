@@ -511,6 +511,50 @@ CONFIGS_REBUTTAL = (
 CONFIGS = CONFIGS_MIN
 
 
+# Smaller rebuttal grid for the paid cross-family model (OpenRouter):
+# the claim-carrying arms only, to stay inside a small API budget.
+CONFIGS_REBUTTAL_X = (
+    [("broadcast", {}), ("oracle", {})]
+    + [("centrality", {"k": 3}), ("topk", {"k": 3}), ("topk", {"k": 5}),
+       ("parcel", {"q": 0.3})]
+    + [("topk", {"k": 2, "scorer": "llm"}),
+       ("centrality", {"k": 3, "scorer": "llm"})]
+)
+
+
+def call_openrouter(model, prompt, retries=8):
+    """OpenRouter chat completion (models named 'vendor/model').
+
+    Same prompt, temperature 0, same extraction rule as the Gemini path;
+    the key is read from OPENROUTER_API_KEY and never stored.
+    """
+    import time
+    import urllib.error
+    import urllib.request
+    key = os.environ["OPENROUTER_API_KEY"]
+    payload = json.dumps({"model": model, "temperature": 0,
+                          "max_tokens": 600,
+                          "messages": [{"role": "user", "content": prompt}]}
+                         ).encode()
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(
+                "https://openrouter.ai/api/v1/chat/completions", data=payload,
+                headers={"Authorization": f"Bearer {key}",
+                         "Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=180) as r:
+                body = json.loads(r.read())
+            text = body["choices"][0]["message"].get("content") or ""
+            if not text:
+                raise KeyError("empty")
+            return text
+        except (urllib.error.URLError, KeyError, ValueError, TimeoutError) as exc:
+            if getattr(exc, "code", None) == 402:
+                return "__QUOTA__ " + str(exc)
+            time.sleep(min(60, 2 ** attempt))
+    return "__ERROR__ retries exhausted"
+
+
 def build_prompt(inst, idx_list, agent, rng):
     by_idx = {p["idx"]: p for p in inst["paragraphs"]}
     paras = [by_idx[j] for j in idx_list if j in by_idx]
@@ -573,7 +617,8 @@ def main():
                     help="skip the first N instances of the seeded shuffle "
                          "(130 = held-out, unused by every earlier grid)")
     ap.add_argument("--grid", default="min",
-                    choices=["core", "min", "full", "head", "rebuttal"],
+                    choices=["core", "min", "full", "head", "rebuttal",
+                             "rebuttal_x"],
                     help="core=4 arms (8 calls/instance -- best power per "
                          "unit of the 500/day/model allowance); min=12; "
                          "full=19")
@@ -583,7 +628,8 @@ def main():
     global CONFIGS
     CONFIGS = {"core": CONFIGS_CORE, "min": CONFIGS_MIN,
                "full": CONFIGS_FULL, "head": CONFIGS_HEAD,
-               "rebuttal": CONFIGS_REBUTTAL}[args.grid]
+               "rebuttal": CONFIGS_REBUTTAL,
+               "rebuttal_x": CONFIGS_REBUTTAL_X}[args.grid]
     rows = load_instances(args.instances, args.family, offset=args.offset)
     if args.composite:
         rows = add_composite_receivers(rows)
@@ -606,8 +652,10 @@ def main():
         return
 
     key = os.environ.get("GEMINI_API_KEY")
-    if not key:
+    if not key and "/" not in args.model:
         sys.exit("set GEMINI_API_KEY")
+    caller = ((lambda p: call_openrouter(args.model, p)) if "/" in args.model
+              else (lambda p: call_gemini(args.model, p, key)))
 
     tag = args.model.replace("/", "-")
     suffix = "c" if args.composite else ""
@@ -658,8 +706,7 @@ def main():
     print(f"{len(jobs)} calls -> {out}")
     with open(out, "a") as fh, ThreadPoolExecutor(args.workers) as pool:
         for n, (m, reply) in enumerate(
-                zip(meta, pool.map(lambda p: call_gemini(args.model, p, key),
-                                   jobs)), 1):
+                zip(meta, pool.map(caller, jobs)), 1):
             if reply.startswith("__QUOTA__"):
                 # Daily free-tier quota gone. Continuing only burns
                 # wall-clock and writes junk rows; the partial file up to
