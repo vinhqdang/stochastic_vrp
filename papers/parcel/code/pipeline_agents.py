@@ -186,6 +186,54 @@ class CallFailed(Exception):
     pass
 
 
+def call_openrouter(model, prompt, timeout=180):
+    """Same call through OpenRouter (model 'vendor/name'), same settings.
+
+    Used to continue a run once the Gemini free tier's 500 requests/day
+    per model is spent. Token counts are the provider-reported usage.
+    """
+    key = os.environ["OPENROUTER_API_KEY"]
+    payload = json.dumps({
+        "model": model, "temperature": 0, "max_tokens": MAX_OUTPUT_TOKENS,
+        "messages": [{"role": "user", "content": prompt}],
+        "usage": {"include": True},
+    }).encode()
+    attempt = 0
+    while True:
+        req = urllib.request.Request(
+            "https://openrouter.ai/api/v1/chat/completions", data=payload,
+            headers={"Authorization": f"Bearer {key}",
+                     "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                body = json.loads(r.read())
+            if "choices" not in body:
+                raise ValueError("no choices")
+            break
+        except urllib.error.HTTPError as e:
+            transient = e.code == 429 or e.code >= 500
+            err = f"HTTP{e.code}"
+        except (urllib.error.URLError, socket.timeout, TimeoutError,
+                ConnectionError, ValueError) as e:
+            transient = True
+            err = type(e).__name__
+        if not transient or attempt >= MAX_RETRIES:
+            raise CallFailed(err)
+        time.sleep(min(2 ** (attempt + 1), 60) * (1 + random.random() * 0.25))
+        attempt += 1
+    try:
+        text = body["choices"][0]["message"].get("content") or ""
+        u = body["usage"]
+        pt, ot = int(u["prompt_tokens"]), int(u["completion_tokens"])
+        th = int((u.get("completion_tokens_details") or {})
+                 .get("reasoning_tokens") or 0)
+    except (KeyError, IndexError, TypeError, ValueError) as e:
+        raise CallFailed(f"parse:{type(e).__name__}") from None
+    if not text.strip():
+        raise CallFailed("empty")
+    return text, pt, ot, th
+
+
 def call_gemini(model, prompt, key, timeout=180):
     """One generateContent call with exponential backoff on 429/5xx.
 
@@ -195,6 +243,8 @@ def call_gemini(model, prompt, key, timeout=180):
     carrying only the HTTP code or exception name (never the URL, which
     holds the key).
     """
+    if "/" in model:
+        return call_openrouter(model, prompt, timeout)
     url = GEMINI_URL.format(model=model, key=key)
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
@@ -297,7 +347,7 @@ def load_done(path):
 
 def run(args, out):
     key = os.environ.get("GEMINI_API_KEY")
-    if not key:
+    if not key and "/" not in args.model:
         sys.exit("set GEMINI_API_KEY")
     insts = sample_instances(args.per_hop)
     print(f"sampled {len(insts)} instances: "

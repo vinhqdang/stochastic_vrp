@@ -287,19 +287,31 @@ def p_random(inst, k=3, rng=None, **_):
 
 
 def p_centrality(inst, k=3, **_):
-    """The classical-IM answer: one globally-ranked seed set for everyone."""
-    score = {p["idx"]: sum(relevance(p, a) for a in inst["agents"])
+    """The classical-IM answer: one globally-ranked seed set for everyone.
+
+    Scores pass through a logistic so that cross-encoder logits aggregate
+    as probabilities (monotone, so lexical rankings are unchanged in
+    spirit; lexical scores are in [0,1] already and stay ordered).
+    """
+    import math
+    tr = (lambda x: x) if SCORER is None else (lambda x: 1 / (1 + math.exp(-x)))
+    score = {p["idx"]: sum(tr(relevance(p, a)) for a in inst["agents"])
              for p in inst["paragraphs"]}
     top = sorted(score, key=score.get, reverse=True)[:k]
     return {i: list(top) for i, _ in enumerate(inst["agents"])}
 
 
-def p_topk(inst, k=3, **_):
-    """Per-agent relevance ranking. The single-price baseline."""
+def p_topk(inst, k=3, density=True, **_):
+    """Per-agent relevance ranking. The single-price baseline.
+
+    density=False ranks by raw score; needed for cross-encoder logits,
+    which can be negative, so dividing by length would invert them.
+    """
     out = {}
     for i, a in enumerate(inst["agents"]):
         ranked = sorted(inst["paragraphs"],
-                        key=lambda p: relevance(p, a) / tokens_of(p),
+                        key=(lambda p: relevance(p, a) / tokens_of(p))
+                        if density else (lambda p: relevance(p, a)),
                         reverse=True)
         out[i] = [p["idx"] for p in ranked[:k]]
     return out
@@ -497,15 +509,15 @@ CONFIGS_HEAD = [("broadcast", {}), ("oracle", {}), ("none", {}),
 # first 130 of the same seeded shuffle). k=5 and q=0.3 are FROZEN from
 # the original matched-budget grid, so this is a held-out evaluation of
 # the "tuned" settings. Scorer arms use the caches built by
-# rebuttal_scorers.py: a per-receiver policy and the seed set each get
-# the strongest scorer, so neither side is handicapped by lexical match.
+# rebuttal_scorers.py (cross-encoders): a per-receiver policy and the
+# seed set each get the strongest scorer, so neither side is handicapped by lexical match.
 CONFIGS_REBUTTAL = (
     [("broadcast", {}), ("oracle", {}), ("none", {})]
     + [("centrality", {"k": 3}), ("topk", {"k": 3}), ("topk", {"k": 5}),
        ("parcel", {"q": 0.3})]
-    + [("topk", {"k": k, "scorer": "llm"}) for k in (1, 2, 3)]
-    + [("centrality", {"k": 3, "scorer": "llm"}),
-       ("topk", {"k": 2, "scorer": "bge"})]
+    + [("topk", {"k": k, "scorer": "ce", "density": False}) for k in (1, 2, 3)]
+    + [("centrality", {"k": 3, "scorer": "ce"}),
+       ("topk", {"k": 2, "scorer": "bge", "density": False})]
 )
 
 CONFIGS = CONFIGS_MIN
@@ -517,8 +529,8 @@ CONFIGS_REBUTTAL_X = (
     [("broadcast", {}), ("oracle", {})]
     + [("centrality", {"k": 3}), ("topk", {"k": 3}), ("topk", {"k": 5}),
        ("parcel", {"q": 0.3})]
-    + [("topk", {"k": 2, "scorer": "llm"}),
-       ("centrality", {"k": 3, "scorer": "llm"})]
+    + [("topk", {"k": 2, "scorer": "ce", "density": False}),
+       ("centrality", {"k": 3, "scorer": "ce"})]
 )
 
 
