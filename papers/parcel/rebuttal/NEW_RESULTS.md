@@ -105,6 +105,11 @@ full_history by position: 2616, 2684, 2837, 2902.
 | per_receiver_ce_k2 vs per_receiver_k3 | +0.117 | [+0.033,+0.200] | 0.013 |
 | per_receiver_ce_k2 vs oracle | −0.217 | [−0.308,−0.133] | <0.001 |
 
+The seed set's scores use the *unresolved* sub-questions (with "#k"
+removed) plus the full question, because one shared set is fixed
+before any agent runs. The 2/3/4-agent token figures come from
+different chains, not from one chain extended.
+
 Failure mode seen in the logs: UNKNOWN cascades. When an upstream agent
 answers UNKNOWN, the resolved question ("UNKNOWN >> country") retrieves
 nothing useful downstream.
@@ -119,15 +124,18 @@ Summaries: `results/summary_est_vs_alloc_{lexical,ce}_{composite,plain}.json`.
 
 | α | lexical, composite | CE, composite | lexical, plain |
 |---|---|---|---|
-| 0 | +0.009 [+.001,+.016] | +0.018 [+.011,+.025] | −0.012 |
+| 0 | +0.009 [+.001,+.016] | +0.018 [+.011,+.025] | −0.012 [−.023,+.000] |
 | 0.25 | +0.018 | +0.028 | −0.010 |
-| 0.5 | +0.015 | +0.032 | −0.024 |
-| 0.75 | +0.029 | +0.055 | −0.016 |
+| 0.5 | +0.015 | +0.032 | −0.024 [−.030,−.005] |
+| 0.75 | +0.029 | +0.055 | −0.016 [−.022,−.009] |
 | 1 | **+0.200 [+.191,+.210]** | **+0.200** | 0.000 |
 
-At α=0.75 the gold paragraphs already rank first for every receiver,
-yet the gain is small. What Algorithm 1 needs is calibrated value
-curves, not only correct rankings.
+At α=0.75 a gold paragraph outscores every distractor, though the
+density ranking (score/tokens) can still put a short distractor above a
+long gold paragraph. The gain stays small until α=1, which suggests
+that Algorithm 1 needs calibrated value curves, not only correct
+rankings. Recall only: Algorithm 1 with perfect scores was not run
+end-to-end with an LLM.
 
 ## R5. Stronger scorers and receiver scaling (no API)
 
@@ -154,3 +162,10 @@ OPT_seed = 0, since one item satisfies one receiver, and
 OPT_per-receiver = 1. The ratio is therefore unbounded for n ≥ 2 without
 saturation. Proposition 4's decomposition needs additivity across
 receivers and does not cover this case.
+
+## Arm selection disclosure
+
+On the held-out grid, k=5 (uniform) and q=0.3 (density) were frozen from
+the submitted grid. The cross-encoder arms (k = 1, 2, 3) were new. The
+rebuttal reports top-3 as the arm with a k fixed in advance, matching
+the lexical top-3, and labels top-1/top-2 as chosen after the fact.
