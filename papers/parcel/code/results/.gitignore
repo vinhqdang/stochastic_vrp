@@ -9,3 +9,4 @@ embed_cache.jsonl
 scores_*.json
 llm_failures.json
 count_cache.json
+*.tmp

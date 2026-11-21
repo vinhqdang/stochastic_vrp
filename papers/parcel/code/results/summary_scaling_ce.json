@@ -1,0 +1,215 @@
+{
+ "n=2": {
+  "lexical": [
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 260,
+    "recall": 0.475,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 1
+    },
+    "tokens": 60,
+    "recall": 0.448,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 221,
+    "recall": 0.696,
+    "receivers": 480
+   }
+  ],
+  "ce": [
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 318,
+    "recall": 0.842,
+    "receivers": 480
+   },
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 2
+    },
+    "tokens": 204,
+    "recall": 0.794,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 1,
+     "density": false
+    },
+    "tokens": 100,
+    "recall": 0.91,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 2,
+     "density": false
+    },
+    "tokens": 217,
+    "recall": 0.935,
+    "receivers": 480
+   }
+  ]
+ },
+ "n=8": {
+  "lexical": [
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 247,
+    "recall": 0.09,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 1
+    },
+    "tokens": 57,
+    "recall": 0.4,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 202,
+    "recall": 0.654,
+    "receivers": 480
+   }
+  ],
+  "ce": [
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 321,
+    "recall": 0.26,
+    "receivers": 480
+   },
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 8
+    },
+    "tokens": 881,
+    "recall": 0.6,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 1,
+     "density": false
+    },
+    "tokens": 100,
+    "recall": 0.887,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 2,
+     "density": false
+    },
+    "tokens": 220,
+    "recall": 0.933,
+    "receivers": 480
+   }
+  ]
+ },
+ "n=16": {
+  "lexical": [
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 267,
+    "recall": 0.023,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 1
+    },
+    "tokens": 53,
+    "recall": 0.317,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 186,
+    "recall": 0.583,
+    "receivers": 480
+   }
+  ],
+  "ce": [
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 3
+    },
+    "tokens": 337,
+    "recall": 0.119,
+    "receivers": 480
+   },
+   {
+    "policy": "centrality",
+    "cfg": {
+     "k": 16
+    },
+    "tokens": 1830,
+    "recall": 0.51,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 1,
+     "density": false
+    },
+    "tokens": 100,
+    "recall": 0.852,
+    "receivers": 480
+   },
+   {
+    "policy": "topk",
+    "cfg": {
+     "k": 2,
+     "density": false
+    },
+    "tokens": 216,
+    "recall": 0.931,
+    "receivers": 480
+   }
+  ]
+ }
+}

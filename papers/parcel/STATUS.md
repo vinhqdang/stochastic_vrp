@@ -7,11 +7,26 @@
 - **Venue:** **AAMAS 2027**, the 26th International Conference on
   Autonomous Agents and Multiagent Systems, **Hanoi, Vietnam,
   3–7 May 2027**. Main track.
-- **State:** **ACTIVE — drafting.** Manuscript at **8 pages of body**
-  (`parcel.tex`, AAMAS `sigconf` anonymous mode) — the full allowance,
-  with references spilling to page 9 and therefore not counted.
-  Compiles clean with zero errors against the official class. Theory in `THEORY.md`,
-  empirical record in `RESULTS.md`, spec in `PROJECT.md`.
+- **State:** **UNDER REVIEW — AAMAS 2027, submission 106; REBUTTAL
+  PHASE** (window 20–24 Nov 2026 AoE; reviewers discuss 25 Nov–3 Dec;
+  notification 21 Dec). Reviews: DXj8 6/7 (Proceedings/Findings), jkMC
+  4/5, r7t8 4/4. The submitted PDF is final for review (AAMAS Q&A §13),
+  so the rebuttal is text only. **`parcel.tex` is frozen** until the
+  decision; the changes promised in the rebuttal go into the
+  camera-ready if the paper is accepted.
+- **Rebuttal:** `rebuttal/REBUTTAL.md` (paste-ready: a general response
+  plus one reply per reviewer), with every number traced in
+  `rebuttal/NEW_RESULTS.md`. New experiments run during the window:
+  held-out replication with frozen settings, Llama-3.3-70B, a dependent
+  multi-agent pipeline, cross-encoder scorers, an estimation-vs-
+  allocation factorial, and n-scaling with the strongest scorer.
+- **Promised for camera-ready:** fix the OpenReview TL;DR/abstract
+  metadata (stale "no accuracy cost"); drop the influence-maximization
+  framing; replace "quadratic" with the measured linear growth; the
+  practical headline becomes the cross-encoder 23.6× result; add the
+  pipeline, held-out and factorial results; cut and de-hedge Section 4;
+  reword "no cost in approximability"; remove the Table 4 caption remark;
+  add an LLM relevance judge (blocked by API quota in the window).
 
 ### Blocking before submission
 

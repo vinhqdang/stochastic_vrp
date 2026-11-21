@@ -104,7 +104,7 @@ NO code, instances, or results with papers 1–3 (same separation
 argument as paper 3) — all ECLAIR code stays inside `papers/eclair/`.
 Spec: `papers/eclair/PROJECT.md`; adoption record: `RESEARCH_LOG.md`.
 
-### Paper 6 — PARCEL (papers/parcel/, ACTIVE — planning)
+### Paper 6 — PARCEL (papers/parcel/, UNDER REVIEW at AAMAS 2027 — rebuttal phase, Nov 2026)
 
 *Price-Aware Relay of Context over Endogenous Links.* Target:
 **AAMAS 2027**, Hanoi, 3–7 May 2027. Dates verified against the
@@ -241,8 +241,9 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   frozen** (submitted 2026-11-13; files in `submission_mcap/`; rejected
   earlier at INFORMS J. Computing — `submission_ijoc/` and `manuscript/`
   are that record).
-- `papers/parcel/` — paper 6 (PARCEL), **ACTIVE and open for edits**;
-  planning stage, self-contained (see its README.md).
+- `papers/parcel/` — paper 6 (PARCEL), **under review at AAMAS 2027
+  (submission 106), manuscript frozen**; rebuttal in `rebuttal/`
+  (see its STATUS.md). Self-contained.
 - `papers/transvrp/` — paper 10 (TRANSVRP), **ACTIVE and open for edits**;
   study phase (see its STATUS.md).
 - **Parallel papers, independent review clocks** — always check each
@@ -250,9 +251,9 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
   papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP), 8
-  (RARECERT, MCAP) and 9 (SORTIE, EJOR) are closed to edits while under
-  review, paper 4 is abandoned, and papers 5 (ECLAIR), 6 (PARCEL) and 10 (TRANSVRP)
-  are the **open papers**.
+  (RARECERT, MCAP), 9 (SORTIE, EJOR) and 6 (PARCEL, AAMAS 2027) are
+  closed to edits while under review, paper 4 is abandoned, and papers 5
+  (ECLAIR) and 10 (TRANSVRP) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
   `eclair.tex`, `parcel.tex`), never `main.*`.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
