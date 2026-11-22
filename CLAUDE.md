@@ -165,7 +165,7 @@ Roles for this project: the master session plans and designs algorithms;
 execution is delegated in small specified modules with tests; review is a
 separate pass.
 
-### Paper 8 — RARECERT (papers/rarecert/, UNDER REVIEW at MCAP, submitted 2026-11-13)
+### Paper 8 — RARECERT (papers/rarecert/, DESK-REJECTED at MCAP — choosing next venue)
 
 *Certifying rare overflow risk of regional pickup-and-delivery plans.*
 Spin-off of QUASAR direction A (2026-10-14): certify service levels
@@ -181,8 +181,10 @@ Informational Sciences*, which is gold open access with an APC the author
 cannot pay). Rewritten as a probability paper with complete proofs and **submitted to
 *Methodology and Computing in Applied Probability*** (Springer, no fee
 without OA) on 2026-11-13 (commit `68f1c6b`; package
-`papers/rarecert/submission_mcap/`). **Frozen while under review** (see its
-STATUS.md and `reviews/ijoc_decision_2026-11-13.md`).
+`papers/rarecert/submission_mcap/`); **desk-rejected there without comments
+(reported 2026-11-22)**. Open for edits; the author cannot pay APCs, so only
+non-open-access hybrid journals qualify (see its STATUS.md and
+`reviews/ijoc_decision_2026-11-13.md`).
 
 QUASAR (paper 7) outcome so far: four honest tests (search inside the
 optimiser, black-box simultaneous estimation, per-route certification,
@@ -237,8 +239,8 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   self-contained (no `svrpspd_wdro/` imports — see its README.md).
 - `papers/quasar/` — paper 7 (QUASAR), **under review at QIP, frozen** (submitted Oct 2026);
   quantum code in `svrpspd_wdro/quantum/` (Qiskit).
-- `papers/rarecert/` — paper 8 (RARECERT), **under review at MCAP,
-  frozen** (submitted 2026-11-13; files in `submission_mcap/`; rejected
+- `papers/rarecert/` — paper 8 (RARECERT), **desk-rejected at MCAP,
+  open for edits** (next venue pending; files in `submission_mcap/`; rejected
   earlier at INFORMS J. Computing — `submission_ijoc/` and `manuscript/`
   are that record).
 - `papers/parcel/` — paper 6 (PARCEL), **under review at AAMAS 2027
@@ -250,10 +252,10 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP), 8
-  (RARECERT, MCAP), 9 (SORTIE, EJOR) and 6 (PARCEL, AAMAS 2027) are
-  closed to edits while under review, paper 4 is abandoned, and papers 5
-  (ECLAIR) and 10 (TRANSVRP) are the **open papers**.
+  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP), 9
+  (SORTIE, EJOR) and 6 (PARCEL, AAMAS 2027) are closed to edits while
+  under review, paper 4 is abandoned, and papers 5 (ECLAIR), 8 (RARECERT)
+  and 10 (TRANSVRP) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
   `eclair.tex`, `parcel.tex`), never `main.*`.
 - **Adding a new paper:** create `papers/<shortname>/` holding the
