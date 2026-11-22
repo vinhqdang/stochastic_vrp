@@ -19,17 +19,22 @@
   `submission_mcap/` (`rarecert_mcap.tex`, `cover_letter.tex`, figures, generated
   table inputs); Springer-style abstract (230 words), keywords, MSC codes and a
   Declarations section.
-- **State:** **DESK-REJECTED at MCAP (reported 2026-11-22, no comments given)** —
-  submitted 2026-11-13 as commit `68f1c6b` (`submission_mcap/`). Springer's transfer
-  system offered: Scientific Reports (OA, APC ≈ €2 490), Queueing Systems (hybrid),
-  Probability Theory and Related Fields (hybrid, far too high a bar), Operations
-  Research Forum (hybrid), Discover Applied Mathematics (listed APC 0, unverified),
-  Mathematical Methods of OR (hybrid). Author has no funds for APCs: only a hybrid
-  journal chosen WITHOUT open access, or a verified-free one, is acceptable. Next venue
-  not yet chosen; package is open for edits again (decision pending with the author).
+- **State:** **SUBMITTED to Queueing Systems (Springer) — UNDER REVIEW, FROZEN.**
+  Transferred by the author through Springer's journal-recommendation system after the
+  MCAP desk rejection; the author reports submitting on 2026-11-22. The transferred
+  package is the MCAP one, unchanged (commit `68f1c6b`, `submission_mcap/`; no
+  tailoring to Queueing Systems' guidelines was done). Queueing Systems is hybrid:
+  publish WITHOUT open access (the author cannot pay an APC). Do not edit
+  `submission_mcap/`, the scripts it cites (`run_rarecert_peis_*.py`,
+  `rarecert/covering.py`) or `results/rarecert/peis/` until the decision arrives;
+  revisions only on the editor's request. Venue history: INFORMS J. Computing
+  (rejected 2026-11-13, no review) → MCAP (submitted 2026-11-13, desk-rejected without
+  comments, reported 2026-11-22) → Queueing Systems. If Queueing Systems also rejects,
+  next candidates: Mathematical Methods of OR (hybrid), Operations Research Forum
+  (hybrid); Discover Applied Mathematics only if its APC is verified as zero.
   Known weaknesses: efficiency theorem is for asymptotic (not computed) dominating
   points; with mass weights the covering condition holds for only 28% of balanced
-  Vietnamese routes; figures carry Type 3 fonts.
+  Vietnamese routes; figures carry Type 3 fonts; queueing is not the journal's core.
 - **Rewrite as a probability paper (2026-11-13; first aimed at PEIS):** rewritten as a probability paper with complete
   proofs (log-asymptotics with explicit error terms, sharp single-shift threshold
   ϱ = 1/4, new silent-underestimation proposition, mixture efficiency under a covering
