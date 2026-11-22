@@ -181,8 +181,10 @@ Informational Sciences*, which is gold open access with an APC the author
 cannot pay). Rewritten as a probability paper with complete proofs and **submitted to
 *Methodology and Computing in Applied Probability*** (Springer, no fee
 without OA) on 2026-11-13 (commit `68f1c6b`; package
-`papers/rarecert/submission_mcap/`); **desk-rejected there without comments
-(reported 2026-11-22)** and then **submitted to *Queueing Systems*** (Springer,
+`papers/rarecert/submission_mcap/`); **rejected there after review (editor
+comments in `papers/rarecert/reviews/mcap_decision.md`: model too specific for
+applied probability; suggests a stochastic-optimization / transportation / OR
+journal)** and then **submitted to *Queueing Systems*** (Springer,
 hybrid; unchanged package, no APC: do not choose open access) on 2026-11-22.
 **Frozen while under review** (see its STATUS.md and
 `reviews/ijoc_decision_2026-11-13.md`).
@@ -242,7 +244,7 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   quantum code in `svrpspd_wdro/quantum/` (Qiskit).
 - `papers/rarecert/` — paper 8 (RARECERT), **under review at Queueing Systems,
   frozen** (submitted 2026-11-22; files in `submission_mcap/`; rejected
-  earlier at INFORMS J. Computing and desk-rejected at MCAP — `submission_ijoc/` and `manuscript/`
+  earlier at INFORMS J. Computing and rejected at MCAP — `submission_ijoc/` and `manuscript/`
   are that record).
 - `papers/parcel/` — paper 6 (PARCEL), **under review at AAMAS 2027
   (submission 106), manuscript frozen**; rebuttal in `rebuttal/`

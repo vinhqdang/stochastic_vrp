@@ -21,15 +21,18 @@
   Declarations section.
 - **State:** **SUBMITTED to Queueing Systems (Springer) — UNDER REVIEW, FROZEN.**
   Transferred by the author through Springer's journal-recommendation system after the
-  MCAP desk rejection; the author reports submitting on 2026-11-22. The transferred
+  MCAP rejection; the author reports submitting on 2026-11-22. The transferred
   package is the MCAP one, unchanged (commit `68f1c6b`, `submission_mcap/`; no
   tailoring to Queueing Systems' guidelines was done). Queueing Systems is hybrid:
   publish WITHOUT open access (the author cannot pay an APC). Do not edit
   `submission_mcap/`, the scripts it cites (`run_rarecert_peis_*.py`,
   `rarecert/covering.py`) or `results/rarecert/peis/` until the decision arrives;
   revisions only on the editor's request. Venue history: INFORMS J. Computing
-  (rejected 2026-11-13, no review) → MCAP (submitted 2026-11-13, desk-rejected without
-  comments, reported 2026-11-22) → Queueing Systems. If Queueing Systems also rejects,
+  (rejected 2026-11-13, no review) → MCAP (submitted 2026-11-13, **rejected after review**, editor
+  comments in `reviews/mcap_decision.md`: proofs have merit but the model is too
+  specific for an applied-probability readership; better suited to a stochastic
+  optimization / transportation / computational OR journal — the email was in spam
+  and Springer's transfer page called it a desk reject) → Queueing Systems. If Queueing Systems also rejects,
   next candidates: Mathematical Methods of OR (hybrid), Operations Research Forum
   (hybrid); Discover Applied Mathematics only if its APC is verified as zero.
   Known weaknesses: efficiency theorem is for asymptotic (not computed) dominating
