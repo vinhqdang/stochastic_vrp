@@ -19,15 +19,17 @@
   `submission_mcap/` (`rarecert_mcap.tex`, `cover_letter.tex`, figures, generated
   table inputs); Springer-style abstract (230 words), keywords, MSC codes and a
   Declarations section.
-- **State:** **SUBMITTED to MCAP on 2026-11-13 — UNDER REVIEW, FROZEN.** Submitted
-  version = commit `68f1c6b`, package `submission_mcap/`
-  (`rarecert_mcap.pdf`, 19 pages, Springer Nature template; standard non-open-access
-  model). Do not edit `submission_mcap/`, the scripts it cites
-  (`run_rarecert_peis_*.py`, `rarecert/covering.py`) or `results/rarecert/peis/` until
-  the decision arrives; revisions only on the editor's request. Known weaknesses at
-  submission: efficiency theorem is for asymptotic (not computed) dominating points; with
-  mass weights the covering condition holds for only 28% of balanced Vietnamese routes;
-  figures carry Type 3 fonts.
+- **State:** **DESK-REJECTED at MCAP (reported 2026-11-22, no comments given)** —
+  submitted 2026-11-13 as commit `68f1c6b` (`submission_mcap/`). Springer's transfer
+  system offered: Scientific Reports (OA, APC ≈ €2 490), Queueing Systems (hybrid),
+  Probability Theory and Related Fields (hybrid, far too high a bar), Operations
+  Research Forum (hybrid), Discover Applied Mathematics (listed APC 0, unverified),
+  Mathematical Methods of OR (hybrid). Author has no funds for APCs: only a hybrid
+  journal chosen WITHOUT open access, or a verified-free one, is acceptable. Next venue
+  not yet chosen; package is open for edits again (decision pending with the author).
+  Known weaknesses: efficiency theorem is for asymptotic (not computed) dominating
+  points; with mass weights the covering condition holds for only 28% of balanced
+  Vietnamese routes; figures carry Type 3 fonts.
 - **Rewrite as a probability paper (2026-11-13; first aimed at PEIS):** rewritten as a probability paper with complete
   proofs (log-asymptotics with explicit error terms, sharp single-shift threshold
   ϱ = 1/4, new silent-underestimation proposition, mixture efficiency under a covering
