@@ -392,3 +392,11 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
 - Full test suite at F (`bf3edab`): 682 passed (2026-11-24, 2 h 37 min under load from
   another session). Commit M follows: manifests, merged dev CSVs, `fidelity_dev.md`, this
   log; no CODE change.
+
+### 2026-11-25 00:05 GMT+7 — experiment B: test_b gate closed (spec 5.3 step 8), M = `5d47d9e`
+- Lines printed by `gatecheck family-line --commit 5d47d9e946c241193613fc1c6cdee1c442fe5f35`;
+  test_b has never been read. Next: test_b evaluation of every stage below, no commit until
+  the last one.
+
+FROZEN COMMIT (test_b): bf3edabd9857644c28ac4d301ea82063950715ff stages=[b_alpz,b_alpz_ind,b_dqn,b_full,b_full_ind,b_ladder,b_ladder_ind,b_ppo,b_rlsm,b_thr,b_thr_ind]
+TEST_B FAMILY CLOSED: family=[alpz,rlsm,dqn,ppo] descriptive=[thr] dropped=[thr:b_thr,dos:cut] references=[full,ladder] independence=[b_alpz_ind,b_full_ind,b_ladder_ind,b_thr_ind] fidelity_sha256=10de648a66b15694a3d735f29a22a0a0bb8de0a10a2e29589be53394caa9267e manifests_sha256=c9a17214d138babdcc8c40b890b4226d0c0452768d9c5a959c6fa8eaaddb2483 code_sha256=62d89cd311ec66037067f266d49f2fb454e4eac66f6902707a854d1a63d6f64f analysis_sha256=179beae5100e74f950423e4457659253173200d516ac94dc1f0eae530a4d6e9f
