@@ -10,7 +10,7 @@ shared engine (`svrpspd_wdro/`) plus one directory per paper under
 in a subpackage of `svrpspd_wdro/` (e.g. `core/`, `ev/`) so everything
 shares the same instances, simulator, cost model, and test suite.
 
-### Paper 1 — BATON (papers/baton/, REVISION 2 SUBMITTED 2026-11-08 at Computers & OR)
+### Paper 1 — BATON (papers/baton/, ACCEPTED 2026-11-24 at Computers & OR)
 
 SVRPSPD with two coupled layers:
 
@@ -35,8 +35,9 @@ Reviews (3 reviewers, CAOR-D-26-01885) arrived September 2026; revision
 round reviews arrived Oct–Nov 2026; revision 2 files are in `r2/` (response letter, portal replies, diff
 against `baton-r1`, flat ZIP). A first upload on 6 November lacked the
 responses; the complete revision was submitted 8 November 2026 (git tag
-`baton-r2`). The directory is frozen until the next decision (see its
-STATUS.md).
+`baton-r2`). Accepted 24 November 2026 (CAOR-D-26-01885R3); Reviewer 2's remaining
+minor suggestions go into the proofs. Edit only for proof corrections
+(see its STATUS.md).
 
 ### Paper 2 — TEMPO (papers/tempo/, UNDER REVIEW at Transportation Science)
 
@@ -230,7 +231,7 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   BATON-era machinery reused everywhere; `ev/` is paper 2. Paper 3
   (`papers/csonet2026/`) does NOT use this engine at all — its code is
   self-contained inside its own directory.
-- `papers/baton/` — C&OR manuscript (revision 2; tables ONLY via its
+- `papers/baton/` — C&OR manuscript (accepted; tables ONLY via its
   `make_tables.py`, never hand-edit `tables/*`).
 - `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
 - `papers/csonet2026/` — paper 3, under **major revision** at JOCO
@@ -255,7 +256,7 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1 (BATON, revision 2 submitted), 2–3, 7 (QUASAR, QIP), 8
+  papers 1 (BATON, accepted; proof corrections only), 2–3, 7 (QUASAR, QIP), 8
   (RARECERT, Queueing Systems), 9 (SORTIE, EJOR) and 6 (PARCEL, AAMAS 2027) are closed to edits while
   under review, paper 4 is abandoned, and papers 5 (ECLAIR) and 10
   (TRANSVRP) are the **open papers**.

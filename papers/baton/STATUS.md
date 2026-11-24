@@ -3,8 +3,11 @@
 - **Title:** Optimal-stopping recourse for vehicle routing with
   simultaneous pickup, delivery, and stochastic demands
 - **Venue:** Computers & Operations Research (Elsevier), manuscript
-  CAOR-D-26-01885 — **REVISION 2 SUBMITTED (8 November 2026), FROZEN
-  until the next decision**. A first upload on 6 November lacked the
+  CAOR-D-26-01885 — **ACCEPTED (24 November 2026)** as CAOR-D-26-01885R3.
+  Reviewer 3 recommended acceptance, Reviewer 2 a minor revision; the AE
+  recommended acceptance with Reviewer 2's remaining suggestions to be
+  incorporated at the proof stage. Pending: read those comments in the
+  peer review platform and apply them to the proofs. Earlier history: a first upload on 6 November lacked the
   cover letter, responses and marked changes; the editor re-invited it,
   and the complete package (portal replies, response letter, cover
   letter, marked-changes PDF, flat LaTeX ZIP, highlights) was submitted
