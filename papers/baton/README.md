@@ -1,7 +1,9 @@
 # BATON — manuscript directory
 
-Computers & Operations Research, manuscript CAOR-D-26-01885 (see
-`STATUS.md` for the review state).
+Computers & Operations Research, manuscript CAOR-D-26-01885 —
+**accepted 24 November 2026** (CAOR-D-26-01885R3); only proof
+corrections remain (see `STATUS.md`). Repository states of the submitted
+versions: git tags `baton-r1`, `baton-r2`.
 
 ## Files
 

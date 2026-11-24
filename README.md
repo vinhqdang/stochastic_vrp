@@ -13,21 +13,21 @@ review clock, and its own `STATUS.md`.
 
 | # | Paper | Contribution | Venue | Status | Code |
 |---|---|---|---|---|---|
-| 1 | **BATON** — [`papers/baton/`](papers/baton/) | Optimal-stopping recourse for SVRPSPD: peak-aware Longstaff–Schwartz labels + a zero-parameter handoff trigger, under six capacity-feasibility gates | Computers & Operations Research | **under review** — frozen | `svrpspd_wdro/core/` |
+| 1 | **BATON** — [`papers/baton/`](papers/baton/) | Optimal-stopping recourse for SVRPSPD: peak-aware Longstaff–Schwartz labels + a zero-parameter handoff trigger, under six capacity-feasibility gates | Computers & Operations Research (Elsevier) | **accepted** 2026-11-24 — proof corrections only | `svrpspd_wdro/core/` |
 | 2 | **TEMPO** — [`papers/tempo/`](papers/tempo/) | *When to replan*: an anytime-valid e-process monitoring a running plan across demand, travel-time, congestion, accident, breakdown and dwell channels, with decision-relevant previsible tilting | Transportation Science (INFORMS) | **under review** — frozen, double-anonymous | `svrpspd_wdro/ev/` |
 | 3 | **MWHED** — [`papers/csonet2026/`](papers/csonet2026/) | Minimum Weighted Hazard-Exposure Dispatch: NP-hardness via knapsack equivalence, an exact pseudo-polynomial DP, an FPTAS, and a matroid-greedy tractable case | J. of Combinatorial Optimization, via CSoNet 2026 Journal Track | **submitted** | self-contained in its own directory |
 | 4 | ~~**WRNF**~~ — [`papers/wrnf/`](papers/wrnf/) | Two-stage Wasserstein-robust network flow. **Abandoned before drafting — scooped:** the thesis is Mohajerin Esfahani & Kuhn (2018) Remark 6.7, and its two-stage form is Duque, Mehrotra & Morton, SIOPT 32(3) 2022 | (was COAP) | **abandoned 2026-07-27** — kept as a documented negative result | n/a |
 | 5 | **ECLAIR** — [`papers/eclair/`](papers/eclair/) | E-process certification of LLM-generated constraint models, with Kelly-style routing of solver-seconds across candidates and probes | *Constraints* (Springer), LLM-Solve special issue | **active** — drafting | self-contained in its own directory |
 | 6 | **PARCEL** — [`papers/parcel/`](papers/parcel/) | Budget-constrained context dissemination between LLM agents: utility is neither monotone (per-agent context saturation) nor submodular (complementary facts), so the influence-maximization toolchain does not transfer | AAMAS 2027, Hanoi | **active** — planning | self-contained in its own directory |
 | 7 | **QUASAR** — [`papers/quasar/`](papers/quasar/) | Quantum amplitude estimation for chance-constrained / CVaR SVRPSPD; four honest tests found no regime where it beats the best classical method | Quantum Information Processing | **under review** — frozen | `svrpspd_wdro/quantum/` |
-| 8 | **RARECERT** — [`papers/rarecert/`](papers/rarecert/) | Importance-sampling certification of rare (10⁻³–10⁻⁶) overflow risk of SVRPSPD plans | Methodology and Computing in Applied Probability (submitted 2026-11-13; rejected earlier at INFORMS J. Computing) | **under review** — frozen | uses the region plans in `svrpspd_wdro/` |
+| 8 | **RARECERT** — [`papers/rarecert/`](papers/rarecert/) | Importance-sampling certification of rare (10⁻³–10⁻⁶) overflow risk of SVRPSPD plans | Queueing Systems (submitted 2026-11-22; rejected earlier at INFORMS J. Computing and at Methodology and Computing in Applied Probability) | **under review** — frozen | uses the region plans in `svrpspd_wdro/` |
 | 9 | **SORTIE** — [`papers/sortie/`](papers/sortie/) | Fair CVRP under random travel times: ex-ante vs ex-post fairness, Poisson–binomial order-statistic integral, risk-consistent tours | European J. of Operational Research (submitted 2026-11-10) | **under review** — frozen | self-contained in `papers/sortie/code/` |
 | 10 | **TRANSVRP** — [`papers/transvrp/`](papers/transvrp/) | Transformer / LLM methods for stochastic VRP, seeded by OR-Transformer (arXiv 2609.01933): amortised continuation value vs BATON, hybrid pathwise training, and an LLM weight-editing idea | not chosen | **active** — study phase (opened 2026-11-15) | self-contained in `papers/transvrp/code/` |
 
 **Read a paper's own `STATUS.md` before touching it.** "Frozen" is a
 per-paper state, not a repo-wide one, and a paper flips from editable to
-frozen the moment it is submitted. Papers 1–3 and 7–9 are all currently closed to
-edits; only revision work is allowed, and only once a decision arrives.
+frozen the moment it is submitted. Paper 1 (BATON) is accepted and open only for proof corrections; papers 2–3 and 7–9 are
+closed to edits while under review, and only revision work is allowed, once a decision arrives.
 Papers 5, 6 and 10 are open.
 
 ### Adding paper N+1
@@ -106,7 +106,7 @@ stochastic_vrp/
 │   ├── tests/           #   pytest suite (~185 tests)
 │   └── results/         #   CSVs + figures (paper tables regenerate from these)
 ├── papers/              # one directory per paper, one review clock each
-│   ├── baton/           #   paper 1 — UNDER REVIEW at Computers & OR (frozen)
+│   ├── baton/           #   paper 1 — ACCEPTED at Computers & OR (proof corrections only)
 │   ├── tempo/           #   paper 2 — UNDER REVIEW at Transportation Science (frozen)
 │   ├── csonet2026/      #   paper 3 — SUBMITTED to JOCO; self-contained code
 │   ├── wrnf/            #   ABANDONED (scooped) — kept as a negative result
