@@ -351,3 +351,44 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
 - The DQN selection is noisy: scores of one config differ by up to 0.28 points between
   passes. This is reported as such; nothing is re-run.
 - test_b has never been read. Next: the dev gates and the main fit (spec 5.3 and 7).
+
+### 2026-11-24 07:30 GMT+7 — experiment B: dev gate run (spec 5.3 step 4) crashed after the gates; rerun by arm in parallel
+- `python -m transvrp.expb.fidelity ... --chosen dqn=1,ppo=1,rlsm=2 --p-main 1 --cut dos` at F
+  (`bf3edab`) ran 2026-11-23 13:54 to 2026-11-24 07:08 (about 17 h, one process, one core),
+  computed every arm gate, then stopped with `ValueError: no tuning rows for rlsm@p1`: an
+  operator error, `--chosen` takes only the arms with a pass curve (DQN, PPO), and RLSM was
+  passed. Nothing was written; `fidelity_dev.md` does not exist; no gate result was read.
+- Rerun with `--chosen dqn=1,ppo=1` (the tuning record's configs). To avoid another 17 h, the
+  arm gates run in five processes through a driver outside the repository
+  (`transvrp_run/fidelity_par.py`) that calls the frozen `gate_report`, `derive_family`,
+  `budget_label`, `render_report` and `write_report` exactly as `fidelity.main` does, keeps the
+  arm order of `B_ARMS`, and checks the budget labels before the gates. CODE is unchanged
+  since F. Each arm gate depends only on its own stage files, so the report is the same as
+  one sequential run (up to floating-point thread order inside tolerance-based checks).
+- Lesson for later code (after test_b): long scripts must print progress.
+- test_b has never been read.
+
+### 2026-11-24 21:30 GMT+7 — experiment B: dev gates (spec 7), THR fails B-THR; no repair
+- `fidelity_dev.md` written 21:05 by the parallel driver (arm wall times: RLSM 0.07 h, PPO
+  0.35 h, DQN 1.48 h, ALP-Z 1.71 h, THR 13.9 h). Every arm passes B0 and P1. ALP-Z, RLSM,
+  DQN, PPO pass their bug gates. THR passes monotonicity but fails (a): 55/62 routes within
+  4 SE (88.7% < 99%). Budget labels: DQN not limited (gain 2→3 = 0.02), PPO not limited (0.14).
+- Diagnosis (read-only, `transvrp_run/thr_diag.py`, same frozen functions, dev only):
+  - 5 of the 7 failing routes (CON3-0 r0, r2; CON3-8 r1; SCA3-2 r1; SCA3-8 r0) have a
+    simulated dev cost of exactly 0 on all 5,000 days, so SE = 0, while the DP value is a
+    positive 0.0004–0.0067 (at most 0.009% of E0): a degenerate band, not a THR error.
+  - The other 2 (CON3-2 r3, z = −5.0; CON3-9 r2, z = −4.75) are genuine; the z values lean
+    negative overall (simulated cost below the DP value on 40 of 62 routes, largest gaps about
+    2% of E0).
+- Decision: no repair. The spec allows one repair for a bug in the arm; none was found, and
+  changing the gate after reading its result is not allowed. Even without the 5 degenerate
+  routes the share would be 55/57 = 96.5% < 99%, so the verdict does not depend on them.
+  THR is evaluated on test_b as a descriptive arm. FAMILY from `fidelity.py`:
+  family=[alpz, rlsm, dqn, ppo]; descriptive=[thr]; dropped=[thr:b_thr, dos:cut];
+  references=[full, ladder]; independence=[b_alpz_ind, b_full_ind, b_ladder_ind, b_thr_ind].
+- Reported, not fixed: the zero-SE degeneracy of the B-THR band and the negative lean of the
+  THR simulated-minus-DP gap (an open question for the paper, not a gate change).
+- test_b has never been read.
+- Full test suite at F (`bf3edab`): 682 passed (2026-11-24, 2 h 37 min under load from
+  another session). Commit M follows: manifests, merged dev CSVs, `fidelity_dev.md`, this
+  log; no CODE change.
