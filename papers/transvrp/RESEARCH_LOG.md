@@ -400,3 +400,22 @@ FROZEN COMMIT: 9f2a29bff90081251a60302d0af5e9f0258377fd
 
 FROZEN COMMIT (test_b): bf3edabd9857644c28ac4d301ea82063950715ff stages=[b_alpz,b_alpz_ind,b_dqn,b_full,b_full_ind,b_ladder,b_ladder_ind,b_ppo,b_rlsm,b_thr,b_thr_ind]
 TEST_B FAMILY CLOSED: family=[alpz,rlsm,dqn,ppo] descriptive=[thr] dropped=[thr:b_thr,dos:cut] references=[full,ladder] independence=[b_alpz_ind,b_full_ind,b_ladder_ind,b_thr_ind] fidelity_sha256=10de648a66b15694a3d735f29a22a0a0bb8de0a10a2e29589be53394caa9267e manifests_sha256=c9a17214d138babdcc8c40b890b4226d0c0452768d9c5a959c6fa8eaaddb2483 code_sha256=62d89cd311ec66037067f266d49f2fb454e4eac66f6902707a854d1a63d6f64f analysis_sha256=179beae5100e74f950423e4457659253173200d516ac94dc1f0eae530a4d6e9f
+
+### 2026-11-25 01:45 GMT+7 — experiment B: test_b evaluated and analysed (spec 5.3 steps 10–11)
+- Correction: the heading of the previous entry (commit L) says 00:05 on 2026-11-25; the
+  lines were written at about 23:55 on 2026-11-24. Nothing else in that entry changes.
+- test_b evaluation of all 11 stages at HEAD `fab25c5` (frozen fit commit `bf3edab`), CPU,
+  12 workers, 2026-11-24 23:55 to 2026-11-25 01:34; every gate check passed, no commit in
+  between. `analysis_b` output in `code/results/expB/analysis_test_b/` (summary.md and CSVs);
+  per-day `.npz` stay local, hashed in `code/results/expB/npz_manifest_test_b.sha256`.
+- Primary family (FULL vs arm at 10^5, Holm over 4, positive = FULL cheaper):
+  ALP-Z +11.33% [8.76, 13.91] WIN (20/20); RLSM +0.16% [0.09, 0.24] TIE_STRONG (17/20);
+  DQN +0.16% [0.11, 0.21] TIE_STRONG (19/20); PPO +1.68% [0.46, 2.90] WIN (20/20).
+  THR (descriptive): +11.01% [8.48, 13.54], 20/20.
+- RE-EVAL FULL vs baton_eq: +0.85% [0.68, 1.02], 20/20 (A: +0.82%). Versus baton_eq:
+  RLSM +0.69%, DQN +0.70% (cheaper), PPO −1.12%, THR −13.2%, ALP-Z −13.6% (dearer).
+- Independence world (12 routes, rep 0): FULL, baton_eq, THR and ALP-Z are within ±0.1%
+  (no difference). The loss of THR and ALP-Z in the main world comes from the dependence
+  between stops that a load-only state cannot see, not from the DP itself.
+- The compute table covers FULL only (`--models` takes one stage); other arms' fit times are
+  in the merged CSVs.
