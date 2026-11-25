@@ -52,7 +52,8 @@ Dastpak M, Errico F, Jabali O, 2023 \emph{Off-line approximate dynamic
 \bibitem[{Dastpak, Errico, \protect\BIBand{} Jabali(2026)}]{dastpak2026deep}
 Dastpak M, Errico F, Jabali O, 2026 \emph{A deep reinforcement learning
   algorithm for the vehicle routing problem with stochastic demands and
-  outsourcing}. arXiv:2607.16875 (preprint, not peer reviewed).
+  outsourcing}. arXiv:2607.16875, doi:10.48550/arXiv.2607.16875 (preprint, not
+  peer reviewed).
 
 \bibitem[{Dethloff(2001)}]{dethloff2001vehicle}
 Dethloff J, 2001 \emph{Vehicle routing and reverse logistics: The vehicle
@@ -123,7 +124,7 @@ Kool W, van Hoof H, Welling M, 2019 \emph{Attention, learn to solve routing
   Min}]{kwon2020pomo}
 Kwon YD, Choo J, Kim B, Yoon I, Gwon Y, Min S, 2020 \emph{{POMO}: Policy
   optimization with multiple optima for reinforcement learning}. \emph{Advances
-  in Neural Information Processing Systems 33 (NeurIPS)}, 21188--21198.
+  in Neural Information Processing Systems}, volume~33.
 
 \bibitem[{Liu et~al.(2026)Liu, Simchi-Levi, Chen, Gao, \protect\BIBand{}
   Zhang}]{liu2026ortransformer}
@@ -163,7 +164,7 @@ Mnih V, Kavukcuoglu K, Silver D, Rusu AA, Veness J, Bellemare MG, Graves A,
   Tak{\'a}{\v c}}]{nazari2018reinforcement}
 Nazari M, Oroojlooy A, Snyder LV, Tak{\'a}{\v c} M, 2018 \emph{Reinforcement
   learning for solving the vehicle routing problem}. \emph{Advances in Neural
-  Information Processing Systems 31 (NeurIPS)}, 9861--9871.
+  Information Processing Systems}, volume~31.
 
 \bibitem[{Novoa \protect\BIBand{} Storer(2009)}]{novoa2009approximate}
 Novoa C, Storer R, 2009 \emph{An approximate dynamic programming approach for
@@ -222,18 +223,18 @@ Tsitsiklis J, Van~Roy B, 2001 \emph{Regression methods for pricing complex
   american-style options}. \emph{IEEE Transactions on Neural Networks}
   12(4):694--703, \urlprefix\url{http://dx.doi.org/10.1109/72.935083}.
 
-\bibitem[{Van~Hasselt, Guez, \protect\BIBand{}
+\bibitem[{van Hasselt, Guez, \protect\BIBand{}
   Silver(2016)}]{vanhasselt2016deep}
-Van~Hasselt H, Guez A, Silver D, 2016 \emph{Deep reinforcement learning with
-  double q-learning}. \emph{Proceedings of the AAAI Conference on Artificial
-  Intelligence} 30(1),
+van Hasselt H, Guez A, Silver D, 2016 \emph{Deep reinforcement learning with
+  double {Q}-learning}. \emph{Proceedings of the Thirtieth AAAI Conference on
+  Artificial Intelligence}, 2094--2100,
   \urlprefix\url{http://dx.doi.org/10.1609/aaai.v30i1.10295}.
 
 \bibitem[{Vaswani et~al.(2017)Vaswani, Shazeer, Parmar, Uszkoreit, Jones,
   Gomez, Kaiser, \protect\BIBand{} Polosukhin}]{vaswani2017attention}
 Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez AN, Kaiser {\L},
   Polosukhin I, 2017 \emph{Attention is all you need}. \emph{Advances in Neural
-  Information Processing Systems 30 (NeurIPS)}, 5998--6008.
+  Information Processing Systems}, volume~30.
 
 \bibitem[{Venkateshan \protect\BIBand{} Mathur(2026)}]{venkateshan2026note}
 Venkateshan P, Mathur K, 2026 \emph{Note on stochastic vehicle routing with
@@ -248,7 +249,7 @@ Wang F, Li H, Xiong H, 2025 \emph{Truck--drone routing problem with stochastic
 
 \bibitem[{Wilcoxon(1945)}]{wilcoxon1945individual}
 Wilcoxon F, 1945 \emph{Individual comparisons by ranking methods}.
-  \emph{Biometrics Bulletin} 1(6):80,
+  \emph{Biometrics Bulletin} 1(6):80--83,
   \urlprefix\url{http://dx.doi.org/10.2307/3001968}.
 
 \bibitem[{Yang, Mathur, \protect\BIBand{} Ballou(2000)}]{yang2000stochastic}

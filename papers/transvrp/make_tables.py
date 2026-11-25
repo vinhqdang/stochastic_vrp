@@ -281,7 +281,36 @@ def numbers(cs: list[dict], cur: pd.DataFrame, da: list[dict]) -> None:
         s += macro(f"B{w}CI", ci(ind.loc[key, "ci95_lo"], ind.loc[key, "ci95_hi"]))
     s += macro("Crossover", f"{int(A.crossover_n(cur, DELTA)):,}".replace(",", "{,}"))
     s += macro("Margin", f"{DELTA:.1f}\\%")
+    s += extra_numbers(by, da)
     write(HERE / "numbers.tex", s)
+
+
+def extra_numbers(by: dict, da: list[dict]) -> str:
+    """Derived quantities quoted in the prose (all from the committed result files)."""
+    df_b = load_b()
+    s = ""
+    reval = A.contrast(df_b, "RE", "nn_full", N_STAR, "baton_eq", N_STAR)
+    s += macro("BReEval", f2(reval["mean"]) + "\\%")
+    s += macro("BReEvalCI", ci(*reval["ci95"]))
+    gap = A.contrast(df_b, "TA", "alpz", N_STAR, "thr", N_STAR)   # positive: ALP-Z cheaper
+    s += macro("ThrAlpzGap", f"{abs(gap['mean']):.2f}\\%")
+    scal = next(c for c in da if c["a"] == "nn_scalar")
+    s += macro("AvsSCALARCIn", ci(*scal["ci90"]))
+    prim = by["P"]["mean"]
+    for cid, w in (("S9", "Mlp"), ("M11", "Boost")):
+        s += macro(f"Share{w}", f"{100 * by[cid]['mean'] / prim:.0f}\\%")
+    fam = pd.read_csv(AB / "family.csv").set_index("arm")
+    for arm, w in (("rlsm", "Rlsm"), ("dqn", "Dqn")):
+        s += macro(f"Share{w}", f"{100 * fam.loc[arm, 'mean'] / reval['mean']:.0f}\\%")
+    sd = pd.read_csv(AB / "replicate_sd.csv").set_index("arm")["mean_sd_pct"]
+    for arm, w in (("nn_full", "Full"), ("baton_eq", "Baton"), ("rlsm", "Rlsm"),
+                   ("dqn", "Dqn"), ("ppo", "Ppo")):
+        s += macro(f"RepSd{w}", f"{sd[arm]:.2f}\\%")
+    ppo = df_b[df_b["policy"] == "ppo"]["fit_seconds"].median()
+    s += macro("PpoHours", f"{ppo / 3600:.1f}")
+    full_b = df_b[df_b["policy"] == "nn_full"]["fit_seconds"].median()
+    s += macro("FullMinutesB", f"{full_b / 60:.0f}")
+    return s
 
 
 def main() -> int:
