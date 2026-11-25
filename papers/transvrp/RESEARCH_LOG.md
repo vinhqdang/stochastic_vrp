@@ -419,3 +419,14 @@ TEST_B FAMILY CLOSED: family=[alpz,rlsm,dqn,ppo] descriptive=[thr] dropped=[thr:
   between stops that a load-only state cannot see, not from the DP itself.
 - The compute table covers FULL only (`--models` takes one stage); other arms' fit times are
   in the merged CSVs.
+
+### 2026-11-25 (afternoon) GMT+7 — experiment C adopted (spec revision 2)
+- Reason: internal referee report on the TS draft (major revision) asked which features
+  carry the gain, how it scales with dependence, for a model-based rich-state rival, and for
+  the baselines B cut (DOS) or ran at one budget (PPO). The author asked to run all four
+  (2026-11-25).
+- `EXPERIMENT_C.md` revision 1 reviewed independently (`REVIEW_C.md`: accept with required
+  changes; blocking: margin too wide for Q1, undefined estimand at rho = 0). Revision 2
+  answers every blocking and required finding (changelog section 11).
+- Nothing of C has been run. A's and B's test streams are not read again; C uses a new
+  gated stream test_c.
