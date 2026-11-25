@@ -58,9 +58,9 @@ from .boost import BoostPredictor, fit_boost  # noqa: E402
 from .eligibility import build_eligibility, stratum_of  # noqa: E402
 from .features import RouteCache, RouteStats  # noqa: E402
 from .model import MLPNet, SetNet  # noqa: E402
-from .paths import (TEST_STREAMS, Paths, RouteSpec, TestStreamGateError,  # noqa: E402
-                    current_commit, route_pool, route_specs, tree_is_clean,
-                    verify_stream_gate, verify_test_gate)
+from .paths import (DEFAULT_WORLD, TEST_STREAMS, Paths, RouteSpec,  # noqa: E402
+                    TestStreamGateError, current_commit, route_pool, route_specs,
+                    tree_is_clean, verify_stream_gate, verify_test_gate)
 from .measure import Stopwatch, process_peak_rss_mb, traced_peak  # noqa: E402
 from .simulate import simulate_policy, summarize  # noqa: E402
 from .train import ConstantPredictor, NetPredictor, StageConfig, fit_neural  # noqa: E402
@@ -71,17 +71,24 @@ from ..expb.dqn import resolve_device  # noqa: E402
 from ..expb.registry import ARM_POLICY_B, ARM_SPECS, B_ARMS, fit_arm  # noqa: E402
 from ..expb.stages import ACTIVE_CUTS, b_stage_defs, cut_record  # noqa: E402
 from ..expb.thr import permute_columns  # noqa: E402
+from ..expc.stages import (c_arm_config, c_fit_payload, cdp_train_paths,  # noqa: E402
+                           c_pilot_defs, c_stage_defs, c_unpack, cdp_predictors,
+                           check_reuse_gate, check_reuse_models, feature_set_label,
+                           to_stage_kwargs)
 
 EXPA_DIR = Path(__file__).resolve().parent
 CODE_DIR = EXPA_DIR.parents[1]
 DEFAULT_RESULTS = CODE_DIR / "results" / "expA"
 DEFAULT_RESULTS_B = CODE_DIR / "results" / "expB"     # where gatecheck reads B models (C1)
+DEFAULT_RESULTS_C = CODE_DIR / "results" / "expC"     # EXPERIMENT_C 4 (MC4)
 MAX_GPU_JOBS = 1          # EXPERIMENT_B 9: one GPU process; CPU arms keep every worker
 
 
 def default_results_dir(stage: str) -> Path:
     """B stages write models, rows and manifests under ``results/expB``, the tree the
     test_b gate reads (EXPERIMENT_B 5.3); A stages keep ``results/expA``."""
+    if stage.startswith("c_"):
+        return DEFAULT_RESULTS_C
     return DEFAULT_RESULTS_B if stage.startswith("b_") else DEFAULT_RESULTS
 SMOKE_INSTANCE = "CON3-0"
 OTR21_MIN_N = 10_000
@@ -91,7 +98,8 @@ BIG_RENAME = {"baton_eq": "baton_big", "dp": "dp_big"}
 ARM_POLICY = {"full": "nn_full", "scalar": "nn_scalar", "mlp": "nn_mlp",
               "boost": "boost"}
 ARM_POLICY.update(ARM_POLICY_B)
-EVAL_SETS = ("dev", "test", "test_b")
+ARM_POLICY["cdp"] = "cdp"                 # EXPERIMENT_C 1.7
+EVAL_SETS = ("dev", "test", "test_b", "test_c")
 TIMING_INST, TIMING_ROUTE = "CON3-0", 3   # section 7.3: the one full-size timing route
 ROW_COLUMNS = ["inst", "route_id", "m", "stratum", "N", "rep", "policy",
                "mean_cost", "handoff_rate", "fail_rate", "gap_closed", "n_eval",
@@ -102,6 +110,27 @@ KEY_COLUMNS = ["inst", "route_id", "N", "rep", "policy", "eval_set"]
 TEST_B_COLUMNS = ROW_COLUMNS + ["family_sha256", "model_sha256", "python", "numpy",
                                 "scipy", "torch"]
 SMOKE_LIKE = ("smoke", "pilot", "b_smoke", "b_pilot")   # in-memory CON3-0 eligibility
+C_ROW_EXTRA = ["world", "feature_set"]      # EXPERIMENT_C 4: every C row names its world and set
+
+
+def rows_suffix(eval_set: str, ext: str) -> str:
+    """Suffix of a job's row files, ``.<eval_set>.<ext>``. The one naming rule of the sweep
+    (writer and merge), of ``expc.gates.day_costs`` and of ``expc.analysis_c`` (via
+    ``day_file_glob``): a job's files are ``<job key>`` + this suffix."""
+    return f".{eval_set}.{ext}"
+
+
+def rows_file_name(job_key: str, eval_set: str, ext: str) -> str:
+    """File name of one job's rows for one eval set and extension ("csv" or "npz")."""
+    return job_key + rows_suffix(eval_set, ext)
+
+
+def day_file_glob(inst: str, route_id: int, N: int, rep: int | None, eval_set: str,
+                  ext: str = "npz") -> str:
+    """Glob of the day-cost files of one route (and replicate; None for all replicates).
+    Matches ``rows_file_name(Job.key, eval_set, ext)`` for every job of the route."""
+    rep_part = "*" if rep is None else str(int(rep))
+    return f"*__{inst}__r{int(route_id)}__N{int(N)}__rep{rep_part}{rows_suffix(eval_set, ext)}"
 
 
 GateError = TestStreamGateError     # refusals of the test-stream gate
@@ -143,6 +172,10 @@ class StageSpec:
     pass_curve: int = 0           # B tuning: passes of one DQN/PPO run, each scored (6.3)
     reuse_models: str = ""        # B cut (i): A's model directory, relative to results_dir's parent
     disabled: str = ""            # non-empty: every entry point refuses with this reason
+    world: str = DEFAULT_WORLD    # EXPERIMENT_C 1.4 generator world of train, dev and test pools
+    feature_set: str = ""         # EXPERIMENT_C 1.3 feature set of BOOST and RLSM ("" = none)
+    family: str = "B"             # "C" for EXPERIMENT_C stages (world/set columns, C arms)
+    eval_only: bool = False       # EXPERIMENT_C 4.3: reused models, no fit
 
 
 STAGE_SPECS: dict[str, StageSpec] = {
@@ -172,6 +205,10 @@ STAGE_SPECS: dict[str, StageSpec] = {
                        routes="eligible"),
 }
 STAGE_SPECS.update({name: StageSpec(**kw) for name, kw in b_stage_defs().items()})
+_C_DEFS = c_stage_defs()
+STAGE_SPECS.update({name: StageSpec(**to_stage_kwargs(kw)) for name, kw in _C_DEFS.items()})
+STAGE_SPECS.update({name: StageSpec(**to_stage_kwargs(kw))
+                    for name, kw in c_pilot_defs(_C_DEFS).items()})
 
 
 def stage_spec(stage: str) -> StageSpec:
@@ -245,6 +282,8 @@ def _route_rows(routes: str, elig: pd.DataFrame) -> list[tuple[str, int]]:
         el = elig[elig["eligible"].astype(bool)]
     elif routes == "subset":
         el = elig[elig["in_1e6_subset"].astype(bool)]
+    elif routes == "pilot":           # EXPERIMENT_C 8: CON3-0 eligible routes
+        el = elig[elig["eligible"].astype(bool) & (elig["inst"] == SMOKE_INSTANCE)]
     elif routes == "subset6":         # cut (ii), 6.1: 3 medium + 3 long of the subset
         sub = elig[elig["in_1e6_subset"].astype(bool)].sort_values(["inst", "route_id"])
         el = pd.concat([sub[sub["stratum"] == s].head(3) for s in ("medium", "long")])
@@ -397,6 +436,8 @@ def _pack(models: dict, arm: str, E0: float) -> dict:
 
 
 def _unpack(blob: dict) -> dict:
+    if blob.get("family") == "C":            # EXPERIMENT_C payloads (BOOST); CDP is below
+        return c_unpack(blob)
     if blob["arm"] in B_ARMS:
         return codecs.unpack_models(blob)
     out: dict[int, list] = {}
@@ -470,6 +511,8 @@ def _policy(kind: str, label: str) -> str:
 def arm_config(sspec: StageSpec, arm: str):
     """Configuration object of one B arm in a stage (EXPERIMENT_B 6.1). A main stage whose
     arm has no chosen configuration yet has no entry and refuses."""
+    if sspec.family == "C":
+        return c_arm_config(sspec, arm)
     entries = [pairs for a, pairs in sspec.arm_cfg if a == arm]
     if len(entries) != 1:
         raise ValueError(f"stage has no configuration for arm {arm!r} "
@@ -509,6 +552,13 @@ def _fit_b_payload(job: Job, sspec: StageSpec, spec: RouteSpec, paths: Paths) ->
             "budget": dict(budget, peak_rss_mb=process_peak_rss_mb())}
 
 
+def _fit_c_payload(job: Job, sspec: StageSpec, spec: RouteSpec, paths: Paths) -> dict:
+    """EXPERIMENT_C neural fit (expc.stages.c_fit_payload) with the peak-memory budget."""
+    payload = c_fit_payload(job, sspec, spec, paths)
+    payload["budget"] = dict(payload["budget"], peak_rss_mb=process_peak_rss_mb())
+    return payload
+
+
 # ---------------------------------------------------------------- fit
 
 def run_fit_job(job: Job, ctx: Ctx) -> str:
@@ -519,13 +569,15 @@ def run_fit_job(job: Job, ctx: Ctx) -> str:
     torch.set_num_threads(1)
     spec = _spec_of(job.inst, job.route_id)
     paths = route_pool(job.inst, "train", job.rep, job.N, cache_dir=chunk_cache_dir(ctx),
-                       routes=[job.route_id])[job.route_id]
+                       routes=[job.route_id], world=sspec.world)[job.route_id]
     paths = stage_paths(sspec, paths, job.inst, job.route_id, "train")
     t0 = time.perf_counter()
     if job.kind in ("ladder", "big"):
         stats = RouteStats.fit(paths)
         models = classical_ladder(spec, paths.g, job.labels, stats=stats)
         payload = {"kind": job.kind, "models": models, "stats": stats, "diag": []}
+    elif job.kind == "neural" and sspec.family == "C":
+        payload = _fit_c_payload(job, sspec, spec, paths)
     elif job.kind == "neural" and job.arm in B_ARMS:
         payload = _fit_b_payload(job, sspec, spec, paths)
     elif job.kind == "neural" and job.arm == "boost":
@@ -538,9 +590,10 @@ def run_fit_job(job: Job, ctx: Ctx) -> str:
                    "stats": stats, "diag": diag}
     else:
         raise ValueError(f"unknown job kind {job.kind!r}")
-    if sspec.test_stream == "test_b":
+    if sspec.test_stream in ("test_b", "test_c"):
         # EXPERIMENT_B 5.3 item 8: the gate compares these with the running process
         payload["libraries"] = library_versions()
+    if sspec.test_stream == "test_b":
         payload["cuts"] = cut_record(ACTIVE_CUTS)     # 9.2: the cut set the fit ran under
     # the commit alone does not prove the code that was fitted: record whether the
     # tree was clean when the fit ran (run_eval_job refuses test use otherwise)
@@ -592,6 +645,15 @@ def _curve_results(job: Job, payload: dict, spec: RouteSpec, pool: Paths) -> dic
     return out
 
 
+def _predictors(job: Job, payload: dict, spec: RouteSpec, sspec: StageSpec, ctx: Ctx) -> dict:
+    """Predictors of a fitted neural job. CDP keeps its model only: the tables are rebuilt
+    from the training paths of the fit (EXPERIMENT_C 1.7), so those are regenerated here."""
+    if job.arm == "cdp":
+        train = cdp_train_paths(job, sspec.world, chunk_cache_dir(ctx))
+        return cdp_predictors(payload["models"], spec, train)
+    return _unpack(payload["models"])
+
+
 def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
                  frozen: str | None = None) -> str:
     job_key = model_path.stem
@@ -606,7 +668,7 @@ def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
                             "it is never evaluated under another stage's gate or stream")
         gate = verify_stream_gate(eval_set, frozen, ctx.stage)
     gated = gate is not None
-    rows_csv = ctx.rows_dir / f"{job_key}.{eval_set}.csv"
+    rows_csv = ctx.rows_dir / rows_file_name(job_key, eval_set, "csv")
     if rows_csv.exists():
         return "skip"
     payload = load_payload(model_path)
@@ -618,7 +680,7 @@ def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
                         f".py changes (or before the flag existed); refusing test evaluation")
     job: Job = payload["job"]
     spec = _spec_of(job.inst, job.route_id)
-    pool = route_pool(job.inst, eval_set, 0, frozen=frozen,
+    pool = route_pool(job.inst, eval_set, 0, frozen=frozen, world=sspec.world,
                       routes=[job.route_id], stage=ctx.stage)[job.route_id]
     pool = stage_paths(sspec, pool, job.inst, job.route_id, eval_set)
     n_eval = int(pool.p.shape[0])
@@ -630,20 +692,22 @@ def run_eval_job(model_path: Path, eval_set: str, ctx: Ctx,
     elif "pass_models" in payload:
         results = _curve_results(job, payload, spec, pool)
     else:
-        preds = _unpack(payload["models"])
+        preds = _predictors(job, payload, spec, sspec, ctx)
         cache = RouteCache(spec, pool, payload["stats"])
         costs, act = simulate_policy(cache, spec.B, spec.H, spec.E, preds,
                                      H_bill=spec.H)
         results = {ARM_POLICY[job.arm]: summarize(costs, act)}
-    extra = _test_b_columns(payload, gate, model_path) if eval_set == "test_b" else None
+    extra = _test_b_columns(payload, gate, model_path) if eval_set in ("test_b", "test_c") else {}
+    if sspec.family == "C":
+        extra = dict(extra, world=sspec.world, feature_set=feature_set_label(sspec.feature_set))
     rows, arrays = _rows_for(payload, results, spec, eval_set, n_eval, ctx.commit, extra)
     ctx.rows_dir.mkdir(parents=True, exist_ok=True)
-    npz_path = ctx.rows_dir / f"{job_key}.{eval_set}.npz"
+    npz_path = ctx.rows_dir / rows_file_name(job_key, eval_set, "npz")
     tmp_npz = npz_path.with_name(npz_path.name + ".tmp.npz")
     np.savez(tmp_npz, **arrays)
     os.replace(tmp_npz, npz_path)
     tmp_csv = rows_csv.with_name(rows_csv.name + ".tmp")
-    columns = TEST_B_COLUMNS if eval_set == "test_b" else ROW_COLUMNS
+    columns = row_columns(ctx.stage, eval_set)
     pd.DataFrame(rows, columns=columns).to_csv(tmp_csv, index=False)
     os.replace(tmp_csv, rows_csv)
     return "eval"
@@ -672,7 +736,7 @@ def run_fit(stage: str, elig: pd.DataFrame, results_dir: Path | None = None,
     if spec.reuse_models:
         raise ValueError(f"stage {stage!r} reads A's model files ({spec.reuse_models}); "
                          "it has no fit")
-    if spec.test_stream == "test_b" and not tree_is_clean():
+    if spec.test_stream in ("test_b", "test_c") and not tree_is_clean():
         raise GateError(f"stage {stage!r} is fitted only on a clean code tree; "
                         "commit or remove uncommitted .py changes first")
     ctx = Ctx(Path(results_dir), stage, spec.cfg,
@@ -706,6 +770,8 @@ def run_eval(stage: str, eval_set: str, results_dir: Path | None = None,
     if spec.reuse_models:
         keys = planned_keys(stage, results_dir)
         model_files = [p for p in model_files if p.stem in keys]
+        check_reuse_gate(stage, eval_set, frozen_commit)
+        check_reuse_models(spec, Path(results_dir), model_files)
     if not model_files:
         raise FileNotFoundError(f"no fitted models for stage {stage!r} in {ctx.models_dir}")
     done = _run_all(partial(_eval_one, eval_set=eval_set, ctx=ctx, frozen=frozen_commit),
@@ -739,6 +805,15 @@ def add_gap_closed(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def row_columns(stage: str, eval_set: str) -> list[str]:
+    """Columns of a stage's merged rows: A's and B's layouts, plus world and feature_set
+    for EXPERIMENT_C stages (test streams carry the family, model and library columns)."""
+    base = TEST_B_COLUMNS if eval_set in ("test_b", "test_c") else ROW_COLUMNS
+    if stage_spec(stage).family == "C":
+        base = base + C_ROW_EXTRA
+    return list(base)
+
+
 def merge_stage(stage: str, eval_set: str = "dev",
                 results_dir: Path | None = None, only: dict | None = None) -> pd.DataFrame:
     """Concatenates the row files of a stage into ``<results_dir>/<stage>.csv`` (dev) or
@@ -747,7 +822,7 @@ def merge_stage(stage: str, eval_set: str = "dev",
     require_enabled(stage)
     results_dir = default_results_dir(stage) if results_dir is None else results_dir
     rows_dir = Path(results_dir) / stage / "rows"
-    suffix = f".{eval_set}.csv"
+    suffix = rows_suffix(eval_set, "csv")
     files = sorted(f for f in rows_dir.glob(f"*{suffix}")
                    if _selected(fields_from_key(f.name[:-len(suffix)]), only))
     if not files:
@@ -757,8 +832,7 @@ def merge_stage(stage: str, eval_set: str = "dev",
     dup = df.duplicated(subset=KEY_COLUMNS, keep=False)
     if dup.any():
         raise ValueError(f"duplicate rows for {int(dup.sum())} keys in stage {stage!r}")
-    columns = TEST_B_COLUMNS if eval_set == "test_b" else ROW_COLUMNS
-    df = add_gap_closed(df)[columns]
+    df = add_gap_closed(df)[row_columns(stage, eval_set)]
     name = f"{stage}.csv" if eval_set == "dev" else f"{stage}.{eval_set}.csv"
     out = Path(results_dir) / name
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -876,6 +950,9 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.cmd == "manifest":
             require_enabled(args.stage)
+            if stage_spec(args.stage).reuse_models:
+                raise ValueError(f"stage {args.stage!r} reuses B's models; its manifest is "
+                                 "results/expB/<reuse stage>/models.sha256")
             info = {"manifest": str(write_manifest(args.stage, results_dir=args.results_dir))}
         elif args.cmd == "fit":
             elig = stage_eligibility(args.stage, args.eligibility)

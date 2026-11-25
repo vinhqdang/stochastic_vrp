@@ -44,9 +44,12 @@ def _pack_one(pred: Any, nets: list, index: dict) -> dict:
     if isinstance(pred, ConstantPredictor):
         return {"kind": "const", "value": float(pred.value)}
     if isinstance(pred, RLSMPredictor):
+        # the feature-set mask (EXPERIMENT_C 1.3) travels with the predictor by name; B's
+        # predictors have no set and store None (their input map is mlp_batch)
         return {"kind": "rlsm", "A": np.array(pred.A, copy=True),
                 "b": np.array(pred.b, copy=True), "theta": np.array(pred.theta, copy=True),
-                "slope": float(pred.slope), "E0": float(pred.E0)}
+                "slope": float(pred.slope), "E0": float(pred.E0),
+                "set": getattr(getattr(pred, "featurize", None), "set_name", None)}
     if isinstance(pred, DOSPredictor):
         return {"kind": "dos", "in_dim": int(pred.net.body[0].in_features),
                 "width": int(pred.net.out.in_features), "state": _cpu_state(pred.net),
@@ -89,7 +92,13 @@ def _unpack_one(item: dict, nets: list, ppo: dict) -> Any:
     if kind == "const":
         return ConstantPredictor(item["value"])
     if kind == "rlsm":
-        return RLSMPredictor(item["A"], item["b"], item["theta"], item["slope"], item["E0"])
+        set_name = item.get("set")
+        featurize = None
+        if set_name:                      # lazy: expc depends on expb, not the reverse
+            from ..expc.rlsm_sets import masked_featurize   # noqa: PLC0415
+            featurize = masked_featurize(set_name)
+        return RLSMPredictor(item["A"], item["b"], item["theta"], item["slope"], item["E0"],
+                             featurize=featurize)
     if kind == "dos":
         net = DOSNet(in_dim=item["in_dim"], width=item["width"])
         net.load_state_dict(item["state"])

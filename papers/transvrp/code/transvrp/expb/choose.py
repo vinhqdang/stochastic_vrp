@@ -153,13 +153,57 @@ def verify_sources(path: Path, results_dir: Path) -> None:
                 raise ValueError(f"{src.name} differs from the file the record was made from")
 
 
+DOS_TUNE_ROUTES = "subset6"        # EXPERIMENT_C 1.8: the six tuning routes (3 medium, 3 long)
+
+
+def rows_hashes(tuning_dir: Path) -> dict:
+    """sha256 of every row file of one tuning stage (its ``rows`` directory), by file name."""
+    rows = Path(tuning_dir) / "rows"
+    if not rows.is_dir():
+        raise ValueError(f"no rows directory for tuning stage {Path(tuning_dir).name}")
+    files = sorted(p for p in rows.iterdir() if p.is_file())
+    if not files:
+        raise ValueError(f"{rows} holds no row files")
+    return {p.name: _sha(p) for p in files}
+
+
+def verify_rows(path: Path, results_dir: Path) -> None:
+    """Every DOS tuning row file hashed into the record still has that hash."""
+    rec = json.loads(Path(path).read_text(encoding="utf-8"))["arms"]["dos"]
+    for cfg, digests in rec.get("rows", {}).items():
+        current = rows_hashes(Path(results_dir) / f"b_tune_dos_{cfg}")
+        if current != digests:
+            raise ValueError(f"row files of DOS tuning {cfg} differ from the record")
+
+
+def choose_dos(results_dir_b: Path, eligibility: Path, out: Path) -> Path:
+    """EXPERIMENT_C 1.8: DOS configuration by the 6.1 rule on the six tuning routes of B's
+    dev DOS tuning CSVs (``b_tune_dos_c<i>.csv``). Dev rows only; the record uses the same
+    format as ``tuning_record.json`` and is read back by ``stages.load_chosen``."""
+    from ..expa import sweep          # noqa: PLC0415 (heavy import)
+    from .stages import TUNE_GRID     # noqa: PLC0415
+    routes = sweep._route_rows(DOS_TUNE_ROUTES, pd.read_csv(eligibility))
+    files = {i: Path(results_dir_b) / f"b_tune_dos_c{i}.csv"
+             for i in range(len(TUNE_GRID["dos"]))}
+    tune = {i: pd.read_csv(f) for i, f in files.items() if f.exists()}
+    rec = choose_config("dos", tune, routes, curve=False,
+                        sources={i: files[i] for i in tune})
+    rec["rows"] = {f"c{i}": rows_hashes(Path(results_dir_b) / f"b_tune_dos_c{i}") for i in tune}
+    return write_record(out, {"dos": rec}, TUNE_GRID)
+
+
 def main(argv: list[str] | None = None) -> int:
     from ..expa import sweep          # noqa: PLC0415 (heavy import)
     from .stages import ACTIVE_CUTS, TUNE_GRID   # noqa: PLC0415
     ap = argparse.ArgumentParser(prog="python -m transvrp.expb.choose")
     ap.add_argument("--results-dir", type=Path, default=sweep.DEFAULT_RESULTS_B)
     ap.add_argument("--eligibility", type=Path, default=sweep.DEFAULT_RESULTS / "eligibility_dev.csv")
+    ap.add_argument("--dos-out", type=Path, default=None,
+                    help="write the EXPERIMENT_C 1.8 DOS record to this path and stop")
     args = ap.parse_args(argv)
+    if args.dos_out is not None:
+        print(choose_dos(args.results_dir, args.eligibility, args.dos_out))
+        return 0
     routes = sweep._route_rows(ACTIVE_CUTS.tune_routes, pd.read_csv(args.eligibility))
     records = {}
     for arm, grid in TUNE_GRID.items():

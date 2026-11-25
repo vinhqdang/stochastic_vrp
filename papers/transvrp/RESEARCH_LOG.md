@@ -430,3 +430,42 @@ TEST_B FAMILY CLOSED: family=[alpz,rlsm,dqn,ppo] descriptive=[thr] dropped=[thr:
   answers every blocking and required finding (changelog section 11).
 - Nothing of C has been run. A's and B's test streams are not read again; C uses a new
   gated stream test_c.
+
+### 2026-11-25 14:35 GMT+7 — experiment C: integration and pre-freeze fixes (no run on any C stream except a smoke)
+- The five C modules were integrated, and the review findings were fixed: stage names, RLSM pickling, CDP tables
+  rebuilt at eval rather than stored, CDP load grid, test gaps, breach table, and row-file naming.
+  Full suite: 936 passed, 0 failed. 15 of 15 targeted mutations were caught.
+- Bug found and fixed before any C fit: the B codec (`expb/codecs.py`) stored an RLSM
+  predictor's weights but not its feature-set mask. Unpacking therefore rebuilt the unmasked
+  featurizer, so RLSM arms F0/F0n/F1/F2 would have been evaluated on inputs different from
+  those they were fitted on. The codec now stores the set name and rebuilds the masked
+  featurizer. B's payloads store set=None and are unchanged, so B's results are not affected
+  (all B RLSM arms used the full feature set).
+- Deviation (declared before any C fit): BOOST-C predictions are clipped to [0, E0], whereas A's BOOST was
+  not clipped. The clip guards against extrapolation by trees on feature subsets and does not apply to
+  A or B.
+- CDP load grid: the lower bound equals THR's data-driven bound computed on the training paths, and loads below it
+  are clamped to the first grid point. The spec gives a 1001-point grid without fixing its
+  lower end, so this is a specification, not a deviation.
+- A smoke run on one CON3-0 route (dev, N=2000) wrote only to C:\work\transvrp_run\smoke_C and is not
+  a result.
+
+### 2026-11-25 17:15 GMT+7 — experiment C: independent code review answered; code commit (not F_C)
+- Independent review of the integrated code: no blocking finding. It raised three
+  should-fix items, all now fixed with mutation-checked tests:
+  - The reuse identity check for B's FULL and PPO models (spec 4.3(b)) was never run and
+    its test could not fail. It now runs against a worktree at `bf3edab`, writes
+    `results/expC/identity_bf3edab.json`, and the test_c gate requires that record from a
+    clean tree.
+  - The test_c gate skipped the code hash for reused stages. It is now enforced; only the
+    comparison of the fit commit with HEAD is skipped.
+  - `analysis_c` ignored the family, descriptive and dropped lists of the pinned line. Holm
+    now runs over the pinned family only.
+- Minor items:
+  - WS dimension: delivery and pickup active sets agree on all 20 plans (2m' holds), and an
+    assertion was added.
+  - A `rho` argument that conflicts with `world` now raises an error.
+  - `dos_choice.json` now hashes the 48 DOS tuning row files; the choice is still c0.
+- Identity on uncommitted code: all differences are 0.0 for b_full and b_ppo on 4 dev routes
+  from 4 instances. It is re-run on the clean tree after this commit.
+- Full suite: 970 passed, 0 failed (1:16:52).

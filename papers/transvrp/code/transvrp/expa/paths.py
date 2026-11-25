@@ -33,7 +33,8 @@ from pathlib import Path
 import numpy as np
 
 from ..baton.costs import LastMileCosts, route_cost_schedules
-from ..data import DATA_DIR, gen_scenarios, load_plans, parse_dethloff, stable_seed
+from ..data import (DATA_DIR, WORLD_SEED_CODE, WORLDS, gen_scenarios, load_plans,
+                    parse_dethloff, stable_seed)
 
 HERE = Path(__file__).resolve().parent
 CODE_DIR = HERE.parents[1]
@@ -42,14 +43,18 @@ FROZEN_HASH_RE = re.compile(r"[0-9a-f]{40}")
 
 CHUNK = 100_000
 N_CHUNKS = 10
-PURPOSES = ("train", "dev", "test", "test_std", "test_b")
+PURPOSES = ("train", "dev", "test", "test_std", "test_b", "test_c")
 DEV_N = 5_000
 TEST_N = 20_000
 TEST_STD_N = 2_000
 TEST_B_N = 20_000
+TEST_C_N = 20_000
 TRAIN_REPS = (0, 1, 2)
-TEST_STREAMS = ("test", "test_b")      # gated streams (EXPERIMENT_B.md 5.2)
+TEST_STREAMS = ("test", "test_b", "test_c")   # gated streams (EXPERIMENT_B.md 5.2, EXPERIMENT_C.md 5)
 TEST_B_SEED_TAG = 20261118
+TEST_C_SEED_TAG = 7                # EXPERIMENT_C.md 3: test_c seed [base, 7, w]
+DEFAULT_WORLD = "W6"               # A's and B's generator; its seeds are unchanged
+W6_ONLY_PURPOSES = ("test", "test_std", "test_b")
 FROZEN_LINE_RE = re.compile(r"^FROZEN COMMIT: ([0-9a-f]{40})\r?$", re.MULTILINE)
 
 
@@ -184,12 +189,28 @@ def verify_test_b_gate(stage: str | None, fit_commit: str | None) -> GateToken:
                      _issuer=_GATE_ISSUER)
 
 
+def verify_test_c_gate(stage: str | None, fit_commit: str | None) -> GateToken:
+    """Gate for the test_c stream (EXPERIMENT_C.md 5): the eight checks of B 5.3 with C's
+    patterns, owners and family keys, in ``expc.gates`` (reused stages of 4.3 included).
+    The token carries stream 'test_c' so it never unlocks another stream."""
+    from ..expc import gates as c_gates     # noqa: PLC0415 (cycle: gates imports paths)
+    if not stage:
+        raise TestStreamGateError("test_c data need the name of the stage that requests them")
+    if not fit_commit:
+        raise TestStreamGateError("test_c data need the stage's fit commit")
+    head, family_sha = c_gates.verify_test_c_stage(stage, fit_commit)
+    return GateToken(commit=head, stream="test_c", stage=stage, family_sha256=family_sha,
+                     _issuer=_GATE_ISSUER)
+
+
 def verify_stream_gate(purpose: str, frozen: str | None, stage: str | None = None) -> GateToken:
     """Dispatches a gated purpose to its own verifier."""
     if purpose == "test":
         return verify_test_gate(frozen)
     if purpose == "test_b":
         return verify_test_b_gate(stage, frozen)
+    if purpose == "test_c":
+        return verify_test_c_gate(stage, frozen)
     raise ValueError(f"purpose {purpose!r} is not a gated stream")
 
 
@@ -247,56 +268,83 @@ def route_specs(inst: str, plan_key: str = "Det") -> list[RouteSpec]:
     return out
 
 
+def _world_code(world: str) -> str:
+    if world not in WORLDS:
+        raise ValueError(f"world must be one of {tuple(WORLDS)}, got {world!r}")
+    return world
+
+
 def _stream(inst: str, purpose: str, rep: int, c: int,
-            gate: GateToken | None = None) -> tuple[object, int]:
-    """Seed and size of one generated chunk. Test-purpose streams need ``gate``."""
+            gate: GateToken | None = None, world: str = DEFAULT_WORLD) -> tuple[object, int]:
+    """Seed and size of one generated chunk. Test-purpose streams need ``gate``.
+
+    W6 keeps A's and B's seeds. Other worlds: train [base, 1, rep, c, w] and dev
+    [base, 3, w]; the A/B test streams exist only for W6 (EXPERIMENT_C.md 3). test_c
+    uses [base, 7, w] in every world, W6 included."""
     _require_gate(purpose, gate)
+    _world_code(world)
+    if purpose in W6_ONLY_PURPOSES and world != DEFAULT_WORLD:
+        raise ValueError(f"{purpose} exists only for {DEFAULT_WORLD}, not {world}")
     base = stable_seed(inst)
+    w = WORLD_SEED_CODE[world]
     if purpose == "train":
-        return [base, 1, rep, c], CHUNK
+        if world == DEFAULT_WORLD:
+            return [base, 1, rep, c], CHUNK
+        return [base, 1, rep, c, w], CHUNK
     if purpose == "dev":
-        return [base, 3], DEV_N
+        if world == DEFAULT_WORLD:
+            return [base, 3], DEV_N
+        return [base, 3, w], DEV_N
     if purpose == "test":
         return base + 99_991, TEST_N
     if purpose == "test_std":
         return base + 99_991, TEST_STD_N
     if purpose == "test_b":
         return [base, TEST_B_SEED_TAG], TEST_B_N
+    if purpose == "test_c":
+        return [base, TEST_C_SEED_TAG, w], TEST_C_N
     raise ValueError(f"unknown purpose {purpose!r}")
 
 
 def chunk_file(cache_dir: Path, inst: str, purpose: str, rep: int, c: int,
-               seed: object, n: int) -> Path:
+               seed: object, n: int, world: str = DEFAULT_WORLD) -> Path:
     """Path of one cached chunk. The key is (instance, purpose, rep, chunk, seed);
-    the size n is included because it is fixed by the purpose."""
+    the size n is included because it is fixed by the purpose. The world is part of
+    the name for every non-W6 world and for test_c; W6 train/dev names are unchanged."""
     seed_tag = format(zlib.crc32(repr(seed).encode()), "08x")
-    return Path(cache_dir) / (f"{inst}__{purpose}__r{rep}__c{c}__n{n}__s{seed_tag}.npy")
+    world_tag = f"__{_world_code(world)}" if _needs_world_tag(purpose, world) else ""
+    return Path(cache_dir) / (f"{inst}__{purpose}__r{rep}__c{c}__n{n}__s{seed_tag}{world_tag}.npy")
+
+
+def _needs_world_tag(purpose: str, world: str) -> bool:
+    return world != DEFAULT_WORLD or purpose == "test_c"
 
 
 def _generate_chunk(inst: str, purpose: str, rep: int, c: int,
-                    gate: GateToken | None = None) -> tuple[np.ndarray, np.ndarray]:
+                    gate: GateToken | None = None,
+                    world: str = DEFAULT_WORLD) -> tuple[np.ndarray, np.ndarray]:
     """(deliveries, pickups) for every customer of one chunk, shape (n, cust)."""
-    seed, n = _stream(inst, purpose, rep, c, gate)
+    seed, n = _stream(inst, purpose, rep, c, gate, world)
     sol = load_plans(inst)
-    return gen_scenarios(sol["dbar"], sol["pbar"], n, seed)
+    return gen_scenarios(sol["dbar"], sol["pbar"], n, seed, world=WORLDS[world])
 
 
 def _chunk_arrays(inst: str, purpose: str, rep: int, c: int,
-                  cache_dir: Path | None, gate: GateToken | None = None
-                  ) -> tuple[np.ndarray, np.ndarray]:
+                  cache_dir: Path | None, gate: GateToken | None = None,
+                  world: str = DEFAULT_WORLD) -> tuple[np.ndarray, np.ndarray]:
     """One chunk's (deliveries, pickups). With ``cache_dir`` the chunk is read from
     ``chunk_file`` when present and otherwise generated and saved there (one
     ``np.save`` of the stacked pair, written atomically). A cached chunk is the
     exact float64 array that generation returned, so both paths agree bit for bit.
     Test-purpose chunks are refused unless ``gate`` is a GateToken."""
     if cache_dir is None:
-        return _generate_chunk(inst, purpose, rep, c, gate)
-    seed, n = _stream(inst, purpose, rep, c, gate)
-    path = chunk_file(cache_dir, inst, purpose, rep, c, seed, n)
+        return _generate_chunk(inst, purpose, rep, c, gate, world)
+    seed, n = _stream(inst, purpose, rep, c, gate, world)
+    path = chunk_file(cache_dir, inst, purpose, rep, c, seed, n, world)
     if path.exists():
         stacked = np.load(path)
         return stacked[0], stacked[1]
-    dsc, psc = _generate_chunk(inst, purpose, rep, c, gate)
+    dsc, psc = _generate_chunk(inst, purpose, rep, c, gate, world)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + f".{os.getpid()}.tmp.npy")
     np.save(tmp, np.stack([dsc, psc]))
@@ -338,7 +386,8 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
                N: int | None = None, *, frozen: str | None = None,
                cache_dir: Path | None = None,
                routes: Iterable[int] | None = None,
-               stage: str | None = None) -> dict[int, Paths]:
+               stage: str | None = None,
+               world: str = DEFAULT_WORLD) -> dict[int, Paths]:
     """route_id -> Paths for the non-empty routes of the 'Det' plan (or only
     ``routes`` when given).
 
@@ -350,6 +399,7 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
     ``_chunk_arrays``); it must be a run directory, never the repository."""
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
+    _world_code(world)
     gate = verify_stream_gate(purpose, frozen, stage) if purpose in TEST_STREAMS else None
     if purpose != "train":
         rep = 0
@@ -369,7 +419,7 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
                   for c in range(-(-n_total // CHUNK))]
     else:
         size = {"dev": DEV_N, "test": TEST_N, "test_std": TEST_STD_N,
-                "test_b": TEST_B_N}[purpose]
+                "test_b": TEST_B_N, "test_c": TEST_C_N}[purpose]
         if N is not None and int(N) != size:
             raise ValueError(f"{purpose} has a fixed size of {size}")
         chunks = [(0, size)]
@@ -377,7 +427,7 @@ def route_pool(inst: str, purpose: str, rep: int = 0,
     parts_p: dict[int, list[np.ndarray]] = {s.route_id: [] for s in specs}
     parts_d: dict[int, list[np.ndarray]] = {s.route_id: [] for s in specs}
     for c, take in chunks:
-        dsc, psc = _chunk_arrays(inst, purpose, rep, c, cache_dir, gate)
+        dsc, psc = _chunk_arrays(inst, purpose, rep, c, cache_dir, gate, world)
         for s in specs:
             r = np.array(s.route)
             # fancy indexing copies, so only the route columns outlive the chunk

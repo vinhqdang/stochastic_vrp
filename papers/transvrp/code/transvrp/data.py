@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -94,6 +95,54 @@ def sample_demands(mean, n, N, cv, dist, rng, rho=RHO):
     return out
 
 
+def _active_customers(mean) -> list[int]:
+    return [i for i in range(1, len(mean)) if mean[i] > 0]
+
+
+@dataclass(frozen=True)
+class World:
+    """Copula of one generated world (EXPERIMENT_C.md 1.4). Marginals are A's
+    (gamma, CV 0.3, same means) in every world. ``shared`` selects one equicorrelated
+    copula over (active deliveries, then active pickups) instead of two separate ones."""
+    code: str
+    rho_d: float
+    rho_p: float
+    shared: bool
+
+
+WORLDS: dict[str, World] = {
+    "W0": World("W0", 0.0, 0.0, False),
+    "W3": World("W3", 0.3, 0.3, False),
+    "W6": World("W6", 0.6, 0.6, False),
+    "W9": World("W9", 0.9, 0.9, False),
+    "WS": World("WS", 0.6, 0.6, True),
+}
+WORLD_SEED_CODE = {"W0": 10, "W3": 13, "W6": 16, "W9": 19, "WS": 26}
+
+
+def _shared_demands(dbar, pbar, N, rho, rng):
+    """One equicorrelated Gaussian copula (correlation rho for every pair) over the
+    active deliveries followed by the active pickups; one standard_normal draw."""
+    act_d, act_p = _active_customers(dbar), _active_customers(pbar)
+    assert len(act_d) == len(act_p), "WS draws 2m' scores: active delivery and pickup counts must match"
+    dsc = np.zeros((N, len(dbar)))
+    psc = np.zeros((N, len(pbar)))
+    m_d = len(act_d)
+    m = m_d + len(act_p)
+    if m == 0:
+        return dsc, psc
+    Sigma = np.full((m, m), float(rho))
+    np.fill_diagonal(Sigma, 1.0)
+    L = np.linalg.cholesky(Sigma)
+    Z = rng.standard_normal((N, m)) @ L.T
+    U = np.clip(st.norm.cdf(Z), 1e-12, 1.0 - 1e-12)
+    for j, i in enumerate(act_d):
+        dsc[:, i] = _marginal_ppf(U[:, j], dbar[i], CV, DIST)
+    for j, i in enumerate(act_p):
+        psc[:, i] = _marginal_ppf(U[:, m_d + j], pbar[i], CV, DIST)
+    return dsc, psc
+
+
 def stable_seed(name: str) -> int:
     return SEED + int(hashlib.md5(name.encode()).hexdigest(), 16) % 10_000
 
@@ -105,10 +154,24 @@ def load_plans(name: str) -> dict:
     return d
 
 
-def gen_scenarios(dbar, pbar, N, seed, rho=RHO):
+def gen_scenarios(dbar, pbar, N, seed, rho=None, world=None):
+    """(deliveries, pickups) scenarios. ``world=None`` (rho default RHO) is the original
+    generator: separate copulas, rho for both, deliveries drawn before pickups. A
+    ``World`` (or its code) takes its copula from the registry; an explicit ``rho`` that
+    differs from the world's copula is a ValueError (EXPERIMENT_C 1.4)."""
+    if isinstance(world, str):
+        world = WORLDS[world]
+    if world is not None and rho is not None and (rho != world.rho_d or rho != world.rho_p):
+        raise ValueError(f"rho={rho} conflicts with world {world.code} "
+                         f"(rho_d={world.rho_d}, rho_p={world.rho_p})")
+    if world is not None and world.shared and world.rho_d > 0.0:
+        return _shared_demands(dbar, pbar, N, world.rho_d, np.random.default_rng(seed))
+    if world is None and rho is None:
+        rho = RHO
+    rho_d, rho_p = (rho, rho) if world is None else (world.rho_d, world.rho_p)
     rng = np.random.default_rng(seed)
-    dsc = sample_demands(dbar, len(dbar), N, CV, DIST, rng, rho=rho)
-    psc = sample_demands(pbar, len(pbar), N, CV, DIST, rng, rho=rho)
+    dsc = sample_demands(dbar, len(dbar), N, CV, DIST, rng, rho=rho_d)
+    psc = sample_demands(pbar, len(pbar), N, CV, DIST, rng, rho=rho_p)
     return dsc, psc
 
 

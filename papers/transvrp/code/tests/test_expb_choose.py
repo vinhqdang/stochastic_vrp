@@ -164,3 +164,48 @@ def test_chosen_arm_cfg_is_generated_from_the_record_not_typed(tmp_path):
     assert cfg["rlsm"] == stages.TUNE_GRID["rlsm"][-1]
     assert cfg["thr"] == () and cfg["alpz"] == ()
     assert "dqn" not in cfg
+
+
+# ---------------------------------------------------------------- DOS record: row hashes (C 1.8)
+
+def _dos_inputs(tmp_path, monkeypatch, cost0=1.0, cost1=1.2):
+    from transvrp.expa import sweep
+    results = tmp_path / "expB"
+    results.mkdir()
+    for i, cost in ((0, cost0), (1, cost1)):
+        _rows("dos", cost).to_csv(results / f"b_tune_dos_c{i}.csv", index=False)
+        rows = results / f"b_tune_dos_c{i}" / "rows"
+        rows.mkdir(parents=True, exist_ok=True)
+        (rows / "r0.npz").write_bytes(f"row-{i}-a".encode())
+        (rows / "r1.npz").write_bytes(f"row-{i}-b".encode())
+    elig = tmp_path / "eligibility.csv"
+    elig.write_text("inst,route_id\nCON3-1,0\n", encoding="utf-8")
+    monkeypatch.setattr(sweep, "_route_rows", lambda names, df: ROUTES)
+    return results, elig
+
+
+def test_dos_record_hashes_every_row_file_and_keeps_the_choice(tmp_path, monkeypatch):
+    import hashlib
+    results, elig = _dos_inputs(tmp_path, monkeypatch)
+    out = choose.choose_dos(results, elig, tmp_path / "dos_choice.json")
+    rec = json.loads(out.read_text(encoding="utf-8"))["arms"]["dos"]
+    assert rec["config"] == 0                                   # c0 is the cheaper config
+    rows = rec["rows"]["c0"]
+    assert set(rows) == {"r0.npz", "r1.npz"}
+    assert rows["r1.npz"] == hashlib.sha256(b"row-0-b").hexdigest()
+    assert set(rec["rows"]) == {"c0", "c1"}
+
+
+def test_changed_row_file_is_refused_by_verify_rows(tmp_path, monkeypatch):
+    results, elig = _dos_inputs(tmp_path, monkeypatch)
+    out = choose.choose_dos(results, elig, tmp_path / "dos_choice.json")
+    choose.verify_rows(out, results)
+    (results / "b_tune_dos_c0" / "rows" / "r0.npz").write_bytes(b"edited")
+    with pytest.raises(ValueError, match="differ"):
+        choose.verify_rows(out, results)
+
+
+def test_empty_rows_directory_is_refused(tmp_path):
+    (tmp_path / "b_tune_dos_c0" / "rows").mkdir(parents=True)
+    with pytest.raises(ValueError, match="no row files"):
+        choose.rows_hashes(tmp_path / "b_tune_dos_c0")
