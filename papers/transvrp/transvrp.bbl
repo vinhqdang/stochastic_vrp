@@ -1,0 +1,264 @@
+\begin{thebibliography}{43}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+
+\bibitem[{Akkerman, Mes, \protect\BIBand{} van
+  Jaarsveld(2025)}]{akkerman2025comparison}
+Akkerman F, Mes M, van Jaarsveld W, 2025 \emph{A comparison of reinforcement
+  learning policies for dynamic vehicle routing problems with stochastic
+  customer requests}. \emph{Computers \& Industrial Engineering} 200:110747,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.cie.2024.110747}.
+
+\bibitem[{Andersson, Avelin, \protect\BIBand{}
+  Olofsson(2026)}]{andersson2026effectiveness}
+Andersson K, Avelin B, Olofsson M, 2026 \emph{On the effectiveness of classical
+  regression methods for optimal switching problems}. arXiv:2506.15436v4
+  (preprint, not peer reviewed).
+
+\bibitem[{Becker, Cheridito, \protect\BIBand{} Jentzen(2019)}]{becker2019deep}
+Becker S, Cheridito P, Jentzen A, 2019 \emph{Deep optimal stopping}.
+  \emph{Journal of Machine Learning Research} 20(74):1--25.
+
+\bibitem[{Bengio, Lodi, \protect\BIBand{} Prouvost(2021)}]{bengio2021machine}
+Bengio Y, Lodi A, Prouvost A, 2021 \emph{Machine learning for combinatorial
+  optimization: A methodological tour d'horizon}. \emph{European Journal of
+  Operational Research} 290(2):405--421,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ejor.2020.07.063}.
+
+\bibitem[{Bertsimas(1992)}]{bertsimas1992vehicle}
+Bertsimas DJ, 1992 \emph{A vehicle routing problem with stochastic demand}.
+  \emph{Operations Research} 40(3):574--585,
+  \urlprefix\url{http://dx.doi.org/10.1287/opre.40.3.574}.
+
+\bibitem[{Chernozhukov et~al.(2018)Chernozhukov, Chetverikov, Demirer, Duflo,
+  Hansen, Newey, \protect\BIBand{} Robins}]{chernozhukov2018double}
+Chernozhukov V, Chetverikov D, Demirer M, Duflo E, Hansen C, Newey W, Robins J,
+  2018 \emph{Double/debiased machine learning for treatment and structural
+  parameters}. \emph{The Econometrics Journal} 21(1):C1--C68,
+  \urlprefix\url{http://dx.doi.org/10.1111/ectj.12097}.
+
+\bibitem[{Dang, Vu, \protect\BIBand{} Nguyen(2026)}]{dang2026baton}
+Dang QV, Vu HV, Nguyen PS, 2026 \emph{Optimal-stopping recourse for vehicle
+  routing with simultaneous pickup, delivery, and stochastic demands}.
+  \emph{Computers \& Operations Research} Accepted 24 November 2026, in press.
+
+\bibitem[{Dastpak, Errico, \protect\BIBand{} Jabali(2023)}]{dastpak2023offline}
+Dastpak M, Errico F, Jabali O, 2023 \emph{Off-line approximate dynamic
+  programming for the vehicle routing problem with a highly variable customer
+  basis and stochastic demands}. \emph{Computers \& Operations Research}
+  159:106338, \urlprefix\url{http://dx.doi.org/10.1016/j.cor.2023.106338}.
+
+\bibitem[{Dastpak, Errico, \protect\BIBand{} Jabali(2026)}]{dastpak2026deep}
+Dastpak M, Errico F, Jabali O, 2026 \emph{A deep reinforcement learning
+  algorithm for the vehicle routing problem with stochastic demands and
+  outsourcing}. arXiv:2607.16875 (preprint, not peer reviewed).
+
+\bibitem[{Dethloff(2001)}]{dethloff2001vehicle}
+Dethloff J, 2001 \emph{Vehicle routing and reverse logistics: The vehicle
+  routing problem with simultaneous delivery and pick-up}. \emph{OR Spektrum}
+  23(1):79--96, \urlprefix\url{http://dx.doi.org/10.1007/pl00013346}.
+
+\bibitem[{Friedman(2001)}]{friedman2001greedy}
+Friedman JH, 2001 \emph{Greedy function approximation: A gradient boosting
+  machine.} \emph{The Annals of Statistics} 29(5):1189--1232,
+  \urlprefix\url{http://dx.doi.org/10.1214/aos/1013203451}.
+
+\bibitem[{Gendreau, Laporte, \protect\BIBand{}
+  Séguin(1996)}]{gendreau1996stochastic}
+Gendreau M, Laporte G, Séguin R, 1996 \emph{Stochastic vehicle routing}.
+  \emph{European Journal of Operational Research} 88(1):3--12,
+  \urlprefix\url{http://dx.doi.org/10.1016/0377-2217(95)00050-x}.
+
+\bibitem[{Gobbi, Manerba, \protect\BIBand{} Vocaturo(2026)}]{gobbi2026optional}
+Gobbi A, Manerba D, Vocaturo F, 2026 \emph{Incorporating stochastic optional
+  pickup demand in routing operations with divisible services for hub-and-spoke
+  e-commerce returns management systems}. \emph{Omega} 141:103510,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.omega.2025.103510}.
+
+\bibitem[{Goodson, Thomas, \protect\BIBand{}
+  Ohlmann(2016)}]{goodson2016restocking}
+Goodson JC, Thomas BW, Ohlmann JW, 2016 \emph{Restocking-based rollout policies
+  for the vehicle routing problem with stochastic demand and duration limits}.
+  \emph{Transportation Science} 50(2):591--607,
+  \urlprefix\url{http://dx.doi.org/10.1287/trsc.2015.0591}.
+
+\bibitem[{Herrera et~al.(2024)Herrera, Krach, Ruyssen, \protect\BIBand{}
+  Teichmann}]{herrera2024optimal}
+Herrera C, Krach F, Ruyssen P, Teichmann J, 2024 \emph{Optimal stopping via
+  randomized neural networks}. \emph{Frontiers of Mathematical Finance}
+  3(1):31--77, \urlprefix\url{http://dx.doi.org/10.3934/fmf.2023022}.
+
+\bibitem[{Holm(1979)}]{holm1979simple}
+Holm S, 1979 \emph{A simple sequentially rejective multiple test procedure}.
+  \emph{Scandinavian Journal of Statistics} 6(2):65--70.
+
+\bibitem[{Hoogendoorn \protect\BIBand{}
+  Spliet(2025)}]{hoogendoorn2025evaluation}
+Hoogendoorn Y, Spliet R, 2025 \emph{An evaluation of common modeling choices
+  for the vehicle routing problem with stochastic demands}. \emph{European
+  Journal of Operational Research} 321(1):107--122,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ejor.2024.09.007}.
+
+\bibitem[{Kadyrov et~al.(2025)Kadyrov, Azamov, Abdumajitov, \protect\BIBand{}
+  Turan}]{kadyrov2025drl}
+Kadyrov S, Azamov A, Abdumajitov Y, Turan C, 2025 \emph{Deep reinforcement
+  learning for dynamic vehicle routing with demand and traffic uncertainty}.
+  \emph{Operations Research Perspectives} 15:100351,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.orp.2025.100351}.
+
+\bibitem[{Kinable et~al.(2026)Kinable, Sluijk, Gendreau, Rei, \protect\BIBand{}
+  Van~Woensel}]{kinable2026fair}
+Kinable J, Sluijk N, Gendreau M, Rei W, Van~Woensel T, 2026 \emph{Fair
+  stochastic vehicle routing with partial deliveries}. \emph{Transportation
+  Science} 60(2):264--283,
+  \urlprefix\url{http://dx.doi.org/10.1287/trsc.2024.0556}.
+
+\bibitem[{Kool, van Hoof, \protect\BIBand{} Welling(2019)}]{kool2019attention}
+Kool W, van Hoof H, Welling M, 2019 \emph{Attention, learn to solve routing
+  problems!} \emph{International Conference on Learning Representations
+  (ICLR)}.
+
+\bibitem[{Kwon et~al.(2020)Kwon, Choo, Kim, Yoon, Gwon, \protect\BIBand{}
+  Min}]{kwon2020pomo}
+Kwon YD, Choo J, Kim B, Yoon I, Gwon Y, Min S, 2020 \emph{{POMO}: Policy
+  optimization with multiple optima for reinforcement learning}. \emph{Advances
+  in Neural Information Processing Systems 33 (NeurIPS)}, 21188--21198.
+
+\bibitem[{Liu et~al.(2026)Liu, Simchi-Levi, Chen, Gao, \protect\BIBand{}
+  Zhang}]{liu2026ortransformer}
+Liu SD, Simchi-Levi D, Chen C, Gao C, Zhang S, 2026 \emph{{OR-Transformer}:
+  Scaling real-time decision-making to 1,000 items}. arXiv:2609.01933v2
+  (preprint, not peer reviewed).
+
+\bibitem[{Longstaff \protect\BIBand{} Schwartz(2001)}]{longstaff2001valuing}
+Longstaff FA, Schwartz ES, 2001 \emph{Valuing american options by simulation: A
+  simple least-squares approach}. \emph{Review of Financial Studies}
+  14(1):113--147, \urlprefix\url{http://dx.doi.org/10.1093/rfs/14.1.113}.
+
+\bibitem[{Louveaux \protect\BIBand{} Salazar-González(2009)}]{louveaux2009one}
+Louveaux F, Salazar-González JJ, 2009 \emph{On the one-commodity
+  pickup-and-delivery traveling salesman problem with stochastic demands}.
+  \emph{Mathematical Programming} 119(1):169--194,
+  \urlprefix\url{http://dx.doi.org/10.1007/s10107-008-0206-0}.
+
+\bibitem[{Louveaux \protect\BIBand{}
+  Salazar-González(2018)}]{louveaux2018exact}
+Louveaux FV, Salazar-González JJ, 2018 \emph{Exact approach for the vehicle
+  routing problem with stochastic demands and preventive returns}.
+  \emph{Transportation Science} 52(6):1463--1478,
+  \urlprefix\url{http://dx.doi.org/10.1287/trsc.2017.0780}.
+
+\bibitem[{Mnih et~al.(2015)Mnih, Kavukcuoglu, Silver, Rusu, Veness, Bellemare,
+  Graves, Riedmiller, Fidjeland, Ostrovski, Petersen, Beattie, Sadik,
+  Antonoglou, King, Kumaran, Wierstra, Legg, \protect\BIBand{}
+  Hassabis}]{mnih2015human}
+Mnih V, Kavukcuoglu K, Silver D, Rusu AA, Veness J, Bellemare MG, Graves A,
+  Riedmiller M, Fidjeland AK, Ostrovski G, Petersen S, Beattie C, Sadik A,
+  Antonoglou I, King H, Kumaran D, Wierstra D, Legg S, Hassabis D, 2015
+  \emph{Human-level control through deep reinforcement learning}. \emph{Nature}
+  518(7540):529--533, \urlprefix\url{http://dx.doi.org/10.1038/nature14236}.
+
+\bibitem[{Nazari et~al.(2018)Nazari, Oroojlooy, Snyder, \protect\BIBand{}
+  Tak{\'a}{\v c}}]{nazari2018reinforcement}
+Nazari M, Oroojlooy A, Snyder LV, Tak{\'a}{\v c} M, 2018 \emph{Reinforcement
+  learning for solving the vehicle routing problem}. \emph{Advances in Neural
+  Information Processing Systems 31 (NeurIPS)}, 9861--9871.
+
+\bibitem[{Novoa \protect\BIBand{} Storer(2009)}]{novoa2009approximate}
+Novoa C, Storer R, 2009 \emph{An approximate dynamic programming approach for
+  the vehicle routing problem with stochastic demands}. \emph{European Journal
+  of Operational Research} 196(2):509--515,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ejor.2008.03.023}.
+
+\bibitem[{Oyola, Arntzen, \protect\BIBand{}
+  Woodruff(2018)}]{oyola2018stochastic}
+Oyola J, Arntzen H, Woodruff DL, 2018 \emph{The stochastic vehicle routing
+  problem, a literature review, part i: models}. \emph{EURO Journal on
+  Transportation and Logistics} 7(3):193--221,
+  \urlprefix\url{http://dx.doi.org/10.1007/s13676-016-0100-5}.
+
+\bibitem[{Powell(2011)}]{powell2011approximate}
+Powell WB, 2011 \emph{Approximate Dynamic Programming: Solving the Curses of
+  Dimensionality} (Wiley), ISBN 9781118029176,
+  \urlprefix\url{http://dx.doi.org/10.1002/9781118029176}.
+
+\bibitem[{Reynal et~al.(2026)Reynal, Cappart, Desaulniers, \protect\BIBand{}
+  Rousseau}]{reynal2026hybrid}
+Reynal G, Cappart Q, Desaulniers G, Rousseau LM, 2026 \emph{A hybrid
+  learning-based matheuristic to solve the vehicle routing problem
+  with stochastic demands}. \emph{Integration of Constraint Programming,
+  Artificial Intelligence, and Operations Research (CPAIOR 2026)}, 453--469,
+  Lecture Notes in Computer Science, ISBN 9783032272423,
+  \urlprefix\url{http://dx.doi.org/10.1007/978-3-032-27242-3_27}.
+
+\bibitem[{Schuirmann(1987)}]{schuirmann1987comparison}
+Schuirmann DJ, 1987 \emph{A comparison of the two one-sided tests procedure and
+  the power approach for assessing the equivalence of average bioavailability}.
+  \emph{Journal of Pharmacokinetics and Biopharmaceutics} 15(6):657--680,
+  \urlprefix\url{http://dx.doi.org/10.1007/bf01068419}.
+
+\bibitem[{Schulman et~al.(2017)Schulman, Wolski, Dhariwal, Radford,
+  \protect\BIBand{} Klimov}]{schulman2017proximal}
+Schulman J, Wolski F, Dhariwal P, Radford A, Klimov O, 2017 \emph{Proximal
+  policy optimization algorithms}. arXiv:1707.06347.
+
+\bibitem[{Secomandi \protect\BIBand{}
+  Margot(2009)}]{secomandi2009reoptimization}
+Secomandi N, Margot F, 2009 \emph{Reoptimization approaches for the
+  vehicle-routing problem with stochastic demands}. \emph{Operations Research}
+  57(1):214--230, \urlprefix\url{http://dx.doi.org/10.1287/opre.1080.0520}.
+
+\bibitem[{Soeffker, Ulmer, \protect\BIBand{}
+  Mattfeld(2022)}]{soeffker2022stochastic}
+Soeffker N, Ulmer MW, Mattfeld DC, 2022 \emph{Stochastic dynamic vehicle
+  routing in the light of prescriptive analytics: A review}. \emph{European
+  Journal of Operational Research} 298(3):801--820,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ejor.2021.07.014}.
+
+\bibitem[{Tsitsiklis \protect\BIBand{}
+  Van~Roy(2001)}]{tsitsiklis2001regression}
+Tsitsiklis J, Van~Roy B, 2001 \emph{Regression methods for pricing complex
+  american-style options}. \emph{IEEE Transactions on Neural Networks}
+  12(4):694--703, \urlprefix\url{http://dx.doi.org/10.1109/72.935083}.
+
+\bibitem[{Van~Hasselt, Guez, \protect\BIBand{}
+  Silver(2016)}]{vanhasselt2016deep}
+Van~Hasselt H, Guez A, Silver D, 2016 \emph{Deep reinforcement learning with
+  double q-learning}. \emph{Proceedings of the AAAI Conference on Artificial
+  Intelligence} 30(1),
+  \urlprefix\url{http://dx.doi.org/10.1609/aaai.v30i1.10295}.
+
+\bibitem[{Vaswani et~al.(2017)Vaswani, Shazeer, Parmar, Uszkoreit, Jones,
+  Gomez, Kaiser, \protect\BIBand{} Polosukhin}]{vaswani2017attention}
+Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez AN, Kaiser {\L},
+  Polosukhin I, 2017 \emph{Attention is all you need}. \emph{Advances in Neural
+  Information Processing Systems 30 (NeurIPS)}, 5998--6008.
+
+\bibitem[{Venkateshan \protect\BIBand{} Mathur(2026)}]{venkateshan2026note}
+Venkateshan P, Mathur K, 2026 \emph{Note on stochastic vehicle routing with
+  delivery choice under recourse options}. \emph{Naval Research Logistics}
+  \urlprefix\url{http://dx.doi.org/10.1002/nav.70103}, published online 15
+  October 2026.
+
+\bibitem[{Wang, Li, \protect\BIBand{} Xiong(2025)}]{wang2025truckdrone}
+Wang F, Li H, Xiong H, 2025 \emph{Truck--drone routing problem with stochastic
+  demand}. \emph{European Journal of Operational Research} 322(3):854--869,
+  \urlprefix\url{http://dx.doi.org/10.1016/j.ejor.2024.11.036}.
+
+\bibitem[{Wilcoxon(1945)}]{wilcoxon1945individual}
+Wilcoxon F, 1945 \emph{Individual comparisons by ranking methods}.
+  \emph{Biometrics Bulletin} 1(6):80,
+  \urlprefix\url{http://dx.doi.org/10.2307/3001968}.
+
+\bibitem[{Yang, Mathur, \protect\BIBand{} Ballou(2000)}]{yang2000stochastic}
+Yang WH, Mathur K, Ballou RH, 2000 \emph{Stochastic vehicle routing problem
+  with restocking}. \emph{Transportation Science} 34(1):99--112,
+  \urlprefix\url{http://dx.doi.org/10.1287/trsc.34.1.99.12278}.
+
+\bibitem[{Zhu, Adulyasak, \protect\BIBand{} Rousseau(2026)}]{zhu2026partial}
+Zhu L, Adulyasak Y, Rousseau LM, 2026 \emph{Partial-outsourcing strategy for
+  the vehicle routing problem with stochastic demands}. \emph{Networks}
+  87(3):266--288, \urlprefix\url{http://dx.doi.org/10.1002/net.70024}.
+
+\end{thebibliography}
