@@ -1,0 +1,5 @@
+inst,route_id,m,stratum,N,rep,policy,mean_cost,handoff_rate,fail_rate,gap_closed,n_eval,eval_set,fit_seconds,fit_commit,eval_commit,world,feature_set
+CON3-0,0,9,short,100000,0,rlsm,0.0,0.0,0.0,,5000,dev,28.732496300013736,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,WS,F0
+CON3-0,1,12,medium,100000,0,rlsm,12.4680516866,0.2118,0.0934,,5000,dev,39.07185670000035,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,WS,F0
+CON3-0,2,12,medium,100000,0,rlsm,0.0,0.0,0.0,,5000,dev,40.06902850000188,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,WS,F0
+CON3-0,3,17,long,100000,0,rlsm,62.348080669800005,0.2974,0.3742,,5000,dev,34.65996369998902,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,43bbf6a0e56c7b3fa0c15d7c6256a47dc206a0d2,WS,F0

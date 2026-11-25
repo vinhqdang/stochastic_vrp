@@ -469,3 +469,36 @@ TEST_B FAMILY CLOSED: family=[alpz,rlsm,dqn,ppo] descriptive=[thr] dropped=[thr:
 - Identity on uncommitted code: all differences are 0.0 for b_full and b_ppo on 4 dev routes
   from 4 instances. It is re-run on the clean tree after this commit.
 - Full suite: 970 passed, 0 failed (1:16:52).
+
+### 2026-11-25 19:40 GMT+7 — experiment C: pilot (spec section 8) and fit commit F_C
+- Pilot: CON3-0's 4 eligible routes (m = 9, 12, 12, 17), rep 0, N = 10^5, dev only, every C stage
+  except c_ppolong_w6 (43 c_pilot_* stages). The run was at code `74a6163`, 12 workers, from
+  17:15 to 19:22 on 2026-11-25. All 43 stages fitted, evaluated and merged; no NaN.
+  - A first attempt at 17:14 omitted `--eligibility` for every stage; nothing was written,
+    and the run was restarted.
+  - Merged pilot CSVs: `code/results/expC/c_pilot_*.csv`. Models and rows stay local.
+- Mean fit time per route-replicate on the pilot routes:
+  | arm | fit time |
+  |---|---|
+  | ladder | <1 s |
+  | THR | 195–211 s |
+  | CDP | 164–203 s |
+  | BOOST | 26–37 s |
+  | RLSM | 21–36 s |
+  | DOS | 279 s |
+  - CDP is under the 10-min rule (spec 1.7), so the factor grid stays at 25 points per factor.
+  - CDP evaluation also rebuilds the tables (about 3 min per job).
+- Projection from these times:
+  - All stages except PPO-long: 106 CPU-h of fit = 8.8 h wall at 12 workers, or about 11–12 h
+    after scaling to the mean m of 14.6 (CON3-0 mean m is 12.5). Dev evaluation adds about
+    3 h, mostly CDP table rebuilds.
+  - PPO-long runs concurrently (spec estimate about 22 h).
+  - Total about 22–25 h, under the 72 h ceiling, so no cut.
+- Observation (pilot, dev; no decision depends on it): in W6 the fitted ρ is 0.599–0.601 on
+  every pilot route, so CDP-true (ρ = 0.6 plugged in) gives the same decisions and costs as
+  CDP. The CDP-true sensitivity is therefore expected to be nearly null at N = 10^5; it stays
+  descriptive as specified.
+- **F_C** is the commit that carries this entry. CODE is unchanged from `74a6163`
+  (code_sha256 `cb9d59aa…3888`, as recorded in `identity_bf3edab.json`). From here on,
+  CODE changes are allowed only as logged bug repairs (one per arm), until test_c has been
+  evaluated.
