@@ -51,12 +51,98 @@ $$
 
 For a fixed error probability and $c$ bounded away from zero, the bounds match in order at $\log M/\eta^2$ synchronized observation days. The pilot assumes that the overload indicator is available, for example by reconstructing it from the two realized pickups. If dispatching a standby vehicle prevents both original pickups from being observed, a separate way to obtain the indicator is needed.
 
-## Reproduce the pilot
+## Optimize early visits from synchronized logs
+
+The optimizer chooses whether to take zero, one, or two early visits under a
+dispatch deadline. After the first binary pickup signal, it can stop or select
+the second customer based on that signal. Each early visit incurs a known
+travel cost. At the end of the chosen visits, it dispatches or waits.
+
+Write $Y$ for the downstream overload label, $L$ for the cost of overload,
+and $D$ for the dispatch cost. Dispatching instead of waiting saves $LY-D$.
+The optimizer needs only the first-visit outcome probabilities and the
+following weighted savings for one- and two-visit histories:
+
+$$
+R_i(s)=\mathbb E[(LY-D)\mathbf 1\{X_i=s\}],
+\qquad
+R_{ij}(s,t)=\mathbb E[(LY-D)\mathbf 1\{X_i=s,X_j=t\}].
+$$
+
+After outcome $s$ at $i$, stopping is worth $[R_i(s)]_+$. An eligible
+second visit to $j$ is worth
+$\sum_t [R_{ij}(s,t)]_+ - P(X_i=s)c_{ij}$, where $c_{ij}$ is the cost of
+the additional travel. These values already include the probability of the
+first outcome. The algorithm picks the better branch action separately for
+each $s$, sums the two values, and subtracts the cost of the first visit.
+Comparing the result across first visits and the two immediate dispatch
+actions gives the exact optimum for a finite weighted distribution. Using
+observation counts as weights gives the empirical optimum. The running
+time is $O(nm+m^2u)$ for $n$ uncompressed observation rows, $m$ candidates,
+and $u$ distinct rows. Policy search takes $O(m^2u)$ after aggregation.
+
+This establishes sufficiency for the two-visit problem. The pickup-pair
+tables must retain the overload label. The preceding construction shows
+why separate demand marginals and individual pickup–overload tables
+cannot generally substitute for them.
+
+### Finite-sample guarantees
+
+Assume IID days, $0\le D\le L$, a deadline $H$, and travel cost $c$ per
+minute. Each feasible policy's saving relative to waiting has range width
+at most $W=L+cH$. If $d_i$ second visits are feasible from first visit $i$,
+the number of adaptive policies is at most
+$K=2+\sum_i(2+4d_i)^2$, summing over eligible first visits. Each first
+outcome has two immediate actions or four terminal dispatch rules per
+second visit. Hoeffding's inequality and a union bound show that the true
+regret of the empirical optimum is at most
+
+$$
+2W\sqrt{\frac{\log(2K/\delta)}{2n}}
+$$
+
+with probability at least $1-\delta$ over $n$ training days.
+
+For deployment, an independently held-out set gives a separate guarantee.
+Compute the learned policy's paired mean saving against each immediate
+action, take the smaller, and subtract
+$W\sqrt{\log(2/\delta)/(2n_{\mathrm{val}})}$. Each paired difference has
+range width at most $W$. A positive lower bound certifies improvement
+over the best immediate action at confidence $1-\delta$, provided the
+policy was fixed before evaluating the holdout.
+
+### Synthetic regional example
+
+The example has five candidate stops, a noisy signal of which region is
+active, and noisy region-specific severity signals. Overload occurs when
+two downstream pickup demands exceed one unit of total available capacity.
+Travel time is Euclidean, with a 5.5-minute deadline and travel cost of 0.05
+per minute. The fixed-order baseline can preselect either second customer
+and can still stop after seeing the first signal. Values below are savings
+per day relative to the best immediate action, net of travel cost.
+
+| Policy | Value under the known synthetic law |
+| --- | ---: |
+| Optimal fixed order with early stopping | 0.174956 |
+| Optimal adaptive policy | 0.399912 |
+| Adaptive policy learned from 4,096 days | 0.399912 |
+
+Both adaptive policies visit the region indicator first and then visit the
+west or east customer according to the signal. On 16,384 independent
+validation days, the learned policy's one-sided 95% lower bound against
+the best immediate action was 0.370681. With a 2-minute deadline, the
+optimal fixed and adaptive policies both save 0.008923. The regional
+example was designed to exercise both branches. It uses synchronized
+binary logs and deterministic prefix travel, with the remaining service
+plan outside the optimization.
+
+## Reproduce the results
 
 ```bash
 python3 papers/informative_pickup_routing/pilot.py
+python3 papers/informative_pickup_routing/run_demo.py
 ```
 
-The script exhaustively checks all 256 demand states for three candidate pairs, computes the optimal adaptive and minimax values, and runs 256 simulated trials with a fixed seed. The simulations use synthetic data. Correlation decreases with $M$ in the asymptotic construction. A separate check fixes the correlation at $0.04$. Evaluation on operational data remains open.
+The first script exhaustively checks all 256 demand states for three candidate pairs, computes the optimal adaptive and minimax values, and runs 256 simulated trials with a fixed seed. Correlation decreases with $M$ in the asymptotic construction. A separate check fixes the correlation at $0.04$. The second script checks the optimizer by exhaustive policy enumeration on 12 small instances, recovers the first script's value for a known model, and reproduces the regional example. Evaluation on operational data remains open.
 
 Related work includes robust optimization with known marginals and adaptive feature acquisition when features are useful in combination. The open novelty question is whether prior work establishes the same minimax limit on the value of early visits when overload is driven by the sum of pickup demands, together with matching bounds on the number of synchronized observation days. [Distributionally Robust Linear and Discrete Optimization with Marginals](https://doi.org/10.1287/opre.2021.2243) · [When Does Synergy Help Active Feature Acquisition?](https://arxiv.org/abs/2609.32301)
