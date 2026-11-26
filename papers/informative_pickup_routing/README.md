@@ -1,62 +1,62 @@
-# Khi thống kê từng cặp chưa đủ để chọn điểm ghé sớm
+# Informative Pickup Routing
 
-Pilot này đo giá trị của hai lượt ghé trước khi điều xe dự phòng. Có $M$ cặp khách ứng viên, mọi khách đều phải được phục vụ trong ngày, và chi phí di chuyển bằng nhau giữa các lựa chọn ghé sớm. Xe được chọn khách thứ hai dựa trên nhu cầu của khách thứ nhất. Trên tuyến cần hỗ trợ, hai khách có pickup 0 hoặc 1 và xe chỉ còn một đơn vị sức chứa. Quá tải xảy ra khi tổng hai pickup lớn hơn 1.
+This pilot measures the value of making two customer visits before deciding whether to dispatch a standby vehicle. There are $M$ candidate pairs. Every customer must be served that day, and all choices of early visits have the same travel cost. The vehicle can choose the second customer after observing demand at the first. On the route that may need support, two customers each have a pickup demand of 0 or 1, and the vehicle has one unit of remaining capacity. An overload occurs when the two pickups sum to more than 1.
 
-## Mô hình
+## Demand model
 
-Mã hóa pickup thành dấu $-1,+1$. Viết $x=(z_1,\ldots,z_{2M},u,v)$, với $u,v$ là hai pickup trên tuyến cần hỗ trợ. Trong mô hình $j$, khách $2j-1$ và $2j$ tạo thành cặp hữu ích. Phân phối là
+Encode each pickup as a sign in $\{-1,+1\}$. Let $x=(z_1,\ldots,z_{2M},u,v)$, where $u$ and $v$ are the two pickups on the route that may need support. In model $j$, customers $2j-1$ and $2j$ form the informative pair. The joint distribution is
 
-\[
+$$
 P_j(x)=2^{-d}\left[1+\alpha\sum_{r<s}x_rx_s
 +\eta z_{2j-1}z_{2j}uv\right],\qquad d=2M+2.
-\]
+$$
 
-Với $\alpha>0$, $0<\eta<1$ và $\alpha d/2+\eta<1$, mọi vector nhu cầu đều có xác suất dương. Thật vậy, tổng tích từng cặp bằng $((\sum_r x_r)^2-d)/2$, nên thấp nhất là $-d/2$. Khi lấy biên của tối đa ba pickup, tích bốn dấu triệt tiêu. Do đó mọi $P_j$ có cùng phân phối biên tới bậc ba và mọi cặp pickup có hệ số tương quan $\alpha$. Cặp biến gồm một pickup quan sát và nhãn quá tải $Y=\mathbf 1\{u=v=+1\}$ cũng có cùng phân phối giữa các mô hình.
+For $\alpha>0$, $0<\eta<1$, and $\alpha d/2+\eta<1$, every demand vector has positive probability. The sum of pairwise products equals $((\sum_r x_r)^2-d)/2$ and is bounded below by $-d/2$. The product of four signs averages to zero when taking any marginal over at most three pickups. As a result, all $P_j$ share the same marginals through order three, and every pair of pickups has correlation $\alpha$. The joint distribution of any one observed pickup and the overload indicator $Y=\mathbf 1\{u=v=+1\}$ is also the same across models.
 
-## Giá trị tối ưu và giá trị minimax
+## Optimal and minimax values
 
-Chi phí điều xe là $1+\alpha$. Nếu chờ, chi phí là $4Y$. Chi phí kỳ vọng khi chưa quan sát là $1+\alpha$ cho cả hai hành động. Với hai dấu quan sát $s,t$, gọi $r$ là hệ số tương tác của cặp được ghé. Lợi ích điều xe ở kết quả $(s,t)$, đã nhân xác suất của kết quả đó, bằng
+Dispatching costs $1+\alpha$. Waiting costs $4Y$. Before any observations, both actions have expected cost $1+\alpha$. Let $s,t$ be the two observed signs and $r$ the interaction coefficient for the pair visited. The saving from dispatching at outcome $(s,t)$, weighted by the probability of that outcome, is
 
-\[
+$$
 \frac{2\alpha(s+t)+(r-\alpha^2)st}{4}.
-\]
+$$
 
-Công thức này thu được từ $4P(Y=1,s,t)-(1+\alpha)P(s,t)$. Giá trị của một nhánh là phần dương của biểu thức, cộng trên các giá trị có thể thấy ở điểm thứ hai. Tối đa hóa riêng cho từng kết quả điểm đầu, rồi chọn điểm đầu tốt nhất, cho nghiệm tối ưu thích nghi.
+This follows from $4P(Y=1,s,t)-(1+\alpha)P(s,t)$. The value of a branch is the sum of the positive parts of this expression over the possible outcomes of the second visit. Optimize the second visit separately for each outcome of the first visit, then choose the best first visit. This yields the optimal adaptive policy.
 
-Để tính minimax, xét phân phối trộn đều $M$ mô hình. Giá trị tối ưu dưới phân phối trộn là cận trên cho giá trị đảm bảo trong trường hợp xấu nhất. Ngẫu nhiên hóa một chính sách tối ưu của phân phối trộn bằng hoán vị đều các cặp đưa giá trị trong từng mô hình về đúng giá trị trung bình. Vì vậy cận trên đạt được. Script tính giá trị minimax trên họ $M$ mô hình bằng cách đặt $r=\eta/M$ ở mỗi cặp ứng viên.
+To compute the minimax value, consider the uniform mixture of the $M$ models. The optimal value under this mixture is an upper bound on the guaranteed value in the worst case. Randomizing an optimal mixture policy by uniformly permuting the candidate pairs gives it the same expected value in every model, equal to the mixture average. This attains the upper bound. The script computes the minimax value over the $M$ models by setting $r=\eta/M$ for every candidate pair.
 
-Với $\alpha=\eta/(16M)$, cặp có tương tác là lựa chọn tốt nhất sau cả hai kết quả của lượt ghé đầu, vì $r>4\alpha+2\alpha^2$ cho cả $r=\eta$ lẫn $r=\eta/M$. Công thức suy ra
+With $\alpha=\eta/(16M)$, visiting the mate of a first customer in an informative pair is optimal after either first outcome because $r>4\alpha+2\alpha^2$ for both $r=\eta$ and $r=\eta/M$. This gives
 
-\[
-G_{\text{biết mô hình}}=\frac{\eta-\alpha^2}{2},
+$$
+G_{\text{known model}}=\frac{\eta-\alpha^2}{2},
 \qquad
 G_{\text{minimax}}=\frac{\eta/M-\alpha^2}{2}.
-\]
+$$
 
-Hai đại lượng đo tiền tiết kiệm kỳ vọng so với không quan sát. Ví dụ giữ tương quan ở mức $0.04$ với $M=8$ và $\eta=0.6$, giá trị biết mô hình là $0.2992$ và giá trị minimax là $0.05875$. Nếu đổi thứ tự tốn thêm $0.10$ đơn vị chi phí đã biết, người biết mô hình nên đổi. Người chỉ biết các biên chung có giá trị đảm bảo cao hơn khi giữ tuyến cũ.
+Both quantities measure expected savings relative to making the dispatch decision without observations. With correlation fixed at $0.04$, $M=8$, and $\eta=0.6$, the known-model value is $0.2992$ and the minimax value is $0.05875$. If reordering costs an additional $0.10$, it pays to reorder when the model is known. With access only to the shared marginals, keeping the original route gives a better worst-case outcome.
 
-## Cần bao nhiêu dữ liệu đồng bộ?
+## How many days of synchronized data are needed?
 
-Một ngày quan sát cung cấp pickup của các khách ứng viên và một nhãn $Y$ cho cùng ngày. Chấm cặp $j$ bằng trung bình mẫu của $z_{2j-1}z_{2j}Y$. Kỳ vọng của điểm này bằng $\alpha/4$ ở cặp thường và $(\alpha+\eta)/4$ ở cặp hữu ích. Với các ngày độc lập, Hoeffding và union bound cho số ngày đủ để xác định đúng cặp với xác suất ít nhất $1-\delta$
+Each observation day provides pickup demands for the candidate customers and the overload indicator $Y$ for that day. Score pair $j$ by the sample mean of $z_{2j-1}z_{2j}Y$. Its expected score is $\alpha/4$ for an ordinary pair and $(\alpha+\eta)/4$ for the informative pair. For independent days, Hoeffding's inequality and a union bound give the following sufficient sample size for identifying the informative pair with probability at least $1-\delta$.
 
-\[
+$$
 n\ge \frac{128}{\eta^2}\log\frac{2M}{\delta}.
-\]
+$$
 
-Về cận dưới, gọi $P_0$ là phân phối với $\eta=0$. Đặt $c=1-\alpha d/2>0$. Vì mật độ tương đối của $P_0$ thấp nhất là $c$, cận chi bình phương cho $D_{\rm KL}(P_j\|P_0)\le\eta^2/c$. Fano cho số ngày cần thiết để nhận đúng cặp với sai số tối đa $\delta$, kể cả khi được biết đầy đủ từng pickup theo ngày
+For a lower bound, let $P_0$ be the model with $\eta=0$ and set $c=1-\alpha d/2>0$. The density of $P_0$ relative to independent fair signs is at least $c$, so the chi-squared bound gives $D_{\rm KL}(P_j\|P_0)\le\eta^2/c$. Fano's inequality gives the following necessary sample size for identifying the informative pair with a worst-case error probability of at most $\delta$, even when all individual pickups are observed each day.
 
-\[
+$$
 n\ge \frac{c}{\eta^2}\left[(1-\delta)\log M-\log 2\right].
-\]
+$$
 
-Với xác suất lỗi cố định và $c$ cách 0, hai cận khớp theo bậc $\log M/\eta^2$. Đây là số ngày quan sát **đồng bộ** trong mô hình. Pilot giả định có nhãn quá tải, chẳng hạn tính lại từ hai pickup thực tế. Nếu can thiệp làm mất cả hai pickup gốc thì cần cơ chế thu nhãn riêng.
+For a fixed error probability and $c$ bounded away from zero, the bounds match in order at $\log M/\eta^2$ synchronized observation days. The pilot assumes that the overload indicator is available, for example by reconstructing it from the two realized pickups. If dispatching a standby vehicle prevents both original pickups from being observed, a separate way to obtain the indicator is needed.
 
-## Chạy lại
+## Reproduce the pilot
 
 ```bash
 python3 papers/informative_pickup_routing/pilot.py
 ```
 
-Script kiểm bằng liệt kê đầy đủ 256 trạng thái cho ba cặp ứng viên, tính giá trị tối ưu thích nghi và chạy 256 lượt mô phỏng có seed cố định. Mô phỏng dùng phân phối tổng hợp có chủ đích. Mức tương quan co theo $M$ trong kết quả tiệm cận, và có thêm một điểm kiểm ở tương quan cố định $0.04$. Chưa có kết quả trên dữ liệu vận hành.
+The script exhaustively checks all 256 demand states for three candidate pairs, computes the optimal adaptive and minimax values, and runs 256 simulated trials with a fixed seed. The simulations use synthetic data. Correlation decreases with $M$ in the asymptotic construction. A separate check fixes the correlation at $0.04$. Evaluation on operational data remains open.
 
-Hai tiền lệ cần đối chiếu sâu là tối ưu robust với các biên đã biết, và chọn đặc trưng thích nghi khi nhiều đặc trưng chỉ hữu ích nếu kết hợp. Phần cần kiểm tra novelty là giới hạn minimax cho giá trị ghé sớm khi quá tải phát sinh từ tổng pickup, cùng cận số ngày đồng bộ trong chính mô hình đó. [Distributionally Robust Linear and Discrete Optimization with Marginals](https://doi.org/10.1287/opre.2021.2243) · [When Does Synergy Help Active Feature Acquisition?](https://arxiv.org/abs/2609.32301)
+Related work includes robust optimization with known marginals and adaptive feature acquisition when features are useful in combination. The open novelty question is whether prior work establishes the same minimax limit on the value of early visits when overload is driven by the sum of pickup demands, together with matching bounds on the number of synchronized observation days. [Distributionally Robust Linear and Discrete Optimization with Marginals](https://doi.org/10.1287/opre.2021.2243) · [When Does Synergy Help Active Feature Acquisition?](https://arxiv.org/abs/2609.32301)
