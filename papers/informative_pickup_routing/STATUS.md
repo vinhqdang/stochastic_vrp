@@ -12,9 +12,13 @@
   matches exhaustive enumeration on small instances and learns the optimal
   adaptive policy in a synthetic regional example. An independent holdout can
   certify improvement over an immediate dispatch decision.
-- **Open questions** — Compare the identification result and policy guarantees
-  with prior work. Test whether the policy can improve a feasible service plan
-  on synchronized operational records.
+- **Fleet formulation** — The [mathematical model](FLEET_MODEL.md) covers
+  arbitrary operating and standby fleets. The dispatch stage is a matching
+  problem. With independent route signals, singleton information can have
+  zero value while joint information has value linear in the number of standby
+  vehicles.
+- **Open questions** — Compare the results with prior work, develop a scalable
+  pre-dispatch optimizer, and evaluate on synchronized operational records.
 
 See [the research note](README.md) for the model, proof, and reproduction
 command.

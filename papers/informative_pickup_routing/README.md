@@ -1,5 +1,10 @@
 # Informative Pickup Routing
 
+The [fleet formulation](FLEET_MODEL.md) defines the joint routing and
+standby allocation problem for arbitrary fleets and gives a lower bound on
+the value of pooling information from independent routes. The pilot below
+studies the value of two early observations for a single dispatch decision.
+
 This pilot measures the value of making two customer visits before deciding whether to dispatch a standby vehicle. There are $M$ candidate pairs. Every customer must be served that day, and all choices of early visits have the same travel cost. The vehicle can choose the second customer after observing demand at the first. On the route that may need support, two customers each have a pickup demand of 0 or 1, and the vehicle has one unit of remaining capacity. An overload occurs when the two pickups sum to more than 1.
 
 ## Demand model
