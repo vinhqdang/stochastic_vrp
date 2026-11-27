@@ -9,6 +9,7 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{setspace}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
@@ -53,13 +54,15 @@ returning to the depot with the value tables of a policy library indexed
 by the factor. We show that the excess cost of such a plug-in rule over
 the library policy at the true factor is bounded by the squared error of
 the factor estimate at the decision stops, and we give the point at which
-pooling across zones starts to hurt. On \TBD{} instances from three
-benchmark families, pooling closes \TBD{} of the gap between the policy
-fitted under the planning law and the policy that knows the day's
-factors, against \TBD{} for per-vehicle learning. The two-level model is
-never worse than the better of full and zone-level pooling, and it keeps
-its advantage when the factors drift during the day, when deliveries
-carry their own factor, and when the pickup noise is misspecified.
+pooling across zones starts to hurt. On 73 instances from three
+benchmark families, pooling with variances estimated from past days
+closes on average 0.71 to 0.89 of the gap between the policy fitted
+under the planning law and the policy that knows the day's factors,
+against 0.42 to 0.74 for per-vehicle learning. In none of 21
+combinations of family and scenario is it significantly worse than full
+or zone-level pooling, and it keeps its advantage when the factors drift
+during the day, when deliveries carry their own factor, and when the
+pickup noise is misspecified.
 \end{abstract}
 
 \begin{keyword}
@@ -118,7 +121,7 @@ The contributions are as follows.
 \item A threshold at which full pooling becomes worse than pooling
   within zones, in terms of the pickup noise, the zone-level variance
   and the number of zones.
-\item A computational study on \TBD{} instances from the
+\item A computational study on 73 instances from the
   \citet{dethloff2001vehicle} and \citet{salhi1999cluster} benchmarks and
   on instances built on the road networks of five cities, with
   independent factor draws per instance, instance-clustered confidence
@@ -257,8 +260,12 @@ f(s_k)\, e_k^2$.
 
 \begin{proof}
 If $x_k$ is not a minimiser of $Q_a(s_k,\cdot)$, then for a minimiser
-$x^*$, $Q_a(s_k,x_k) \le Q_{\hat a}(s_k,x_k) + \ell|e_k| \le
-Q_{\hat a}(s_k,x^*) + \ell|e_k| \le Q_a(s_k,x^*) + 2\ell|e_k|$. The loss
+$x^*$,
+\[
+Q_a(s_k,x_k) \le Q_{\hat a}(s_k,x_k) + \ell|e_k| \le
+Q_{\hat a}(s_k,x^*) + \ell|e_k| \le Q_a(s_k,x^*) + 2\ell|e_k|.
+\]
+The loss
 is therefore at most $2\ell|e_k|$, and a wrong choice requires
 $\Delta(s_k) \le 2\ell|e_k|$. Taking the conditional expectation given
 $e_k$ and applying Assumption~\ref{ass:margin} gives the bound.
@@ -276,9 +283,15 @@ where the sum runs over the decision stops reached under $L$.
 \begin{proof}
 By the performance-difference identity \citep{kakade2002approx} for a
 finite-horizon problem with benchmark $\pi_a$,
-$J(L) - J(\pi_a) = \E_L \sum_k [Q_a(s_k,x_k) - Q_a(s_k,\pi_a(s_k))]$.
-Each term equals $[Q_a(s_k,x_k) - \min_x Q_a(s_k,x)] + [\min_x
-Q_a(s_k,x) - Q_a(s_k,\pi_a(s_k))]$; the second bracket is not positive,
+\[
+J(L) - J(\pi_a) = \E_L \sum_k \bigl[Q_a(s_k,x_k) - Q_a(s_k,\pi_a(s_k))\bigr].
+\]
+Each term equals
+\[
+\bigl[Q_a(s_k,x_k) - \min_x Q_a(s_k,x)\bigr] + \bigl[\min_x
+Q_a(s_k,x) - Q_a(s_k,\pi_a(s_k))\bigr];
+\]
+the second bracket is not positive,
 and Lemma~\ref{lem:one} bounds the first.
 \end{proof}
 
@@ -335,11 +348,197 @@ within zones.
 
 % ====================================================================
 \section{Computational study}\label{sec:study}
-\TBD
+
+\subsection{Design}
+
+\paragraph{Instances and plans} We use all 40 instances of
+\citet{dethloff2001vehicle} (50 customers), 14 instances of
+\citet{salhi1999cluster} (50 to 199 customers) and 19 instances built on
+the road networks of Hanoi, Ho Chi Minh City, New York, Paris and
+Shanghai (100 to 400 customers), 73 in total. Each instance is solved
+once under the planning law with the deterministic capacity gate of
+\citet{dang2026baton}; the plans have 4 to 10, 3 to 12 and 6 to 23
+routes in the three families. Zones are a geographic partition of the
+customers, computed by $k$-means on a classical multidimensional scaling
+of the road distances, with $Z = \min\{4, \max\{2, \lfloor K/2
+\rfloor\}\}$ zones. Zones cut across routes, so a vehicle may visit
+several of them.
+
+\paragraph{Scenarios} Pickups have coefficient of variation $c = 0.3$
+given the factors, and deliveries are gamma with the planned mean and
+the same coefficient of variation. The scenarios differ in how the day's
+variation is shared and in how the truth departs from the model that
+the estimators assume:
+\begin{description}
+\item[city] $s_c = 0.3$, $s_z = 0$: one factor for the whole city;
+\item[mixed] $s_c = s_z = 0.2$;
+\item[zone] $s_c = 0$, $s_z = 0.3$: independent zones;
+\item[drift] as mixed, and the log factors follow a random walk along
+  the stops (common increment sd 0.03, zone increment sd 0.04 per stop);
+\item[delivery] as mixed, and deliveries carry a day factor of their own
+  (log-normal, sd 0.15) that no estimator models;
+\item[heavy tail] as mixed with Student-$t_3$ factors scaled to the same
+  standard deviations;
+\item[noise] as mixed with true pickup coefficient of variation 0.45,
+  while every estimator assumes 0.3.
+\end{description}
+
+\paragraph{Policies} All policies use the rule~\eqref{eq:rule} with the
+same library (factor grid $0.5, 0.6, \dots, 2.0$) and differ only in the
+factor estimate: \emph{fixed} ($\hat a = 1$, the policy fitted under the
+planning law); \emph{route} (posterior from the vehicle's own pickups,
+after \citealp{florio2023bayesian}); \emph{full} (one factor for the
+fleet); \emph{zone} (one factor per zone, no sharing between zones);
+\emph{two-level} (exact posterior of Section~\ref{sec:method} with the
+true $s_c$ and $s_z$); \emph{EB}, the TEMPO rule used in practice (the
+same posterior with $s_c$ and $s_z$ estimated from 60 past days of the
+same scenario); \emph{MLE} (each zone's ratio of observed to planned
+pickups, without a prior); and \emph{known} (the true factors of the
+remaining stops). The known rule is a reference point and not a bound:
+it is greedy with respect to the true library tables, which is not the
+optimal policy for the day. Route, full and zone use the prior
+$N(0, s_c^2 + s_z^2)$ on the log factor.
+
+\paragraph{Evaluation} Each instance and scenario is run for 150 days,
+and all policies are evaluated on the same days (common random
+numbers). We report the mean daily recourse cost, the share of the gap
+between fixed and known that a policy closes, and paired differences
+with 95\% confidence intervals from a bootstrap that resamples instances
+and then days within instances (2000 resamples). The intervals therefore
+account for variation between instances and not only between days.
+Tables are produced by \texttt{scripts/tempo\_pool\_latex.py} from the
+raw results.
+
+\subsection{Pooling against per-vehicle learning}
+
+Table~\ref{tab:gap} reports the gap shares. Averaged over the seven
+scenarios, the EB rule closes 0.71, 0.89 and 0.80 of the gap on the
+Dethloff, Salhi--Nagy and City families, and learning from the vehicle's
+own pickups closes 0.42, 0.74 and 0.50. Table~\ref{tab:pairs} gives the
+paired differences. The EB rule is cheaper than per-vehicle learning in
+every one of the 21 family--scenario combinations, and the interval
+excludes zero in 17 of them. The saving is largest on the Dethloff
+instances (4.3 to 7.0 per day, or 2.6 to 3.9\% of the fixed policy's
+cost), whose routes are short: a vehicle with a few customers learns
+little from its own pickups before its decisions are taken.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Mean daily cost of the fixed and known policies and share of
+the gap between them closed by each learning rule. Bold marks the
+largest share in a row. Shares can exceed one or fall below zero
+because the known rule is not optimal.}\label{tab:gap}
+\resizebox{\textwidth}{!}{\input{tables/gap}}
+\end{table}
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Paired differences in mean daily cost between the EB rule and
+other rules, with 95\% instance-clustered bootstrap intervals. Negative
+values favour EB; bold marks intervals that exclude zero.}\label{tab:pairs}
+\resizebox{\textwidth}{!}{\input{tables/pairs}}
+\end{table}
+
+\subsection{Choosing the level of pooling}
+
+Full and zone pooling each win in one of the extreme scenarios and lose
+in the other. When one factor drives the city, full pooling closes
+0.90 to 0.97 of the gap and zone pooling 0.69 to 0.86. When the zones
+are independent the order reverses, and full pooling falls below
+per-vehicle learning on all three families (0.21 against 0.39 on
+Dethloff, 0.47 against 0.67 on Salhi--Nagy, 0.36 against 0.61 on City):
+mixing evidence from unrelated zones is worse than not sharing at all,
+as Proposition~\ref{prop:threshold} predicts once a few pickups per zone
+have been seen.
+
+The two-level rule needs no choice between the two. With the true
+variances it coincides with full pooling in the city scenario and with
+zone pooling in the zone scenario, by construction. The EB rule, which
+must estimate the variances, matches it: its difference from the
+two-level rule never has an interval that excludes zero
+(Table~\ref{tab:pairs}, last column). From 60 past days the
+method-of-moments estimates average 0.18 to 0.21 for $s_c = s_z = 0.2$,
+0.28 to 0.31 for $s_c = 0.3$ and 0.30 for $s_z = 0.3$, with the zero
+variances estimated at 0.01 to 0.04. In the intermediate scenarios the
+EB rule is significantly better than full pooling in all 12 scenarios
+with $s_z > 0$ on Dethloff and Salhi--Nagy and in 3 of 6 on City. In
+the five scenarios with both levels of variation it is better than zone
+pooling by 0.5 to 1.0 per day on Dethloff, with intervals that exclude
+zero in four of them; on Salhi--Nagy and City the difference from zone
+pooling is within noise in these scenarios. The MLE rule, which drops
+the prior, closes less of the gap than zone pooling in every
+combination, and on City in the noise scenario it is worse than the
+fixed policy: with few pickups per zone the raw ratios are too variable
+to act on.
+
+\subsection{Misspecification}
+
+The four last scenarios break the model that all estimators assume.
+Drift makes the factor of the remaining stops differ from that of the
+stops already seen; the delivery factor shifts the load in a way the
+pickup model cannot explain; heavy tails produce occasional extreme
+days; and the noise scenario makes each pickup less informative than
+the estimators believe, so the posterior is overconfident. In these
+scenarios the EB rule closes 0.62 to 0.90 of the gap, against 0.24 to
+0.83 for per-vehicle learning, and it is never significantly worse than
+another learning rule. The noise
+scenario is the hardest, with gap shares of 0.62, 0.80 and 0.63, since
+overconfident posteriors move the decision factor too early. In the noise
+scenario the extra pickup noise also raises the estimate of $s_z$ from
+the past days, to 0.21 to 0.23 against a true value of 0.2.
+
+\subsection{Cost and estimation error}
+
+Theorem~\ref{thm:regret} bounds the excess cost by a weighted sum of
+squared estimation errors. Table~\ref{tab:slope} reports, for each
+family and scenario, the slope of the logarithm of a rule's mean excess
+cost over the known reference against the logarithm of its mean squared
+factor error at the decision stops, across instances and the six
+learning rules. A slope of one corresponds to the bound holding with
+constant local factors. On Dethloff the slopes are 0.81 to 1.01 except
+under heavy tails (0.56), and on Salhi--Nagy 0.56 to 1.20. On City they
+are 0.12 to 0.63: the gaps between rules on those instances are small
+(the whole fixed-to-known gap is 3.4 to 4.8 per day) and the excess cost
+over the known rule is dominated by day-to-day noise, so the relation
+is weaker. Where the gaps are large, the estimation error explains the
+differences in cost between the learning rules well.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Slope of log excess cost over the known reference on log mean
+squared factor error (instances $\times$ learning rules, points with
+non-positive excess dropped).}\label{tab:slope}
+\input{tables/slope}
+\end{table}
 
 % ====================================================================
 \section{Conclusion}\label{sec:conclusion}
-\TBD
+
+When the pickups of a day share a cause, the vehicles of a fleet can
+estimate it together. TEMPO does so with a two-level model of city-wide
+and zone-level factors whose variances are estimated from past days, and
+it turns the estimate into recourse decisions through the value tables
+of a policy library, so that no policy is fitted during the day. The
+excess cost of this plug-in rule over the library policy at the true
+factor is bounded by the squared estimation error at the decision stops,
+and full pooling stops paying once a few pickups per zone have been
+observed. On 73 instances from three families, pooling closes on
+average 0.71 to 0.89 of the gap between the policy fitted under the
+planning law and the policy that knows the day's factors, against 0.42
+to 0.74 for per-vehicle learning. The two-level model removes the need
+to choose between full and zone-level pooling, and the estimated
+variances cost nothing measurable against the true ones.
+
+Three limitations point to further work. The factors act on pickups
+only; a joint model of pickups and deliveries would remove the bias of
+the delivery scenario. The zones are fixed before the day, and learning
+them from the history of past days, or using a spatial covariance in
+place of discrete zones, is a natural extension. Finally, the vehicles
+learn passively: no vehicle changes its route to observe more, although
+the bound of Section~\ref{sec:theory} shows where better information
+would be worth most. Testing the method on recorded demand data, where
+the factor structure is not chosen by the experimenter, is the main
+empirical step that remains.
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{tempo}
