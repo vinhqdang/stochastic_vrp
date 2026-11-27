@@ -167,3 +167,34 @@ journal's anonymity policy and length limit before writing.
 
 Roles (per the author's instructions): planning/design here; modules
 implemented in small specified pieces; a separate review pass.
+
+## 7. Prototype result (go/no-go), November 2026
+
+Fleet experiment, 10 Dethloff instances (Det plans, 4-12 routes of 2-28
+stops), 40-60 test days per scenario, replan = switch every alive route
+to the BATON policy fitted under the estimated pickup scale
+(`scripts/tempo2_proto.py`, `scripts/tempo2_frontier.py`,
+`results/tempo2/`).
+
+- The value-innovation monitor is valid as designed: no replans on
+  null, lighter-pickup or heavier-delivery days.
+- Within a day it has little power on these routes: under a 30% surge it
+  replans 0.1-0.9 times per day (alpha 0.05-0.8) and recovers only part
+  of the saving. The model-fit LR monitor and CUSUM are similarly weak.
+  Harm materialises after a few stops, before any test has evidence.
+- A plug-in cost-based trigger (replan when the predicted saving under
+  the current estimate exceeds C_rp) dominates every statistical trigger
+  in realised cost on harmful days and pays only 2.5-5 units on null
+  days (e.g. C_rp = 20: null 101.4 vs never 98.9; surge30 167.7 vs best
+  statistical 170.0; surge50 192.9 vs 192.6-199.0).
+- "Harmless" deviations are not harmless for the decision: under lighter
+  pickups the day-0 policy is over-conservative and re-optimising cuts
+  recourse cost from 16.5 to 11.0. The decision-relevant quantity is the
+  value of re-optimisation (current policy vs re-fitted policy under the
+  true law), which is positive for deviations in either direction; the
+  excess-cost null of Section 2 targets the wrong quantity.
+
+Conclusion: the within-day, short-route version of the redesign does not
+support the paper's claim. Options are recorded in the conversation with
+the author (cross-day monitoring of the value of re-optimisation;
+long-route within-day setting; or shelving TEMPO).

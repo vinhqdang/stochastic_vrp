@@ -4,9 +4,14 @@ Prototype support for the TEMPO-2 experiments. A plan's routes run
 simultaneously; events are processed in stop-clock order (stop 1 of every
 route, then stop 2 of every alive route, ...). Each route follows a BATON
 policy fit by ``core.costs.fit_lsm_actions`` and valued exactly by
-``ev.vi.RouteValue``. A replan at stop index k refits every alive route's
-remaining-stop policy under a pickup-scale estimate a_hat, conditioning
-on the current load through a pseudo-stop whose demand is the load.
+``ev.vi.RouteValue``.
+
+Policy library. For every route and every pickup scale a in A_GRID a policy
+is fit on full-route planning-law days whose pickup means are a * pbar. The
+continuation models are Markov in (stop, load), so the library policy for
+scale a is used unchanged from any mid-route state: a replan only switches
+each alive route to the library entry for the grid value nearest to the
+estimated scale. Entries are built lazily and cached (also across days).
 
 Conventions
 -----------
@@ -14,10 +19,8 @@ Conventions
   d_i ~ Gamma(mean dbar_i, sd CV*dbar_i), independent, CV = 0.30.
 * A drift scenario multiplies pickups by a_p and deliveries by a_d from
   1-based stop index ``onset`` on (on every route).
-* ``RoutePolicy.offset = k*`` means the policy was fit after real stop k*;
-  its RouteValue lives in suffix coordinates (suffix stop j = real stop
-  k* + j), so ``rv.H[j-1]``, ``rv.E[j-1]``, ``rv.R[j-1]`` are the prices of
-  real stop k* + j.
+* A replan refits only the pickup scale. A delivery change (heavy_del) is
+  therefore never modelled by a replan; this is a stated limitation.
 """
 
 from __future__ import annotations
@@ -37,8 +40,9 @@ from ev.vi import RouteValue, ValueInnovationMonitor
 
 CV = 0.30
 N_FIT = 1000
-G_DAY0 = 1500
-G_REFIT = 1500
+G_LIB = 1500      # library entries and day-0 policies
+G_CROSS = 800     # cross tables used by CostBased
+A_GRID = tuple(round(0.5 + 0.1 * i, 1) for i in range(16))   # 0.5 .. 2.0
 RESULTS = Path(__file__).resolve().parent.parent / "results"
 
 
@@ -201,8 +205,8 @@ def _gamma_block(mean, N, rng):
 
 def _sample_pd(pbar, dbar, N, rng, drift=None):
     """(p, d) arrays of shape (N, m) under the planning law, with drift."""
-    p = _gamma_block(pbar, N, rng)
-    d = _gamma_block(dbar, N, rng)
+    p = _gamma_block(np.asarray(pbar, float), N, rng)
+    d = _gamma_block(np.asarray(dbar, float), N, rng)
     if drift is not None:
         s = drift.onset - 1
         p[:, s:] *= drift.a_p
@@ -224,87 +228,71 @@ def sample_day(fleet: FleetPlan, scenario, rng):
 
 
 # ============================================================
-# Policies
+# Policy library
 # ============================================================
 
 
-def fit_route_policy(pbar_r, dbar_r, B, H, E, R, seed, N=N_FIT, w0=0.0,
-                     G=G_DAY0):
-    """Fit a BATON policy on N planning-law days of one route.
+def quantize_a(a: float) -> float:
+    """Nearest grid value of A_GRID (ties to the smaller value)."""
+    return min(A_GRID, key=lambda g: (abs(g - float(a)), g))
 
-    With w0 == 0 this is the plain fit on the route. With w0 != 0 the fit
-    is conditioned on a current load w0 (pseudo-stop, see ``_fit_suffix``)
-    and the arrays are the remaining stops.
 
-    Returns (models, rv) with models = {k: (iso, F_k)} in stop coordinates
-    of the arrays passed in.
-    """
-    if w0 != 0.0:
-        return _fit_suffix(pbar_r, dbar_r, B, H, E, R, w0, seed, N, G,
-                           (H[0], E[0], R[0]))
+def fit_route_policy(pbar_r, dbar_r, B, H, E, R, seed, N=N_FIT, G=G_LIB):
+    """Fit a BATON policy on N planning-law days of one route, with the
+    pickup means and deliveries exactly as passed. Returns (models, rv)."""
     rng = np.random.default_rng(seed)
-    p, d = _sample_pd(np.asarray(pbar_r, float), np.asarray(dbar_r, float),
-                      N, rng)
+    p, d = _sample_pd(pbar_r, dbar_r, N, rng)
     models = fit_lsm_actions(p - d, B, H, E, R)
     rv = RouteValue(pbar_r, dbar_r, B, H, E, R, models, cv=CV, G=G)
     return models, rv
 
 
-def _fit_suffix(pbar, dbar, B, H, E, R, W, seed, N, G, pseudo):
-    """Policy for remaining stops 1..m given current load W before stop 1.
-
-    Training matrix [W, g_1..g_m]: a first pseudo-stop whose demand is the
-    constant load W, so cumulative loads are absolute loads. Its prices
-    (``pseudo``) only enter the update at the dropped pseudo-stop, so they
-    do not affect any kept model. The decision for real stop j uses the
-    fitted stop j+1.
-    """
-    rng = np.random.default_rng(seed)
-    pbar = np.asarray(pbar, float)
-    dbar = np.asarray(dbar, float)
-    m = len(pbar)
-    p, d = _sample_pd(pbar, dbar, N, rng)
-    g = np.hstack([np.full((N, 1), float(W)), p - d])
-    H0, E0, R0 = pseudo
-    Hf = np.concatenate([[H0], np.asarray(H, float)])
-    Ef = np.concatenate([[E0], np.asarray(E, float)])
-    Rf = np.concatenate([[R0], np.asarray(R, float)])
-    fm = fit_lsm_actions(g, B, Hf, Ef, Rf)
-    models = {j: fm[j + 1] for j in range(1, m)}
-    rv = RouteValue(pbar, dbar, B, H, E, R, models, cv=CV, G=G)
-    return models, rv
-
-
 @dataclass
 class RoutePolicy:
-    offset: int          # real stop after which the policy was fit (0 = day 0)
-    rv: RouteValue       # suffix coordinates: suffix stop j = real stop offset + j
-    a: float = 1.0       # pickup scale the policy was fit under
+    rv: RouteValue      # full-route coordinates (stop k uses rv stop k)
+    a: float            # grid pickup scale the policy was fit under
 
 
-def fit_fleet_day0(fleet: FleetPlan, seed: int, N=N_FIT, G=G_DAY0):
-    """Day-0 policies for every route of the fleet (planning law)."""
-    out = []
-    for r, rt in enumerate(fleet.routes):
-        models, rv = fit_route_policy(rt.pbar, rt.dbar, rt.B, rt.H, rt.E, rt.R,
-                                      seed + r, N=N, G=G)
-        out.append(RoutePolicy(0, rv, 1.0))
-    return out
+class PolicyLibrary:
+    """Per-route policies for every grid scale, built lazily and cached.
 
+    ``get(r, a)`` returns the library policy for route r at the grid value
+    nearest to a. ``cross(r, a_cur, a_q)`` is the RouteValue of the policy
+    fit at a_cur, valued under pickup scale a_q (G = G_CROSS).
+    """
 
-def refit_suffix(route: RouteData, k: int, W: float, a_hat: float, seed,
-                 N=N_FIT, G=G_REFIT) -> RoutePolicy:
-    """Replan policy for the stops k+1..m of one route after stop k, at
-    load W, under a pickup scale a_hat."""
-    if not 0 <= k < route.m:
-        raise ValueError("no remaining stops to refit")
-    pb = float(a_hat) * route.pbar[k:]
-    db = route.dbar[k:]
-    pseudo = (route.H[max(k - 1, 0)], route.E[max(k - 1, 0)],
-              route.R[max(k - 1, 0)])
-    _, rv = _fit_suffix(pb, db, route.B, route.H[k:], route.E[k:],
-                        route.R[k:], W, seed, N, G, pseudo)
-    return RoutePolicy(offset=k, rv=rv, a=float(a_hat))
+    def __init__(self, fleet: FleetPlan, seed: int, N=N_FIT, G=G_LIB):
+        self.fleet = fleet
+        self.seed = int(seed)
+        self.N = N
+        self.G = G
+        self._pol = {}
+        self._cross = {}
+
+    def seed_for(self, r: int, a: float):
+        return [self.seed, int(r), int(round(quantize_a(a) * 10))]
+
+    def get(self, r: int, a: float) -> RoutePolicy:
+        a = quantize_a(a)
+        key = (int(r), a)
+        if key not in self._pol:
+            rt = self.fleet.routes[r]
+            models, rv = fit_route_policy(a * rt.pbar, rt.dbar, rt.B, rt.H,
+                                          rt.E, rt.R, self.seed_for(r, a),
+                                          N=self.N, G=self.G)
+            self._pol[key] = RoutePolicy(rv, a)
+        return self._pol[key]
+
+    def cross(self, r: int, a_cur: float, a_q: float) -> RouteValue:
+        a_cur, a_q = quantize_a(a_cur), quantize_a(a_q)
+        key = (int(r), a_cur, a_q)
+        if key not in self._cross:
+            rt = self.fleet.routes[r]
+            models = self.get(r, a_cur).rv.models
+            self._cross[key] = RouteValue(a_q * rt.pbar, rt.dbar, rt.B, rt.H,
+                                          rt.E, rt.R, models, cv=CV,
+                                          G=G_CROSS)
+        return self._cross[key]
 
 
 def estimate_a(p_obs, pbar_obs) -> float:
@@ -466,71 +454,45 @@ class Cusum(Trigger):
 
 
 class CostBased(Trigger):
-    """Replan when the predicted saving from refitting under the estimated
-    pickup scale exceeds C_rp. The saving is the sum over the evaluated
-    alive routes of (current policy cost - refitted policy cost) from the
-    current state under a_hat, both valued at grid size G_eval.
+    """Replan (switch every alive route to the library policy at a_q) only
+    when a_q differs from the current scale and the predicted saving exceeds
+    C_rp. Saving at stop k: sum over the remaining routes of
+    U_cross(k+1, W) - U_lib(a_q)(k+1, W), i.e. the current policy valued
+    under a_q minus the library policy for a_q, from the current loads.
 
-    ``max_routes`` caps the number of routes evaluated (the highest-load
-    ones), scaling the saving by #remaining / #evaluated. ``cache`` (a dict)
-    may be shared across C_rp values for one day: the saving depends only
-    on the state, so trajectories that coincide reuse each other's values.
+    ``cache`` (a dict) may be shared across C_rp values for one day: the
+    saving depends only on the state, so coinciding trajectories reuse it.
     """
 
     name = "CostBased"
 
-    def __init__(self, C_rp, max_routes=None, G_eval=800, cache=None):
+    def __init__(self, C_rp, cache=None):
         self.C_rp = float(C_rp)
         self.param = self.C_rp
-        self.max_routes = max_routes
-        self.G_eval = int(G_eval)
         self.cache = {} if cache is None else cache
 
     def observe(self, stop_index, obs, extra):
-        a_hat, a_cur = extra["a_hat"], extra["a_cur"]
-        if abs(a_hat - a_cur) < 0.05:
-            return False
+        a_q, a_cur = extra["a_q"], extra["a_cur"]
         rem = extra["remaining"]
-        if not rem:
+        if a_q == a_cur or not rem:
             return False
         W = extra["W"]
-        evalset = sorted(rem, key=lambda r: -W[r])
-        if self.max_routes:
-            evalset = evalset[:self.max_routes]
-        key = (stop_index, extra["last_replan"], round(a_cur, 9),
-               round(a_hat, 9), len(rem),
-               tuple((r, round(float(W[r]), 9)) for r in evalset))
+        key = (stop_index, a_cur, a_q,
+               tuple((r, round(float(W[r]), 9)) for r in rem))
         if key not in self.cache:
-            self.cache[key] = self._saving(stop_index, evalset, extra)
-        saving = self.cache[key] * len(rem) / len(evalset)
-        return saving > self.C_rp
+            self.cache[key] = self._saving(stop_index, rem, extra)
+        return self.cache[key] > self.C_rp
 
-    def _saving(self, k, evalset, extra):
-        fleet, a_hat = extra["fleet"], extra["a_hat"]
+    @staticmethod
+    def _saving(k, rem, extra):
+        lib, a_cur, a_q = extra["lib"], extra["a_cur"], extra["a_q"]
         total = 0.0
-        for r in evalset:
-            rt = fleet.routes[r]
+        for r in rem:
             W = float(extra["W"][r])
-            cur = _current_suffix_cost(rt, extra["policies"][r], k, a_hat,
-                                       W, self.G_eval)
-            ref = refit_suffix(rt, k, W, a_hat,
-                               seed=[extra["base"], k, r],
-                               G=self.G_eval).rv.U(1, W)
+            cur = lib.cross(r, a_cur, a_q).U(k + 1, W)
+            ref = lib.get(r, a_q).rv.U(k + 1, W)
             total += cur - ref
         return total
-
-
-def _current_suffix_cost(rt, pol, k, a_hat, W, G):
-    """Expected remaining cost from load W after real stop k, of the CURRENT
-    policy (models and prices as fit) evaluated under pickup scale a_hat."""
-    s = k - pol.offset
-    H = pol.rv.H[s:]
-    E = pol.rv.E[s:]
-    R = pol.rv.R[s:]
-    models = {j - s: v for j, v in pol.rv.models.items() if j > s}
-    rv = RouteValue(a_hat * rt.pbar[k:], rt.dbar[k:], rt.B, H, E, R, models,
-                    cv=CV, G=G)
-    return rv.U(1, W)
 
 
 class Oracle(Trigger):
@@ -553,23 +515,26 @@ class Oracle(Trigger):
 # ============================================================
 
 
-def simulate_fleet_day(fleet: FleetPlan, policies, day, trigger, C_rp, rng):
+def simulate_fleet_day(lib: PolicyLibrary, day, trigger, C_rp):
     """Execute one fleet day in stop-clock order.
 
+    lib : PolicyLibrary of the fleet (day-0 policies are its a = 1 entries).
     day : (gs, ps) from ``sample_day``.
-    policies : list of RoutePolicy, one per fleet route (not modified).
-    rng : Generator; one draw seeds all replan refits, and refit seeds are
-        then derived from (seed, stop index, route) so that triggers that
-        replan at the same stops see identical refit randomness.
+
+    A replan at stop k (after all routes processed stop k, if the trigger
+    fires and some alive route has remaining stops) switches every such
+    route to the library policy for quantize_a(a_hat), where a_hat is the
+    trigger's a_override or ``estimate_a`` of the pickups observed so far.
+    Each replan costs C_rp.
 
     Returns dict: cost (recourse + replan charges), recourse_cost,
     n_replans, breaches, handoffs, restocks, replan_stops.
     """
+    fleet = lib.fleet
     gs, ps = day
     n_r = len(fleet.routes)
-    base = int(rng.integers(2 ** 31))
     trigger.reset_day()
-    pol = list(policies)
+    pol = [lib.get(r, 1.0) for r in range(n_r)]
     W = np.zeros(n_r)
     alive = [True] * n_r
     recourse = 0.0
@@ -578,7 +543,6 @@ def simulate_fleet_day(fleet: FleetPlan, policies, day, trigger, C_rp, rng):
     replan_stops = []
     obs_p, obs_pbar = [], []
     a_cur = 1.0
-    last_replan = 0
 
     for k in range(1, fleet.m_max + 1):
         if not any(alive):
@@ -592,8 +556,7 @@ def simulate_fleet_day(fleet: FleetPlan, policies, day, trigger, C_rp, rng):
             obs_p.append(p)
             obs_pbar.append(rt.pbar[k - 1])
             cur = pol[r]
-            j = k - cur.offset
-            I, L = cur.rv.innovation(j, W[r], g)
+            I, L = cur.rv.innovation(k, W[r], g)
             obs.append({"r": r, "k": k, "g": g, "p": p, "I": I, "L": L})
 
             W[r] += g
@@ -605,19 +568,19 @@ def simulate_fleet_day(fleet: FleetPlan, policies, day, trigger, C_rp, rng):
             if k == rt.m:
                 alive[r] = False
                 continue
-            entry = cur.rv.models.get(j)
+            entry = cur.rv.models.get(k)
             if entry is None:
                 continue
             iso, F = entry
             chat = float(np.asarray(iso.predict([W[r]]), dtype=float).ravel()[0])
-            v_ho = float(cur.rv.H[j - 1])
-            v_rs = float(cur.rv.R[j - 1]) + float(F)
+            v_ho = float(rt.H[k - 1])
+            v_rs = float(rt.R[k - 1]) + float(F)
             if v_ho < chat and v_ho <= v_rs:
                 recourse += v_ho
                 handoffs += 1
                 alive[r] = False
             elif v_rs < chat:
-                recourse += float(cur.rv.R[j - 1])
+                recourse += float(rt.R[k - 1])
                 restocks += 1
                 W[r] = 0.0
 
@@ -626,19 +589,17 @@ def simulate_fleet_day(fleet: FleetPlan, policies, day, trigger, C_rp, rng):
         if not remaining:
             continue
         a_hat_est = estimate_a(obs_p, obs_pbar)
-        extra = {"fleet": fleet, "policies": pol, "W": W.copy(),
-                 "remaining": remaining, "a_hat": a_hat_est, "a_cur": a_cur,
-                 "last_replan": last_replan, "base": base, "obs_p": obs_p,
+        override = trigger.a_override
+        a_q = quantize_a(override if override is not None else a_hat_est)
+        extra = {"fleet": fleet, "lib": lib, "policies": pol,
+                 "W": W.copy(), "remaining": remaining, "a_hat": a_hat_est,
+                 "a_q": a_q, "a_cur": a_cur, "obs_p": obs_p,
                  "obs_pbar": obs_pbar}
         if not trigger.observe(k, obs, extra):
             continue
-        override = trigger.a_override
-        a_hat = float(override) if override is not None else a_hat_est
         for r in remaining:
-            pol[r] = refit_suffix(fleet.routes[r], k, W[r], a_hat,
-                                  seed=[base, k, r])
-        a_cur = a_hat
-        last_replan = k
+            pol[r] = lib.get(r, a_q)
+        a_cur = a_q
         n_rep += 1
         replan_stops.append(k)
         trigger.after_replan()

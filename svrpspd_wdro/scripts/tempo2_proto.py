@@ -3,9 +3,12 @@
 
 Usage (from svrpspd_wdro/):
     python scripts/tempo2_proto.py [n_inst=10] [days=60] [tune_days=30]
-        [workers=4] [cb_routes=0] [out=results/tempo2/proto.csv]
+        [workers=4] [out=results/tempo2/proto.csv]
 
-cb_routes caps the routes evaluated by CostBased (0 = all alive routes).
+Replans switch each alive route to a precomputed policy library entry
+(pickup scale on the grid A_GRID, nearest to the estimate). Limitation:
+heavy_del changes deliveries, but a replan only re-scales pickups, so the
+heavy_del scenario is evaluated with the pickups-only refit.
 
 For each instance (gate Det, first n_inst cached Dethloff instances):
   * tuning (seed stream 1/4): EveryK's k in {1,2,3,4,6} per C_rp on the
@@ -21,11 +24,15 @@ C_rp, sharing a per-day cache of its saving estimates.
 
 from __future__ import annotations
 
-import csv
-import math
+import os
 import sys
 import time
 import zlib
+
+# One BLAS thread per worker process: multithreaded BLAS under a process
+# pool oversubscribes the cores and slows the RouteValue builds sharply.
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -35,7 +42,7 @@ import pandas as pd
 _WDRO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_WDRO))
 
-from ev.fleet import (FleetPlan, fit_fleet_day0, sample_day,  # noqa: E402
+from ev.fleet import (FleetPlan, PolicyLibrary, sample_day,  # noqa: E402
                       simulate_fleet_day, make_drift, Never, EveryK,
                       Continuous, ValueInnovation, ModelFitLR, Cusum,
                       CostBased, Oracle, _z_score)
@@ -98,13 +105,13 @@ def tune_cusum_h(fleet, tune_days, iid):
     return best_h
 
 
-def run_instance(path_str, days, tune_days, cb_routes):
+def run_instance(path_str, days, tune_days):
     t0 = time.time()
     path = Path(path_str)
     stem = path.stem
     iid = _inst_id(stem)
     fleet = FleetPlan.from_instance(path, "Det")
-    pol0 = fit_fleet_day0(fleet, seed=iid)
+    lib = PolicyLibrary(fleet, seed=iid)
     h = tune_cusum_h(fleet, tune_days, iid)
 
     # ---- EveryK tuning (replan charge applied afterwards, exact) ----
@@ -114,8 +121,7 @@ def run_instance(path_str, days, tune_days, cb_routes):
         for d in range(tune_days):
             day = sample_day(fleet, scen, np.random.default_rng([1, iid, sid, d]))
             for k in K_GRID:
-                res = simulate_fleet_day(fleet, pol0, day, EveryK(k), 0.0,
-                                         np.random.default_rng([4, iid, sid, d]))
+                res = simulate_fleet_day(lib, day, EveryK(k), 0.0)
                 for C in C_RPS:
                     acc[k][C].append((scen, res["recourse_cost"]
                                       + C * res["n_replans"]))
@@ -140,9 +146,6 @@ def run_instance(path_str, days, tune_days, cb_routes):
         for d in range(days):
             day = sample_day(fleet, drift, np.random.default_rng([2, iid, sid, d]))
 
-            def rng_refit():
-                return np.random.default_rng([3, iid, sid, d])
-
             free = {
                 "Never": Never(),
                 "Continuous": Continuous(),
@@ -153,22 +156,18 @@ def run_instance(path_str, days, tune_days, cb_routes):
             }
             res_free = {}
             for name, trig in free.items():
-                res_free[name] = (trig, simulate_fleet_day(
-                    fleet, pol0, day, trig, 0.0, rng_refit()))
+                res_free[name] = (trig, simulate_fleet_day(lib, day, trig, 0.0))
             ek = {}
             for C in C_RPS:
                 k = tuned_k[C]
                 if k not in ek:
-                    ek[k] = simulate_fleet_day(fleet, pol0, day, EveryK(k),
-                                               0.0, rng_refit())
+                    ek[k] = simulate_fleet_day(lib, day, EveryK(k), 0.0)
 
             cache = {}
             cb = {}
             for C in C_RPS:
                 cb[C] = simulate_fleet_day(
-                    fleet, pol0, day,
-                    CostBased(C, max_routes=cb_routes or None, cache=cache),
-                    C, rng_refit())
+                    lib, day, CostBased(C, cache=cache), C)
 
             for C in C_RPS:
                 base = dict(instance=stem, scenario=scen, C_rp=C, day=d)
@@ -207,7 +206,7 @@ def list_instances(n_inst):
 
 
 def main(argv):
-    kw = dict(n_inst=10, days=60, tune_days=30, workers=4, cb_routes=0,
+    kw = dict(n_inst=10, days=60, tune_days=30, workers=4,
               out="results/tempo2/proto.csv")
     for a in argv:
         k, v = a.split("=", 1)
@@ -216,8 +215,7 @@ def main(argv):
     print(f"instances: {[p.stem for p in insts]}", flush=True)
     t0 = time.time()
     rows, tunings = [], []
-    jobs = [(str(p), int(kw["days"]), int(kw["tune_days"]), int(kw["cb_routes"]))
-            for p in insts]
+    jobs = [(str(p), int(kw["days"]), int(kw["tune_days"])) for p in insts]
     with ProcessPoolExecutor(max_workers=int(kw["workers"])) as ex:
         futs = [ex.submit(run_instance, *j) for j in jobs]
         for f in futs:
