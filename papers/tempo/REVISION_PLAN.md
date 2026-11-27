@@ -301,3 +301,21 @@ pooling under a city factor. With a randomly permuted zone partition
   Florio et al. 2023 unless a fleet-level decision per-route learning
   cannot make is added (e.g. standby commitment/dispatch from pooled
   early evidence), or a decision-loss threshold for when pooling hurts.
+
+### 8.5 Standby booking go/no-go: negative
+
+`scripts/tempo3_pool.py`, `results/tempo3/pool_Dethloff_s0.3.csv` (10
+Dethloff Det plans, s = 0.3, 150 test days, booking rules tuned on 40
+separate days). Mean daily cost: pay-per-use 108.9; static booking from
+the prior 133.1; two-stage booking with a top-up from the pooled
+posterior at stop 2/3/4/6: 136.0 / 133.2 / 132.3 / 132.6; clairvoyant
+booking (knows a) 115.2. In-day learning recovers none of the 18-unit
+value of knowing the factor.
+
+Structural reason (`hotime` check, s = 0.3): a fleet makes only 0.2-0.5
+handoffs per day, and 74-97% of them happen by stop 2-3 (CON3-0: 53% by
+stop 3; HANOI-100-1: 97%; HCMC-200-1: 83%). The risk sits at the first
+stops, as in BATON, so any mid-day fleet decision comes after the
+decisions it would inform. In-day learning can only act on what remains
+after stop 2-3, which bounds its value on these plans (the pooled-vs-
+per-route gains of 8.1-8.3 are 1-4% of the daily cost).
