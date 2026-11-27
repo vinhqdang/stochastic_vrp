@@ -33,15 +33,16 @@ this session and are not flagged here.
 ## TEMPO (direction 1) bibliography, `tempo.bib` (November 2026)
 
 Built only from entries verified in `reviews/reference_audit.md` and
-`reviews/reference_audit2.md`. Open points:
-- kakade2002approx: no DOI or Crossref record; pages 267-274 from
-  OpenAlex only; publisher/address omitted. Check against the ICML 2002
-  proceedings before submission.
-- efron1973stein: end page 130 from OpenAlex only (Crossref gives the
-  start page).
-- Given names for ak2007paired, zhu2014paired, goodson2013rollout,
-  ghosal2020dro, audibert2007fast, secomandi2009reopt partly from memory
-  (Crossref returned family names only); confirm on the publisher pages.
-- dang2026baton: accepted at Computers & OR; add volume/DOI when issued.
+`reviews/reference_audit2.md`. Checked on 27 November 2026 against
+OpenAlex:
+- kakade2002approx: pages 267-274 (OpenAlex; no DOI exists for ICML
+  2002). Publisher/address omitted.
+- efron1973stein: pages 117-130 confirmed.
+- Given names: corrected ak2007paired (Aykagan Ak, not "Arda") and
+  zhu2014paired (Lin Zhu, not "Lei"); ghosal2020dro expanded to full
+  names; goodson2013rollout, audibert2007fast, secomandi2009reopt
+  confirmed.
+- Still open: dang2026baton (accepted at Computers & OR); add volume and
+  DOI when issued.
 The TRSC bibliography (`references.bib`) had one non-existent reference
 and wrong author names in two others; it must not be reused.
