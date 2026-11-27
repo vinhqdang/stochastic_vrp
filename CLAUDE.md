@@ -39,7 +39,7 @@ responses; the complete revision was submitted 8 November 2026 (git tag
 minor suggestions go into the proofs. Edit only for proof corrections
 (see its STATUS.md).
 
-### Paper 2 — TEMPO (papers/tempo/, UNDER REVIEW at Transportation Science)
+### Paper 2 — TEMPO (papers/tempo/, REJECTED at Transportation Science Nov 2026 — REDESIGN)
 
 E-process (e-value) monitoring of a running routing plan under multiple
 stochastic factors — demand, diurnal/weather travel times, congestion
@@ -53,8 +53,13 @@ TEMPO = Tilted E-Martingale Process for Online re-optimization.
 Evaluation set is identical to BATON's (Dethloff + Salhi-Nagy + city,
 same plan cache). Spec: `papers/tempo/PROJECT.md`. Code: `svrpspd_wdro/ev/`.
 
-**Do not modify `papers/tempo/` while the paper is under review** (see
-its STATUS.md); revisions only when the decision arrives.
+Rejected at TRSC (Nov 2026; reports in `papers/tempo/reviews/`). The
+redesign — explicit SVRPSPD + BATON recourse execution layer, a
+value-innovation e-process testing a decision-relevant composite null,
+fleet-level realised-cost comparisons against tuned periodic, continuous
+and cost-based triggers — is in `papers/tempo/REVISION_PLAN.md`. Open
+for edits; `main.tex` stays as the TRSC record, the new paper is
+`tempo.tex`. Next target: Transportation Research Part B (recommended).
 
 ### Paper 3 — CSoNet 2026 / JOCO combinatorial-scheduling paper
 ### (papers/csonet2026/, MAJOR REVISION at JOCO)
@@ -233,7 +238,7 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   self-contained inside its own directory.
 - `papers/baton/` — C&OR manuscript (accepted; tables ONLY via its
   `make_tables.py`, never hand-edit `tables/*`).
-- `papers/tempo/` — paper 2 (TEMPO), frozen under review (see above).
+- `papers/tempo/` — paper 2 (TEMPO), rejected at TRSC; **ACTIVE redesign** (see above).
 - `papers/csonet2026/` — paper 3, under **major revision** at JOCO
   (revised manuscript + response letter prepared 2026-10-05); edits
   only in service of the editor's/reviewers' requests.
@@ -256,9 +261,9 @@ not peer reviewed) — see its `VERIFY_CITATIONS.md` before citing numbers.
   paper's own `STATUS.md` before touching it; "frozen" is a per-paper
   state, not a repo-wide one, and a paper can move from editable to
   frozen mid-session the moment the author submits it. As of now
-  papers 1 (BATON, accepted; proof corrections only), 2–3, 7 (QUASAR, QIP), 8
+  papers 1 (BATON, accepted; proof corrections only), 3, 7 (QUASAR, QIP), 8
   (RARECERT, Queueing Systems), 9 (SORTIE, EJOR) and 6 (PARCEL, AAMAS 2027) are closed to edits while
-  under review, paper 4 is abandoned, and papers 5 (ECLAIR) and 10
+  under review, paper 4 is abandoned, and papers 2 (TEMPO, redesign), 5 (ECLAIR) and 10
   (TRANSVRP) are the **open papers**.
   Manuscript files are named after the paper (`rarecert.tex`, `quasar.tex`,
   `eclair.tex`, `parcel.tex`), never `main.*`.
