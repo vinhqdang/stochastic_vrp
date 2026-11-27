@@ -11,6 +11,8 @@ factor, estimated by:
   fullpool all fleet pickups as one factor, same prior
   zonepool pickups of the vehicle's zone only, same prior
   hier     exact posterior of the two-level model on a log grid
+  hier_ebH the same with (s_c, s_z) estimated by method of moments
+           from H complete past days
   oracle   true a_z
 Usage (from svrpspd_wdro/): python scripts/tempo3_hier.py [n_inst=10 days=150 workers=4]
 """
@@ -31,7 +33,8 @@ from ev.fleet import FleetPlan, PolicyLibrary, CV, quantize_a, parse_instance  #
 SHAPE = 1.0 / CV ** 2
 BG = np.linspace(np.log(0.35), np.log(2.8), 161)      # log-factor grid
 DB = BG[1] - BG[0]
-POL = ["fixed", "route", "fullpool", "zonepool", "hier", "oracle"]
+POL = ["fixed", "route", "fullpool", "zonepool", "hier", "hier_eb30", "hier_eb60", "hier_eb120", "oracle"]
+EB = (30, 60, 120)
 SCEN = [(0.3, 0.0), (0.2, 0.2), (0.1, 0.3), (0.0, 0.3)]
 
 
@@ -89,11 +92,37 @@ def hier_means(Lz, s_c, s_z):
     return out
 
 
+def history_estimate(fl, zone, s_c, s_z, H, rng):
+    """Method-of-moments estimate of (s_c, s_z) from H complete past days.
+
+    Per day and zone, b_dz = log(sum p / sum pbar) = mu_d + eta_dz + e_dz
+    with sampling variance v_z ~ CV^2 sum(pbar^2) / (sum pbar)^2.
+    Within-day spread of b_dz estimates s_z^2 + mean v; the variance of
+    the daily zone average estimates s_c^2 + (s_z^2 + mean v) / Z.
+    """
+    Z = zone.max() + 1
+    pb = [np.concatenate([fl.routes[r].pbar for r in range(len(fl.routes))
+                          if zone[r] == z]) for z in range(Z)]
+    pb = [x[x > 0] for x in pb]
+    v = np.array([CV ** 2 * (x ** 2).sum() / x.sum() ** 2 for x in pb])
+    B = np.zeros((H, Z))
+    for d in range(H):
+        mu = rng.normal(0, s_c) if s_c > 0 else 0.0
+        eta = rng.normal(0, s_z, Z) if s_z > 0 else np.zeros(Z)
+        for z in range(Z):
+            p = np.exp(mu + eta[z]) * pb[z] * rng.gamma(SHAPE, 1.0, len(pb[z])) / SHAPE
+            B[d, z] = np.log(p.sum() / pb[z].sum())
+    within = B.var(axis=1, ddof=1).mean()
+    sz2 = max(0.0, within - v.mean())
+    sc2 = max(0.0, B.mean(axis=1).var(ddof=1) - (sz2 + v.mean()) / Z)
+    return float(np.sqrt(sc2)), float(np.sqrt(sz2))
+
+
 def loglik(p, pbar):
     return -SHAPE * BG - p / (np.exp(BG) * pbar * CV ** 2)
 
 
-def run_day(fl, lib, zone, s_c, s_z, rng):
+def run_day(fl, lib, zone, s_c, s_z, rng, est):
     K = len(fl.routes)
     Z = zone.max() + 1
     mu = rng.normal(0, s_c) if s_c > 0 else 0.0
@@ -123,6 +152,8 @@ def run_day(fl, lib, zone, s_c, s_z, rng):
             Lz = np.array([Lr[zone == z].sum(0) for z in range(Z)])
             if pol == "hier":
                 hm = hier_means(Lz, s_c, s_z)
+            elif pol.startswith("hier_eb"):
+                hm = hier_means(Lz, *est[int(pol[7:])])
             elif pol == "fullpool":
                 fm = post_mean(lprior + Lr.sum(0))
             for r in obs:
@@ -142,7 +173,7 @@ def run_day(fl, lib, zone, s_c, s_z, rng):
                     a = fm
                 elif pol == "zonepool":
                     a = post_mean(lprior + Lz[zone[r]])
-                elif pol == "hier":
+                elif pol.startswith("hier"):
                     a = hm[zone[r]]
                 rv = lib.get(r, quantize_a(a)).rv
                 cont = rv.U(k + 1, W[r])
@@ -165,11 +196,15 @@ def run(path, days):
     lib = PolicyLibrary(fl, seed=1)
     rows = []
     for s_c, s_z in SCEN:
+        hrng = np.random.default_rng(99)
+        est = {H: history_estimate(fl, zone, s_c, s_z, H, hrng) for H in EB}
         rng = np.random.default_rng(11)
         for d in range(days):
-            res = run_day(fl, lib, zone, s_c, s_z, rng)
+            res = run_day(fl, lib, zone, s_c, s_z, rng, est)
             rows.append(dict(instance=fl.name, K=len(fl.routes), Z=int(zone.max() + 1),
-                             s_c=s_c, s_z=s_z, day=d, **res))
+                             s_c=s_c, s_z=s_z, day=d,
+                             **{f"sc_hat{H}": est[H][0] for H in EB},
+                             **{f"sz_hat{H}": est[H][1] for H in EB}, **res))
     return rows
 
 

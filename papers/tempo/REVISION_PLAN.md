@@ -251,3 +251,13 @@ than per-route learning). Hyperparameters are still the true ones; next:
 empirical Bayes from past days, unknown zone structure, theory (plug-in
 regret ~ curvature x posterior MSE; value of pooling in K, s, stop), city
 instances with geographic zones.
+
+### 8.2 Hyperparameters estimated from history
+
+Method of moments on complete past days (per-zone log ratio of observed
+to planned pickups, sampling variance subtracted). With 30, 60 or 120
+past days the estimated-hyperparameter version matches the
+true-hyperparameter one within 0.5 cost units in every regime (e.g.
+mixed (0.2, 0.2): 94.19 / 94.33 / 94.19 vs 94.03; city only: 83.37-83.57
+vs 83.46). Estimates: (0.2, 0.2) -> (0.185, 0.182) at 30 days, (0.205,
+0.205) at 120. Theory notes: `THEORY_V3.md`.
