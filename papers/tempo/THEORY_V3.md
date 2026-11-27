@@ -1,114 +1,134 @@
-# TEMPO v3 — theory notes (fleet-pooled learning recourse)
+# TEMPO (direction 1) — theory, corrected after the internal review
 
-Working notes for the theory section. Notation follows the code
-(`scripts/tempo3_hier.py`, `ev/fleet.py`, `ev/vi.py`).
+Replaces the first version of these notes. Corrections made after
+`reviews/internal_review_v3.md`:
+(i) the regret statement is now against the library policy at the true
+factor, through the performance-difference identity, instead of an
+invalid telescoping against the one-step "known" policy;
+(ii) the margin condition is stated conditionally on the estimation
+error;
+(iii) the information per pickup is the gamma Fisher information 1/c^2
+about log a, the same for every customer (the earlier "effective count"
+was wrong);
+(iv) the claimed monotonicity in fleet size is dropped: it is not
+supported by the data.
 
-## 1. Model
+## 1. Model and policies
 
-- Fleet of K routes; route r serves stops k = 1..m_r; load W, slack B_r;
-  prices H_{r,k} (handoff), R_{r,k} + continuation from an empty vehicle
-  (restock), E_{r,k} (breach). Execution as in BATON.
-- Day factors. Each route belongs to a zone z(r). On day d,
-  b_z = log a_z = mu + eta_z, mu ~ N(0, s_c^2), eta_z ~ N(0, s_z^2),
-  independent. Pickup of customer i (zone z): p_i ~ Gamma(mean a_z pbar_i,
-  cv c); deliveries follow the planning law.
-- Library: for every a on a grid, pi_a is the BATON policy fitted under
-  pickups a * pbar, and U_a(k, W) its exact value (pre-observation, stop k).
-- Plug-in learning policy: at stop k, route r takes
-  argmin { U_{a_hat}(k+1, W) [continue], H_{r,k}, R_{r,k} + U_{a_hat}(k+1, 0) }
-  with a_hat the posterior mean of a_{z(r)} given F_k (all pickups observed
-  by the fleet up to stop k), under a chosen pooling rule.
+Fleet of K routes. Route r serves stops k = 1..m_r; state (k, W);
+prices H_{r,k} (handoff), R_{r,k} (restock; the load resets to 0),
+E_{r,k} (breach, W > B_r). Customers lie in zones z = 1..Z (geographic,
+independent of the routes). Day factors b_z = log a_z = mu + eta_z,
+mu ~ N(0, s_c^2), eta_z ~ N(0, s_z^2). Pickup of customer i:
+p_i ~ Gamma(shape kappa = 1/c^2, mean a_{z(i)} pbar_i).
 
-## 2. Plug-in regret is second order in the estimation error
+Library: for each grid value a, pi_a is the BATON policy fitted under
+pickups a * pbar; Q_a(s, x) is the expected remaining cost under law a of
+taking action x in state s and following pi_a afterwards (computed
+exactly on a load grid by `ev/vi.py`), and V_a(s) = Q_a(s, pi_a(s)).
 
-Fix a stop and a state s = (r, k, W). Let Q_a(s, x) be the expected
-remaining cost under law a of taking action x now and following pi_a
-afterwards, and x*(a) = argmin_x Q_a(s, x). Define the action gap
-Delta_a(s) = (second smallest) - (smallest) of Q_a(s, .).
+Learning policy L: at each decision state s_k of route r, form an
+estimate a_hat_k of the route's factor (from the pickups observed by the
+fleet so far, under a pooling rule) and take
+x_k = argmin_x Q_{a_hat_k}(s_k, x)  (continue / handoff / restock).
 
-Assumptions.
-(A1) Lipschitz in the factor: |Q_a(s, x) - Q_b(s, x)| <= l_s |a - b| for
-     every action x (l_s depends on the stop's prices and remaining
-     route).
-(A2) Margin: conditional on the state, the gap of the TRUE law has a
-     density bounded by f_s near zero:  P(Delta_a(s) <= t) <= f_s t.
+## 2. Regret is driven by the squared estimation error
 
-Proposition 1 (one decision). The expected extra cost of acting at
-a_hat instead of a satisfies
-  E[ Q_a(s, x*(a_hat)) - Q_a(s, x*(a)) ] <= 2 l_s^2 f_s * 4 * E[(a_hat - a)^2]
-                                          = 8 l_s^2 f_s MSE_s.
-Proof sketch. The loss is zero unless the ranking flips; a flip requires
-Delta_a(s) <= 2 l_s |a_hat - a| (A1), and then the loss is at most
-2 l_s |a_hat - a|. So loss <= 2 l_s |e| 1{Delta <= 2 l_s |e|}, e = a_hat - a.
-Conditioning on e and using (A2): E[loss | e] <= 2 l_s |e| f_s 2 l_s |e|.
-(Constant 8 to be tightened; the point is the square.)
+Fix the true factor a of route r (constant within the day).
 
-Corollary 1 (route-day). Summing over the decision stops reached,
-  J(plug-in) - J(oracle) <= sum_k E[ 8 l_{s_k}^2 f_{s_k} MSE_k ] + (library
-  quantisation term) + (continuation mismatch: after stop k the plug-in
-  keeps re-estimating, so the comparison is with the oracle that knows a
-  from the start; telescoping over stops gives the sum above).
-Interpretation: the cost of not knowing the day's factor is driven by the
-mean squared error of the factor estimate at the stops where decisions
-are close; any pooling rule that lowers MSE at those stops lowers cost,
-quadratically.
+Assumption A1 (Lipschitz in the factor). For every decision state s
+and action x, |Q_a(s, x) - Q_b(s, x)| <= l(s) |a - b|.
 
-To verify numerically: l_s and the gap distribution from the library
-tables (finite differences of U_a in a); the bound against measured
-regret per instance.
+Assumption A2 (margin, conditional on the error). Let
+Delta(s) = (second smallest) - (smallest) of Q_a(s, .) and
+e_k = a_hat_k - a. For every t >= 0,
+P(Delta(s_k) <= t | e_k) <= f(s_k) t  almost surely.
 
-## 3. MSE of the pooling rules (Gaussian approximation in log space)
+Lemma 1 (one decision). Under A1-A2,
+E[ Q_a(s_k, x_k) - min_x Q_a(s_k, x) | e_k ] <= 4 l^2 f e_k^2,
+with l = l(s_k), f = f(s_k) (or their suprema over the states reached).
+Proof. If x_k is not a minimiser of Q_a(s_k, .), then
+Q_a(s_k, x_k) <= Q_{a_hat}(s_k, x_k) + l|e| <= Q_{a_hat}(s_k, x*) + l|e|
+<= Q_a(s_k, x*) + 2 l|e|, so the loss is at most 2 l |e_k|, and the same
+chain shows that a wrong choice requires Delta(s_k) <= 2 l |e_k|. Hence
+loss <= 2 l |e_k| 1{Delta(s_k) <= 2 l |e_k|}; take the conditional
+expectation given e_k and use A2. QED.
 
-Per pickup, y_i = log(p_i / pbar_i) is approximately b_z + e_i with
-var(e_i) ~ c^2 (better: weight by pbar; the sufficient statistic of the
-gamma likelihood is sum p_i / pbar_i scaled; use effective counts
-n = (sum pbar)^2 / sum pbar^2). Let n_r, n_z, n_F be the effective
-pickup counts observed so far on the route, in its zone, in the fleet;
-tau^2 = c^2.
+Theorem 1 (route-day regret). Let J(.) be the expected route cost under
+the true law. Then
+J(L) - J(pi_a) <= sum_k E[ 4 l(s_k)^2 f(s_k) e_k^2 ],
+the sum running over the decision epochs reached by L.
+Proof. Performance-difference identity for the finite-horizon MDP with
+the benchmark pi_a:
+J(L) - J(pi_a) = E_L sum_k [ Q_a(s_k, x_k) - V_a(s_k) ].
+Split Q_a(s_k, x_k) - V_a(s_k) = [Q_a(s_k, x_k) - min_x Q_a(s_k, x)]
++ [min_x Q_a(s_k, x) - V_a(s_k)]; the second bracket is <= 0. Apply
+Lemma 1 to the first. QED.
 
-- Per-route (prior N(0, s^2), s^2 = s_c^2 + s_z^2):
-  MSE_route = (1/s^2 + n_r/tau^2)^{-1}.
-- Zone pooling: MSE_zone = (1/s^2 + n_z/tau^2)^{-1}.
-- Full pooling (one factor, prior s^2): unbiased only if s_z = 0;
-  otherwise the estimate of b_z is a weighted average of zone means, and
-  MSE_full = posterior variance + bias variance
-  ~ (1/s^2 + n_F/tau^2)^{-1} + s_z^2 (1 - n_z/n_F)^2 + ... (exact form
-  from the Gaussian model; the bias term does not vanish as n_F grows).
-- Hierarchical (BLUP): the posterior mean of b_z under the two-level
-  Gaussian model; its MSE is the posterior variance
-  V_hier = Var(b_z | all data), which by Bayes optimality is
-  <= min(MSE_route, MSE_zone, MSE_full) for every data configuration
-  (each rule is a measurable function of the same data).
-  Closed form: with zone means ybar_z (precision P_z = n_z/tau^2),
-  marginally ybar_z = mu + eta_z + noise; standard random-effects
-  algebra gives the weight on the zone's own mean
-  w_z = s_z^2 / (s_z^2 + tau^2/n_z) and on the city estimate 1 - w_z.
+Remarks.
+- The benchmark pi_a is the library policy at the true factor. The
+  "known" reference of the experiments (greedy with respect to Q_a at
+  every stop) is a rollout of pi_a, so J(known) <= J(pi_a) by the rollout
+  improvement property; Theorem 1 does not bound J(L) - J(known), and
+  the experiments report both.
+- l(s) and f(s) are computable from the library (finite differences of
+  Q_a in a; empirical distribution of Delta over simulated states). The
+  bound predicts slope 1 of log regret on log MSE; the measured slope
+  across instances and pooling rules is 0.73-0.87 (REVISION_PLAN 8.4).
+- Library quantisation adds a term bounded by l times half the grid
+  step; it is common to all learning rules.
 
-## 4. Value of pooling
+## 3. Estimation error of the pooling rules
 
-Combining Sections 2 and 3, the saving of the hierarchical rule over
-per-route learning at stop k is bounded below by (constants aside)
-  G_k ~ c_k [ MSE_route(k) - V_hier(k) ],
-with MSE_route(k) = s^2 tau^2 / (tau^2 + n_r(k) s^2). The bracket is
-- increasing in the factor variance (zero when s = 0: nothing to learn),
-- increasing in fleet size and zone size (more pooled evidence),
-- largest at early and middle stops, where n_r(k) s^2 is comparable to
-  tau^2, and vanishing late in the route when the vehicle's own data
-  suffice,
-- for full pooling, eventually negative when s_z > 0 (bias term), which
-  is the failure seen in the "zone only" scenario.
+Information. With kappa = 1/c^2, the log-likelihood of one pickup in
+b = log a is -kappa b - kappa p / (e^b pbar) + const, whose Fisher
+information about b is kappa, the SAME for every customer. Write n_z for
+the number of pickups observed so far in zone z, n = sum_z n_z, and
+n_r for those on route r. To first order (Gaussian approximation of the
+log-likelihood around the truth) a zone's data act as an observation of
+b_z with variance c^2 / n_z.
 
-Checks against simulation (to do): per-instance measured saving of
-hier over route against sum_k c_k [MSE_route - V_hier] with the
-simulated n_r(k), n_z(k), n_F(k); rank correlation across the 10-40
-instances and across (s_c, s_z).
+Under the Gaussian model b = mu 1 + eta with prior covariance
+Sigma = s_c^2 11' + s_z^2 I and observation precisions
+Lambda = diag(n_z / c^2):
+- Hierarchical (exact Bayes) error: MSE_hier(z) = [(Sigma^{-1} + Lambda)^{-1}]_{zz}.
+  Since the posterior mean minimises posterior expected squared error
+  given the data, MSE_hier(z) <= MSE of any other rule that uses the same
+  data, for every data configuration (route-only, zone-only and
+  full-pool rules are functions of subsets of these data).
+- Zone pooling (prior sd s, s^2 = s_c^2 + s_z^2):
+  MSE_zone(z) = (1/s^2 + n_z/c^2)^{-1}, ignoring the information from
+  other zones.
+- Route-only: MSE_route = (1/s^2 + n_r/c^2)^{-1} with n_r <= n_z.
+- Full pooling treats all zones as one factor: its estimate is a
+  precision-weighted average of the zone means, so its error for zone z
+  contains the zone deviations eta_{z'} - eta_z of the other zones, which
+  do not average out as n grows.
 
-## 5. Limitations to state
+Proposition 2 (when full pooling stops paying; Z zones observed
+equally, n_z = n/Z). As n_z grows,
+MSE_full(z) -> s_z^2 (1 - 1/Z) > 0 while MSE_zone(z) ~ c^2 / n_z -> 0;
+zone pooling becomes better than full pooling once roughly
+n_z > n* = c^2 / (s_z^2 (1 - 1/Z)).
+Example: c = 0.3, s_z = 0.2, Z = 2 gives n* = 4.5 pickups per zone; with
+s_z = 0.1, n* = 18. Before n*, full pooling's variance reduction wins;
+after it, its bias dominates. The hierarchical rule tracks the better of
+the two at every n (and is strictly better in between).
 
-- The plug-in (certainty-equivalent) rule ignores the value of
-  information: a vehicle does not act to learn. The prototype shows the
-  full Bayesian average adds nothing over the posterior mean here.
-- Zones are given (route groups); unknown or overlapping structure is a
-  robustness experiment, not covered by the theory.
-- The gamma/log-normal approximation in Section 3 is for the formulas;
-  the implemented posterior is exact on the grid.
+Combining with Theorem 1: the regret bound of each rule is the sum over
+decision epochs of (local constant) x (its MSE at that epoch), so the
+ordering of the rules' regret bounds follows the ordering of their MSE at
+the stops where decisions are close. Most decisions that matter occur at
+the first two or three stops (REVISION_PLAN 8.5), so the relevant n_z is
+small: this is where pooling across vehicles matters most and where full
+pooling can still beat zone pooling.
+
+## 4. What is not claimed
+
+- No claim that the value of pooling increases with fleet size: the
+  measured correlation of K with the saving is about zero.
+- The plug-in rule ignores the value of information (vehicles do not act
+  to learn); a full Bayesian average of the value tables was tested and
+  adds nothing over the posterior mean.
+- Theorem 1 is an upper bound; it does not lower-bound the value of
+  pooling.
