@@ -21,6 +21,11 @@
   select observations with additive costs at a fixed service state. Exact
   batch evaluation and bounds on the optimal batch were checked on 36 small
   synthetic fleets. The algorithm also ran on a synthetic fleet with 256 routes.
+- **Benchmark** — [Comparisons](BENCHMARK.md) cover 132 small synthetic and
+  route-derived cases, including the published one-standby committing
+  policy. Two-flip local search matched the batch optimum on all cases.
+  Matching also attained the exact batch optimum on the separate symmetric
+  construction with 256 routes.
 - **Open questions** — Compare the results with prior work, connect the batch
   optimizer to feasible early travel, and estimate score laws from
   synchronized operational records.
