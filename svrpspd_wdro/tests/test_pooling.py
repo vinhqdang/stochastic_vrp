@@ -8,9 +8,11 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ev.pooling import (BG, CV, SHAPE, Scenario, customer_zones, gauss,  # noqa: E402
-                        history_estimate, hier_means, loglik, post_mean,
-                        weighted_factor, zone_count)
+from ev.fleet import FleetPlan  # noqa: E402
+from ev.pooling import (BG, CV, SCENARIOS, SHAPE, Scenario, build_structure,  # noqa: E402
+                        customer_zones, draw_day, gauss, history_estimate,
+                        hier_means, loglik, post_mean, weighted_factor,
+                        zone_count)
 
 
 def _euclid(points):
@@ -123,3 +125,59 @@ def test_gauss_degenerate_is_delta_at_zero_grid_point():
     g = gauss(BG, 1e-9)
     assert g.sum() == 1.0
     assert BG[int(np.argmax(g))] == BG[int(np.argmin(np.abs(BG)))]
+
+
+def _toy_fleet(n_routes=6, m=4, seed=11):
+    """Synthetic plan with K = n_routes routes of m customers each."""
+    rng = np.random.default_rng(seed)
+    n = 1 + n_routes * m
+    X = rng.uniform(0, 1, (n, 2))
+    D = np.rint(np.hypot(*(X[:, None, :] - X[None, :, :]).transpose(2, 0, 1))
+                * 1e4).astype(np.int64)
+    dbar = np.zeros(n)
+    pbar = np.zeros(n)
+    dbar[1:] = rng.uniform(40, 120, n - 1)
+    pbar[1:] = rng.uniform(40, 120, n - 1)
+    routes = [list(range(1 + r * m, 1 + (r + 1) * m)) for r in range(n_routes)]
+    Q = max(dbar[r].sum() for r in routes) + 150.0
+    return FleetPlan(D, Q, 10000, dbar, pbar, routes), D
+
+
+def _same_partition(a, b):
+    """True when two label vectors induce the same partition."""
+    same_a = a[:, None] == a[None, :]
+    same_b = b[:, None] == b[None, :]
+    return np.array_equal(same_a, same_b)
+
+
+def test_mixed_day_uses_estimator_zones_and_is_reproducible():
+    fl, D = _toy_fleet()
+    scn = SCENARIOS["mixed"]
+    assert scn.zones_true == "same"
+    st = build_structure(fl, D, alt=(scn.zones_true == "alt"))
+    assert st.Zt == st.Z
+    assert all(np.array_equal(a, b) for a, b in zip(st.ztrue, st.zone))
+    assert np.array_equal(st.zct, st.zc)
+    d1 = draw_day(fl, st, scn, np.random.default_rng(21))
+    d2 = draw_day(fl, st, scn, np.random.default_rng(21))
+    assert np.array_equal(d1.B, d2.B)
+    for r in range(st.K):
+        assert np.array_equal(d1.af[r], d2.af[r])
+        assert np.array_equal(d1.p[r], d2.p[r])
+        assert np.array_equal(d1.d[r], d2.d[r])
+        assert np.array_equal(d1.dec_known[r], d2.dec_known[r])
+
+
+def test_alt_partition_has_one_more_zone_and_differs():
+    fl, D = _toy_fleet()
+    st = build_structure(fl, D, alt=True)
+    assert st.Zt == st.Z + 1
+    assert st.zct.shape == st.zc.shape
+    assert set(st.zct.tolist()) <= set(range(st.Zt))
+    assert not _same_partition(st.zc, st.zct)
+    assert [len(z) for z in st.ztrue] == [rt.m for rt in fl.routes]
+    day = draw_day(fl, st, SCENARIOS["wrongzone"], np.random.default_rng(22))
+    assert day.B.shape == (fl.m_max, st.Zt)
+    for r, rt in enumerate(fl.routes):
+        assert day.af[r].shape == (rt.m,)
+        assert np.all(np.isfinite(day.p[r])) and np.all(day.p[r] >= 0)

@@ -45,14 +45,15 @@ def run_job(path, scen_name, days):
     path = Path(path)
     fl = FleetPlan.from_instance(path)
     D = parse_instance(path)[0]
-    st = build_structure(fl, D)
-    lib = PolicyLibrary(fl, seed=1)
     scn = SCENARIOS[scen_name]
+    alt = scn.zones_true == "alt"
+    st = build_structure(fl, D, alt=alt)
+    lib = PolicyLibrary(fl, seed=1)
     seed = zlib.crc32(f"{path.stem}|{scen_name}".encode())
     rng_h = np.random.default_rng(np.random.SeedSequence([seed, 1]))
     rng_d = np.random.default_rng(np.random.SeedSequence([seed, 2]))
     sc_hat, sz_hat = history_estimate(st.zc, st.sk, st.pb, st.Z, scn,
-                                      H_HISTORY, rng_h)
+                                      H_HISTORY, rng_h, zct=st.zct, Zt=st.Zt)
     rows = []
     for d in range(days):
         day = draw_day(fl, st, scn, rng_d)

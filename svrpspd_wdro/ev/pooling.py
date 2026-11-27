@@ -60,6 +60,8 @@ class Scenario:
     delfactor: bool = False
     heavytail: bool = False
     cv_true: float = CV
+    zones_true: str = "same"     # "same": factors on the estimator zones;
+                                 # "alt": factors on an independent partition
 
 
 SCENARIOS = {
@@ -70,6 +72,7 @@ SCENARIOS = {
     "delfactor": Scenario("delfactor", 0.2, 0.2, delfactor=True),
     "heavytail": Scenario("heavytail", 0.2, 0.2, heavytail=True),
     "cvmis": Scenario("cvmis", 0.2, 0.2, cv_true=0.45),
+    "wrongzone": Scenario("wrongzone", 0.2, 0.2, zones_true="alt"),
 }
 
 
@@ -152,15 +155,17 @@ def zone_count(K: int) -> int:
     return int(min(4, max(2, K // 2)))
 
 
-def customer_zones(D, customers, K: int) -> np.ndarray:
+def customer_zones(D, customers, K: int, Z=None, seed=0) -> np.ndarray:
     """Zone of every customer in ``customers`` (node indices into D).
 
     Classical MDS of the symmetrised distance matrix restricted to these
-    customers (2 dimensions), then k-means with Z = zone_count(K). Returns an
-    int array aligned with ``customers``, values in range(Z).
+    customers (2 dimensions), then k-means with Z = zone_count(K) (or the
+    given Z) and random_state = seed. Returns an int array aligned with
+    ``customers``, values in range(Z).
     """
     cust = np.asarray(sorted({int(c) for c in customers}))
-    Z = zone_count(K)
+    if Z is None:
+        Z = zone_count(K)
     if len(cust) < Z:
         raise ValueError("fewer customers than zones")
     Dc = np.asarray(D, dtype=float)[np.ix_(cust, cust)]
@@ -173,35 +178,55 @@ def customer_zones(D, customers, K: int) -> np.ndarray:
     coords = V[:, top] * np.sqrt(np.clip(w[top], 0.0, None))
     if coords.shape[1] < 2:
         coords = np.hstack([coords, np.zeros((n, 2 - coords.shape[1]))])
-    lab = KMeans(n_clusters=Z, n_init=10, random_state=0).fit(coords).labels_
+    lab = KMeans(n_clusters=Z, n_init=10, random_state=seed).fit(coords).labels_
     node_zone = {int(c): int(z) for c, z in zip(cust, lab)}
     return np.array([node_zone[int(c)] for c in customers], dtype=int)
 
 
 @dataclass
 class Structure:
-    """Zone structure of one fleet plan."""
+    """Zone structure of one fleet plan.
+
+    K, Z, zone, zc, sk, pb are the estimator's view. Zt, ztrue, zct are the
+    zones on which the day's factors are generated (the true partition); they
+    equal Z, zone, zc unless the scenario misspecifies the zones.
+    """
     K: int
     Z: int
     zone: list          # per route: zone index of each stop (0-based stop)
     zc: np.ndarray      # flattened customer zones (all routes)
     sk: np.ndarray      # flattened stop index (1-based)
     pb: np.ndarray      # flattened planned pickup means
+    Zt: int             # number of true zones
+    ztrue: list         # per route: true-zone index of each stop
+    zct: np.ndarray     # flattened true-zone indices (all routes)
 
 
-def build_structure(fl: FleetPlan, D) -> Structure:
+def build_structure(fl: FleetPlan, D, alt=False) -> Structure:
     K = len(fl.routes)
     Z = zone_count(K)
     allc = [c for rt in fl.routes for c in rt.customers]
     lab = customer_zones(D, allc, K)
-    zone, pos = [], 0
-    for rt in fl.routes:
-        zone.append(lab[pos:pos + rt.m])
-        pos += rt.m
+    zone, pos = _split_by_route(fl, lab)
     zc = np.concatenate(zone)
+    if alt:
+        lab_t = customer_zones(D, allc, K, Z=Z + 1, seed=1)
+        ztrue, _ = _split_by_route(fl, lab_t)
+        Zt = Z + 1
+        zct = np.concatenate(ztrue)
+    else:
+        Zt, ztrue, zct = Z, zone, zc
     sk = np.concatenate([np.arange(1, rt.m + 1) for rt in fl.routes])
     pb = np.concatenate([rt.pbar for rt in fl.routes])
-    return Structure(K, Z, zone, zc, sk, pb)
+    return Structure(K, Z, zone, zc, sk, pb, Zt, ztrue, zct)
+
+
+def _split_by_route(fl: FleetPlan, lab):
+    out, pos = [], 0
+    for rt in fl.routes:
+        out.append(lab[pos:pos + rt.m])
+        pos += rt.m
+    return out, pos
 
 
 # ============================================================
@@ -243,7 +268,7 @@ class Day:
 
 
 def draw_day(fl: FleetPlan, st: Structure, scn: Scenario, rng) -> Day:
-    B = draw_log_factors(scn, st.Z, fl.m_max, rng)
+    B = draw_log_factors(scn, st.Zt, fl.m_max, rng)
     fd = math.exp(float(rng.normal(0.0, DEL_SD))) if scn.delfactor else 1.0
     shape_p = 1.0 / scn.cv_true ** 2
     P, Dl, DK, AF = [], [], [], []
@@ -251,7 +276,7 @@ def draw_day(fl: FleetPlan, st: Structure, scn: Scenario, rng) -> Day:
         m = rt.m
         bp = rng.gamma(shape_p, 1.0, m) / shape_p
         bd = rng.gamma(SHAPE_D, 1.0, m) / SHAPE_D
-        af = np.exp(B[np.arange(m), st.zone[r]])
+        af = np.exp(B[np.arange(m), st.ztrue[r]])
         P.append(af * rt.pbar * bp)
         Dl.append(fd * rt.dbar * bd)
         AF.append(af)
@@ -262,14 +287,18 @@ def draw_day(fl: FleetPlan, st: Structure, scn: Scenario, rng) -> Day:
     return Day(P, Dl, DK, AF, B)
 
 
-def history_estimate(zc, sk, pb, Z, scn: Scenario, H, rng):
+def history_estimate(zc, sk, pb, Z, scn: Scenario, H, rng, zct=None, Zt=None):
     """Method-of-moments (s_c, s_z) from H complete past days drawn from the
-    scenario (including its misspecification). Per day and zone,
+    scenario (including its misspecification). Past factors are generated on
+    the true zones zct (Zt of them, default zc and Z); statistics are computed
+    on the estimator zones zc. Per day and zone,
     b_dz = log(sum p / sum pbar) has sampling variance
     v_z = CV^2 sum(pbar^2) / (sum pbar)^2 (CV = 0.3, the estimator's
     assumption). Returns (s_c_hat, s_z_hat).
     """
     zc = np.asarray(zc, dtype=int)
+    zct = zc if zct is None else np.asarray(zct, dtype=int)
+    Zt = Z if Zt is None else Zt
     sk = np.asarray(sk, dtype=int)
     pb = np.asarray(pb, dtype=float)
     zsum = np.bincount(zc, weights=pb, minlength=Z)
@@ -283,8 +312,8 @@ def history_estimate(zc, sk, pb, Z, scn: Scenario, H, rng):
     shape = 1.0 / scn.cv_true ** 2
     B = np.zeros((H, Zk))
     for d in range(H):
-        L = draw_log_factors(scn, Z, m_max, rng)
-        a = np.exp(L[sk - 1, zc])
+        L = draw_log_factors(scn, Zt, m_max, rng)
+        a = np.exp(L[sk - 1, zct])
         p = a * pb * rng.gamma(shape, 1.0, len(pb)) / shape
         sp = np.bincount(zc, weights=p, minlength=Z)
         B[d] = np.log(sp[keep] / zsum[keep])
