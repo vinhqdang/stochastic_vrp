@@ -38,6 +38,8 @@ DB = BG[1] - BG[0]
 POL = ["fixed", "route", "fullpool", "zonepool", "hier", "hier_eb30", "hier_eb60", "hier_eb120", "hier_wrong", "oracle"]
 EB = (30, 60, 120)
 SCEN = [(0.3, 0.0), (0.2, 0.2), (0.1, 0.3), (0.0, 0.3)]
+if os.environ.get("TEMPO3_SCEN"):
+    SCEN = [tuple(map(float, x.split(":"))) for x in os.environ["TEMPO3_SCEN"].split(",")]
 
 
 def zones_of(fl, D):
@@ -137,6 +139,8 @@ def run_day(fl, lib, zone, s_c, s_z, rng, est, zwrong):
     out = {}
     for pol in POL:
         cost = 0.0
+        se = 0.0
+        nd = 0
         W = np.zeros(K)
         alive = [True] * K
         Lr = np.zeros((K, len(BG)))
@@ -182,6 +186,8 @@ def run_day(fl, lib, zone, s_c, s_z, rng, est, zwrong):
                     a = hw[zwrong[r]]
                 elif pol.startswith("hier"):
                     a = hm[zone[r]]
+                se += (a - a_z[zone[r]]) ** 2
+                nd += 1
                 rv = lib.get(r, quantize_a(a)).rv
                 cont = rv.U(k + 1, W[r])
                 rest = rt.R[k - 1] + rv.U(k + 1, 0.0)
@@ -193,6 +199,8 @@ def run_day(fl, lib, zone, s_c, s_z, rng, est, zwrong):
                     cost += rt.R[k - 1]
                     W[r] = 0.0
         out[pol] = cost
+        out[pol + "_se"] = se
+        out[pol + "_nd"] = nd
     return out
 
 
@@ -226,5 +234,5 @@ if __name__ == "__main__":
         res = list(ex.map(run, paths, [days] * len(paths)))
     df = pd.DataFrame([r for rs in res for r in rs])
     (_W / "results" / "tempo3").mkdir(parents=True, exist_ok=True)
-    df.to_csv(_W / "results" / "tempo3" / f"hier_{fam}.csv", index=False)
+    df.to_csv(_W / "results" / "tempo3" / f"hier_{fam}{kw.get('tag', '')}.csv", index=False)
     print(df.groupby(["s_c", "s_z"])[POL].mean().round(2).to_string())
