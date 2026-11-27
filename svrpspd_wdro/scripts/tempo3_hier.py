@@ -13,6 +13,8 @@ factor, estimated by:
   hier     exact posterior of the two-level model on a log grid
   hier_ebH the same with (s_c, s_z) estimated by method of moments
            from H complete past days
+  hier_wrong  hierarchical (true hyperparameters) with a WRONG zone
+           partition: the route labels are randomly permuted
   oracle   true a_z
 Usage (from svrpspd_wdro/): python scripts/tempo3_hier.py [n_inst=10 days=150 workers=4]
 """
@@ -33,7 +35,7 @@ from ev.fleet import FleetPlan, PolicyLibrary, CV, quantize_a, parse_instance  #
 SHAPE = 1.0 / CV ** 2
 BG = np.linspace(np.log(0.35), np.log(2.8), 161)      # log-factor grid
 DB = BG[1] - BG[0]
-POL = ["fixed", "route", "fullpool", "zonepool", "hier", "hier_eb30", "hier_eb60", "hier_eb120", "oracle"]
+POL = ["fixed", "route", "fullpool", "zonepool", "hier", "hier_eb30", "hier_eb60", "hier_eb120", "hier_wrong", "oracle"]
 EB = (30, 60, 120)
 SCEN = [(0.3, 0.0), (0.2, 0.2), (0.1, 0.3), (0.0, 0.3)]
 
@@ -122,7 +124,7 @@ def loglik(p, pbar):
     return -SHAPE * BG - p / (np.exp(BG) * pbar * CV ** 2)
 
 
-def run_day(fl, lib, zone, s_c, s_z, rng, est):
+def run_day(fl, lib, zone, s_c, s_z, rng, est, zwrong):
     K = len(fl.routes)
     Z = zone.max() + 1
     mu = rng.normal(0, s_c) if s_c > 0 else 0.0
@@ -150,6 +152,9 @@ def run_day(fl, lib, zone, s_c, s_z, rng, est):
                 W[r] += p - d
                 obs.append(r)
             Lz = np.array([Lr[zone == z].sum(0) for z in range(Z)])
+            if pol == "hier_wrong":
+                Lw = np.array([Lr[zwrong == z].sum(0) for z in range(Z)])
+                hw = hier_means(Lw, s_c, s_z)
             if pol == "hier":
                 hm = hier_means(Lz, s_c, s_z)
             elif pol.startswith("hier_eb"):
@@ -173,6 +178,8 @@ def run_day(fl, lib, zone, s_c, s_z, rng, est):
                     a = fm
                 elif pol == "zonepool":
                     a = post_mean(lprior + Lz[zone[r]])
+                elif pol == "hier_wrong":
+                    a = hw[zwrong[r]]
                 elif pol.startswith("hier"):
                     a = hm[zone[r]]
                 rv = lib.get(r, quantize_a(a)).rv
@@ -189,18 +196,19 @@ def run_day(fl, lib, zone, s_c, s_z, rng, est):
     return out
 
 
-def run(path, days):
+def run(path, days):  # noqa: C901
     fl = FleetPlan.from_instance(path)
     D = parse_instance(path)[0]
     zone = zones_of(fl, np.asarray(D, float))
     lib = PolicyLibrary(fl, seed=1)
+    zwrong = np.random.default_rng(5).permutation(zone)
     rows = []
     for s_c, s_z in SCEN:
         hrng = np.random.default_rng(99)
         est = {H: history_estimate(fl, zone, s_c, s_z, H, hrng) for H in EB}
         rng = np.random.default_rng(11)
         for d in range(days):
-            res = run_day(fl, lib, zone, s_c, s_z, rng, est)
+            res = run_day(fl, lib, zone, s_c, s_z, rng, est, zwrong)
             rows.append(dict(instance=fl.name, K=len(fl.routes), Z=int(zone.max() + 1),
                              s_c=s_c, s_z=s_z, day=d,
                              **{f"sc_hat{H}": est[H][0] for H in EB},
@@ -211,11 +219,12 @@ def run(path, days):
 if __name__ == "__main__":
     kw = dict(x.split("=") for x in sys.argv[1:])
     n, days, wk = int(kw.get("n_inst", 10)), int(kw.get("days", 150)), int(kw.get("workers", 4))
-    paths = [p for p in sorted((_W / "data" / "Dethloff").glob("*.vrpspd"))
+    fam = kw.get("fam", "Dethloff")
+    paths = [p for p in sorted((_W / "data" / fam).glob("*.vrpspd"))
              if (_W / "results" / "plans" / f"{p.stem}.json").exists()][:n]
     with ProcessPoolExecutor(max_workers=wk) as ex:
         res = list(ex.map(run, paths, [days] * len(paths)))
     df = pd.DataFrame([r for rs in res for r in rs])
     (_W / "results" / "tempo3").mkdir(parents=True, exist_ok=True)
-    df.to_csv(_W / "results" / "tempo3" / "hier.csv", index=False)
+    df.to_csv(_W / "results" / "tempo3" / f"hier_{fam}.csv", index=False)
     print(df.groupby(["s_c", "s_z"])[POL].mean().round(2).to_string())
