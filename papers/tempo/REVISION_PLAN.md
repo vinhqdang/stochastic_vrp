@@ -230,3 +230,24 @@ Next: heterogeneous factors (city-level plus zone-level), where full
 pooling is biased and per-route learning is slow; hierarchical partial
 pooling that learns how much to share; value-of-pooling bound in K,
 factor variance and route position.
+
+### 8.1 Hierarchical partial pooling, first result
+
+`scripts/tempo3_hier.py`, `results/tempo3/hier.csv`: 10 Dethloff Det
+plans, 150 days per scenario, zones = route groups (average linkage on
+mean customer distance, Z = round(K/3) >= 2), log a_z = mu + eta_z with
+mu ~ N(0, s_c^2), eta_z ~ N(0, s_z^2). Mean daily recourse cost:
+
+| (s_c, s_z) | fixed | per-route | full pool | zone pool | hierarchical | oracle |
+|---|---|---|---|---|---|---|
+| (0.3, 0.0) city only | 94.84 | 87.37 | **83.46** | 84.78 | **83.46** | 81.17 |
+| (0.2, 0.2) | 107.36 | 96.78 | 96.46 | 94.61 | **94.03** | 90.05 |
+| (0.1, 0.3) | 106.45 | 97.07 | 100.91 | **94.53** | **94.53** | 89.57 |
+| (0.0, 0.3) zone only | 98.66 | 90.69 | 94.62 | **87.92** | **87.92** | 84.19 |
+
+The hierarchical posterior is best or tied in every regime; each simpler
+pooling rule fails somewhere (full pooling under zone factors is worse
+than per-route learning). Hyperparameters are still the true ones; next:
+empirical Bayes from past days, unknown zone structure, theory (plug-in
+regret ~ curvature x posterior MSE; value of pooling in K, s, stop), city
+instances with geographic zones.
