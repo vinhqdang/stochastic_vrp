@@ -7,7 +7,9 @@ the value of pooling information from independent routes. The
 service state, computes their exact expected value, and bounds the best
 possible batch. The [benchmark](BENCHMARK.md) compares it with same-protocol
 local search, exact batch and sequential optima, and a published Pandora
-policy. The pilot below studies two early observations for a single
+policy. The [route-menu model](ROUTE_MENUS.md) then optimizes feasible
+early visits using route-dependent costs and a quantile lower bound.
+The pilot below studies two early observations for a single
 dispatch decision.
 
 This pilot measures the value of making two customer visits before deciding whether to dispatch a standby vehicle. There are $M$ candidate pairs. Every customer must be served that day, and all choices of early visits have the same travel cost. The vehicle can choose the second customer after observing demand at the first. On the route that may need support, two customers each have a pickup demand of 0 or 1, and the vehicle has one unit of remaining capacity. An overload occurs when the two pickups sum to more than 1.

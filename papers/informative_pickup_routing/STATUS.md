@@ -26,8 +26,14 @@
   policy. Two-flip local search matched the batch optimum on all cases.
   Matching also attained the exact batch optimum on the separate symmetric
   construction with 256 routes.
-- **Open questions** — Compare the results with prior work, connect the batch
-  optimizer to feasible early travel, and estimate score laws from
+- **Feasible early visits** — The [route-menu solver](ROUTE_MENUS.md)
+  certifies choices across routes using an advance-information bound.
+  It improves on two-flip in a complementary synthetic fleet and closes
+  the gaps on 96 route-derived problems. Held-out gains beyond the
+  prior-mean plan depend on pickup volume and the cost of activating
+  standby vehicles.
+- **Open questions** — Compare with published routing policies under
+  matched operational constraints and estimate score laws from
   synchronized operational records.
 
 See [the research note](README.md) for the model, proof, and reproduction

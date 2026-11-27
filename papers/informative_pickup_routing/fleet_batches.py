@@ -1,7 +1,8 @@
 """Choose one batch of independent route signals for a shared standby pool."""
 
 from dataclasses import dataclass
-from itertools import product
+from functools import cache
+from itertools import combinations, product
 from math import fsum, isclose, isfinite
 
 from scipy.optimize import linear_sum_assignment
@@ -62,6 +63,30 @@ class Batch:
     net_saving: float
     upper_bound: float
     exchange_degree: int
+
+
+def improve_choices(start, choices, value):
+    """Improve a feasible assignment by replacing at most two choices at once."""
+    mutable = [i for i, options in enumerate(choices) if len(options) > 1]
+    current = start
+    while True:
+        best, best_value = current, value(current)
+        for count in (1, 2):
+            for indices in combinations(mutable, count):
+                alternatives = (
+                    [option for option in choices[i] if option != current[i]] for i in indices
+                )
+                for replacements in product(*alternatives):
+                    trial = list(current)
+                    for i, option in zip(indices, replacements):
+                        trial[i] = option
+                    trial = tuple(trial)
+                    score = value(trial)
+                    if score > best_value + 1e-10:
+                        best, best_value = trial, score
+        if best == current:
+            return current
+        current = best
 
 
 class Fleet:
@@ -155,3 +180,23 @@ class Fleet:
         all_gross = self._gross_value(range(count))
         upper = min(max_degree * scaled, all_gross)
         return Batch(selected, lower, upper, max_degree)
+
+    def refine_batch(self):
+        """Use matching, no observations, and all observations as local-search starts."""
+        initial = self.select_batch()
+        if initial.upper_bound - initial.net_saving <= 1e-10:
+            return initial
+        count = len(self.signals)
+        choices = ((0, 1),) * count
+        selected = frozenset(initial.routes)
+        starts = ((0,) * count, (1,) * count, tuple(int(i in selected) for i in range(count)))
+
+        @cache
+        def value(bits):
+            return self.net_value(i for i, bit in enumerate(bits) if bit)
+
+        best = max((improve_choices(start, choices, value) for start in starts), key=value)
+        return Batch(
+            tuple(i for i, bit in enumerate(best) if bit),
+            value(best), initial.upper_bound, initial.exchange_degree,
+        )

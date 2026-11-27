@@ -89,6 +89,11 @@ and near-cutoff synthetic families. The route-derived groups gave equal
 values for all evaluated policies. City gave no positive acquisition
 value under the tested score laws and fees.
 
+The refined matching method starts two-flip from the matching, empty,
+and full batches. It reaches the exact batch optimum on all 132 cases
+and keeps the matching upper bound. The script reports its values in a
+separate column.
+
 The separate two-group construction in the fleet model also admits an
 exact benchmark at larger sizes by symmetry. If $a$ incumbents and $b$
 challengers are observed, the gross gain is

@@ -8,7 +8,7 @@ from math import comb, fsum, isclose
 from pathlib import Path
 from random import Random
 
-from fleet_batches import Fleet, Signal
+from fleet_batches import Fleet, Signal, improve_choices
 from run_fleet_batches import enumerate_savings, greedy_singletons
 
 
@@ -84,20 +84,13 @@ def exact_batch(value, size):
 
 def local_batch(value, size):
     """Two-start local search with add, drop, and up to two flips."""
-    flips = [
-        frozenset(items) for k in (1, 2) for items in combinations(range(size), k)
-    ]
-    best = 0.0
-    for start in (frozenset(), frozenset(range(size))):
-        batch = start
-        while True:
-            current = value(batch)
-            neighbor = max((batch ^ flip for flip in flips), key=value)
-            if value(neighbor) <= current + 1e-10:
-                best = max(best, current)
-                break
-            batch = neighbor
-    return best
+    def score(bits):
+        return value(frozenset(i for i, bit in enumerate(bits) if bit))
+
+    return max(
+        score(improve_choices((start,) * size, ((0, 1),) * size, score))
+        for start in (0, 1)
+    )
 
 
 def exact_complementary_batch(standby, cost):
@@ -193,15 +186,19 @@ def evaluate(fleet):
     optimal = exact_batch(value, size)
     matching = fleet.select_batch()
     local = local_batch(value, size)
+    refined = fleet.refine_batch()
     sequential = exact_sequential(fleet)
     published = committing(fleet) if fleet.standby == 1 else None
     assert matching.net_saving <= optimal + 1e-9
     assert optimal <= matching.upper_bound + 1e-9
     assert local <= optimal + 1e-9 and optimal <= sequential + 1e-9
+    assert max(local, matching.net_saving) <= refined.net_saving + 1e-9
+    assert refined.net_saving <= optimal + 1e-9
     if published is not None:
         assert published <= sequential + 1e-9
     return (
-        greedy_singletons(fleet), matching.net_saving, local, optimal, published, sequential
+        greedy_singletons(fleet), matching.net_saving, local, optimal, published, sequential,
+        refined.net_saving,
     )
 
 
@@ -243,16 +240,18 @@ def main():
     for family, fleet in (*synthetic_fleets(), *route_fleets()):
         groups.setdefault((family, fleet.standby), []).append(evaluate(fleet))
     print("Mean incremental net savings")
-    print("Greedy  Matching  Two-flip  Batch optimum  BK committing  Sequential optimum")
+    print("Greedy  Matching  Two-flip  Batch optimum  BK committing  Sequential optimum  Refined")
     for (family, standby), rows in sorted(groups.items()):
         print(f"{family}, B={standby}, cases={len(rows)}")
         summarize(rows)
         positive = sum(row[3] > 1e-9 for row in rows)
         exact_local = sum(isclose(row[2], row[3], abs_tol=1e-9) for row in rows)
+        exact_refined = sum(isclose(row[6], row[3], abs_tol=1e-9) for row in rows)
         wins = sum(matching > local + 1e-9 for _, matching, local, *_ in rows)
         losses = sum(matching + 1e-9 < local for _, matching, local, *_ in rows)
         print(f"Positive batch optimum: {positive}/{len(rows)}. "
-              f"Two-flip attained the exact optimum: {exact_local}/{len(rows)}.")
+              f"Exact optimum with two-flip: {exact_local}/{len(rows)}, "
+              f"with refinement: {exact_refined}/{len(rows)}.")
         print(f"Matching vs two-flip: {wins} wins, {losses} losses, {len(rows)-wins-losses} ties.")
 
     print("Complementary construction: matching and exact batch savings")
