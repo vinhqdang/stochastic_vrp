@@ -17,8 +17,13 @@
   problem. With independent route signals, singleton information can have
   zero value while joint information has value linear in the number of standby
   vehicles.
-- **Open questions** — Compare the results with prior work, develop a scalable
-  pre-dispatch optimizer, and evaluate on synchronized operational records.
+- **Fleet batch algorithm** — The [batch model and implementation](FLEET_BATCHES.md)
+  select observations with additive costs at a fixed service state. Exact
+  batch evaluation and bounds on the optimal batch were checked on 36 small
+  synthetic fleets. The algorithm also ran on a synthetic fleet with 256 routes.
+- **Open questions** — Compare the results with prior work, connect the batch
+  optimizer to feasible early travel, and estimate score laws from
+  synchronized operational records.
 
 See [the research note](README.md) for the model, proof, and reproduction
 command.
