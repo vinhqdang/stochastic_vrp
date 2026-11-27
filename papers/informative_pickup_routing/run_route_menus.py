@@ -87,11 +87,11 @@ class HeldOut:
     predicted_saving: np.ndarray
 
 
-def evaluate_policy(choices, held_out, standby):
+def evaluate_policy(choices, held_out, standby, standby_fee=0.0):
     """Use training posterior scores to dispatch, then pay realized costs."""
     routes = [options[choice] for options, choice in zip(held_out, choices)]
-    predicted = np.vstack([run.predicted_saving for run in routes])
-    actual = np.vstack([run.standby_saving for run in routes])
+    predicted = np.vstack([run.predicted_saving for run in routes]) - standby_fee
+    actual = np.vstack([run.standby_saving for run in routes]) - standby_fee
     initial = np.sum([run.primary for run in routes], axis=0)
     selected = np.argsort(-predicted, axis=0, kind="stable")[:standby]
     score = np.take_along_axis(predicted, selected, axis=0)

@@ -83,8 +83,8 @@ class RouteMenus:
         )
         return fsum(option.cost for option in options) - gross
 
-    def mean_score_plan(self):
-        """Exact route choice if standby allocation must precede all signals."""
+    def mean_score_options(self):
+        """Best primary and standby options and their prior standby advantages."""
         without = tuple(
             min(indices, key=lambda j: self.menus[i][j].cost)
             for i, indices in enumerate(self.options)
@@ -93,14 +93,19 @@ class RouteMenus:
             min(indices, key=lambda j: self.menus[i][j].cost - self.menus[i][j].signal.mean)
             for i, indices in enumerate(self.options)
         )
-        choices = list(without)
         benefit = [
             self.menus[i][without[i]].cost - self.menus[i][j].cost + self.menus[i][j].signal.mean
             for i, j in enumerate(with_standby)
         ]
+        return without, with_standby, benefit
+
+    def mean_score_plan(self, standby_fee=0.0):
+        """Exact route choice if standby allocation must precede all signals."""
+        without, with_standby, benefit = self.mean_score_options()
+        choices = list(without)
         ranked = sorted(range(len(self.menus)), key=benefit.__getitem__, reverse=True)
         for i in ranked[:self.standby]:
-            if benefit[i] > 0:
+            if benefit[i] > standby_fee:
                 choices[i] = with_standby[i]
         return tuple(choices)
 

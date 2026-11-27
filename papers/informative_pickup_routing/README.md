@@ -9,6 +9,8 @@ possible batch. The [benchmark](BENCHMARK.md) compares it with same-protocol
 local search, exact batch and sequential optima, and a published Pandora
 policy. The [route-menu model](ROUTE_MENUS.md) then optimizes feasible
 early visits using route-dependent costs and a quantile lower bound.
+The [fee analysis](FEE_FRONTIER.md) finds the fee ranges where planning
+those visits around their information value pays.
 The pilot below studies two early observations for a single
 dispatch decision.
 

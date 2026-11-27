@@ -32,6 +32,11 @@
   the gaps on 96 route-derived problems. Held-out gains beyond the
   prior-mean plan depend on pickup volume and the cost of activating
   standby vehicles.
+- **Fee sensitivity** — The [continuous fee analysis](FEE_FRONTIER.md)
+  proves that the value of reordering can peak at an interior fee and
+  finds the profitable intervals of the fitted route-menu problems.
+  In the elevated City scenario, the held-out gain over prior-mean
+  planning peaks at 2.552 among the five evaluated fees.
 - **Open questions** — Compare with published routing policies under
   matched operational constraints and estimate score laws from
   synchronized operational records.
