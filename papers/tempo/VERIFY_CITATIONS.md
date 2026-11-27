@@ -29,3 +29,19 @@ Ramdas & Rinaldo 2024, He et al. 2026, Chen et al. 2025, Merchán et al.
 2024, Dethloff 2001, Salhi & Nagy 1999) carry DOIs already used
 elsewhere in this repository or independently cross-checked during
 this session and are not flagged here.
+
+## TEMPO (direction 1) bibliography, `tempo.bib` (November 2026)
+
+Built only from entries verified in `reviews/reference_audit.md` and
+`reviews/reference_audit2.md`. Open points:
+- kakade2002approx: no DOI or Crossref record; pages 267-274 from
+  OpenAlex only; publisher/address omitted. Check against the ICML 2002
+  proceedings before submission.
+- efron1973stein: end page 130 from OpenAlex only (Crossref gives the
+  start page).
+- Given names for ak2007paired, zhu2014paired, goodson2013rollout,
+  ghosal2020dro, audibert2007fast, secomandi2009reopt partly from memory
+  (Crossref returned family names only); confirm on the publisher pages.
+- dang2026baton: accepted at Computers & OR; add volume/DOI when issued.
+The TRSC bibliography (`references.bib`) had one non-existent reference
+and wrong author names in two others; it must not be reused.
