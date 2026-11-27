@@ -24,7 +24,8 @@ from ev.pooling import SCENARIOS  # noqa: E402
 FAMS = [("Dethloff", "Dethloff"), ("SalhiNagy", "Salhi--Nagy"), ("City", "City")]
 SCN = list(SCENARIOS)
 SCN_TEX = {"city": "city", "mixed": "mixed", "zone": "zone", "drift": "drift",
-           "delfactor": "delivery", "heavytail": "heavy tail", "cvmis": "noise"}
+           "delfactor": "delivery", "heavytail": "heavy tail", "cvmis": "noise",
+           "wrongzone": "wrong zones"}
 GAP_POL = ["route", "full", "zone", "hier", "hier_eb", "mle"]
 PAIR_B = ["route", "full", "zone", "hier"]
 OUT = _W.parent / "papers" / "tempo" / "tables"
@@ -46,7 +47,7 @@ def main():
             m = {p: float(sub[f"cost_{p}"].mean())
                  for p in ["fixed", "known"] + GAP_POL}
             den = m["fixed"] - m["known"]
-            lead = f"\\multirow{{7}}{{*}}{{{ftex}}}" if i == 0 else ""
+            lead = f"\\multirow{{{len(SCN)}}}{{*}}{{{ftex}}}" if i == 0 else ""
             cells = [f"{(m['fixed'] - m[p]) / den:.2f}" for p in GAP_POL]
             best = max(range(len(GAP_POL)), key=lambda j: float(cells[j]))
             cells = [f"\\textbf{{{c}}}" if float(c) == float(cells[best]) else c

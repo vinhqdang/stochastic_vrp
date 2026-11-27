@@ -403,8 +403,14 @@ the estimators assume:
 \item[heavy tail] as mixed with Student-$t_3$ factors scaled to the same
   standard deviations;
 \item[noise] as mixed with true pickup coefficient of variation 0.45,
-  while every estimator assumes 0.3.
+  while every estimator assumes 0.3;
+\item[wrong zones] as mixed, but the factors are drawn on a different
+  partition of the customers ($k$-means with $Z+1$ clusters and another
+  initialisation) from the one every estimator uses, and the past days
+  for the variance estimates come from the same mismatched model.
 \end{description}
+In the first seven scenarios the estimators use the partition on which
+the factors are drawn.
 
 \paragraph{Policies} All policies use the rule~\eqref{eq:rule} with the
 same library (factor grid $0.5, 0.6, \dots, 2.0$) and differ only in the
