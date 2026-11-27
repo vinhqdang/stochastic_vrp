@@ -24,3 +24,19 @@
   this paper is the execution/monitoring layer); `papers/csonet2026/`
   is an independent, unrelated combinatorial-scheduling paper — no
   shared results, code, or evaluation instances with either.
+
+## 27 November 2026 — new manuscript drafted
+
+- `tempo.tex` (fleet-pooled learning for recourse, "direction 1") is
+  complete: theory (Lemma 1, Theorem 1, Proposition 2), computational
+  study on 73 instances x 8 scenarios x 150 days, conclusion.
+- Results: `svrpspd_wdro/results/tempo_pool/` (CSVs, `tables.md`);
+  LaTeX tables regenerate with `python scripts/tempo_pool_latex.py`
+  from `svrpspd_wdro/`. Never hand-edit `tables/*.tex`.
+- An internal referee pass was addressed: the theory is restricted to
+  the in-model setting with uniform constants, the baselines' oracle
+  variances are disclosed, a wrong-zone scenario was added, and
+  overclaims were removed.
+- Bibliography author names were checked against OpenAlex. The only
+  open item is the BATON volume/DOI.
+- Journal: not chosen yet; the draft carries `\journal{Computers & OR}`.

@@ -56,13 +56,13 @@ the library policy at the true factor is bounded by the squared error of
 the factor estimate at the decision stops, and that pooling all zones
 into one factor has an error floor that pooling within zones does not. On 73 instances from three
 benchmark families, pooling with variances estimated from past days
-closes on average 0.71 to 0.89 of the gap between the policy fitted
+closes on average 0.70 to 0.89 of the gap between the policy fitted
 under the planning law and the policy that knows the day's factors,
-against 0.42 to 0.74 for per-vehicle learning. In none of 21
-combinations of family and scenario is it significantly worse than full
-or zone-level pooling, and it keeps its advantage when the factors drift
-during the day, when deliveries carry their own factor, and when the
-pickup noise is misspecified.
+against 0.42 to 0.75 for per-vehicle learning. In none of 24
+combinations of family and scenario is it significantly worse than
+another learning rule, including scenarios in which the factors drift
+during the day, deliveries carry their own factor, the pickup noise is
+misspecified or the zones do not match the true ones.
 \end{abstract}
 
 \begin{keyword}
@@ -443,13 +443,13 @@ raw results.
 
 \subsection{Pooling against per-vehicle learning}
 
-Table~\ref{tab:gap} reports the gap shares. Averaged over the seven
-scenarios, the EB rule closes 0.71, 0.89 and 0.80 of the gap on the
+Table~\ref{tab:gap} reports the gap shares. Averaged over the eight
+scenarios, the EB rule closes 0.70, 0.89 and 0.78 of the gap on the
 Dethloff, Salhi--Nagy and City families, and learning from the vehicle's
-own pickups closes 0.42, 0.74 and 0.50. Table~\ref{tab:pairs} gives the
+own pickups closes 0.42, 0.75 and 0.50. Table~\ref{tab:pairs} gives the
 paired differences. The EB rule is cheaper than per-vehicle learning in
-every one of the 21 family--scenario combinations, and the interval
-excludes zero in 17 of them. The saving is largest on the Dethloff
+every one of the 24 family--scenario combinations, and the interval
+excludes zero in 18 of them. The saving is largest on the Dethloff
 instances (4.3 to 7.0 per day, or 2.6 to 3.9\% of the fixed policy's
 cost), whose routes are short: a vehicle with a few customers learns
 little from its own pickups before its decisions are taken.
@@ -494,8 +494,8 @@ two-level rule never has an interval that excludes zero
 method-of-moments estimates average 0.18 to 0.21 for $s_c = s_z = 0.2$,
 0.28 to 0.31 for $s_c = 0.3$ and 0.30 for $s_z = 0.3$, with the zero
 variances estimated at 0.01 to 0.04. In the intermediate scenarios the
-EB rule is significantly better than full pooling in all 12 scenarios
-with $s_z > 0$ on Dethloff and Salhi--Nagy and in 3 of 6 on City. In
+EB rule is significantly better than full pooling in all 14 scenarios
+with $s_z > 0$ on Dethloff and Salhi--Nagy and in 3 of 7 on City. In
 the five scenarios with both levels of variation it is better than zone
 pooling by 0.5 to 1.0 per day on Dethloff, with intervals that exclude
 zero in four of them; on Salhi--Nagy and City the difference from zone
@@ -507,18 +507,31 @@ to act on.
 
 \subsection{Misspecification}
 
-The four last scenarios break the model that all estimators assume.
+The five last scenarios break the model that all estimators assume.
 Drift makes the factor of the remaining stops differ from that of the
 stops already seen; the delivery factor shifts the load in a way the
 pickup model cannot explain; heavy tails produce occasional extreme
 days; and the noise scenario makes each pickup less informative than
-the estimators believe, so the posterior is overconfident. In these
-scenarios the EB rule closes 0.62 to 0.90 of the gap, against 0.24 to
+the estimators believe, so the posterior is overconfident; and with
+wrong zones the estimators pool evidence across customers whose factors
+differ and separate customers whose factors are equal. In these
+scenarios the EB rule closes 0.60 to 0.90 of the gap, against 0.24 to
 0.83 for per-vehicle learning, and it is never significantly worse than
 another learning rule. The noise
 scenario is the hardest, with gap shares of 0.62, 0.80 and 0.63. In the noise
 scenario the extra pickup noise also raises the estimate of $s_z$ from
 the past days, to 0.21 to 0.23 against a true value of 0.2.
+
+Wrong zones cost every pooling rule part of its advantage. The EB rule
+closes 0.61, 0.88 and 0.60 of the gap, against 0.70, 0.88 and 0.70 in
+the mixed scenario with the same variances, and the estimate of $s_z$
+falls to 0.15 to 0.17, since the zone deviations seen through the wrong
+partition are partly averaged out. Its advantage over per-vehicle
+learning remains significant on Dethloff ($-3.25$ per day) and is
+within noise on the other two families, where per-vehicle learning
+loses less from the mismatch because it does not use the zones at all.
+The EB rule is still not worse than any other rule, so a poor partition
+reduces the gain from pooling without making it worse than learning alone.
 
 \subsection{Cost and estimation error}
 
@@ -533,7 +546,7 @@ and one of the seven rules other than known (fixed included); points
 with non-positive excess cost are dropped (at most 4\% on Dethloff, 20\%
 on Salhi--Nagy and 26\% on City). If cost differences between rules were
 driven by estimation error with roughly constant local factors, the
-slope would be near one. On Dethloff the slopes are 0.81 to 1.01 except
+slope would be near one. On Dethloff the slopes are 0.72 to 1.01 except
 under heavy tails (0.56), and on Salhi--Nagy 0.56 to 1.20. On City they
 are 0.12 to 0.63. The gaps between rules on the city instances are
 small (the whole fixed-to-known gap is 3.4 to 4.8 per day), and with
@@ -560,16 +573,19 @@ model's own setting, the excess cost of this plug-in rule over the
 library policy at the true factor is bounded by the squared estimation
 error at the decision stops, and pooling all zones into one factor has
 an error floor that pooling within zones does not. On 73 instances from
-three families, pooling with estimated variances closes on average 0.71
+three families, pooling with estimated variances closes on average 0.70
 to 0.89 of the gap between the policy fitted under the planning law and
-the policy that knows the day's factors, against 0.42 to 0.74 for
+the policy that knows the day's factors, against 0.42 to 0.75 for
 per-vehicle learning. The two-level rule matches the better of full and
 zone-level pooling in the two extreme scenarios and is never
 significantly worse than either; its advantage over zone-level pooling
 in the intermediate scenarios is clear on the Dethloff instances and
 within noise on the others. Replacing the true variances by estimates
 from 60 past days changes the daily cost by at most 0.3, with intervals
-that include zero. WRONGZONE_CONCL
+that include zero.When the zones used by the estimators do
+not match the true ones, the gain over per-vehicle learning shrinks and
+on two of the three families is no longer significant, but pooling
+does not become harmful.
 
 The model has limits that the experiments make visible. The factors act
 on pickups only, and the delivery scenario shows the cost of ignoring a
