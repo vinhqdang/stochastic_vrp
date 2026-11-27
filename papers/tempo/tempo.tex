@@ -1,0 +1,328 @@
+%% TEMPO: fleet-pooled learning for recourse in vehicle routing with
+%% simultaneous pickup and delivery and stochastic demands.
+%% Build: pdflatex tempo; bibtex tempo; pdflatex tempo; pdflatex tempo
+%% Numbers marked \TBD are filled from scripts/tempo_pool_tables.py.
+\newif\ifanon
+\anonfalse
+
+\documentclass[preprint,authoryear,12pt]{elsarticle}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
+\onehalfspacing
+
+\newtheorem{assumption}{Assumption}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\newcommand{\TBD}{\textcolor{red}{[TBD]}}
+\newcommand{\E}{\mathbb{E}}
+
+\journal{Computers \& Operations Research}
+
+\begin{document}
+\begin{frontmatter}
+
+\title{Learning the day as a fleet: pooled demand evidence for
+recourse in vehicle routing with simultaneous pickup and delivery}
+
+\ifanon
+  \author{Anonymised for review}
+\else
+  \author{Quang-Vinh Dang}
+  \ead{vinh.dq4@buv.edu.vn}
+  \address{British University Vietnam, Hung Yen, Vietnam}
+\fi
+
+\begin{abstract}
+Pickup volumes on a delivery day often share a common cause, such as
+weather, a promotion or a local event. A vehicle that sees heavy pickups
+at its first stops learns something about its later stops, and so do
+the other vehicles of the fleet. Existing recourse policies for vehicle
+routing with stochastic demands either assume the demand distribution is
+known or learn it from the vehicle's own observations. We propose TEMPO
+(Team Evidence and Multilevel Pooling for Online recourse), which pools
+the pickups observed by the whole fleet in a two-level Bayesian model of
+city-wide and zone-level day factors, and lets every vehicle choose
+between continuing, handing its remaining route to a standby vehicle and
+returning to the depot with the value tables of a policy library indexed
+by the factor. We show that the excess cost of such a plug-in rule over
+the library policy at the true factor is bounded by the squared error of
+the factor estimate at the decision stops, and we give the point at which
+pooling across zones starts to hurt. On \TBD{} instances from three
+benchmark families, pooling closes \TBD{} of the gap between the policy
+fitted under the planning law and the policy that knows the day's
+factors, against \TBD{} for per-vehicle learning. The two-level model is
+never worse than the better of full and zone-level pooling, and it keeps
+its advantage when the factors drift during the day, when deliveries
+carry their own factor, and when the pickup noise is misspecified.
+\end{abstract}
+
+\begin{keyword}
+Vehicle routing \sep Stochastic demands \sep Recourse \sep Bayesian
+learning \sep Information pooling
+\end{keyword}
+\end{frontmatter}
+
+% ====================================================================
+\section{Introduction}\label{sec:intro}
+
+A vehicle that collects and delivers goods along a fixed route does not
+know the pickup volumes in advance. Its load rises and falls along the
+route, and a breach of capacity forces an expensive emergency vehicle.
+Recourse policies decide at each stop whether to continue, to return to
+the depot, or to hand the rest of the route to another vehicle
+\citep{yang2000restocking,secomandi2009reopt,florio2022partial}. Almost
+all of them assume that the probability law of the demands is known.
+
+On a real day the law is not known. Demand volumes depend on the
+weather, on promotions, on local events and on the day of the week, and
+these causes act on many customers at once. A vehicle that meets heavy
+pickups at its first three stops has learned that the day is heavy. The
+other vehicles of the fleet have learned the same thing, if the cause is
+shared. \citet{florio2023bayesian} model such a common factor for a
+single route and update it by Bayes' rule as the vehicle observes its
+customers. They report savings of more than ten per cent over policies
+that assume independent demands. Their vehicle, however, learns only
+from its own customers.
+
+This paper asks what a fleet gains when its vehicles learn together. The
+answer depends on how the day's variation is shared. If one city-wide
+factor drives every customer, all vehicles should pool their evidence.
+If each district has its own factor, pooling across districts mixes
+unrelated evidence and can be worse than not pooling at all. Real days
+lie in between. We therefore model the day by a city-wide factor and
+zone-level deviations, estimate their variances from past days, and
+compute the exact posterior of each zone's factor from the pickups the
+fleet has seen so far. Each vehicle then uses the factor of the zones it
+has still to visit.
+
+The contributions are as follows.
+\begin{enumerate}
+\item A recourse method for the vehicle routing problem with
+  simultaneous pickup and delivery and stochastic demands that pools
+  demand evidence across the vehicles of a fleet. Decisions use a
+  library of recourse policies indexed by the day factor, with exact
+  value tables, so the learning layer adds no fitting during the day.
+\item A regret bound: the excess cost of the plug-in rule over the
+  library policy at the true factor is at most a sum, over decision
+  stops, of local constants times the squared error of the factor
+  estimate. The bound turns a statistical question (how well is the
+  factor estimated at each stop?) into a cost statement, and it explains
+  why pooling helps most at the first stops, where most recourse
+  decisions are taken.
+\item A threshold at which full pooling becomes worse than pooling
+  within zones, in terms of the pickup noise, the zone-level variance
+  and the number of zones.
+\item A computational study on \TBD{} instances from the
+  \citet{dethloff2001vehicle} and \citet{salhi1999cluster} benchmarks and
+  on instances built on the road networks of five cities, with
+  independent factor draws per instance, instance-clustered confidence
+  intervals, and four forms of misspecification.
+\end{enumerate}
+
+The method sits on top of an execution policy for the same problem
+\citep{dang2026baton}, which prices handoffs and depot returns from route
+geometry and fits per-stop continuation costs by backward induction. Our
+contribution is the learning layer, not the execution policy.
+
+% ====================================================================
+\section{Related work}\label{sec:related}
+
+\paragraph{Recourse for stochastic demands} The vehicle routing problem
+with stochastic demands assigns customers to a priori routes and
+specifies what happens when a vehicle cannot serve a customer
+\citep{bertsimas1992vrpsd,gendreau1996stochastic,oyola2018svrp1}.
+\citet{yang2000restocking} add preventive returns to the depot, chosen by
+dynamic programming over the vehicle's load; exact methods for the
+resulting problem include \citet{louveaux2018exact} and the rule-based
+and hybrid recourse policies of \citet{salavati2019rulebased,salavati2019hybrid}.
+\citet{secomandi2001rollout} and \citet{secomandi2009reopt} re-optimise
+the remaining route as demands are revealed, \citet{goodson2013rollout}
+and \citet{goodson2016restocking} extend rollout policies to several
+vehicles and duration limits, and \citet{florio2022partial} study partial
+re-optimisation. All of these assume a known demand law.
+
+\paragraph{Learning the demand law} \citet{florio2023bayesian} introduce
+a common external factor that scales every customer's demand and update
+its posterior along a fixed route. \citet{popovic1995bayesian} treats
+uncertain demand in a Bayesian way at the planning stage. Our model
+differs in two respects: the factor has a city-wide and a zone-level
+part, and the evidence comes from the whole fleet.
+
+\paragraph{Cooperation between vehicles} Paired recourse strategies let
+two vehicles share customers when one runs out of capacity
+\citep{ak2007paired,zhu2014paired}. They share work, not information.
+Distributionally robust formulations protect a plan against an
+ambiguous law instead of learning it \citep{ghosal2020dro}.
+
+\paragraph{Pooling and shrinkage} Estimating many related means by
+shrinking each towards a common value is the empirical Bayes idea of
+\citet{efron1973stein}; hierarchical models choose the amount of
+shrinkage from the data \citep{gelman2006prior}. Our regret bound uses
+the margin argument of plug-in classification
+\citep{audibert2007fast} and the performance-difference identity of
+reinforcement learning \citep{kakade2002approx}.
+
+% ====================================================================
+\section{Problem and execution model}\label{sec:model}
+
+\paragraph{Fleet and routes} A plan assigns the customers to $K$ routes
+served from one depot. Route $r$ visits stops $k=1,\dots,m_r$ in a fixed
+order. At stop $k$ the vehicle delivers $d_k$ and collects $p_k$; its
+load changes by $g_k = p_k - d_k$. The departure load is the planned
+delivery volume, and $B_r$ denotes the residual capacity at departure.
+If the running load $W_k$ exceeds $B_r$, the vehicle breaches at stop
+$k$: an emergency vehicle serves the rest of the route at price
+$E_{r,k}$. After serving stop $k$ the vehicle may instead hand the rest
+of the route to a standby vehicle at price $H_{r,k}$, or return to the
+depot at price $R_{r,k}$, which resets the load to zero. Prices are built
+from the route geometry and a three-class fleet cost model
+\citep{dang2026baton}: planned vehicles, standby vehicles paid per use,
+and emergency vehicles hired at surge prices.
+
+\paragraph{Day factors} Customers lie in $Z$ geographic zones. On a
+given day, zone $z$ has a pickup factor $a_z = \exp(b_z)$ with
+\begin{equation}\label{eq:factor}
+b_z = \mu + \eta_z, \qquad \mu \sim N(0, s_c^2), \qquad
+\eta_z \sim N(0, s_z^2),
+\end{equation}
+independent. Given the factors, the pickup of customer $i$ in zone $z$
+is gamma distributed with mean $a_z \bar p_i$ and coefficient of
+variation $c$; deliveries follow the planning law. The planning law is
+the special case $a_z = 1$ for all $z$.
+
+\paragraph{Policy library} For each value $a$ on a grid $\mathcal{A}$,
+$\pi_a$ is the recourse policy fitted by backward induction under
+pickups scaled by $a$ \citep{dang2026baton}. For each $\pi_a$ we compute
+exactly, on a load grid, the expected remaining cost $Q_a(s,x)$ of
+taking action $x \in \{\text{continue},\text{handoff},\text{restock}\}$
+in state $s=(r,k,W)$ and following $\pi_a$ afterwards. The library is
+built once per plan, before the day.
+
+% ====================================================================
+\section{TEMPO: pooled learning during the day}\label{sec:method}
+
+\paragraph{Posterior of the zone factors} Each pickup observed so far
+contributes the gamma log-likelihood of $b_{z(i)}$. Under
+\eqref{eq:factor}, the posterior of $b_z$ given all pickups observed by
+the fleet is computed exactly on a grid of $b$ values: integrate the
+city factor $\mu$ out of the other zones' likelihoods, convolve with the
+zone-level prior, and multiply by zone $z$'s own likelihood. The cost is
+a few one-dimensional convolutions per stop.
+
+\paragraph{Variances from past days} The variances $s_c^2$ and $s_z^2$
+are estimated by the method of moments from complete past days: the
+spread of the zones' log ratios of observed to planned pickups within a
+day estimates $s_z^2$ plus sampling noise, and the variance of the
+daily average estimates $s_c^2$ plus a known share of the rest.
+
+\paragraph{Decision rule} At stop $k$ of route $r$ the vehicle computes
+its factor $\hat a_{r,k}$ as the planned-pickup-weighted mean of the
+posterior means of the zones of its remaining customers, and takes
+\begin{equation}\label{eq:rule}
+x_{r,k} = \arg\min_x Q_{\hat a_{r,k}}(s_{r,k}, x).
+\end{equation}
+Special cases of the same rule are the policy fitted under the planning
+law ($\hat a = 1$), per-vehicle learning (only the vehicle's own
+pickups, as in \citealp{florio2023bayesian}), full pooling (one factor
+for the fleet) and pooling within zones.
+
+% ====================================================================
+\section{Analysis}\label{sec:theory}
+
+Fix a route and its true factor $a$, and write $e_k = \hat a_k - a$ for
+the estimation error at decision stop $k$.
+
+\begin{assumption}[Lipschitz in the factor]\label{ass:lip}
+For every state $s$ and action $x$, $|Q_a(s,x) - Q_{a'}(s,x)| \le
+\ell(s)\,|a-a'|$.
+\end{assumption}
+
+\begin{assumption}[Margin]\label{ass:margin}
+Let $\Delta(s)$ be the difference between the second smallest and the
+smallest of $Q_a(s,\cdot)$. For all $t \ge 0$,
+$P(\Delta(s_k) \le t \mid e_k) \le f(s_k)\,t$ almost surely.
+\end{assumption}
+
+\begin{lemma}\label{lem:one}
+Under Assumptions~\ref{ass:lip} and~\ref{ass:margin},
+$\E[Q_a(s_k,x_k) - \min_x Q_a(s_k,x) \mid e_k] \le 4\,\ell(s_k)^2
+f(s_k)\, e_k^2$.
+\end{lemma}
+
+\begin{proof}
+If $x_k$ is not a minimiser of $Q_a(s_k,\cdot)$, then for a minimiser
+$x^*$, $Q_a(s_k,x_k) \le Q_{\hat a}(s_k,x_k) + \ell|e_k| \le
+Q_{\hat a}(s_k,x^*) + \ell|e_k| \le Q_a(s_k,x^*) + 2\ell|e_k|$. The loss
+is therefore at most $2\ell|e_k|$, and a wrong choice requires
+$\Delta(s_k) \le 2\ell|e_k|$. Taking the conditional expectation given
+$e_k$ and applying Assumption~\ref{ass:margin} gives the bound.
+\end{proof}
+
+\begin{theorem}\label{thm:regret}
+Let $J(\cdot)$ denote the expected cost of the route under the true
+law, and let $L$ be the rule~\eqref{eq:rule}. Then
+\[
+J(L) - J(\pi_a) \le \sum_k \E\bigl[4\,\ell(s_k)^2 f(s_k)\, e_k^2\bigr],
+\]
+where the sum runs over the decision stops reached under $L$.
+\end{theorem}
+
+\begin{proof}
+By the performance-difference identity \citep{kakade2002approx} for a
+finite-horizon problem with benchmark $\pi_a$,
+$J(L) - J(\pi_a) = \E_L \sum_k [Q_a(s_k,x_k) - Q_a(s_k,\pi_a(s_k))]$.
+Each term equals $[Q_a(s_k,x_k) - \min_x Q_a(s_k,x)] + [\min_x
+Q_a(s_k,x) - Q_a(s_k,\pi_a(s_k))]$; the second bracket is not positive,
+and Lemma~\ref{lem:one} bounds the first.
+\end{proof}
+
+\begin{remark}
+The benchmark is the library policy at the true factor. The reference
+used in Section~\ref{sec:study}, which acts greedily with respect to
+$Q_a$ at every stop, is a rollout of $\pi_a$ and is at least as good
+\citep{bertsekas1997rollout}; Theorem~\ref{thm:regret} does not bound
+the gap to it.
+\end{remark}
+
+\paragraph{Estimation error of the pooling rules} With $\kappa = 1/c^2$,
+one pickup carries Fisher information $\kappa$ about $b_{z}$, whatever
+its planned volume. With $n_z$ pickups observed in zone $z$, the zone's
+evidence acts, to first order, as one observation of $b_z$ with variance
+$c^2/n_z$. Writing $\Sigma = s_c^2\mathbf{1}\mathbf{1}^\top + s_z^2 I$
+and $\Lambda = \mathrm{diag}(n_z/c^2)$, the two-level posterior has
+error $[(\Sigma^{-1}+\Lambda)^{-1}]_{zz}$, the smallest of any rule that
+uses the same data. Pooling within the zone has error
+$(1/s^2 + n_z/c^2)^{-1}$ with $s^2 = s_c^2 + s_z^2$. Full pooling mixes
+the other zones' deviations into the estimate of $b_z$.
+
+\begin{proposition}\label{prop:threshold}
+Suppose the $Z$ zones are observed equally, $n_z = n/Z$. As $n_z$ grows,
+the error of full pooling tends to $s_z^2(1 - 1/Z) > 0$, while that of
+pooling within the zone is of order $c^2/n_z$. To first order, pooling
+within the zone is the better rule once
+$n_z > c^2 / \bigl(s_z^2 (1 - 1/Z)\bigr)$.
+\end{proposition}
+
+With $c = 0.3$, $s_z = 0.2$ and two zones the threshold is 4.5 pickups
+per zone. Most recourse decisions are taken at the first two or three
+stops \citep{dang2026baton}, when few pickups have been seen; this is
+where pooling matters and where full pooling can still beat pooling
+within zones.
+
+% ====================================================================
+\section{Computational study}\label{sec:study}
+\TBD
+
+% ====================================================================
+\section{Conclusion}\label{sec:conclusion}
+\TBD
+
+\bibliographystyle{elsarticle-harv}
+\bibliography{tempo}
+\end{document}
