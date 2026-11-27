@@ -279,3 +279,25 @@ pooling under a city factor. With a randomly permuted zone partition
 | Salhi-Nagy (0, 0.3) | 81.51 | 85.27 | 80.04 | 80.04 | 80.15 | 83.62 | 79.26 |
 | Salhi-Nagy (0.2, 0.2) | 83.81 | 84.16 | 81.88 | 81.76 | 81.69 | 83.77 | 79.92 |
 | Salhi-Nagy (0.3, 0) | 82.63 | 80.67 | 81.36 | 80.67 | 80.52 | 80.67 | 80.29 |
+
+### 8.4 Regret against MSE, and the internal review
+
+- 40 Dethloff instances, 60 days, three regimes: across instances and
+  pooling rules, log(excess cost over the library oracle) against
+  log(MSE of the factor estimate at decision stops) has slope 0.73-0.87
+  (pooled 0.84, corr 0.68; within-instance median 0.80, IQR 0.60-1.03).
+  Closer to the second-order prediction (1) than to first order (0.5),
+  but not a clean 1.
+- Internal review (`reviews/internal_review_v3.md`): no numerical bug.
+  Robust: zone-aware pooling beats per-route learning (Florio-style),
+  CI excludes 0 in 11 of 12 family x regime cells. Not shown:
+  hierarchical vs zone pooling (within noise; "best or tied" partly by
+  construction in the single-factor regimes). Major issues: the
+  "oracle" is not an upper bound; every instance reuses the same factor
+  draws (rng 11); zones are circular (generator = estimator structure);
+  no misspecification tests; THEORY_V3 Corollary 1 telescoping invalid,
+  Prop. 1 margin conditioning, wrong effective count (each gamma pickup
+  carries Fisher information 1/CV^2 about log a); contribution thin after
+  Florio et al. 2023 unless a fleet-level decision per-route learning
+  cannot make is added (e.g. standby commitment/dispatch from pooled
+  early evidence), or a decision-loss threshold for when pooling hurts.
