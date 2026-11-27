@@ -198,3 +198,35 @@ Conclusion: the within-day, short-route version of the redesign does not
 support the paper's claim. Options are recorded in the conversation with
 the author (cross-day monitoring of the value of re-optimisation;
 long-route within-day setting; or shelving TEMPO).
+
+## 8. New direction: fleet-pooled learning recourse (November 2026)
+
+Author's decision: keep the name TEMPO, change the method.
+
+Novelty check (`reviews/novelty_bayes_fleet.md`): per-route Bayesian
+learning of a common multiplicative demand factor during execution is
+published (Florio, Gendreau, Hartl, Minner, Vidal, EJOR 2023). Pooling
+that learning across the vehicles of a fleet appears open (Florio et al.
+list cooperative/inter-route learning as future work; paired recourse
+papers share customers, not posteriors). Do not claim Bayesian learning
+itself.
+
+Prototype (`scripts/tempo3_proto.py`, `results/tempo3/proto.csv`; 10
+Dethloff Det plans, 150 days, day factor a_d ~ lognormal(0, s)
+discretised on the library grid; recourse decisions by library value
+tables U_a(k+1, W)):
+
+| s (true, model) | fixed a=1 | per-route Bayes | pooled plug-in (post. mean) | pooled Bayes | oracle |
+|---|---|---|---|---|---|
+| 0.15, 0.15 | 95.5 | 92.6 | 90.8 | 91.1 | 89.2 |
+| 0.30, 0.30 | 101.8 | 94.8 | 91.2 | 90.6 | 89.0 |
+| 0.30, 0.15 (prior too narrow) | 101.8 | 95.8 | 91.1 | 91.7 | 89.0 |
+
+Pooling closes 88% of the fixed-to-oracle gap at s = 0.3 against 55%
+for per-route learning. Full Bayesian averaging adds nothing over the
+pooled posterior mean: the gain is the pooling, not the hedging.
+
+Next: heterogeneous factors (city-level plus zone-level), where full
+pooling is biased and per-route learning is slow; hierarchical partial
+pooling that learns how much to share; value-of-pooling bound in K,
+factor variance and route position.
