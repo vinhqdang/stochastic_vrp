@@ -149,3 +149,17 @@ def test_innovation_lower_bound_random_inputs(fitted):
         g = _sample_g(rng, 1, PBAR, DBAR)[0, k - 1]
         I, L = rv.innovation(k, w, g)
         assert I >= -L - 1e-9
+
+
+def test_innovation_conditional_mean_zero_at_fixed_states(fitted):
+    """E[I | load] = 0 under the planning law at fixed (stop, load),
+    including loads next to the breach boundary (no one-signed grid bias)."""
+    _, rv = fitted
+    rng = np.random.default_rng(21)
+    n = 400_000
+    g = _sample_g(rng, n, PBAR, DBAR)
+    for k in (3, 8, 12):
+        for w in (B - 12.37, B - 4.1, B - 0.93):
+            I = np.array([rv.innovation(k, w, gi)[0] for gi in g[:, k - 1]])
+            se = I.std() / np.sqrt(n)
+            assert abs(I.mean()) <= 4 * se + 1e-9, (k, w, I.mean(), se)

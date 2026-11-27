@@ -15,8 +15,9 @@ What this module provides.
   ``U[k](w)`` is the pre-observation value at stop k given load w, and
   ``post[k](w)`` is the value just after observing stop k's demand.
 * ``RouteValue.innovation(k, w, g)`` returns the value innovation
-  ``I = post(k, w + g) - U(k, w)`` and a predictable bound ``L = U(k, w) -
-  (lower bound on post over the demand range)`` so that ``I >= -L``.
+  ``I = post_k[j + t] - U_k[j]`` (j: grid index of the load before stop k,
+  t: lattice index of the realised demand) and a predictable bound
+  ``L = U_k[j] - min post_k`` so that ``I >= -L`` for any realised demand.
 * ``ValueInnovationMonitor`` runs a bank of betting e-processes on the
   normalised innovations ``x = (I - eps) / (L + eps)``.
 * ``run_route_day`` executes the policy on realised demands and feeds the
@@ -33,13 +34,15 @@ factor ``1 + f * x`` with ``0 <= f <= 1`` is a nonnegative supermartingale
 factor with conditional mean at most 1, and so is the average over the
 fractions. Ville's inequality then gives ``P(sup_n wealth_n >= 1/alpha) <=
 alpha`` for every stopping rule, which is the anytime-valid alarm.
-Clipping ``x`` at -1 only matters outside the demand range used for ``L``.
+The clip of ``x`` at -1 is inactive (``I >= -L`` holds for every g); it
+only guards against floating-point noise.
 
 Numerical notes. The load grid is ``W_lo + j*h`` for ``j = 0..G-1`` with
 ``W_lo < 0`` so that the grid covers all loads that can occur. Demand pmfs
-live on the same lattice ``h * Z``, so ``w + g`` for a grid point ``w`` is
-again a grid point. Realised loads are continuous, so ``post`` and ``U`` are
-evaluated by linear interpolation. Loads below ``W_lo`` are clipped to
+live on the same lattice ``h * Z`` and are the exact bin probabilities of
+the continuous law of g, so the innovation (which rounds the load and the
+demand to the lattice) is exactly mean-zero under the planning law. The
+methods ``U`` and ``post`` interpolate linearly and serve reporting only. Loads below ``W_lo`` are clipped to
 ``W_lo``; loads above ``B`` are breaches.
 """
 
@@ -48,8 +51,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from scipy import stats
-from scipy.signal import fftconvolve
+from scipy import special, stats
 
 
 # ============================================================
@@ -57,39 +59,50 @@ from scipy.signal import fftconvolve
 # ============================================================
 
 
-def _trim(pmf: np.ndarray, offset: int):
-    """Keep the lattice points where pmf > 1e-12 * max; renormalise."""
-    keep = np.flatnonzero(pmf > 1e-12 * pmf.max())
-    lo, hi = int(keep[0]), int(keep[-1])
-    out = pmf[lo:hi + 1]
-    return out / out.sum(), offset + lo
+def _gamma_cdf(x, mean: float, cv: float):
+    """CDF of gamma(shape 1/cv^2, scale mean*cv^2) at x (0 for x < 0)."""
+    a = 1.0 / cv ** 2
+    return special.gammainc(a, np.maximum(x, 0.0) / (mean * cv ** 2))
 
 
-def _gamma_pmf(mean: float, cv: float, h: float):
-    """pmf of a gamma(shape 1/cv^2, scale mean*cv^2) variable on h*Z_{>=0}.
+def _g_pmf(pbar: float, dbar: float, cv: float, h: float, n_quad: int = 400):
+    """Exact lattice law of g = p - d, returned as (pmf, g_start).
 
-    Returns (pmf, start) with mass pmf[t] at lattice index start + t.
-    A zero mean is a point mass at 0.
+    Lattice index t carries the probability P((t - 1/2) h <= g < (t + 1/2) h)
+    of the CONTINUOUS law of g (p and d independent gammas). These bin
+    probabilities are computed from the CDF of g, F_g(e) = E_d[F_p(e + d)],
+    by Gauss-Legendre quadrature over d. Rounding the realised g to the
+    nearest lattice point therefore has exactly this pmf, which makes the
+    value innovation exactly mean-zero under the planning law (up to
+    quadrature error, ~1e-12).
     """
-    if mean <= 0.0:
+    if pbar <= 0.0 and dbar <= 0.0:
         return np.array([1.0]), 0
-    sd = cv * mean
-    jmax = int(math.ceil((mean + 20.0 * sd) / h)) + 1
-    x = np.arange(jmax + 1) * h
-    pdf = stats.gamma.pdf(x, a=1.0 / cv ** 2, scale=mean * cv ** 2)
-    pdf = np.where(np.isfinite(pdf), pdf, 0.0)
-    return _trim(pdf / pdf.sum(), 0)
-
-
-def _g_pmf(pbar: float, dbar: float, cv: float, h: float):
-    """pmf of g = p - d on the lattice h*Z, returned as (pmf, g_start)."""
-    p, ap = _gamma_pmf(pbar, cv, h)
-    d, ad = _gamma_pmf(dbar, cv, h)
-    conv = fftconvolve(p, d[::-1])
-    conv = np.clip(conv, 0.0, None)
-    conv = conv / conv.sum()
-    # Index r of conv corresponds to lattice index (ap - ad - (len(d)-1)) + r.
-    return _trim(conv, ap - ad - (len(d) - 1))
+    sp, sd = cv * max(pbar, 0.0), cv * max(dbar, 0.0)
+    g_lo = -(dbar + 25.0 * sd) if dbar > 0 else 0.0
+    g_hi = (pbar + 25.0 * sp) if pbar > 0 else 0.0
+    t_lo = int(math.floor(g_lo / h)) - 1
+    t_hi = int(math.ceil(g_hi / h)) + 1
+    edges = (np.arange(t_lo, t_hi + 1) + 0.5) * h      # upper edge of bin t
+    if dbar <= 0.0:
+        F = _gamma_cdf(edges, pbar, cv)
+    elif pbar <= 0.0:
+        F = 1.0 - _gamma_cdf(-edges, dbar, cv)          # P(-d <= e)
+    else:
+        xs, ws = np.polynomial.legendre.leggauss(n_quad)
+        lo, hi = 0.0, dbar + 25.0 * sd
+        x = 0.5 * (hi - lo) * xs + 0.5 * (hi + lo)
+        wq = 0.5 * (hi - lo) * ws * stats.gamma.pdf(
+            x, a=1.0 / cv ** 2, scale=dbar * cv ** 2)
+        F = (_gamma_cdf(edges[:, None] + x[None, :], pbar, cv) * wq).sum(1)
+    F = np.clip(F, 0.0, 1.0)
+    pmf = np.diff(np.concatenate([[0.0], F]))       # bin t: (e_{t-1}, e_t]
+    pmf = np.clip(pmf, 0.0, None)
+    pmf[-1] += max(0.0, 1.0 - pmf.sum())            # far upper tail
+    pmf = pmf / pmf.sum()
+    keep = np.flatnonzero(pmf > 0.0)
+    lo_i, hi_i = int(keep[0]), int(keep[-1])
+    return pmf[lo_i:hi_i + 1], t_lo + lo_i
 
 
 # ============================================================
@@ -203,45 +216,35 @@ class RouteValue:
         g0 = self._g0[k]
         return g0 * self.h, (g0 + len(pmf) - 1) * self.h
 
-    def _range_min(self, k: int, lo: float, hi: float) -> float:
-        """Minimum of post[k] over the load interval [lo, hi].
-
-        post[k] is piecewise linear on [W_lo, B] with vertices on the grid
-        and equals E[k-1] on (B, inf). The minimum over an interval is
-        therefore attained at an endpoint, a grid vertex, or the breach
-        plateau.
-        """
-        post = self._post[k]
-        best = math.inf
-        if lo <= self.B:
-            x0 = max(lo, self.W_lo)
-            top = min(hi, self.B)
-            best = min(best, self.post(k, x0))
-            if top >= x0:
-                best = min(best, self.post(k, top))
-                j0 = max(0, int(math.ceil((x0 - self.W_lo) / self.h - 1e-9)))
-                j1 = min(self.G - 1,
-                         int(math.floor((top - self.W_lo) / self.h + 1e-9)))
-                if j1 >= j0:
-                    best = min(best, float(post[j0:j1 + 1].min()))
-        if hi > self.B:
-            best = min(best, float(self.E[k - 1]))
-        return best
+    def _index(self, w: float) -> int:
+        """Nearest load-grid index of w (clipped to the grid)."""
+        j = int(round((float(w) - self.W_lo) / self.h))
+        return min(max(j, 0), self.G - 1)
 
     def innovation(self, k: int, w_prev: float, g: float):
-        """Value innovation at stop k.
+        """Value innovation at stop k, exactly centred under the planning law.
 
-        Returns (I, L) with I = post(k, w_prev + g) - U(k, w_prev) and
-        L = U(k, w_prev) - min over ALL loads of post(k, .) (including the
-        breach value E[k-1]). L depends on the past only, and I >= -L holds
-        for every realised demand g whatever its law, so the betting
-        e-values stay valid when the planning law is misspecified.
+        The load before stop k is rounded to its nearest grid point j and
+        the realised demand to its nearest lattice point t = round(g / h).
+        The innovation is I = post_k[j + t] - U_k[j], where an index beyond
+        the grid is a breach (value E[k-1]) and an index below it is clipped
+        to the first grid point, exactly the convention used to compute U_k.
+        Because the pmf of t is the exact lattice law of g (see _g_pmf),
+        E[I | past] = 0 under the planning law, with no discretisation bias.
+        I and its bound L use the rounded state only, which is a function of
+        the past, so the betting e-values remain valid.
+
+        L = U_k[j] - min(min post_k, E[k-1]) >= 0, and I >= -L for ANY
+        realised g, whatever its law.
         """
-        w_prev = float(w_prev)
-        U_w = self.U(k, w_prev)
-        mn = min(float(np.min(self._post[k])), float(self.E[k - 1]))
-        I = self.post(k, w_prev + float(g)) - U_w
-        return float(I), float(max(U_w - mn, 0.0))
+        j = self._index(w_prev)
+        t = int(round(float(g) / self.h))
+        idx = j + t
+        post = self._post[k]
+        val = float(self.E[k - 1]) if idx >= self.G else float(post[max(idx, 0)])
+        U_j = float(self._U[k][j])
+        mn = min(float(np.min(post)), float(self.E[k - 1]))
+        return val - U_j, max(U_j - mn, 0.0)
 
     def expected_cost(self) -> float:
         """Exact expected cost of the fixed policy from the empty route."""
