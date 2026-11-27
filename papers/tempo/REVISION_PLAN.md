@@ -261,3 +261,21 @@ true-hyperparameter one within 0.5 cost units in every regime (e.g.
 mixed (0.2, 0.2): 94.19 / 94.33 / 94.19 vs 94.03; city only: 83.37-83.57
 vs 83.46). Estimates: (0.2, 0.2) -> (0.185, 0.182) at 30 days, (0.205,
 0.205) at 120. Theory notes: `THEORY_V3.md`.
+
+### 8.3 City and Salhi-Nagy instances; wrong zone structure
+
+`results/tempo3/hier_City.csv` (19 instances), `hier_SalhiNagy.csv`
+(14), 100 days per scenario. Same ordering as on Dethloff: the
+hierarchical rule (true or 30-120-day empirical hyperparameters) is best
+or tied in every regime; full pooling fails under zone factors, zone
+pooling under a city factor. With a randomly permuted zone partition
+(`hier_wrong`) it degrades to about per-route learning, never far below:
+
+| family, (s_c, s_z) | route | full | zone | hier | hier_eb30 | hier_wrong | oracle |
+|---|---|---|---|---|---|---|---|
+| City (0, 0.3) | 52.53 | 53.73 | 50.62 | 50.62 | 50.52 | 52.79 | 48.83 |
+| City (0.2, 0.2) | 46.05 | 46.08 | 45.38 | 45.10 | 45.16 | 45.80 | 44.35 |
+| City (0.3, 0) | 52.61 | 51.20 | 51.33 | 51.20 | 51.06 | 51.20 | 50.06 |
+| Salhi-Nagy (0, 0.3) | 81.51 | 85.27 | 80.04 | 80.04 | 80.15 | 83.62 | 79.26 |
+| Salhi-Nagy (0.2, 0.2) | 83.81 | 84.16 | 81.88 | 81.76 | 81.69 | 83.77 | 79.92 |
+| Salhi-Nagy (0.3, 0) | 82.63 | 80.67 | 81.36 | 80.67 | 80.52 | 80.67 | 80.29 |
