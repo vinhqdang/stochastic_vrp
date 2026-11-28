@@ -177,6 +177,10 @@ def table_Z(rng):
     print("wrote sens_Z.tex")
 
 
+def _rng(x):
+    return str(x.min()) if x.min() == x.max() else f"{x.min()}--{x.max()}"
+
+
 def table_timing():
     lines = [r"\begin{tabular}{lrrrrr}", r"\toprule",
              r"Family & Customers & Routes & Library (s) & Posterior (ms) & Variances (ms) \\",
@@ -187,7 +191,7 @@ def table_timing():
             continue
         t = read(p)
         lines.append(" & ".join([
-            ftex, f"{t.n_cust.min()}--{t.n_cust.max()}", f"{t.K.min()}--{t.K.max()}",
+            ftex, _rng(t.n_cust), _rng(t.K),
             f"{t.lib_seconds.min():.0f}--{t.lib_seconds.max():.0f}",
             f"{t.hier_ms.mean():.2f}", f"{t.history_ms.mean():.2f}"]) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}", ""]

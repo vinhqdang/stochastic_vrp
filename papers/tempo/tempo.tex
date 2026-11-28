@@ -453,11 +453,12 @@ is $K|\mathcal{A}| = 16K$ fits. Table~\ref{tab:timing} reports wall-clock
 times on one core of an Intel Xeon at 2.3\,GHz for the first five
 instances of each family. The library takes 18 to 45\,s for plans with
 up to 7 routes, 66\,s for a city plan with 11 routes and 135\,s for the
-400-customer plan with 23 routes, about 0.37\,s per fit throughout. During the day,
+400-customer plan with 23 routes, or 0.34 to 0.56\,s per fit. During the day,
 one evaluation of the posterior means of all zones
 (\eqref{eq:post} and \eqref{eq:Mz} on the 161-point grid) takes 0.08 to
-0.16\,ms, and the decision rule evaluates the fitted continuation
-costs of one library policy at the current state. The
+0.16\,ms. The decision rule then evaluates the fitted continuation
+costs of one library policy at the current state, a few regression
+evaluations that we did not time separately. The
 variance estimates from 60 past days take under 1.2\,ms and are computed
 once per day. The on-line cost is therefore negligible against the time
 between two stops, and the only material cost is the off-line library.
@@ -785,8 +786,8 @@ factor drives the city, full pooling and the EB rule coincide (the
 orange line lies under the yellow one) and their error at the first
 decision is about half that of per-vehicle learning, since the vehicle
 starts with the evidence the whole fleet has seen. When the zones are
-independent ($s_z = 0.3$), full pooling reaches a floor of about 0.18
-to 0.24 and stays there, while the zone and EB errors keep falling. The
+independent ($s_z = 0.3$), full pooling levels off at about 0.18
+to 0.24, while the zone and EB errors keep falling. The
 floor is of the order of the root error $s_z\sqrt{1-1/Z} = 0.21$ to
 $0.26$ of Proposition~\ref{prop:threshold} for $Z = 2$ to 4; the
 proposition concerns one zone's log factor, while the decision factor
@@ -811,7 +812,8 @@ families. Zone pooling moves the other way, from 0.55, 0.93 and 0.83 at $s_z
 = 0$ to 0.77, 0.94 and 0.89 at $s_z = 0.4$. The EB rule follows the
 better of the two at both ends, with gap shares between 0.70 and 1.06
 across the sweep, and on Dethloff it is above both in the middle of the
-range ($s_z = 0.1$ to $0.3$), where neither extreme is right. On City
+range ($s_z = 0.1$ to $0.3$) in point estimate, by 0.03 to 0.04 over
+the better of the two at $s_z = 0.2$ and $0.3$. On City
 with $s_z \le 0.1$ the whole gap is 0.9 to 1.8 per day, so the shares
 in that part of the figure are noisy and some exceed one.
 
@@ -830,7 +832,9 @@ rule with the two-level rule that knows the variances, for histories of
 even with 5 days, and the point estimates are between $-0.25$ and
 $+0.22$ per day. The decision depends on the variances only through the
 prior in \eqref{eq:post}, which the pickups of the day soon dominate,
-so a rough estimate of the variances is enough.
+which suggests that the rule does not need precise variances,
+although the intervals at $D = 5$ are wide (up to $+0.91$ per day) and
+cannot exclude a moderate loss.
 
 \begin{table}[t]
 \centering\footnotesize
@@ -843,14 +847,15 @@ past days $D$ ($D = 60$: main runs).}\label{tab:sensH}
 \paragraph{Number of zones} Table~\ref{tab:sensZ} sets $Z$ to 2, 4 and
 8 on every instance, in the mixed scenario. The factors are drawn on
 the same partition the estimators use, so a larger $Z$ means more
-independent zones, each with fewer customers. The advantage of the EB
-rule over zone pooling grows with $Z$: on Dethloff it is $-0.30$,
-$-1.20$ and $-2.25$ per day, and on Salhi--Nagy and City the point
-estimate at $Z = 8$ is $-0.72$ and $-0.52$ with intervals that reach
+independent zones, each with fewer customers. On Dethloff the
+advantage of the EB rule over zone pooling grows with $Z$: $-0.30$,
+$-1.20$ and $-2.25$ per day. On Salhi--Nagy it moves in the same
+direction and on City it is not monotone, both within noise; at $Z = 8$
+the point estimates are $-0.72$ and $-0.52$ with intervals that reach
 just above zero. With many small zones, a zone's own pickups are few, and
 the city level of the two-level model supplies the evidence that zone
-pooling lacks; on City with $Z = 8$ zone pooling closes less of the gap
-than per-vehicle learning (0.44 against 0.48). With $Z = 2$ the EB and
+pooling lacks; on City with $Z = 8$ zone pooling closes no more of the
+gap than per-vehicle learning (0.44 against 0.48). With $Z = 2$ the EB and
 zone rules are within noise everywhere.
 
 \begin{table}[t]
@@ -911,8 +916,8 @@ in the intermediate scenarios is clear on the Dethloff instances and
 within noise on the others. Replacing the true variances by estimates
 from 60 past days changes the daily cost by at most 0.3, with intervals
 that include zero, and with five past days no difference is detected either.
-The advantage over zone-level pooling grows as the plan is split into
-more, smaller zones. When the zones used by the estimators do
+On the Dethloff instances the advantage over zone-level pooling grows
+as the plan is split into more, smaller zones. When the zones used by the estimators do
 not match the true ones, the gain over per-vehicle learning shrinks and
 on two of the three families is no longer significant, but pooling
 does not become harmful.
