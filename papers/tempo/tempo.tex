@@ -10,6 +10,8 @@
 \usepackage{setspace}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
@@ -139,106 +141,312 @@ policy itself unchanged.
 \paragraph{Recourse for stochastic demands} The vehicle routing problem
 with stochastic demands assigns customers to a priori routes and
 specifies what happens when a vehicle cannot serve a customer
-\citep{bertsimas1992vrpsd,gendreau1996stochastic,oyola2018svrp1}.
-\citet{yang2000restocking} add preventive returns to the depot, chosen by
-dynamic programming over the vehicle's load; exact methods for the
-resulting problem include \citet{louveaux2018exact} and the rule-based
-and hybrid recourse policies of \citet{salavati2019rulebased,salavati2019hybrid}.
-\citet{secomandi2001rollout} and \citet{secomandi2009reopt} re-optimise
-the remaining route as demands are revealed, \citet{goodson2013rollout}
-and \citet{goodson2016restocking} extend rollout policies to several
-vehicles and duration limits, and \citet{florio2022partial} study partial
-re-optimisation. All of these assume a known demand law.
+\citep{bertsimas1992vrpsd,gendreau1996stochastic,oyola2018svrp1}. In the
+classical recourse a vehicle that fails at a customer returns to the
+depot and comes back. \citet{yang2000restocking} add preventive returns,
+chosen by dynamic programming over the vehicle's residual load, and show
+that an optimal policy has a threshold form at each customer.
+\citet{louveaux2018exact} solve the a priori routing problem exactly
+under this recourse, and \citet{salavati2019rulebased,salavati2019hybrid}
+design rule-based and hybrid recourse policies that are easier to embed
+in an exact method. A second line re-optimises the remaining route as
+demands are revealed: \citet{secomandi2001rollout} propose a rollout
+algorithm for a single vehicle, \citet{secomandi2009reopt} study partial
+re-optimisation, \citet{goodson2013rollout} extend rollout to several
+vehicles with duration limits, \citet{goodson2016restocking} build
+restocking-based rollout policies, and \citet{florio2022partial} compare
+recourse strategies under partial re-optimisation. All of these methods
+assume that the probability law of the demands is known, and most assume
+that demands are independent across customers.
 
-\paragraph{Learning the demand law} \citet{florio2023bayesian} introduce
-a common external factor that scales every customer's demand and update
-its posterior along a fixed route. \citet{popovic1995bayesian} treats
-uncertain demand in a Bayesian way at the planning stage. Our model
-differs in two respects: the factor has a city-wide and a zone-level
-part, and the evidence comes from the whole fleet.
+\paragraph{Stochastic dynamic routing} When information arrives during
+the day, routing becomes a sequential decision problem.
+\citet{powell2019unified} gives a unified framework for such problems,
+in which the state includes a belief about unknown quantities and a
+policy maps the state to a decision. \citet{ulmer2020modeling} adapt
+this framework to stochastic dynamic vehicle routing and recommend that
+models state explicitly what is known when each decision is taken.
+\citet{soeffker2022review} review the field from the angle of
+prescriptive analytics, and \citet{ulmer2019offline} combine value
+functions learned offline with online rollouts. In this terminology our
+problem has a belief state, the posterior of the day's factors, that is
+shared by all vehicles and updated by every vehicle's observations. The
+policy library plays the role of an offline approximation and the
+posterior update the role of the online step.
+
+\paragraph{Learning an unknown demand law} Bayesian learning of an
+unknown demand parameter goes back to the inventory model of
+\citet{scarf1959bayes}, in which the posterior of the parameter becomes
+part of the state; \citet{azoury1985bayes} shows that for several
+demand families the resulting dynamic programme reduces to one with
+fewer state variables. \citet{lariviere1999stalking} study the value of information
+when lost sales are not observed, and \citet{wang2017changepoint} allow
+the demand law to change at unknown times. In routing,
+\citet{popovic1995bayesian} treats uncertain demand in a Bayesian way at
+the planning stage, and \citet{florio2023bayesian} introduce a common
+external factor that scales every customer's demand on a route, update
+its posterior after each customer and embed the posterior predictive in
+an optimal restocking policy. They report that ignoring the correlation
+induced by the factor costs more than ten per cent in their
+experiments. Our model shares their idea of a multiplicative factor and
+generalises it in two directions: the factor has a city-wide and a
+zone-level part, and the evidence comes from all vehicles of the fleet,
+not only from the vehicle that takes the decision.
+
+\paragraph{Pooling and shrinkage} Estimating many related means by
+shrinking each towards a common value is the empirical Bayes idea of
+\citet{efron1973stein}; \citet{morris1983peb} develops parametric
+empirical Bayes with hyperparameters estimated from the data, and
+hierarchical models choose the amount of shrinkage from the data
+\citep{gelman2006prior}. \citet{gupta2022pooling} show that pooling
+data across many small stochastic optimisation problems, such as
+newsvendors with few observations each, improves the decisions even
+when the problems are unrelated, and they quantify when pooling helps.
+Their problems are solved offline and are exchangeable; ours are the
+routes of one fleet on one day, the data arrive online, and the
+dependence between routes has a known spatial structure that the
+two-level model exploits.
+
+\paragraph{From estimates to decisions} Our rule estimates the factor
+and plugs the estimate into a family of policies. This is the
+estimate-then-optimise approach that \citet{bertsimas2020predictive} and
+\citet{elmachtoub2022spo} examine for contextual problems; the latter
+argue that an estimate should be judged by the decisions it induces
+rather than by its prediction error. Our regret bound links the two for
+sequential recourse decisions: it uses the margin argument of
+plug-in classification \citep{audibert2007fast} and the
+performance-difference identity of reinforcement learning
+\citep{kakade2002approx}.
 
 \paragraph{Cooperation between vehicles} Paired recourse strategies let
 two vehicles share customers when one runs out of capacity
 \citep{ak2007paired,zhu2014paired}. The partners share customers, and
-each vehicle's demand law is assumed known.
-Distributionally robust formulations protect a plan against an
-ambiguous law instead of learning it \citep{ghosal2020dro}.
+each vehicle's demand law is assumed known. Distributionally robust
+formulations protect a plan against an ambiguous law instead of
+learning it \citep{ghosal2020dro}. Table~\ref{tab:position} summarises
+how the closest approaches differ from ours.
 
-\paragraph{Pooling and shrinkage} Estimating many related means by
-shrinking each towards a common value is the empirical Bayes idea of
-\citet{efron1973stein}; hierarchical models choose the amount of
-shrinkage from the data \citep{gelman2006prior}. Our regret bound uses
-the margin argument of plug-in classification
-\citep{audibert2007fast} and the performance-difference identity of
-reinforcement learning \citep{kakade2002approx}.
+\begin{table}[t]
+\centering\footnotesize
+\caption{Position of this paper. ``Learned'': the demand law is updated
+during the day; ``Evidence'': whose observations are used; ``Shared
+structure'': how dependence between customers is modelled.}
+\label{tab:position}
+\begin{tabular}{llll}
+\toprule
+Reference & Law & Evidence & Shared structure \\
+\midrule
+\citet{yang2000restocking} & known & --- & independent demands \\
+\citet{secomandi2009reopt} & known & --- & independent demands \\
+\citet{goodson2013rollout} & known & --- & independent demands \\
+\citet{ak2007paired} & known & --- & independent demands \\
+\citet{florio2023bayesian} & learned & own route & one factor \\
+\citet{gupta2022pooling} & learned offline & all problems & exchangeable \\
+This paper & learned & whole fleet & city and zone factors \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ====================================================================
 \section{Problem and execution model}\label{sec:model}
 
 \paragraph{Fleet and routes} A plan assigns the customers to $K$ routes
 served from one depot. Route $r$ visits stops $k=1,\dots,m_r$ in a fixed
-order. At stop $k$ the vehicle delivers $d_k$ and collects $p_k$; its
-load changes by $g_k = p_k - d_k$. The departure load is the planned
-delivery volume, and $B_r$ denotes the residual capacity at departure.
-If the running load $W_k$ exceeds $B_r$, the vehicle breaches at stop
-$k$: an emergency vehicle serves the rest of the route at price
-$E_{r,k}$. After serving stop $k$ the vehicle may instead hand the rest
-of the route to a standby vehicle at price $H_{r,k}$, or return to the
-depot at price $R_{r,k}$, which resets the load to zero. Prices are built
-from the route geometry and a three-class fleet cost model
+order; we write $i(r,k)$ for the customer at stop $k$ of route $r$. At
+that stop the vehicle delivers $d_{r,k}$ and collects $p_{r,k}$, so its
+load changes by $p_{r,k} - d_{r,k}$. The vehicle leaves the depot with
+the planned delivery volume; $B_r$ denotes the residual capacity at
+departure and $W_{r,k}$ the load change accumulated after stop $k$. If
+$W_{r,k} > B_r$, the vehicle breaches at stop $k$: an emergency vehicle
+serves the rest of the route at price $E_{r,k}$. Otherwise, after
+serving stop $k < m_r$, the vehicle chooses one of three actions:
+\emph{continue} to stop $k+1$; \emph{hand off} the rest of the route to
+a standby vehicle at price $H_{r,k}$, after which the route leaves the
+problem; or \emph{restock}, a return to the depot at price $R_{r,k}$
+that resets the accumulated load to zero. The prices are built from
+the route geometry and a three-class fleet cost model
 \citep{dang2026baton}: planned vehicles, standby vehicles paid per use,
-and emergency vehicles hired at surge prices.
+and emergency vehicles hired at surge prices. Table~\ref{tab:notation}
+collects the notation.
 
-\paragraph{Day factors} Customers lie in $Z$ geographic zones. On a
-given day, zone $z$ has a pickup factor $a_z = \exp(b_z)$ with
+\begin{table}[t]
+\centering\footnotesize
+\caption{Notation.}\label{tab:notation}
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+$K$, $m_r$ & number of routes; stops of route $r$ \\
+$\bar p_i$, $\bar d_i$ & planned pickup and delivery of customer $i$ \\
+$p_{r,k}$, $d_{r,k}$, $W_{r,k}$ & realised pickup, delivery, accumulated load change \\
+$B_r$ & residual capacity of route $r$ at departure \\
+$H_{r,k}$, $R_{r,k}$, $E_{r,k}$ & handoff, restock and breach prices \\
+$Z$, $z(i)$ & number of zones; zone of customer $i$ \\
+$\mu$, $\eta_z$, $b_z = \mu + \eta_z$ & city factor, zone deviation, log factor of zone $z$ \\
+$s_c$, $s_z$ & standard deviations of $\mu$ and $\eta_z$ \\
+$c$, $\kappa = 1/c^2$ & coefficient of variation and shape of the pickup noise \\
+$\mathcal{A}$, $\pi_a$, $Q_a$ & factor grid; library policy; its action values \\
+$\hat a_{r,k}$ & decision factor of route $r$ at stop $k$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Day factors} Customers lie in $Z$ geographic zones, which
+need not coincide with the routes: a route may cross several zones and a
+zone is usually served by several routes. On a given day, zone $z$ has
+a pickup factor $a_z = \exp(b_z)$ with
 \begin{equation}\label{eq:factor}
 b_z = \mu + \eta_z, \qquad \mu \sim N(0, s_c^2), \qquad
 \eta_z \sim N(0, s_z^2),
 \end{equation}
-independent. Given the factors, the pickup of customer $i$ in zone $z$
-is gamma distributed with mean $a_z \bar p_i$ and coefficient of
-variation $c$; deliveries follow the planning law. The planning law is
-the special case $a_z = 1$ for all $z$.
+all independent. Given the factors, the pickup of customer $i$ is gamma
+distributed with mean $a_{z(i)} \bar p_i$ and coefficient of variation
+$c$, independently across customers; deliveries follow the planning
+law. The planning law is the special case $a_z = 1$ for all $z$. The
+city factor $\mu$ captures causes that act on the whole service area,
+such as weather or a public holiday; the deviations $\eta_z$ capture
+local causes, such as a market day in one district. The ratio
+$s_c^2/(s_c^2+s_z^2)$ is the correlation between the log factors of two
+zones, and it decides how much one zone's pickups say about another's.
+
+\paragraph{Information} Vehicles serve their stops in parallel. We
+index time by the stop counter: at epoch $k$ every vehicle still in
+service has served its $k$-th stop, and the dispatcher knows the
+pickups of all stops served so far by all vehicles still in service.
+This is an idealisation of a real day, in which vehicles reach their
+$k$-th stop at different times; it fixes the order in which information
+becomes available and is the same for every learning rule we compare.
+A vehicle that has handed off or breached stops reporting.
 
 \paragraph{Policy library} For each value $a$ on a grid $\mathcal{A}$,
 $\pi_a$ is the recourse policy fitted under pickups scaled by $a$ by
 regression-based backward induction on simulated samples
 \citep{dang2026baton}; one set of samples is used for the whole
-library. For each $\pi_a$ we compute
-exactly, on a load grid, the expected remaining cost $Q_a(s,x)$ of
-taking action $x \in \{\text{continue},\text{handoff},\text{restock}\}$
-in state $s=(r,k,W)$ and following $\pi_a$ afterwards. The library is
-built once per plan, before the day.
+library. For each $\pi_a$ we compute exactly, on a load grid, the
+expected remaining cost $Q_a(s,x)$ of taking action
+$x \in \{\text{continue},\text{handoff},\text{restock}\}$ in state
+$s=(r,k,W)$ and following $\pi_a$ afterwards, with $V_a(s) =
+Q_a(s,\pi_a(s))$. The library is built once per plan, before the day,
+and costs $|\mathcal{A}|$ policy fits per route
+(Section~\ref{sec:cost}).
 
 % ====================================================================
 \section{TEMPO: pooled learning during the day}\label{sec:method}
 
-\paragraph{Posterior of the zone factors} Each pickup observed so far
-contributes the gamma log-likelihood of $b_{z(i)}$. Under
-\eqref{eq:factor}, the posterior of $b_z$ given the pickups observed so
-far by the vehicles still in service is computed exactly on a grid of
-$b$ values: integrate the
-city factor $\mu$ out of the other zones' likelihoods, convolve with the
-zone-level prior, and multiply by zone $z$'s own likelihood. The cost is
-a few one-dimensional convolutions per stop.
+\subsection{Posterior of the zone factors}
 
-\paragraph{Variances from past days} The variances $s_c^2$ and $s_z^2$
-are estimated by the method of moments from complete past days: the
-spread of the zones' log ratios of observed to planned pickups within a
-day estimates $s_z^2$ plus sampling noise, and the variance of the
-daily average estimates $s_c^2$ plus a known share of the rest.
+With $\kappa = 1/c^2$, a pickup $p$ of a customer with planned pickup
+$\bar p$ in zone $z$ contributes the log-likelihood
+\begin{equation}\label{eq:loglik}
+\lambda(b_z; p, \bar p) = -\kappa\, b_z - \kappa\, \frac{p}{\bar p\, e^{b_z}}
+\end{equation}
+up to a constant. Let $L_z(b) = \sum \lambda(b; p_i, \bar p_i)$, the sum
+running over the pickups observed so far in zone $z$, and let $\phi_s$
+denote the $N(0,s^2)$ density. Under \eqref{eq:factor} the zones are
+independent given $\mu$, so the posterior of $b_z$ is
+\begin{equation}\label{eq:post}
+\pi(b_z \mid \text{data}) \;\propto\; e^{L_z(b_z)} \int
+\phi_{s_z}(b_z - \mu)\, \phi_{s_c}(\mu) \prod_{z' \ne z} M_{z'}(\mu)
+\, d\mu,
+\end{equation}
+where
+\begin{equation}\label{eq:Mz}
+M_{z'}(\mu) = \int e^{L_{z'}(b)}\, \phi_{s_z}(b - \mu)\, db .
+\end{equation}
+Each $M_{z'}$ is the likelihood of $\mu$ from zone $z'$'s pickups, so
+\eqref{eq:post} reads: combine the evidence of the other zones on the
+city factor with its prior, pass the result through the zone-level
+spread, and multiply by the zone's own evidence. We evaluate
+\eqref{eq:post} on a grid of $G$ points for $b$ and $\mu$. Each $M_{z'}$
+and the outer integral are one-dimensional convolutions with a Gaussian
+kernel, so one update for all zones costs $O(Z G^2)$ operations, or
+$O(Z G \log G)$ with fast transforms. The decision uses the posterior
+mean $\E[a_z \mid \text{data}] = \E[e^{b_z} \mid \text{data}]$. Two
+limits are worth noting. If $s_z = 0$, all zones share one factor and
+\eqref{eq:post} reduces to full pooling with prior $N(0,s_c^2)$. If
+$s_c = 0$, the zones are independent and \eqref{eq:post} reduces to
+pooling within each zone with prior $N(0,s_z^2)$.
 
-\paragraph{Decision rule} At stop $k$ of route $r$ the vehicle computes
-its factor $\hat a_{r,k}$ as the planned-pickup-weighted mean of the
-posterior means of the zones of its remaining customers, rounds it to
-the nearest point of $\mathcal{A}$, and takes
+\subsection{Variances from past days}
+
+The variances are estimated from $D$ complete past days by the method
+of moments \citep{morris1983peb}. For day $t$ and zone $z$ let
+$y_{tz} = \log\bigl(\sum_i p_{ti} / \sum_i \bar p_i\bigr)$, the sums
+running over the zone's customers. To first order $y_{tz} = b_{tz} +
+\varepsilon_{tz}$ with sampling variance $v_z = c^2 \sum_i \bar p_i^2 /
+(\sum_i \bar p_i)^2$. With $\bar v$ the mean of the $v_z$,
+\begin{equation}\label{eq:mom}
+\hat s_z^2 = \max\Bigl\{0,\ \frac1D \sum_t \widehat{\mathrm{Var}}_z(y_{tz})
+- \bar v\Bigr\},
+\qquad
+\hat s_c^2 = \max\Bigl\{0,\ \widehat{\mathrm{Var}}_t(\bar y_{t\cdot}) -
+\frac{\hat s_z^2 + \bar v}{Z}\Bigr\},
+\end{equation}
+where $\widehat{\mathrm{Var}}_z$ is the sample variance across zones
+within a day and $\bar y_{t\cdot}$ the mean over zones. The first
+estimator uses the spread between zones within a day, which does not
+involve $\mu$; the second removes from the variance of the daily mean
+the part that the zone deviations and the noise contribute. Both are
+truncated at zero, so a scenario without zone deviations gives a small
+positive $\hat s_z$ rather than a negative one.
+
+\subsection{Decision rule}
+
+At epoch $k$, route $r$ forms its decision factor as the
+planned-pickup-weighted mean of the posterior factor means of its
+remaining customers,
+\begin{equation}\label{eq:decfactor}
+\hat a_{r,k} = \frac{\sum_{j > k} \bar p_{i(r,j)}\,
+\E[a_{z(i(r,j))} \mid \text{data}]}{\sum_{j>k} \bar p_{i(r,j)}},
+\end{equation}
+rounds it to the nearest point of $\mathcal{A}$, and takes
 \begin{equation}\label{eq:rule}
 x_{r,k} = \arg\min_x Q_{\hat a_{r,k}}(s_{r,k}, x).
 \end{equation}
-Special cases of the same rule are the policy fitted under the planning
-law ($\hat a = 1$), per-vehicle learning (only the vehicle's own
-pickups, as in \citealp{florio2023bayesian}), full pooling (one factor
-for the fleet) and pooling within zones.
+The weighting makes the factor of a route that is about to enter a
+zone with heavy pickups move before the vehicle has seen any of them,
+on the evidence of other vehicles. Special cases of the same rule are
+the policy fitted under the planning law ($\hat a = 1$), per-vehicle
+learning (only the vehicle's own pickups, as in
+\citealp{florio2023bayesian}), full pooling (one factor for the fleet)
+and pooling within zones. Algorithm~\ref{alg:tempo} summarises one day.
+
+The rule uses the posterior mean of the factor and not the posterior
+expectation of the action values, $\E[Q_{a}(s,x) \mid \text{data}]$,
+which would also be available from the library. In prototype runs the
+two gave costs within noise of each other, and the plug-in form is the
+one the analysis of Section~\ref{sec:theory} covers. Vehicles do not change their routes in
+order to learn: the information they collect is a by-product of
+serving their customers.
+
+\begin{algorithm}[t]
+\caption{One day of TEMPO.}\label{alg:tempo}
+\begin{algorithmic}[1]
+\Require plan, library $\{Q_a\}_{a \in \mathcal{A}}$, variances
+$\hat s_c, \hat s_z$ from past days
+\State $L_z \gets 0$ for all zones; all routes in service
+\For{$k = 1, 2, \dots$}
+  \For{each route $r$ in service with $k \le m_r$}
+    \State observe $p_{r,k}$, $d_{r,k}$; update $W_{r,k}$; add
+    $\lambda(\cdot; p_{r,k}, \bar p_{i(r,k)})$ to $L_{z(i(r,k))}$
+  \EndFor
+  \State compute $\E[a_z \mid \text{data}]$ for all $z$ from \eqref{eq:post}
+  \For{each route $r$ in service with $k \le m_r$}
+    \If{$W_{r,k} > B_r$} pay $E_{r,k}$; remove $r$
+    \ElsIf{$k = m_r$} remove $r$ (route completed)
+    \Else
+      \State compute $\hat a_{r,k}$ by \eqref{eq:decfactor} and round it to $\mathcal{A}$
+      \State take $x_{r,k}$ by \eqref{eq:rule}; on handoff pay $H_{r,k}$ and remove
+      $r$; on restock pay $R_{r,k}$ and set $W_{r,k} \gets 0$
+    \EndIf
+  \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Computational cost}\label{sec:cost}
+
+TIMING_PARAGRAPH
 
 % ====================================================================
 \section{Analysis}\label{sec:theory}
