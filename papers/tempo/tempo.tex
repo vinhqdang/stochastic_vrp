@@ -13,6 +13,7 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage{graphicx}
+\usepackage[section]{placeins}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,allcolors=blue!50!black]{hyperref}
 \onehalfspacing
@@ -446,7 +447,30 @@ $\hat s_c, \hat s_z$ from past days
 
 \subsection{Computational cost}\label{sec:cost}
 
-TIMING_PARAGRAPH
+The policy library is built once per plan, before the first day. It
+fits one continuation-cost policy per route and grid value, so its size
+is $K|\mathcal{A}| = 16K$ fits. Table~\ref{tab:timing} reports wall-clock
+times on one core of an Intel Xeon at 2.3\,GHz for the first five
+instances of each family. The library takes 18 to 45\,s for plans with
+up to 7 routes, 66\,s for a city plan with 11 routes and 135\,s for the
+400-customer plan with 23 routes, about 0.37\,s per fit throughout. During the day,
+one evaluation of the posterior means of all zones
+(\eqref{eq:post} and \eqref{eq:Mz} on the 161-point grid) takes 0.08 to
+0.16\,ms, and the decision rule evaluates the fitted continuation
+costs of one library policy at the current state. The
+variance estimates from 60 past days take under 1.2\,ms and are computed
+once per day. The on-line cost is therefore negligible against the time
+between two stops, and the only material cost is the off-line library.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Wall-clock times, first five instances of each family (one
+core). Library: off-line build of all $16K$ policies, range over
+instances. Posterior: mean time of one evaluation of the zone posterior
+means. Variances: mean time of the moment estimates from 60 past
+days.}\label{tab:timing}
+\input{tables/timing}
+\end{table}
 
 % ====================================================================
 \section{Analysis}\label{sec:theory}
@@ -748,6 +772,95 @@ loses less from the mismatch because it does not use the zones at all.
 The EB rule is still not worse than any other rule, so a poor partition
 reduces the gain from pooling without making it worse than learning alone.
 
+\subsection{Sensitivity}\label{sec:sens}
+
+The runs in this section use 100 days per instance instead of 150 and
+otherwise the same design; points taken from the main runs are marked
+as such.
+
+\paragraph{Learning by stop} Figure~\ref{fig:rmse} shows the root mean
+squared error of the decision factor $\hat a_{r,k}$, against the value
+computed from the true factors, at the $k$-th stop of a route. When one
+factor drives the city, full pooling and the EB rule coincide (the
+orange line lies under the yellow one) and their error at the first
+decision is about half that of per-vehicle learning, since the vehicle
+starts with the evidence the whole fleet has seen. When the zones are
+independent ($s_z = 0.3$), full pooling reaches a floor of about 0.18
+to 0.24 and stays there, while the zone and EB errors keep falling. The
+floor is of the order of the root error $s_z\sqrt{1-1/Z} = 0.21$ to
+$0.26$ of Proposition~\ref{prop:threshold} for $Z = 2$ to 4; the
+proposition concerns one zone's log factor, while the decision factor
+averages over the zones still ahead. In every panel the error of
+per-vehicle learning after ten stops is still above that of the zone and
+EB rules.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig_rmse}
+\caption{Root mean squared error of the decision factor by stop index,
+for three scenarios (columns) and three families (rows). 100 days per
+instance.}\label{fig:rmse}
+\end{figure}
+
+\paragraph{Size of the zone variation} Figure~\ref{fig:sz} varies $s_z$
+from 0 to 0.4 with $s_c = 0.2$ fixed (the point $s_z = 0.2$ is the mixed
+scenario of the main runs). Full pooling is best or tied at $s_z \le
+0.05$ and declines as $s_z$ grows: at $s_z = 0.4$ it closes 0.36, 0.70
+and 0.41 of the gap and is below per-vehicle learning on all three
+families. Zone pooling moves the other way, from 0.55, 0.93 and 0.83 at $s_z
+= 0$ to 0.77, 0.94 and 0.89 at $s_z = 0.4$. The EB rule follows the
+better of the two at both ends, with gap shares between 0.70 and 1.06
+across the sweep, and on Dethloff it is above both in the middle of the
+range ($s_z = 0.1$ to $0.3$), where neither extreme is right. On City
+with $s_z \le 0.1$ the whole gap is 0.9 to 1.8 per day, so the shares
+in that part of the figure are noisy and some exceed one.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_sz}
+\caption{Share of the fixed-to-known gap closed as the zone-level
+standard deviation $s_z$ varies ($s_c = 0.2$). The point $s_z = 0.2$ is
+the mixed scenario of the main runs (150 days); the others use 100
+days.}\label{fig:sz}
+\end{figure}
+
+\paragraph{Length of the history} Table~\ref{tab:sensH} compares the EB
+rule with the two-level rule that knows the variances, for histories of
+5 to 60 past days in the mixed scenario. No interval excludes zero,
+even with 5 days, and the point estimates are between $-0.25$ and
+$+0.22$ per day. The decision depends on the variances only through the
+prior in \eqref{eq:post}, which the pickups of the day soon dominate,
+so a rough estimate of the variances is enough.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{EB rule minus two-level rule with the true variances, mean
+daily cost with 95\% bootstrap intervals, mixed scenario, by number of
+past days $D$ ($D = 60$: main runs).}\label{tab:sensH}
+\resizebox{\textwidth}{!}{\input{tables/sens_H}}
+\end{table}
+
+\paragraph{Number of zones} Table~\ref{tab:sensZ} sets $Z$ to 2, 4 and
+8 on every instance, in the mixed scenario. The factors are drawn on
+the same partition the estimators use, so a larger $Z$ means more
+independent zones, each with fewer customers. The advantage of the EB
+rule over zone pooling grows with $Z$: on Dethloff it is $-0.30$,
+$-1.20$ and $-2.25$ per day, and on Salhi--Nagy and City the point
+estimate at $Z = 8$ is $-0.72$ and $-0.52$ with intervals that reach
+just above zero. With many small zones, a zone's own pickups are few, and
+the city level of the two-level model supplies the evidence that zone
+pooling lacks; on City with $Z = 8$ zone pooling closes less of the gap
+than per-vehicle learning (0.44 against 0.48). With $Z = 2$ the EB and
+zone rules are within noise everywhere.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Number of zones, mixed scenario: share of the gap closed and
+paired differences of the EB rule (95\% bootstrap intervals; bold
+excludes zero).}\label{tab:sensZ}
+\resizebox{\textwidth}{!}{\input{tables/sens_Z}}
+\end{table}
+
 \subsection{Cost and estimation error}
 
 Theorem~\ref{thm:regret} is an upper bound for the model's own setting
@@ -797,7 +910,9 @@ significantly worse than either; its advantage over zone-level pooling
 in the intermediate scenarios is clear on the Dethloff instances and
 within noise on the others. Replacing the true variances by estimates
 from 60 past days changes the daily cost by at most 0.3, with intervals
-that include zero.When the zones used by the estimators do
+that include zero, and with five past days no difference is detected either.
+The advantage over zone-level pooling grows as the plan is split into
+more, smaller zones. When the zones used by the estimators do
 not match the true ones, the gain over per-vehicle learning shrinks and
 on two of the three families is no longer significant, but pooling
 does not become harmful.
