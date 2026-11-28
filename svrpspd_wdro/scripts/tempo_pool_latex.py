@@ -36,7 +36,32 @@ def load(fam):
                        keep_default_na=False)
 
 
+def instances_table():
+    """Instance summary: plans from the cached deterministic-gate solutions."""
+    from ev.fleet import FleetPlan
+    rows = []
+    for fam, ftex in FAMS:
+        ps = [p for p in sorted((_W / "data" / fam).glob("*.vrpspd"))
+              if (_W / "results" / "plans" / f"{p.stem}.json").exists()]
+        n, K, m = [], [], []
+        for p in ps:
+            fl = FleetPlan.from_instance(p)
+            ms = [rt.m for rt in fl.routes]
+            n.append(sum(ms))
+            K.append(len(ms))
+            m += ms
+        Zs = sorted(load(fam).Z.unique())
+        rows.append(" & ".join([ftex, str(len(ps)), f"{min(n)}--{max(n)}",
+                                f"{min(K)}--{max(K)}", f"{np.mean(m):.1f}",
+                                f"{min(m)}--{max(m)}", f"{min(Zs)}--{max(Zs)}"]) + r" \\")
+    (OUT / "instances.tex").write_text("\n".join([
+        r"\begin{tabular}{lrrrrrr}", r"\toprule",
+        r"Family & Instances & Customers & Routes & Mean stops per route & Stops per route & Zones \\",
+        r"\midrule"] + rows + [r"\bottomrule", r"\end{tabular}", ""]))
+
+
 def main():
+    instances_table()
     OUT.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(SEED)
     gap, pairs, slope = [], [], {}

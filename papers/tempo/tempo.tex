@@ -593,7 +593,13 @@ customers, computed by $k$-means on a classical multidimensional scaling
 of the distance matrix (Euclidean for the two benchmark families, road
 distances for the city instances), with $Z = \min\{4, \max\{2, \lfloor K/2
 \rfloor\}\}$ zones. Zones cut across routes, so a vehicle may visit
-several of them.
+several of them. Table~\ref{tab:instances} summarises the instances.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Instances and plans.}\label{tab:instances}
+\resizebox{\textwidth}{!}{\input{tables/instances}}
+\end{table}
 
 \paragraph{Scenarios} Pickups have coefficient of variation $c = 0.3$
 given the factors, and deliveries are gamma with the planned mean and
@@ -659,7 +665,8 @@ paired differences. The EB rule is cheaper than per-vehicle learning in
 every one of the 24 family--scenario combinations, and the interval
 excludes zero in 18 of them. The saving is largest on the Dethloff
 instances (4.3 to 7.0 per day, or 2.6 to 3.9\% of the fixed policy's
-cost), whose routes are short: a vehicle with a few customers learns
+cost), whose routes are short (7.6 stops on average, against about 17 in
+the other two families): a vehicle with a few customers learns
 little from its own pickups before its decisions are taken.
 
 \begin{table}[t]
