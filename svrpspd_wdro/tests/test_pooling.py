@@ -5,14 +5,15 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ev.fleet import FleetPlan  # noqa: E402
+from ev.fleet import FleetPlan, PolicyLibrary  # noqa: E402
 from ev.pooling import (BG, CV, SCENARIOS, SHAPE, Scenario, build_structure,  # noqa: E402
                         customer_zones, draw_day, gauss, history_estimate,
-                        hier_means, loglik, post_mean, weighted_factor,
-                        zone_count)
+                        hier_means, loglik, post_mean, simulate_day,
+                        simulate_policy, weighted_factor, zone_count)
 
 
 def _euclid(points):
@@ -166,6 +167,43 @@ def test_mixed_day_uses_estimator_zones_and_is_reproducible():
         assert np.array_equal(d1.p[r], d2.p[r])
         assert np.array_equal(d1.d[r], d2.d[r])
         assert np.array_equal(d1.dec_known[r], d2.dec_known[r])
+
+
+def test_trace_does_not_change_results_and_sums_to_totals():
+    fl, D = _toy_fleet()
+    scn = SCENARIOS["mixed"]
+    st = build_structure(fl, D)
+    lib = PolicyLibrary(fl, seed=1, N=200, G=300)     # small, test only
+    day = draw_day(fl, st, scn, np.random.default_rng(23))
+    for pol in ["route", "full", "zone", "hier", "hier_eb", "mle"]:
+        args = (pol, fl, lib, st, day, scn.s_c, scn.s_z, 0.25, 0.15)
+        plain = simulate_policy(*args, trace=None)
+        tr = {}
+        traced = simulate_policy(*args, trace=tr)
+        assert traced["cost"] == plain["cost"]
+        assert traced["se"] == plain["se"]
+        assert traced["nd"] == plain["nd"]
+        assert sum(v[0] for v in tr.values()) == pytest.approx(plain["se"])
+        assert sum(v[1] for v in tr.values()) == plain["nd"]
+        assert all(1 <= k <= fl.m_max for k in tr)
+    tr = {}
+    known = simulate_policy("known", fl, lib, st, day, scn.s_c, scn.s_z,
+                            0.25, 0.15, trace=tr)
+    assert tr == {} and known["se"] == 0.0 and known["nd"] > 0
+    # simulate_day with a policy subset returns exactly those policies
+    res = simulate_day(fl, lib, st, day, scn, 0.25, 0.15, pols=["hier", "mle"])
+    assert set(res) == {"hier", "mle"}
+
+
+def test_build_structure_zone_count_override():
+    fl, D = _toy_fleet()
+    st = build_structure(fl, D, Z=3)
+    assert st.Z == 3
+    assert len(set(st.zc.tolist())) == 3
+    assert set(st.zc.tolist()) <= set(range(3))
+    assert st.zc.shape == (sum(rt.m for rt in fl.routes),)
+    default = build_structure(fl, D)
+    assert default.Z == zone_count(len(fl.routes))
 
 
 def test_alt_partition_has_one_more_zone_and_differs():

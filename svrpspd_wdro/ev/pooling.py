@@ -202,11 +202,11 @@ class Structure:
     zct: np.ndarray     # flattened true-zone indices (all routes)
 
 
-def build_structure(fl: FleetPlan, D, alt=False) -> Structure:
+def build_structure(fl: FleetPlan, D, alt=False, Z=None) -> Structure:
     K = len(fl.routes)
-    Z = zone_count(K)
+    Z = zone_count(K) if Z is None else int(Z)
     allc = [c for rt in fl.routes for c in rt.customers]
-    lab = customer_zones(D, allc, K)
+    lab = customer_zones(D, allc, K, Z=Z)
     zone, pos = _split_by_route(fl, lab)
     zc = np.concatenate(zone)
     if alt:
@@ -358,9 +358,13 @@ def _estimate_matrix(pol, K, Z, lprior, s_c, s_z, sc_hat, sz_hat,
 
 
 def simulate_policy(pol, fl: FleetPlan, lib: PolicyLibrary, st: Structure,
-                    day: Day, s_c, s_z, sc_hat, sz_hat):
+                    day: Day, s_c, s_z, sc_hat, sz_hat, trace=None):
     """Run one estimator/decision policy over the day. Returns dict with
-    cost, se (sum of squared decision-factor errors against known) and nd."""
+    cost, se (sum of squared decision-factor errors against known) and nd.
+
+    If ``trace`` is a dict, per stop index k (1-based) it accumulates
+    trace[k] = [sum of squared errors, count], mirroring se and nd. Nothing
+    is added for pol == "known". Results do not depend on ``trace``."""
     K, Z, G = st.K, st.Z, len(BG)
     lprior = np.log(gauss(BG, math.hypot(s_c, s_z)) + 1e-300)
     W = np.zeros(K)
@@ -410,6 +414,10 @@ def simulate_policy(pol, fl: FleetPlan, lib: PolicyLibrary, st: Structure,
             else:
                 a = weighted_factor(rt.pbar[k:], E[r][st.zone[r][k:]])
                 se += (a - dk) ** 2
+                if trace is not None:
+                    t = trace.setdefault(k, [0.0, 0])
+                    t[0] += (a - dk) ** 2
+                    t[1] += 1
             nd += 1
             rv = lib.get(r, quantize_a(a)).rv
             cont = rv.U(k + 1, W[r])
@@ -424,9 +432,11 @@ def simulate_policy(pol, fl: FleetPlan, lib: PolicyLibrary, st: Structure,
     return {"cost": cost, "se": se, "nd": nd}
 
 
-def simulate_day(fl, lib, st, day, scn: Scenario, sc_hat, sz_hat):
+def simulate_day(fl, lib, st, day, scn: Scenario, sc_hat, sz_hat, pols=None):
+    """Simulate the policies in ``pols`` (default all of POL) on one day.
+    Returns {policy: result}; policies not run are absent."""
     out = {}
-    for pol in POL:
+    for pol in (POL if pols is None else pols):
         res = simulate_policy(pol, fl, lib, st, day, scn.s_c, scn.s_z,
                               sc_hat, sz_hat)
         out[pol] = res

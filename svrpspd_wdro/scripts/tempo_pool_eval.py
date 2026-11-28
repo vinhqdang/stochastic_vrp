@@ -3,6 +3,13 @@
 Usage (from svrpspd_wdro/):
     python scripts/tempo_pool_eval.py fam=Dethloff [n_inst=all] [days=150]
         [workers=4] [scen=city,mixed,...] [tag=]
+        [sc=<float> sz=<float>] [H=60] [Z=<zones>] [pols=hier,hier_eb,...]
+
+sc / sz (either or both; defaults 0.2) replace scen by an ad-hoc scenario
+named sw_sc<sc>_sz<sz>. H overrides the history length (CSV column H). Z
+overrides the zone count. pols restricts the simulated policies; the others
+get empty CSV cells. Always pass a non-empty tag in test runs: the default
+tag overwrites the published results.
 
 Parallel over (instance, scenario) jobs. Each job builds its instance's
 PolicyLibrary once (seed 1), draws H = 60 history days and `days` fleet days
@@ -28,8 +35,8 @@ import numpy as np
 _W = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_W))
 from ev.fleet import FleetPlan, PolicyLibrary, parse_instance  # noqa: E402
-from ev.pooling import (POL, SCENARIOS, H_HISTORY, build_structure, draw_day,  # noqa: E402
-                        history_estimate, simulate_day)
+from ev.pooling import (POL, SCENARIOS, H_HISTORY, Scenario, build_structure,  # noqa: E402
+                        draw_day, history_estimate, simulate_day)
 
 OUT = _W / "results" / "tempo_pool"
 TZ7 = dt.timezone(dt.timedelta(hours=7))
@@ -39,32 +46,62 @@ def _now():
     return dt.datetime.now(TZ7).strftime("%Y-%m-%d %H:%M:%S GMT+7")
 
 
-def run_job(path, scen_name, days):
-    """All fleet days of one (instance, scenario). Returns (rows, seconds)."""
+def adhoc_scenario(kw):
+    """Ad-hoc Scenario from kwargs sc / sz (defaults 0.2 each when only one
+    is given; other fields default). Returns (name, Scenario) or None when
+    neither is given."""
+    if "sc" not in kw and "sz" not in kw:
+        return None
+    sc = float(kw.get("sc", 0.2))
+    sz = float(kw.get("sz", 0.2))
+    name = f"sw_sc{sc:.2f}_sz{sz:.2f}"
+    return name, Scenario(name, sc, sz)
+
+
+def parse_pols(kw):
+    """Policy list from kwarg pols (comma separated); None means all of POL."""
+    if "pols" not in kw:
+        return None
+    pols = [p for p in kw["pols"].split(",") if p]
+    for p in pols:
+        if p not in POL:
+            raise SystemExit(f"unknown policy {p}")
+    return pols
+
+
+def run_job(path, scen_name, days, H=H_HISTORY, Z=None, pols=None, scn=None):
+    """All fleet days of one (instance, scenario). Returns (rows, seconds).
+
+    ``scn`` is the Scenario object (default SCENARIOS[scen_name]); ``H`` the
+    history length; ``Z`` an optional zone count (default zone_count(K));
+    ``pols`` the policies to simulate (default all of POL). Policies not run
+    have no keys in their row, so their CSV cells are empty."""
     t0 = time.time()
     path = Path(path)
     fl = FleetPlan.from_instance(path)
     D = parse_instance(path)[0]
-    scn = SCENARIOS[scen_name]
+    if scn is None:
+        scn = SCENARIOS[scen_name]
     alt = scn.zones_true == "alt"
-    st = build_structure(fl, D, alt=alt)
+    st = build_structure(fl, D, alt=alt, Z=Z)
     lib = PolicyLibrary(fl, seed=1)
     seed = zlib.crc32(f"{path.stem}|{scen_name}".encode())
     rng_h = np.random.default_rng(np.random.SeedSequence([seed, 1]))
     rng_d = np.random.default_rng(np.random.SeedSequence([seed, 2]))
     sc_hat, sz_hat = history_estimate(st.zc, st.sk, st.pb, st.Z, scn,
-                                      H_HISTORY, rng_h, zct=st.zct, Zt=st.Zt)
+                                      H, rng_h, zct=st.zct, Zt=st.Zt)
     rows = []
     for d in range(days):
         day = draw_day(fl, st, scn, rng_d)
-        res = simulate_day(fl, lib, st, day, scn, sc_hat, sz_hat)
+        res = simulate_day(fl, lib, st, day, scn, sc_hat, sz_hat, pols=pols)
         row = {"instance": path.stem, "K": st.K, "Z": st.Z,
                "scenario": scen_name, "day": d,
                "sc_hat": sc_hat, "sz_hat": sz_hat}
-        for pol in POL:
+        for pol in res:
             row[f"cost_{pol}"] = res[pol]["cost"]
             row[f"se_{pol}"] = res[pol]["se"]
             row[f"nd_{pol}"] = res[pol]["nd"]
+        row["H"] = H
         rows.append(row)
     return rows, time.time() - t0
 
@@ -73,7 +110,7 @@ def columns():
     cols = ["instance", "K", "Z", "scenario", "day", "sc_hat", "sz_hat"]
     for pol in POL:
         cols += [f"cost_{pol}", f"se_{pol}", f"nd_{pol}"]
-    return cols
+    return cols + ["H"]
 
 
 def main(kw):
@@ -81,10 +118,19 @@ def main(kw):
     days = int(kw.get("days", 150))
     workers = int(kw.get("workers", 4))
     tag = kw.get("tag", "")
-    scen_names = (kw["scen"].split(",") if "scen" in kw else list(SCENARIOS))
-    for s in scen_names:
-        if s not in SCENARIOS:
-            raise SystemExit(f"unknown scenario {s}")
+    H = int(kw.get("H", H_HISTORY))
+    Z = int(kw["Z"]) if "Z" in kw else None
+    pols = parse_pols(kw)
+    adhoc = adhoc_scenario(kw)
+    if adhoc is not None:
+        scen_objs = {adhoc[0]: adhoc[1]}
+        scen_names = [adhoc[0]]
+    else:
+        scen_names = (kw["scen"].split(",") if "scen" in kw else list(SCENARIOS))
+        for s in scen_names:
+            if s not in SCENARIOS:
+                raise SystemExit(f"unknown scenario {s}")
+        scen_objs = {s: SCENARIOS[s] for s in scen_names}
     paths = [p for p in sorted((_W / "data" / fam).glob("*.vrpspd"))
              if (_W / "results" / "plans" / f"{p.stem}.json").exists()]
     if "n_inst" in kw and kw["n_inst"] != "all":
@@ -103,15 +149,24 @@ def main(kw):
         logf.write(line + "\n")
         logf.flush()
 
+    extra = ""
+    if H != H_HISTORY:
+        extra += f" H={H}"
+    if Z is not None:
+        extra += f" Z={Z}"
+    if pols is not None:
+        extra += f" pols={','.join(pols)}"
     log(f"start fam={fam} instances={len(paths)} scenarios={scen_names} "
-        f"days={days} workers={workers} jobs={len(jobs)} -> {csv_path.name}")
+        f"days={days} workers={workers} jobs={len(jobs)}{extra} -> {csv_path.name}")
     t_all = time.time()
     n_rows = 0
     with open(csv_path, "w", newline="") as fh:
         wr = csv.DictWriter(fh, fieldnames=columns())
         wr.writeheader()
         with ProcessPoolExecutor(max_workers=workers) as ex:
-            futs = {ex.submit(run_job, p, s, days): (p, s) for p, s in jobs}
+            futs = {ex.submit(run_job, p, s, days, H=H, Z=Z, pols=pols,
+                              scn=scen_objs[s]): (p, s)
+                    for p, s in jobs}
             for f in as_completed(futs):
                 p, s = futs[f]
                 rows, secs = f.result()
